@@ -3,6 +3,8 @@ package com.selene.onestepflight.controller;
 import java.util.Set;
 
 import org.springframework.http.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -13,12 +15,15 @@ import com.selene.onestepflight.dto.BoardingPassExtractionResponse;
 import com.selene.onestepflight.service.BoardingPassDocumentProcessor;
 import com.selene.onestepflight.service.InvalidDocumentException;
 import com.selene.onestepflight.service.IpRateLimitService;
+import com.selene.onestepflight.service.DocumentResultClassification;
+import com.selene.onestepflight.service.DocumentResultClassifier;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/documents")
 public class DocumentController {
+	private static final Logger LOGGER = LoggerFactory.getLogger(DocumentController.class);
 
 	private static final long MAX_FILE_SIZE = 10L * 1024L * 1024L;
 	private static final Set<String> ALLOWED_TYPES = Set.of(
@@ -44,7 +49,14 @@ public class DocumentController {
 			throw new InvalidDocumentException("DOCUMENT_TYPE_NOT_ALLOWED");
 		}
 		try {
-			return documentProcessor.extract(file.getBytes(), safeFilename(file.getOriginalFilename()), contentType);
+			BoardingPassExtractionResponse result = documentProcessor.extract(
+					file.getBytes(), safeFilename(file.getOriginalFilename()), contentType);
+			DocumentResultClassification classification = DocumentResultClassifier.classify(result);
+			LOGGER.info("documentExtraction mimeType={} bytes={} documentType={} segmentCount={} hasFlightNumber={} hasDepartureDate={} result={}",
+					contentType, file.getSize(), result.documentType(), result.segments().size(),
+					DocumentResultClassifier.hasAnyFlightNumber(result),
+					DocumentResultClassifier.hasAnyDepartureDate(result), classification);
+			return result;
 		} catch (java.io.IOException exception) {
 			throw new InvalidDocumentException("DOCUMENT_READ_FAILED");
 		}

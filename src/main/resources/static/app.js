@@ -133,6 +133,30 @@
   Object.assign(translations.zh, { datePlaceholder: '请选择出发日期', preparingPng: '正在准备卡片…' });
   Object.assign(translations.en, { datePlaceholder: 'Choose departure date', preparingPng: 'Preparing card…' });
   Object.assign(translations.es, { datePlaceholder: 'Elige la fecha de salida', preparingPng: 'Preparando tarjeta…' });
+  Object.assign(translations.zh, {
+    documentUnusableContext: '文件无法识别', documentUnusableTitle: '没有读到航班信息',
+    documentUnusableLead: '这份文件中没有读到可用于查询的航班号和出发日期。请换一份更完整、清晰的旅行文件，或手动输入。',
+    documentUnusableHint: '可以上传航空公司行程单、预订确认、电子客票、登机牌，或这些文件的完整截图。',
+    chooseOtherFile: '选择其他文件', manualFlightNumber: '手动输入航班号', documentUnusableWhy: '为什么没有读到？',
+    documentUnusableReason: '文件可能不完整、文字过小或模糊，或者不是受支持的航空公司旅行文件。系统不会猜测缺失的航班号和日期。',
+    partialDocumentNotice: '只读到部分信息，请补全后查询'
+  });
+  Object.assign(translations.en, {
+    documentUnusableContext: 'File not recognized', documentUnusableTitle: 'No flight information was found',
+    documentUnusableLead: 'No flight number and departure date that can be used for a search were found in this file. Choose a clearer, more complete travel document or enter the details manually.',
+    documentUnusableHint: 'You can upload an airline itinerary, booking confirmation, e-ticket, boarding pass, or a complete screenshot of one of these documents.',
+    chooseOtherFile: 'Choose another file', manualFlightNumber: 'Enter flight number manually', documentUnusableWhy: 'Why was nothing found?',
+    documentUnusableReason: 'The file may be incomplete, the text may be too small or blurred, or it may not be a supported airline travel document. The system will not guess a missing flight number or date.',
+    partialDocumentNotice: 'Only some information was found. Complete the details before searching.'
+  });
+  Object.assign(translations.es, {
+    documentUnusableContext: 'No se pudo reconocer el archivo', documentUnusableTitle: 'No se encontró información del vuelo',
+    documentUnusableLead: 'No se encontraron en este archivo un número de vuelo y una fecha de salida que puedan usarse para la búsqueda. Elige un documento de viaje más completo y claro o introduce los datos manualmente.',
+    documentUnusableHint: 'Puedes subir un itinerario de la aerolínea, una confirmación de reserva, un billete electrónico, una tarjeta de embarque o una captura completa de uno de estos documentos.',
+    chooseOtherFile: 'Elegir otro archivo', manualFlightNumber: 'Introducir el número de vuelo', documentUnusableWhy: '¿Por qué no se encontró nada?',
+    documentUnusableReason: 'Es posible que el archivo esté incompleto, que el texto sea demasiado pequeño o borroso, o que no sea un documento de viaje de una aerolínea compatible. El sistema no inventará el número de vuelo ni la fecha que falten.',
+    partialDocumentNotice: 'Solo se encontró parte de la información. Completa los datos antes de buscar.'
+  });
 
   var completionLabels = {
     CHECK_IN: ['我已经完成值机，继续', 'I have checked in; continue', 'Ya he facturado; continuar'],
@@ -321,7 +345,10 @@
     document.querySelectorAll('input[type="date"]').forEach(function (input) {
       input.lang = localeLanguageTag(currentLocale);
       var display = input.parentElement && input.parentElement.querySelector('[data-date-display]');
-      if (display) display.textContent = formatVisibleDate(input.value);
+      if (display) {
+        display.textContent = formatVisibleDate(input.value);
+        input.parentElement.dataset.empty = String(!input.value);
+      }
     });
   }
 
@@ -1140,6 +1167,65 @@
     }).finally(function () { setLookupBusy(false); });
   }
 
+  function validDocumentFlightNumber(value) {
+    return /^[A-Z0-9]{2,3}\d{1,4}[A-Z]?$/.test(normalizeFlightNumber(value));
+  }
+
+  function validDocumentDepartureDate(value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return false;
+    var parts = String(value).split('-').map(Number);
+    var date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    return date.getUTCFullYear() === parts[0] && date.getUTCMonth() === parts[1] - 1
+      && date.getUTCDate() === parts[2];
+  }
+
+  function classifyDocumentResult(result) {
+    var segments = result && Array.isArray(result.segments) ? result.segments.filter(Boolean) : [];
+    if (!segments.length) return { outcome: 'UNUSABLE', usableSegments: [], partialSegment: null };
+    var usableSegments = segments.filter(function (segment) {
+      return validDocumentFlightNumber(segment.flightNumber) && validDocumentDepartureDate(segment.departureDate);
+    });
+    if (usableSegments.length) return { outcome: 'USABLE', usableSegments: usableSegments, partialSegment: null };
+    var partialSegments = segments.filter(function (segment) {
+      return validDocumentFlightNumber(segment.flightNumber) || validDocumentDepartureDate(segment.departureDate);
+    });
+    return partialSegments.length
+      ? { outcome: 'PARTIAL', usableSegments: [], partialSegment: partialSegments[0] }
+      : { outcome: 'UNUSABLE', usableSegments: [], partialSegment: null };
+  }
+
+  function resetDocumentResultState() {
+    clearJourney();
+    document.querySelector('[data-manual-partial-notice]').hidden = true;
+  }
+
+  function showUnusableDocument() {
+    resetDocumentResultState();
+    setStaffContent(
+      '请帮我找到正确的旅行文件', 'Please help me find the right travel document',
+      '这个文件没有读到航班号和出发日期。请告诉我应该使用哪一份航空公司行程单、预订确认、电子客票或登机牌。',
+      'No flight number and departure date were found in this file. Please tell me which airline itinerary, booking confirmation, e-ticket, or boarding pass I should use.',
+      'Ayúdeme a encontrar el documento de viaje correcto',
+      'No se encontraron el número de vuelo ni la fecha de salida. Dígame qué itinerario, confirmación, billete electrónico o tarjeta de embarque debo usar.');
+    navigationHistory.push('welcome');
+    showScreen('document-unusable');
+    announce(t('documentUnusableTitle'));
+  }
+
+  function showPartialDocument(segment) {
+    resetDocumentResultState();
+    var flightInput = document.getElementById('flight-input');
+    var dateInput = document.getElementById('date-input');
+    flightInput.value = validDocumentFlightNumber(segment && segment.flightNumber)
+      ? formatFlightNumber(segment.flightNumber) : '';
+    setDateInputValue(dateInput, validDocumentDepartureDate(segment && segment.departureDate)
+      ? segment.departureDate : '');
+    document.querySelector('[data-manual-partial-notice]').hidden = false;
+    navigationHistory.push('welcome');
+    showScreen('manual');
+    announce(t('partialDocumentNotice'));
+  }
+
   function uploadDocument(file) {
     if (lookupInFlight) return;
     var activeRequest = ++requestSequence;
@@ -1157,18 +1243,34 @@
     extraction.then(function (result) {
       if (activeRequest !== requestSequence) return;
       updateLoadingProgress(100, uploadLoadingMessages, 2);
+      var assessment = classifyDocumentResult(result);
+      if (assessment.outcome === 'UNUSABLE') {
+        showUnusableDocument();
+        return;
+      }
+      if (assessment.outcome === 'PARTIAL') {
+        showPartialDocument(assessment.partialSegment);
+        return;
+      }
+      var usableSegments = assessment.usableSegments;
+      var selectedResult = result;
+      if (usableSegments.length === 1) {
+        selectedResult = Object.assign({}, result, usableSegments[0], {
+          fields: result.fields || {}, segments: [usableSegments[0]]
+        });
+      }
       lastLookupContext = {
-        flightNumber: normalizeFlightNumber(result.flightNumber),
-        departureDate: result.departureDate || null,
-        departureAirport: result.departureAirport || null,
-        arrivalAirport: result.arrivalAirport || null
+        flightNumber: normalizeFlightNumber(selectedResult.flightNumber),
+        departureDate: selectedResult.departureDate || null,
+        departureAirport: selectedResult.departureAirport || null,
+        arrivalAirport: selectedResult.arrivalAirport || null
       };
-      documentSegments = Array.isArray(result.segments) ? result.segments.slice() : [];
+      documentSegments = usableSegments.slice();
       selectedDocumentSegmentIndex = documentSegments.length === 1 ? 0 : null;
       documentRootFields = Object.assign({}, result.fields || {});
       documentRootReviewFields = Array.isArray(result.needsReviewFields) ? result.needsReviewFields.slice() : [];
-      var extractedFlight = extractionToFlight(result);
-      beginFlight(extractedFlight, result);
+      var extractedFlight = extractionToFlight(selectedResult);
+      beginFlight(extractedFlight, selectedResult);
       recordJourneyEvent('DOCUMENT_EXTRACTED',
         'Nutrient 已从隐私安全文件提取字段',
         'Nutrient extracted fields from the privacy-safe document', true);
@@ -1375,6 +1477,7 @@
     showScreen('manual');
     var flightField = document.getElementById('flight-input');
     var dateField = document.getElementById('date-input');
+    document.querySelector('[data-manual-partial-notice]').hidden = true;
     flightField.value = '';
     setDateInputValue(dateField, '');
     flightField.focus({ preventScroll: true });
@@ -3830,15 +3933,26 @@
     var action = actionElement.dataset.action;
     if (action === 'upload') navigate('upload');
     if (action === 'choose-file') fileInput.click();
+    if (action === 'choose-other-file') {
+      fileInput.value = '';
+      fileInput.click();
+    }
     if (action === 'home') {
       if ((journeyContext || currentAction) && currentScreen !== 'welcome') showEndConfirmation(); else returnHome();
     }
     if (action === 'journey-back') goBack();
     if (action === 'manual') {
+      document.querySelector('[data-manual-partial-notice]').hidden = true;
       if (currentFlight) {
         document.getElementById('flight-input').value = currentFlight.flightNumber || '';
         setDateInputValue(document.getElementById('date-input'), currentFlight.departureDate);
       }
+      navigate('manual');
+    }
+    if (action === 'unusable-manual') {
+      document.getElementById('flight-input').value = '';
+      setDateInputValue(document.getElementById('date-input'), '');
+      document.querySelector('[data-manual-partial-notice]').hidden = true;
       navigate('manual');
     }
     if (action === 'demo-flight') startFlightLookup('BA117', '2026-09-03', true, null);
