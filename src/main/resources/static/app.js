@@ -32,6 +32,7 @@
   var currentDestinationCopy = null;
   var shareSession = readStoredJson(SHARE_SESSION_KEY);
   var shareSyncTimer = null;
+  var shareCreationInFlight = false;
   var arrivalRefreshFlightKey = null;
   var documentSegments = [];
   var selectedDocumentSegmentIndex = null;
@@ -81,10 +82,10 @@
     checkInContext: '确认值机状态', checkInQuestion: '你已经完成值机，或已经拿到登机牌了吗？', checkInQuestionLead: '如果你已经取得登机牌，通常表示已经值机。',
     boardingPassCheckIn: '已从登机牌判断：你已经值机', boardingPassCheckInLead: '请确认后继续；如果实际情况不同，可以更改。', checkInPresetContinue: '是，继续', thisIsWrong: '这不对',
     checkInYes: '✓ 是，我已经完成值机', checkInNo: '还没有', checkInUnsure: '我不确定', stopSpeaking: '停止朗读',
-    staffCardInstruction: '请把这个页面拿给机场工作人员看。', globalFooter: '© 2026 OneStep Flight · 无障碍乘机指引',
+    staffCardInstruction: '请把这个页面拿给工作人员看', globalFooter: '© 2026 OneStep Flight · 无障碍乘机指引',
     allFlightInfo: '查看全部航班信息', flightSourceLabel: '航班信息来源',
     departurePassedTitle: '这趟航班已经离港', departurePassedLead: '点击下方“请工作人员帮忙”，并前往航空公司服务柜台出示给工作人员。',
-    enterNewFlight: '输入新的航班信息', backHome: '返回首页', uploadContext: '选择旅行文件', uploadTitle: '选择或上传文件', chooseFile: '选择文件'
+    enterNewFlight: '输入新的航班信息', backHome: '返回首页', uploadContext: '选择旅行文件', uploadTitle: '选择或上传文件', chooseFile: '选择文件', previewPng: '预览 PNG 卡片'
   });
   Object.assign(translations.en, {
     upload: 'Upload travel itinerary or boarding pass',
@@ -99,10 +100,10 @@
     checkInContext: 'Confirm check-in status', checkInQuestion: 'Have you checked in or received your boarding pass?', checkInQuestionLead: 'If you already have a boarding pass, you are usually checked in.',
     boardingPassCheckIn: 'Your boarding pass indicates that you are checked in', boardingPassCheckInLead: 'Confirm to continue, or change this if it is not correct.', checkInPresetContinue: 'Yes, continue', thisIsWrong: 'This is not correct',
     checkInYes: '✓ Yes, I have checked in', checkInNo: 'Not yet', checkInUnsure: 'I am not sure', stopSpeaking: 'Stop reading',
-    staffCardInstruction: 'Please show this screen to an airport staff member.', globalFooter: '© 2026 OneStep Flight · Accessible air-travel guidance',
+    staffCardInstruction: 'Show this page to a member of staff', globalFooter: '© 2026 OneStep Flight · Accessible air-travel guidance',
     allFlightInfo: 'View all flight information', flightSourceLabel: 'Flight information source',
     departurePassedTitle: 'This flight has departed', departurePassedLead: 'Select “Ask a member of staff” below, then go to the airline service desk and show it to a staff member.',
-    enterNewFlight: 'Enter new flight information', backHome: 'Return home', uploadContext: 'Choose a travel document', uploadTitle: 'Choose or upload a file', chooseFile: 'Choose file'
+    enterNewFlight: 'Enter new flight information', backHome: 'Return home', uploadContext: 'Choose a travel document', uploadTitle: 'Choose or upload a file', chooseFile: 'Choose file', previewPng: 'Preview PNG card'
   });
   Object.assign(translations.es, {
     upload: 'Subir itinerario de viaje o tarjeta de embarque',
@@ -117,10 +118,10 @@
     checkInContext: 'Confirmar la facturación', checkInQuestion: '¿Ya has facturado o recibido tu tarjeta de embarque?', checkInQuestionLead: 'Si ya tienes una tarjeta de embarque, normalmente ya has facturado.',
     boardingPassCheckIn: 'La tarjeta de embarque indica que ya has facturado', boardingPassCheckInLead: 'Confirma para continuar o cambia esta respuesta si no es correcta.', checkInPresetContinue: 'Sí, continuar', thisIsWrong: 'Esto no es correcto',
     checkInYes: '✓ Sí, ya he facturado', checkInNo: 'Todavía no', checkInUnsure: 'No estoy seguro', stopSpeaking: 'Detener la lectura',
-    staffCardInstruction: 'Muestre esta pantalla al personal del aeropuerto.', globalFooter: '© 2026 OneStep Flight · Guía accesible para viajar en avión',
+    staffCardInstruction: 'Muestre esta página a un miembro del personal', globalFooter: '© 2026 OneStep Flight · Guía accesible para viajar en avión',
     allFlightInfo: 'Ver toda la información del vuelo', flightSourceLabel: 'Fuente de información del vuelo',
     departurePassedTitle: 'Este vuelo ya ha salido', departurePassedLead: 'Pulsa «Pedir ayuda al personal» y ve al mostrador de atención de la aerolínea para mostrárselo al personal.',
-    enterNewFlight: 'Introducir un vuelo nuevo', backHome: 'Volver al inicio', uploadContext: 'Elegir un documento de viaje', uploadTitle: 'Elegir o subir un archivo', chooseFile: 'Elegir archivo'
+    enterNewFlight: 'Introducir un vuelo nuevo', backHome: 'Volver al inicio', uploadContext: 'Elegir un documento de viaje', uploadTitle: 'Elegir o subir un archivo', chooseFile: 'Elegir archivo', previewPng: 'Vista previa de la tarjeta PNG'
   });
 
   var completionLabels = {
@@ -236,13 +237,6 @@
     primary.lang = localeLanguageTag(currentLocale);
     primary.textContent = primaryText || '';
     element.appendChild(primary);
-    if (currentLocale !== 'en' && englishText && englishText !== primaryText) {
-      var english = document.createElement('span');
-      english.className = heading ? 'bilingual-heading-secondary' : 'bilingual-secondary';
-      english.lang = 'en';
-      english.textContent = englishText;
-      element.appendChild(english);
-    }
   }
 
   function setHidden(element, hidden) {
@@ -710,12 +704,6 @@
             ? localeText('Nutrient 文件 + 实时来源', 'Nutrient document + live sources', 'Documento Nutrient + fuentes en directo')
             : localeText('多源实时信息', 'Cross-checked live data', 'Datos contrastados en directo');
     source.classList.toggle('demo-tag', flight.demo);
-    document.querySelector('[data-demo-disclaimer]').hidden = !flight.demo;
-    if (flight.demo) {
-      document.querySelector('[data-demo-disclaimer]').textContent = simulated
-        ? localeText('模拟数据', 'Simulated data', 'Datos simulados')
-        : t('demoDisclaimer');
-    }
     var extractionNote = document.querySelector('[data-extraction-note]');
     extractionNote.hidden = !fromDocument;
     if (fromDocument) {
@@ -1836,12 +1824,12 @@
     primary.textContent = primaryCopy;
     primary.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale;
     primaryEn.textContent = copy.primaryEn;
-    primaryEn.hidden = currentLocale === 'en' || !copy.primaryEn || copy.primaryEn === primaryCopy;
+    primaryEn.hidden = true;
     context.textContent = contextCopy;
     context.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale;
     context.hidden = !contextCopy;
     contextEn.textContent = copy.contextEn;
-    contextEn.hidden = currentLocale === 'en' || !copy.contextEn || copy.contextEn === contextCopy;
+    contextEn.hidden = true;
   }
 
   function renderActionTime() {
@@ -2579,7 +2567,7 @@
     var instructionPrimary = document.querySelector('[data-staff-instruction-primary]');
     if (instructionEn) {
       instructionEn.textContent = translations.en.staffCardInstruction;
-      instructionEn.hidden = currentLocale === 'en';
+      instructionEn.hidden = true;
     }
     if (instructionPrimary) {
       instructionPrimary.textContent = t('staffCardInstruction');
@@ -2700,10 +2688,8 @@
     var primaryBody = currentLocale === 'zh' ? staffContent.bodyZh : currentLocale === 'es' ? staffContent.bodyEs : staffContent.bodyEn;
     var heading = t('staffCardInstruction') + '\n\n' + progress[currentLocale]
       + '\n' + primaryTitle + '\n\n' + primaryBody;
-    if (currentLocale !== 'en') {
-      heading += '\n\n' + translations.en.staffCardInstruction + '\n\n' + progress.en
-        + '\n' + staffContent.titleEn + '\n\n' + staffContent.bodyEn;
-    }
+    if (currentLocale !== 'en') heading += '\n\n' + progress.en
+      + '\n' + staffContent.titleEn + '\n\n' + staffContent.bodyEn;
     return heading + '\n\n'
       + assistanceFacts().map(function (fact) { return fact[0] + ': ' + fact[1]; }).join('\n');
   }
@@ -3111,8 +3097,7 @@
 
   function shareViewUrl() {
     if (!shareSession || !shareSession.viewToken) return '';
-    var url = shareSession.viewUrl || '/share/' + encodeURIComponent(shareSession.viewToken);
-    return new URL(url, window.location.origin).href;
+    return new URL('/share/' + encodeURIComponent(shareSession.viewToken), window.location.origin).href;
   }
 
   function renderFamilyShareControls() {
@@ -3150,11 +3135,15 @@
   }
 
   function createFamilyShare() {
+    if (shareCreationInFlight || shareSession && shareSession.viewToken) return;
     var payload = safeSharePayload();
     if (!payload) {
       setShareStatus(localeText('请先进入乘机步骤。', 'Start the journey first.', 'Inicia el viaje primero.'));
       return;
     }
+    shareCreationInFlight = true;
+    var createButton = document.querySelector('[data-action="create-family-share"]');
+    if (createButton) createButton.disabled = true;
     setShareStatus(localeText('正在创建安全链接…', 'Creating a secure link…', 'Creando un enlace seguro…'));
     postJson('/api/share-sessions', payload).then(function (result) {
       shareSession = {
@@ -3170,6 +3159,9 @@
       setShareStatus(localeText('实时共享已开启。', 'Live sharing is active.', 'El enlace en directo está activo.'));
     }).catch(function () {
       setShareStatus(localeText('暂时无法创建链接，请检查网络后重试。', 'The link could not be created. Check your connection and try again.', 'No se pudo crear el enlace. Comprueba la conexión e inténtalo de nuevo.'));
+    }).finally(function () {
+      shareCreationInFlight = false;
+      if (createButton && !shareSession) createButton.disabled = false;
     });
   }
 
@@ -3246,10 +3238,12 @@
   }
 
   function wrapCanvasText(context, text, x, y, maxWidth, lineHeight) {
-    var words = String(text || '').split(/\s+/);
+    var source = String(text || '');
+    var words = /\s/.test(source) ? source.split(/\s+/) : Array.from(source);
+    var separator = /\s/.test(source) ? ' ' : '';
     var line = '';
     words.forEach(function (word) {
-      var trial = line ? line + ' ' + word : word;
+      var trial = line ? line + separator + word : word;
       if (line && context.measureText(trial).width > maxWidth) {
         context.fillText(line, x, y);
         y += lineHeight;
@@ -3285,19 +3279,12 @@
     context.font = '800 72px Arial, sans-serif';
     context.fillStyle = '#172B3B';
     var y = wrapCanvasText(context, actionTextForLocale(currentAction, 'title', currentLocale), 120, 545, 840, 88);
-    if (currentLocale !== 'en') {
-      context.font = '700 52px Arial, sans-serif';
-      y = wrapCanvasText(context, actionTextForLocale(currentAction, 'title', 'en'), 120, y + 12, 840, 66);
-    }
     context.font = '650 40px Arial, sans-serif';
     context.fillStyle = '#344B5D';
     y = wrapCanvasText(context, familyMessageForLocale(currentLocale).split('\n').slice(1).join(' · '), 120, y + 35, 840, 58);
-    if (currentLocale !== 'en') {
-      context.font = '600 34px Arial, sans-serif';
-      y = wrapCanvasText(context, familyMessageForLocale('en').split('\n').slice(1).join(' · '), 120, y + 8, 840, 50);
-    }
     var safeFacts = [];
     if (payload.terminal) safeFacts.push(formatTerminalValue(payload.terminal));
+    if (payload.checkInDeskOrZone) safeFacts.push(formatCheckInValue(payload.checkInDeskOrZone));
     if (payload.gate) safeFacts.push(formatGateValue(payload.gate));
     if (payload.arrivalBaggageBelt) safeFacts.push(formatBeltValue(payload.arrivalBaggageBelt));
     context.font = '700 42px Arial, sans-serif';
@@ -3305,8 +3292,8 @@
     wrapCanvasText(context, safeFacts.join(' · '), 120, y + 45, 840, 58);
     context.fillStyle = '#687B89';
     context.font = '600 30px Arial, sans-serif';
-    context.fillText(localeText('请以机场屏幕和工作人员为准', 'Confirm with airport screens and staff', 'Confirma con las pantallas y el personal'), 120, currentLocale === 'en' ? 1240 : 1200);
-    if (currentLocale !== 'en') context.fillText('Confirm with airport screens and staff', 120, 1250);
+    wrapCanvasText(context, localeText('生成时间：', 'Generated: ', 'Generado: ') + new Intl.DateTimeFormat(localeLanguageTag(currentLocale), { dateStyle: 'medium', timeStyle: 'short' }).format(new Date()), 120, 1200, 840, 40);
+    wrapCanvasText(context, localeText('请以机场屏幕和工作人员为准', 'Confirm with airport screens and staff', 'Confirma con las pantallas y el personal'), 120, 1260, 840, 40);
     return new Promise(function (resolve, reject) {
       canvas.toBlob(function (blob) { blob ? resolve(blob) : reject(new Error('png unavailable')); }, 'image/png');
     });
@@ -3326,6 +3313,22 @@
       showToast(localeText('PNG 卡片已保存。', 'PNG card saved.', 'Tarjeta PNG guardada.'));
     }).catch(function (error) {
       if (!error || error.name !== 'AbortError') showToast(localeText('暂时无法生成 PNG 卡片。', 'The PNG card could not be created.', 'No se pudo crear la tarjeta PNG.'));
+    });
+  }
+
+  function previewFamilyCard() {
+    var previewWindow = window.open('', '_blank', 'noopener');
+    if (!previewWindow) {
+      showToast(localeText('请允许打开预览窗口。', 'Allow the preview window to open.', 'Permite que se abra la ventana de vista previa.'));
+      return;
+    }
+    createFamilyCardBlob().then(function (blob) {
+      var objectUrl = URL.createObjectURL(blob);
+      previewWindow.location.replace(objectUrl);
+      window.setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 60000);
+    }).catch(function () {
+      previewWindow.close();
+      showToast(localeText('暂时无法生成 PNG 卡片。', 'The PNG card could not be created.', 'No se pudo crear la tarjeta PNG.'));
     });
   }
 
@@ -3671,6 +3674,7 @@
     if (action === 'preview-family-share' && shareViewUrl()) window.open(shareViewUrl(), '_blank', 'noopener');
     if (action === 'share-family') shareFamily();
     if (action === 'share-family-card') shareFamilyCard();
+    if (action === 'preview-family-card') previewFamilyCard();
     if (action === 'copy-family') copyText(familyMessage(), localeText('当前步骤已复制。', 'Current step copied.', 'Paso actual copiado.'));
     if (action === 'stop-family-share') stopFamilyShare();
     if (action === 'end-journey') showEndConfirmation();
@@ -3766,6 +3770,15 @@
 
   document.querySelector('[data-scenario-panel]').hidden = new URLSearchParams(window.location.search).get('demoScenarios') !== 'true';
 
+  var pngShareButton = document.querySelector('[data-action="share-family-card"]');
+  if (pngShareButton && !document.querySelector('[data-action="preview-family-card"]')) {
+    var pngPreviewButton = document.createElement('button');
+    pngPreviewButton.className = 'button button-secondary';
+    pngPreviewButton.type = 'button';
+    pngPreviewButton.dataset.action = 'preview-family-card';
+    pngPreviewButton.dataset.i18n = 'previewPng';
+    pngShareButton.parentNode.insertBefore(pngPreviewButton, pngShareButton);
+  }
   updateLanguage();
   var restoredJourney = restoreJourney();
   updateLanguage();

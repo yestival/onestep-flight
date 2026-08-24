@@ -1,7 +1,7 @@
 'use strict';
 
 const CACHE_PREFIX = 'onestep-flight-shell-';
-const CACHE_NAME = CACHE_PREFIX + 'v12';
+const CACHE_NAME = CACHE_PREFIX + 'v13';
 const APP_SHELL = ['/', '/index.html', '/styles.css', '/app.js', '/share.html', '/share.css', '/share.js'];
 
 function fetchFresh(request) {

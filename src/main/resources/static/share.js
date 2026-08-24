@@ -169,13 +169,6 @@
     primary.lang = localeLanguageTag(currentLocale);
     primary.textContent = primaryText || '';
     element.appendChild(primary);
-    if (currentLocale !== 'en' && englishText && englishText !== primaryText) {
-      var english = document.createElement('span');
-      english.className = heading ? 'bilingual-heading-secondary' : 'bilingual-secondary';
-      english.lang = 'en';
-      english.textContent = englishText;
-      element.appendChild(english);
-    }
   }
 
   function readViewToken() {
@@ -339,13 +332,12 @@
     setBilingualContent(document.querySelector('[data-action-title]'), t(action[0]), t(action[0], null, 'en'), true);
     setBilingualContent(document.querySelector('[data-action-description]'), t(action[1]), t(action[1], null, 'en'), false);
     var destination = actionDestination(data, currentLocale);
-    var destinationEnglish = currentLocale === 'en' ? null : actionDestination(data, 'en');
     var primaryDestination = document.querySelector('[data-destination-primary]');
     var englishDestination = document.querySelector('[data-destination-english]');
     primaryDestination.textContent = destination || '';
     primaryDestination.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale;
-    englishDestination.textContent = destinationEnglish || '';
-    englishDestination.hidden = !destinationEnglish || destinationEnglish === destination;
+    englishDestination.textContent = '';
+    englishDestination.hidden = true;
     document.querySelector('[data-destination-block]').hidden = !destination;
     document.querySelector('.action-card').dataset.urgency = ['CRITICAL', 'URGENT', 'IMMEDIATE'].indexOf(safeCode(data.urgency)) >= 0 ? 'urgent' : 'normal';
 

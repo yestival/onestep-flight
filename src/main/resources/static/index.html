@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0B1F3A">
   <title>OneStep Flight | 一步乘机</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=13">
 </head>
 <body>
   <div class="app-shell">
@@ -151,7 +151,6 @@
           <div><span data-i18n="timeUntilDeparture">距离预计起飞</span><strong data-departure-countdown>—</strong></div>
           <p data-data-freshness>—</p>
         </div>
-        <p class="demo-disclaimer" data-demo-disclaimer data-i18n="demoDisclaimer">演示数据：尚未连接真实航班服务</p>
         <p class="extraction-note" data-extraction-note hidden></p>
         <button class="button button-secondary button-large refresh-flight-button" type="button" data-action="refresh-flight" data-i18n="refreshLive" hidden>刷新实时信息</button>
         <p class="refresh-status" data-refresh-status aria-live="polite"></p>
@@ -296,6 +295,6 @@
     <div class="visually-hidden" role="status" aria-live="assertive" aria-atomic="true" data-live-region></div>
     <div class="toast" role="status" aria-live="polite" data-toast></div>
   </div>
-  <script src="app.js"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>
