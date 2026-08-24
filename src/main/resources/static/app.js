@@ -3496,28 +3496,28 @@
       return Promise.reject(pngError('PNG_RENDER_FAILED', error));
     }
     try {
-    context.fillStyle = '#F1F3F4';
+    context.fillStyle = '#F3F4F7';
     context.fillRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = '#172B3B';
+    context.fillStyle = '#1B2537';
     context.fillRect(0, 0, canvas.width, 180);
-    context.fillStyle = '#FFFFFF';
+    context.fillStyle = '#EAEBF2';
     context.font = '800 58px Arial, sans-serif';
     context.fillText('OneStep Flight', 80, 112);
-    context.fillStyle = '#2F6FA9';
+    context.fillStyle = '#2C648E';
     context.fillRect(70, 235, 14, 930);
-    context.fillStyle = '#172B3B';
+    context.fillStyle = '#1B2537';
     context.font = '800 62px Arial, sans-serif';
     context.fillText(formatFlightNumber(payload.flightNumber), 120, 330);
     context.font = '700 42px Arial, sans-serif';
-    context.fillStyle = '#344B5D';
+    context.fillStyle = '#2A3747';
     context.fillText((payload.departureAirport || '—') + '  →  ' + (payload.arrivalAirport || '—'), 120, 405);
     context.font = '800 72px Arial, sans-serif';
-    context.fillStyle = '#172B3B';
+    context.fillStyle = '#1B2537';
     var cardAction = currentAction ? actionTextForLocale(currentAction, 'title', currentLocale)
       : localeText('确认航班信息', 'Confirm flight information', 'Confirmar la información del vuelo');
     var y = wrapCanvasText(context, cardAction, 120, 545, 840, 88);
     context.font = '650 40px Arial, sans-serif';
-    context.fillStyle = '#344B5D';
+    context.fillStyle = '#2A3747';
     y = wrapCanvasText(context, familyMessageForLocale(currentLocale).split('\n').slice(1).join(' · '), 120, y + 35, 840, 58);
     var safeFacts = [];
     if (payload.terminal) safeFacts.push(formatTerminalValue(payload.terminal));
@@ -3525,9 +3525,9 @@
     if (payload.gate) safeFacts.push(formatGateValue(payload.gate));
     if (payload.arrivalBaggageBelt) safeFacts.push(formatBeltValue(payload.arrivalBaggageBelt));
     context.font = '700 42px Arial, sans-serif';
-    context.fillStyle = '#2F6FA9';
+    context.fillStyle = '#2C648E';
     wrapCanvasText(context, safeFacts.join(' · '), 120, y + 45, 840, 58);
-    context.fillStyle = '#687B89';
+    context.fillStyle = '#576777';
     context.font = '600 30px Arial, sans-serif';
     wrapCanvasText(context, localeText('生成时间：', 'Generated: ', 'Generado: ') + new Intl.DateTimeFormat(localeLanguageTag(currentLocale), { dateStyle: 'medium', timeStyle: 'short' }).format(new Date()), 120, 1200, 840, 40);
     wrapCanvasText(context, localeText('请以机场屏幕和工作人员为准', 'Confirm with airport screens and staff', 'Confirma con las pantallas y el personal'), 120, 1260, 840, 40);

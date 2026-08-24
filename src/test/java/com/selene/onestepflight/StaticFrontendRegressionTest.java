@@ -123,9 +123,35 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("No se encontró información del vuelo"));
         assertTrue(js.contains("Only some information was found"));
         assertTrue(js.contains("Solo se encontró parte de la información"));
-        assertTrue(html.contains("styles.css?v=17"));
-        assertTrue(html.contains("app.js?v=17"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v17'"));
+        assertTrue(html.contains("styles.css?v=18"));
+        assertTrue(html.contains("app.js?v=18"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v18'"));
+    }
+
+    @Test
+    void staticFrontendUsesTheApprovedSemanticColorSystem() throws IOException {
+        String index = resource("index.html");
+        String styles = resource("styles.css");
+        String app = resource("app.js");
+        String shareHtml = resource("share.html");
+        String shareStyles = resource("share.css");
+        String shareJs = resource("share.js");
+        String combined = String.join("\n", index, styles, app, shareHtml, shareStyles, shareJs);
+
+        for (String variable : new String[] { "--color-bg", "--color-surface", "--color-surface-muted",
+                "--color-surface-emphasis", "--color-text", "--color-text-secondary", "--color-text-muted",
+                "--color-primary", "--color-primary-hover", "--color-border", "--color-border-strong",
+                "--color-panel-dark", "--color-panel-deep", "--color-on-dark", "--color-success",
+                "--color-danger", "--color-focus", "--color-shadow" }) {
+            assertTrue(styles.contains(variable + ":"), variable + " must be defined in styles.css");
+            assertTrue(shareStyles.contains(variable + ": "), variable + " must be defined in share.css");
+        }
+
+        assertFalse(combined.matches("(?is).*#(?:fff(?:fff)?|000(?:000)?)(?![0-9a-f]).*"));
+        assertTrue(app.contains("context.fillStyle = '#F3F4F7'"));
+        assertTrue(app.contains("context.fillStyle = '#1B2537'"));
+        assertTrue(index.contains("name=\"theme-color\" content=\"#1B2537\""));
+        assertTrue(shareHtml.contains("name=\"theme-color\" content=\"#1B2537\""));
     }
 
     @Test
