@@ -1,25 +1,26 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#1B2537">
-  <title>OneStep Flight · 家属行程</title>
-  <link rel="stylesheet" href="/share.css?v=18">
-  <script src="/share.js?v=18" defer></script>
+  <title>OneStep Flight · Shared journey</title>
+  <link rel="stylesheet" href="/share.css?v=19">
+  <script src="/locale.js?v=19" defer></script>
+  <script src="/share.js?v=19" defer></script>
 </head>
 <body>
   <div class="share-shell">
     <header class="share-header">
       <a class="brand" href="/" aria-label="OneStep Flight">
         <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
-        <span><strong>OneStep Flight</strong><small data-i18n="brandSubtitle">一步乘机</small></span>
+        <span><strong>OneStep Flight</strong><small data-i18n="brandSubtitle">Flight guidance</small></span>
       </a>
       <div class="locale-control">
-        <label class="visually-hidden" for="share-locale" data-i18n="languageLabel">选择语言</label>
-        <select id="share-locale" aria-label="选择语言">
-          <option value="zh">中文</option>
+        <label class="visually-hidden" for="share-locale" data-i18n="languageLabel">Choose language</label>
+        <select id="share-locale" aria-label="Choose language">
           <option value="en">English</option>
+          <option value="zh">中文</option>
           <option value="es">Español</option>
         </select>
       </div>
@@ -28,8 +29,8 @@
     <main id="main-content" tabindex="-1">
       <section class="state-card loading-state" data-view="loading" aria-labelledby="loading-title">
         <div class="loading-mark" aria-hidden="true"></div>
-        <h1 id="loading-title" data-i18n="loadingTitle">正在读取共享行程</h1>
-        <p data-i18n="loadingLead">请稍候，我们正在取得最新一步。</p>
+        <h1 id="loading-title" data-i18n="loadingTitle">Loading the shared journey</h1>
+        <p data-i18n="loadingLead">Please wait while we get the latest step.</p>
       </section>
 
       <section class="journey-view" data-view="journey" hidden aria-labelledby="journey-title">
@@ -59,7 +60,7 @@
             </div>
             <span class="status-pill" data-flight-status hidden></span>
           </div>
-          <div class="route" aria-label="航线" data-i18n-aria="routeLabel">
+          <div class="route" aria-label="Route" data-i18n-aria="routeLabel">
             <strong data-departure-airport>—</strong>
             <span aria-hidden="true">→</span>
             <strong data-arrival-airport>—</strong>
@@ -109,7 +110,7 @@
       </section>
     </main>
 
-    <footer><span data-i18n="globalFooter">© 2026 OneStep Flight · 无障碍乘机指引</span></footer>
+    <footer><span data-i18n="globalFooter">© 2026 OneStep Flight · Accessible flight guidance</span></footer>
     <div class="visually-hidden" role="status" aria-live="polite" aria-atomic="true" data-announcer></div>
   </div>
 </body>

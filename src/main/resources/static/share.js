@@ -128,27 +128,12 @@
   };
 
   function normalizeLocale(value) {
-    var locale = String(value || '').trim().toLowerCase();
-    return locale === 'zh' || locale === 'en' || locale === 'es' ? locale : 'en';
-  }
-  function localeFromLanguageTag(value) {
-    var primaryLanguage = String(value || '').trim().toLowerCase().split(/[-_]/)[0];
-    return primaryLanguage === 'zh' || primaryLanguage === 'en' || primaryLanguage === 'es' ? primaryLanguage : null;
-  }
-  function resolveLocalePreference(stored, languages, language) {
-    var storedLocale = String(stored || '').trim().toLowerCase();
-    if (storedLocale === 'zh' || storedLocale === 'en' || storedLocale === 'es') return storedLocale;
-    var preferences = Array.isArray(languages) ? languages : [];
-    for (var index = 0; index < preferences.length; index += 1) {
-      var matchedLocale = localeFromLanguageTag(preferences[index]);
-      if (matchedLocale) return matchedLocale;
-    }
-    return localeFromLanguageTag(language) || 'en';
+    return window.OneStepLocale.normalizeLocale(value);
   }
   function readStoredLocale() {
     var stored = null;
     try { stored = localStorage.getItem(LOCALE_KEY); } catch (error) { /* Use browser preference. */ }
-    return resolveLocalePreference(stored, navigator.languages, navigator.language);
+    return window.OneStepLocale.resolveLocalePreference(stored, navigator.languages, navigator.language);
   }
   function storeLocale(locale) { try { localStorage.setItem(LOCALE_KEY, locale); } catch (error) { /* Page remains usable. */ } }
   function t(key, params, locale) {
@@ -189,7 +174,7 @@
     document.documentElement.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale;
     document.title = t('pageTitle');
     var select = document.getElementById('share-locale');
-    select.value = currentLocale;
+    window.OneStepLocale.orderLocaleOptions(select, currentLocale);
     select.setAttribute('aria-label', t('languageLabel'));
     document.querySelectorAll('[data-i18n]').forEach(function (element) { element.textContent = t(element.dataset.i18n); });
     document.querySelectorAll('[data-i18n-aria]').forEach(function (element) { element.setAttribute('aria-label', t(element.dataset.i18nAria)); });

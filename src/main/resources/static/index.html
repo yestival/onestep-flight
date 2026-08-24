@@ -1,24 +1,24 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#1B2537">
-  <title>OneStep Flight | 一步乘机</title>
-  <link rel="stylesheet" href="styles.css?v=18">
+  <title>OneStep Flight</title>
+  <link rel="stylesheet" href="styles.css?v=19">
 </head>
 <body>
   <div class="app-shell">
     <header class="site-header">
-      <button class="brand" type="button" data-action="home" aria-label="返回欢迎页">
+      <button class="brand" type="button" data-action="home" aria-label="Return to welcome page">
         <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
-        <span class="brand-copy"><strong>OneStep Flight</strong><small>一步乘机</small></span>
+        <span class="brand-copy"><strong>OneStep Flight</strong><small>Flight assistant</small></span>
       </button>
       <div class="header-tools">
-        <label class="visually-hidden" for="locale-select" data-i18n="languageLabel">选择语言</label>
-        <select class="language-select" id="locale-select" data-locale-select aria-label="选择语言">
-          <option value="zh">中文</option>
+        <label class="visually-hidden" for="locale-select" data-i18n="languageLabel">Choose language</label>
+        <select class="language-select" id="locale-select" data-locale-select aria-label="Choose language">
           <option value="en">English</option>
+          <option value="zh">中文</option>
           <option value="es">Español</option>
         </select>
       </div>
@@ -28,21 +28,21 @@
       <section class="screen screen-welcome is-active" data-screen="welcome" aria-labelledby="welcome-title">
         <div class="welcome-layout">
           <div class="welcome-intro">
-            <p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="eyebrow">你的乘机助手</span></p>
-            <h1 id="welcome-title" data-i18n="welcomeTitle">现在，只做下一步</h1>
-            <p class="lead" data-i18n="welcomeLead">上传机票或登机牌，我们会根据航班信息，每次只告诉你现在应该做什么。</p>
+            <p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="eyebrow">Your flight companion</span></p>
+            <h1 id="welcome-title" data-i18n="welcomeTitle">Now, take the next step</h1>
+            <p class="lead" data-i18n="welcomeLead">Upload a travel document or enter flight details. We show one action at a time.</p>
           </div>
           <div class="welcome-actions">
             <button class="button button-primary button-large" type="button" data-action="upload">
-              <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 14v5h14v-5"/></svg><span data-i18n="upload">上传出行行程单或登机牌</span>
+              <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 14v5h14v-5"/></svg><span data-i18n="upload">Upload booking confirmation, e-ticket, or boarding pass</span>
             </button>
             <button class="button button-secondary button-large" type="button" data-action="manual">
-              <svg class="button-icon outline" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span data-i18n="manual">手动输入航班号</span>
+              <svg class="button-icon outline" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span data-i18n="manual">Enter flight number manually</span>
             </button>
-            <button class="text-button" type="button" data-action="family" data-i18n="family">分享行程给家属</button>
-            <label class="visually-hidden" for="ticket-file" data-i18n="fileLabel">选择预订确认、电子客票或登机牌文件</label>
+            <button class="text-button" type="button" data-action="family" data-i18n="family">Share journey with family</button>
+            <label class="visually-hidden" for="ticket-file" data-i18n="fileLabel">Choose a booking confirmation, e-ticket, or boarding pass</label>
             <input id="ticket-file" type="file" accept="application/pdf,image/jpeg,image/png,.jpg,.jpeg,.png" hidden>
-            <p class="upload-hint" data-i18n="uploadHint">支持航空公司行程单、电子客票、预订确认或登机牌 PDF，也支持这些文件的截图（JPG、JPEG、PNG）。</p>
+            <p class="upload-hint" data-i18n="uploadHint">PDF, JPG, JPEG, and PNG are supported, including booking screenshots, e-ticket itineraries, and boarding passes.</p>
           </div>
           <aside class="scenario-panel" data-scenario-panel hidden aria-labelledby="scenario-title">
             <strong id="scenario-title" data-i18n="scenarioTitle">模拟场景（不是真实航班）</strong>
@@ -55,7 +55,7 @@
               <button type="button" data-action="scenario" data-scenario="STALE" data-i18n="scenarioStale">过期数据</button>
             </div>
           </aside>
-          <div class="privacy-note"><svg class="lock-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><span data-i18n="privacy">你的旅行文件只用于生成乘机指引</span></div>
+          <div class="privacy-note"><svg class="lock-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><span data-i18n="privacy">Your travel document is only used to create flight guidance</span></div>
         </div>
         <div class="welcome-route" aria-hidden="true">
           <svg viewBox="0 0 520 300" role="presentation">
@@ -88,7 +88,7 @@
           <p class="eyebrow"><span class="eyebrow-line"></span><span>ONESTEP FLIGHT</span></p>
           <h1 id="loading-title" data-i18n="loadingTitle">正在准备你的乘机步骤</h1>
           <p class="loading-status" aria-live="polite" data-loading-status>正在安全读取文件</p>
-          <div class="progress-track" role="progressbar" aria-label="读取进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="15"><span data-progress></span></div>
+          <div class="progress-track" role="progressbar" aria-label="Loading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="15"><span data-progress></span></div>
         </div>
       </section>
 
@@ -124,7 +124,7 @@
           <p data-i18n="chooseSegmentLead">选择后才会查询这一个航段的实时信息。</p>
           <div class="segment-options" data-segment-options></div>
         </section>
-        <article class="flight-card" aria-label="航班信息">
+        <article class="flight-card" aria-label="Flight information">
           <div class="flight-card-top confirm-flight-number-row"><span class="flight-number" data-flight-number>—</span></div>
           <div class="route-summary"><div><span class="airport-city" data-departure-name>—</span><strong class="airport-code" data-departure-airport>—</strong><span class="airport-time-label" data-route-departure-label>计划起飞 · 当地时间</span><time class="airport-local-time" data-route-departure-time>—</time></div><svg class="route-arrow" viewBox="0 0 32 20" aria-hidden="true" focusable="false"><path d="M2 10h26m-7-7 7 7-7 7"/></svg><div class="align-right"><span class="airport-city" data-arrival-name>—</span><strong class="airport-code" data-arrival-airport>—</strong><span class="airport-time-label" data-route-arrival-label>计划到达 · 当地时间</span><time class="airport-local-time" data-route-arrival-time>—</time></div></div>
           <div class="flight-details flight-details-core"><div><span data-i18n="terminal">航站楼</span><strong data-terminal>—</strong></div><div><span data-i18n="gate">登机口</span><strong data-gate>—</strong></div><div><span data-i18n="boardingTime">登机时间</span><strong data-boarding-time>—</strong></div><div><span data-i18n="checkInArea">值机 / 托运区域</span><strong data-check-in-area>—</strong></div></div>
@@ -175,7 +175,7 @@
         <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="manualContext">填写航班信息</span></p><h1 id="manual-title" data-i18n="manualTitle">输入你的航班信息</h1><p class="lead" data-i18n="manualLead">请输入航班号和出发日期。</p></div>
         <p class="manual-partial-notice" data-manual-partial-notice data-i18n="partialDocumentNotice" hidden>只读到部分信息，请补全后查询</p>
         <form class="manual-form" data-action="manual-submit">
-          <div class="manual-fields"><div><label for="flight-input" data-i18n="flightLabel">航班号</label><input class="manual-control" id="flight-input" name="flight" type="text" data-placeholder="flightPlaceholder" placeholder="例如 BA 117" autocomplete="off" spellcheck="false" required></div><div><label for="date-input" data-i18n="dateLabel">出发日期</label><div class="manual-control date-control"><span class="date-control-value" data-date-display aria-hidden="true"></span><input id="date-input" name="departureDate" type="date" value="2026-09-03" required></div></div></div>
+          <div class="manual-fields"><div><label for="flight-input" data-i18n="flightLabel">航班号</label><input class="manual-control" id="flight-input" name="flight" type="text" data-placeholder="flightPlaceholder" placeholder="For example BA 117" autocomplete="off" spellcheck="false" required></div><div><label for="date-input" data-i18n="dateLabel">出发日期</label><div class="manual-control date-control"><span class="date-control-value" data-date-display aria-hidden="true"></span><input id="date-input" name="departureDate" type="date" value="2026-09-03" required></div></div></div>
           <div class="choice-actions manual-actions"><button class="button button-primary button-large" type="submit" data-i18n="searchLiveFlight">查询真实航班</button><button class="button button-secondary button-large" type="button" data-action="demo-flight" data-i18n="useDemoFlight">使用 BA 117 演示航班</button></div>
         </form>
       </section>
@@ -231,7 +231,7 @@
           <button class="button button-secondary button-large" type="button" data-action="new-flight-info" data-i18n="enterNewFlight">输入新的航班信息</button>
         </div>
         <div class="step-assistance-actions">
-          <button class="support-button assistance-button" type="button" data-action="speak" aria-label="朗读这一步"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 10v4h4l5 4V6l-5 4H4zm12 0a4 4 0 010 4m2-7a8 8 0 010 10"/></svg><span data-i18n="speak">朗读这一步</span></button>
+          <button class="support-button assistance-button" type="button" data-action="speak" aria-label="Read this step aloud"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 10v4h4l5 4V6l-5 4H4zm12 0a4 4 0 010 4m2-7a8 8 0 010 10"/></svg><span data-i18n="speak">朗读这一步</span></button>
           <button class="support-button assistance-button staff-help-button" type="button" data-action="staff"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a4 4 0 110 8 4 4 0 010-8zM5 21a7 7 0 0114 0M19 8v6m-3-3h6"/></svg><span data-i18n="askForHelp">请工作人员帮忙</span></button>
           <button class="support-button assistance-button family-help-button" type="button" data-action="family"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.3 4.5 9.7 8 8 9.7a15 15 0 006.3 6.3l1.7-1.7 3.5 2.4v2.1a2 2 0 01-2 2C9.6 20.8 3.2 14.4 3.2 6.5a2 2 0 012-2h2.1z"/><path d="M15 4a3 3 0 110 6m-2.5 2.2a5.5 5.5 0 016.5.8"/></svg><span data-i18n="contactFamily">分享行程给家属</span></button>
         </div>
@@ -269,7 +269,7 @@
             <p lang="zh-CN" data-staff-instruction-primary>请把这个页面拿给机场工作人员看。</p>
             <p lang="en" data-staff-instruction-en>Please show this screen to an airport staff member.</p>
           </div>
-          <button class="card-close" type="button" data-action="close-staff" data-i18n="close" aria-label="关闭">关闭</button>
+          <button class="card-close" type="button" data-action="close-staff" data-i18n="close" aria-label="Close">关闭</button>
         </div>
         <div class="staff-completed" data-staff-completed>
           <p lang="zh-CN" data-staff-completed-primary>我已完成：尚未开始</p>
@@ -301,6 +301,7 @@
     <div class="visually-hidden" role="status" aria-live="assertive" aria-atomic="true" data-live-region></div>
     <div class="toast" role="status" aria-live="polite" data-toast></div>
   </div>
-  <script src="app.js?v=18"></script>
+  <script src="locale.js?v=19"></script>
+  <script src="app.js?v=19"></script>
 </body>
 </html>

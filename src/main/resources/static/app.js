@@ -204,32 +204,13 @@
   ];
 
   function normalizeLocale(value) {
-    var locale = String(value || '').trim().toLowerCase();
-    return ['zh', 'en', 'es'].indexOf(locale) >= 0 ? locale : 'en';
-  }
-
-  function localeFromLanguageTag(value) {
-    var primaryLanguage = String(value || '').trim().toLowerCase().split(/[-_]/)[0];
-    return ['zh', 'en', 'es'].indexOf(primaryLanguage) >= 0 ? primaryLanguage : null;
-  }
-
-  function resolveLocalePreference(stored, languages, language) {
-    var storedLocale = String(stored || '').trim().toLowerCase();
-    if (['zh', 'en', 'es'].indexOf(storedLocale) >= 0) return storedLocale;
-
-    var preferences = Array.isArray(languages) ? languages : [];
-    for (var index = 0; index < preferences.length; index += 1) {
-      var matchedLocale = localeFromLanguageTag(preferences[index]);
-      if (matchedLocale) return matchedLocale;
-    }
-
-    return localeFromLanguageTag(language) || 'en';
+    return window.OneStepLocale.normalizeLocale(value);
   }
 
   function detectInitialLocale() {
     var stored = null;
     try { stored = localStorage.getItem(LOCALE_KEY); } catch (error) { /* Use browser language. */ }
-    return resolveLocalePreference(stored, navigator.languages, navigator.language);
+    return window.OneStepLocale.resolveLocalePreference(stored, navigator.languages, navigator.language);
   }
 
   function storeLocale(locale) {
@@ -298,7 +279,7 @@
     document.title = localeText('OneStep Flight | 一步乘机', 'OneStep Flight', 'OneStep Flight | Un paso para volar');
     var localeSelect = document.querySelector('[data-locale-select]');
     if (localeSelect) {
-      localeSelect.value = currentLocale;
+      window.OneStepLocale.orderLocaleOptions(localeSelect, currentLocale);
       localeSelect.setAttribute('aria-label', t('languageLabel'));
     }
     var speakButton = document.querySelector('[data-action="speak"]');

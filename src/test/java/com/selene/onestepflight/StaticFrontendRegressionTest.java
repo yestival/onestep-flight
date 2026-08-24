@@ -123,9 +123,39 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("No se encontró información del vuelo"));
         assertTrue(js.contains("Only some information was found"));
         assertTrue(js.contains("Solo se encontró parte de la información"));
-        assertTrue(html.contains("styles.css?v=18"));
-        assertTrue(html.contains("app.js?v=18"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v18'"));
+        assertTrue(html.contains("styles.css?v=19"));
+        assertTrue(html.contains("locale.js?v=19"));
+        assertTrue(html.contains("app.js?v=19"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v19'"));
+        assertTrue(worker.contains("'/locale.js'"));
+    }
+
+    @Test
+    void bothPagesUseSharedLocaleResolutionAndEnglishNoScriptDefaults() throws IOException {
+        String index = resource("index.html");
+        String app = resource("app.js");
+        String shareHtml = resource("share.html");
+        String shareJs = resource("share.js");
+        String locale = resource("locale.js");
+
+        assertTrue(index.contains("<html lang=\"en\">"));
+        assertTrue(shareHtml.contains("<html lang=\"en\">"));
+        assertTrue(index.indexOf("<option value=\"en\">English</option>")
+                < index.indexOf("<option value=\"zh\">中文</option>"));
+        assertTrue(shareHtml.indexOf("<option value=\"en\">English</option>")
+                < shareHtml.indexOf("<option value=\"zh\">中文</option>"));
+        assertTrue(index.contains("aria-label=\"Choose language\""));
+        assertTrue(shareHtml.contains("aria-label=\"Choose language\""));
+        assertTrue(index.contains("Now, take the next step"));
+        assertTrue(shareHtml.contains("Loading the shared journey"));
+        assertTrue(index.contains("locale.js?v=19"));
+        assertTrue(shareHtml.contains("/locale.js?v=19"));
+        assertTrue(app.contains("window.OneStepLocale.resolveLocalePreference(stored, navigator.languages, navigator.language)"));
+        assertTrue(shareJs.contains("window.OneStepLocale.resolveLocalePreference(stored, navigator.languages, navigator.language)"));
+        assertTrue(app.contains("window.OneStepLocale.orderLocaleOptions(localeSelect, currentLocale)"));
+        assertTrue(shareJs.contains("window.OneStepLocale.orderLocaleOptions(select, currentLocale)"));
+        assertTrue(locale.contains("var STABLE_OPTION_ORDER = ['en', 'zh', 'es']"));
+        assertTrue(locale.contains("return localeFromLanguageTag(language) || 'en'"));
     }
 
     @Test
