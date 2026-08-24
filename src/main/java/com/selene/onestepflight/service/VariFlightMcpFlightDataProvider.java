@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -34,6 +35,7 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
 
 @Component
+@ConditionalOnProperty(name = "onestep.providers.variflight.enabled", havingValue = "true")
 public class VariFlightMcpFlightDataProvider implements OperationalFlightDataProvider {
 
 	private static final Duration CACHE_TTL = Duration.ofMinutes(5);

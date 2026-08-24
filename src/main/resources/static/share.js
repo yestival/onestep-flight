@@ -24,7 +24,7 @@
       stoppedLead: '旅客已经停止分享这段行程。', expiredTitle: '共享链接已过期', expiredLead: '为保护隐私，这个链接已不再提供行程信息。',
       errorTitle: '暂时无法读取行程', errorLead: '请检查网络连接，然后重试。', invalidTitle: '这个共享链接无效',
       invalidLead: '请让旅客重新发送正确的共享链接。', notFoundTitle: '找不到这段共享行程', notFoundLead: '链接可能不完整，请向旅客确认。', retry: '重试',
-      privacyNote: '此页面只显示完成乘机协助所需的最少信息。', updatedAnnouncement: '共享行程已更新。',
+      privacyNote: '此页面只显示完成乘机协助所需的最少信息。', globalFooter: '© 2026 OneStep Flight · 无障碍乘机指引', updatedAnnouncement: '共享行程已更新。',
       terminal: '航站楼', gate: '登机口', checkIn: '值机柜台', bagDrop: '托运行李柜台', baggageBelt: '行李转盘',
       terminalValue: '{value}号航站楼', gateValue: '{value}登机口', checkInValue: '{value}号柜台', checkInAreaValue: '{value}区值机柜台',
       checkInAreaCountersValue: '{area}区 {counters}号值机柜台', bagDropAreaCountersValue: '{area}区 {counters}号柜台',
@@ -55,7 +55,7 @@
       stoppedLead: 'The traveller has stopped sharing this journey.', expiredTitle: 'This sharing link has expired', expiredLead: 'To protect privacy, this link no longer shows journey information.',
       errorTitle: 'The journey cannot be loaded right now', errorLead: 'Check your connection, then try again.', invalidTitle: 'This sharing link is invalid',
       invalidLead: 'Ask the traveller to send the correct sharing link again.', notFoundTitle: 'This shared journey was not found', notFoundLead: 'The link may be incomplete. Please check with the traveller.', retry: 'Try again',
-      privacyNote: 'This page shows only the minimum information needed to help with the journey.', updatedAnnouncement: 'The shared journey has been updated.',
+      privacyNote: 'This page shows only the minimum information needed to help with the journey.', globalFooter: '© 2026 OneStep Flight · Accessible air-travel guidance', updatedAnnouncement: 'The shared journey has been updated.',
       terminal: 'Terminal', gate: 'Gate', checkIn: 'Check-in', bagDrop: 'Bag drop', baggageBelt: 'Baggage belt',
       terminalValue: 'Terminal {value}', gateValue: 'Gate {value}', checkInValue: 'Counters {value}', checkInAreaValue: 'Check-in area {value}',
       checkInAreaCountersValue: 'Check-in area {area}, counters {counters}', bagDropAreaCountersValue: 'Area {area}, counters {counters}',
@@ -86,7 +86,7 @@
       stoppedLead: 'La persona que viaja dejó de compartir este viaje.', expiredTitle: 'Este enlace ha caducado', expiredLead: 'Para proteger la privacidad, el enlace ya no muestra información del viaje.',
       errorTitle: 'No se puede cargar el viaje ahora', errorLead: 'Comprueba la conexión y vuelve a intentarlo.', invalidTitle: 'Este enlace no es válido',
       invalidLead: 'Pide a la persona que viaja que vuelva a enviar el enlace correcto.', notFoundTitle: 'No se encontró este viaje compartido', notFoundLead: 'Es posible que el enlace esté incompleto. Confírmalo con la persona que viaja.', retry: 'Volver a intentar',
-      privacyNote: 'Esta página muestra solo la información mínima necesaria para ayudar con el viaje.', updatedAnnouncement: 'El viaje compartido se ha actualizado.',
+      privacyNote: 'Esta página muestra solo la información mínima necesaria para ayudar con el viaje.', globalFooter: '© 2026 OneStep Flight · Guía accesible para viajar en avión', updatedAnnouncement: 'El viaje compartido se ha actualizado.',
       terminal: 'Terminal', gate: 'Puerta', checkIn: 'Facturación', bagDrop: 'Entrega de equipaje', baggageBelt: 'Cinta de equipaje',
       terminalValue: 'Terminal {value}', gateValue: 'Puerta {value}', checkInValue: 'Mostradores {value}', checkInAreaValue: 'Zona de facturación {value}',
       checkInAreaCountersValue: 'Zona de facturación {area}, mostradores {counters}', bagDropAreaCountersValue: 'Zona {area}, mostradores {counters}',
@@ -127,9 +127,28 @@
     WAIT: null, BOARD_NOW: 'completedBoard', IN_FLIGHT: 'completedFlight', BAGGAGE_CLAIM: 'completedBaggage', EXIT_AIRPORT: 'completedExit'
   };
 
-  function normalizeLocale(value) { return value === 'en' || value === 'es' ? value : 'zh'; }
+  function normalizeLocale(value) {
+    var locale = String(value || '').trim().toLowerCase();
+    return locale === 'zh' || locale === 'en' || locale === 'es' ? locale : 'en';
+  }
+  function localeFromLanguageTag(value) {
+    var primaryLanguage = String(value || '').trim().toLowerCase().split(/[-_]/)[0];
+    return primaryLanguage === 'zh' || primaryLanguage === 'en' || primaryLanguage === 'es' ? primaryLanguage : null;
+  }
+  function resolveLocalePreference(stored, languages, language) {
+    var storedLocale = String(stored || '').trim().toLowerCase();
+    if (storedLocale === 'zh' || storedLocale === 'en' || storedLocale === 'es') return storedLocale;
+    var preferences = Array.isArray(languages) ? languages : [];
+    for (var index = 0; index < preferences.length; index += 1) {
+      var matchedLocale = localeFromLanguageTag(preferences[index]);
+      if (matchedLocale) return matchedLocale;
+    }
+    return localeFromLanguageTag(language) || 'en';
+  }
   function readStoredLocale() {
-    try { return localStorage.getItem(LOCALE_KEY) || document.documentElement.lang; } catch (error) { return document.documentElement.lang; }
+    var stored = null;
+    try { stored = localStorage.getItem(LOCALE_KEY); } catch (error) { /* Use browser preference. */ }
+    return resolveLocalePreference(stored, navigator.languages, navigator.language);
   }
   function storeLocale(locale) { try { localStorage.setItem(LOCALE_KEY, locale); } catch (error) { /* Page remains usable. */ } }
   function t(key, params, locale) {
@@ -138,6 +157,25 @@
     return String(value == null ? '' : value).replace(/\{(\w+)\}/g, function (_, name) {
       return params && params[name] != null ? String(params[name]) : '';
     });
+  }
+
+  function localeLanguageTag(locale) { return locale === 'zh' ? 'zh-CN' : locale; }
+
+  function setBilingualContent(element, primaryText, englishText, heading) {
+    if (!element) return;
+    element.replaceChildren();
+    var primary = document.createElement('span');
+    primary.className = heading ? 'bilingual-heading-primary' : 'bilingual-primary';
+    primary.lang = localeLanguageTag(currentLocale);
+    primary.textContent = primaryText || '';
+    element.appendChild(primary);
+    if (currentLocale !== 'en' && englishText && englishText !== primaryText) {
+      var english = document.createElement('span');
+      english.className = heading ? 'bilingual-heading-secondary' : 'bilingual-secondary';
+      english.lang = 'en';
+      english.textContent = englishText;
+      element.appendChild(english);
+    }
   }
 
   function readViewToken() {
@@ -175,6 +213,7 @@
   function stripPrefix(value, pattern) { var text = cleanValue(value); return text ? text.replace(pattern, '').trim() : null; }
   function formatTerminal(value, locale) {
     var clean = stripPrefix(value, /^(terminal|航站楼|航廈|terminal de)\s*/i);
+    clean = clean ? clean.replace(/^t\s*(?=\d)/i, '').replace(/\s+/g, ' ').trim() : null;
     return clean ? t('terminalValue', { value: clean }, locale) : null;
   }
   function formatGate(value, locale) {
@@ -289,19 +328,24 @@
   function renderJourney(data, announceChange) {
     currentJourney = data;
     if (data.completed || !cleanValue(data.actionCode)) {
+      setBilingualContent(document.getElementById('complete-title'), t('completeTitle'), t('completeTitle', null, 'en'), true);
+      setBilingualContent(document.querySelector('[data-view="complete"] > p'), t('completeLead'), t('completeLead', null, 'en'), false);
       document.querySelector('[data-complete-flight]').textContent = [cleanValue(data.flightNumber), cleanValue(data.departureAirport), cleanValue(data.arrivalAirport)].filter(Boolean).join(' · ');
       document.querySelector('[data-complete-flight]').hidden = !cleanValue(data.flightNumber);
       setView('complete');
       return;
     }
     var action = actions[safeCode(data.actionCode)] || actions.ASK_FOR_HELP;
-    document.querySelector('[data-action-title]').textContent = t(action[0]);
-    document.querySelector('[data-action-description]').textContent = t(action[1]);
+    setBilingualContent(document.querySelector('[data-action-title]'), t(action[0]), t(action[0], null, 'en'), true);
+    setBilingualContent(document.querySelector('[data-action-description]'), t(action[1]), t(action[1], null, 'en'), false);
     var destination = actionDestination(data, currentLocale);
     var destinationEnglish = currentLocale === 'en' ? null : actionDestination(data, 'en');
-    document.querySelector('[data-destination-primary]').textContent = destination || '';
-    document.querySelector('[data-destination-english]').textContent = destinationEnglish || '';
-    document.querySelector('[data-destination-english]').hidden = !destinationEnglish || destinationEnglish === destination;
+    var primaryDestination = document.querySelector('[data-destination-primary]');
+    var englishDestination = document.querySelector('[data-destination-english]');
+    primaryDestination.textContent = destination || '';
+    primaryDestination.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale;
+    englishDestination.textContent = destinationEnglish || '';
+    englishDestination.hidden = !destinationEnglish || destinationEnglish === destination;
     document.querySelector('[data-destination-block]').hidden = !destination;
     document.querySelector('.action-card').dataset.urgency = ['CRITICAL', 'URGENT', 'IMMEDIATE'].indexOf(safeCode(data.urgency)) >= 0 ? 'urgent' : 'normal';
 

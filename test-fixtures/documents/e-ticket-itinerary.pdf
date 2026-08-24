@@ -13,7 +13,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
 endobj
 5 0 obj
-<< /Length 449 >>
+<< /Length 660 >>
 stream
 BT
 /F1 15 Tf
@@ -23,21 +23,25 @@ BT
 /F1 27 Tf
 0.04 0.16 0.35 rg
 0 -55 Td
-(E-TICKET ITINERARY) Tj
+(TRAVEL ITINERARY - TWO FLIGHT SEGMENTS) Tj
 /F1 16 Tf
 0.10 0.18 0.28 rg
 0 -36 Td
-(Flight: BA 117) Tj
+(Outbound flight: BA 117) Tj
 0 -36 Td
-(Departure date: 2026-08-24) Tj
+(Departure: 2026-08-24 08:20 local time, LHR) Tj
 0 -36 Td
-(Route: LHR to JFK) Tj
+(Scheduled arrival: 2026-08-24 11:10 local time, JFK) Tj
 0 -36 Td
-(Scheduled departure: 08:20 local time) Tj
+(Return flight: BA 178) Tj
+0 -36 Td
+(Departure: 2026-09-02 08:00 local time, JFK) Tj
+0 -36 Td
+(Scheduled arrival: 2026-09-02 20:00 local time, LHR) Tj
 0 -36 Td
 (This itinerary is not a boarding pass) Tj
 0 -36 Td
-(Fixture expectation: start with CHECK_IN) Tj
+(Fixture expectation: choose a segment, then start with CHECK_IN) Tj
 ET
 endstream
 endobj
@@ -52,5 +56,5 @@ xref
 trailer
 << /Size 6 /Root 1 0 R >>
 startxref
-876
+1087
 %%EOF

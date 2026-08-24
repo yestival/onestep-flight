@@ -23,7 +23,29 @@ Windows PowerShell:
 .\mvnw.cmd spring-boot:run
 ```
 
-Open <http://localhost:8080/>. A safe readiness endpoint is available at <http://localhost:8080/api/integrations/status>; it returns only `READY` or `MISSING`, never secret values.
+Open <http://localhost:8080/>. A safe readiness endpoint is available at <http://localhost:8080/api/integrations/status>; it returns only `READY`, `MISSING`, or `DISABLED`, never secret values. VariFlight is deliberately `DISABLED` unless `VARIFLIGHT_ENABLED=true` is explicitly set, even when an old key remains on the computer.
+
+Local development uses an in-memory H2 database on port `8080`. Share sessions survive page reloads while that Spring Boot process is running, but all local share links stop working when the process restarts. The H2 console is a local-development aid only and is disabled by the production profile.
+
+## Deploy on Render
+
+The root `render.yaml` is a Render Blueprint for a free Docker web service and a free PostgreSQL database in Frankfurt. The service builds with Java 17 in the multi-stage `Dockerfile`, runs as a non-root user, listens on Render's `PORT`, and uses `/api/health` for health checks.
+
+1. Publish the repository, then create a new **Blueprint** in Render and select this repository. Render reads `render.yaml`; no manual database URL assembly is needed.
+2. During the first Blueprint creation, enter only these three secret values when Render prompts for variables marked `sync: false`: `NUTRIENT_API_KEY`, `SERPAPI_API_KEY`, and `AERODATABOX_RAPIDAPI_KEY`.
+3. Do not put secret values into `render.yaml`, source files, screenshots, build arguments, or logs. `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` are populated directly from the managed database resource.
+4. Wait for `GET /api/health` to return a successful response, then open the generated `https://<service-name>.onrender.com/` URL.
+
+The Blueprint deliberately does not request or provision a VariFlight key and sets `VARIFLIGHT_ENABLED=false`. The other configured live providers continue to support partial success when VariFlight is unavailable.
+
+With the public HTTPS URL, a family link such as `https://<service-name>.onrender.com/share/{viewToken}` can be opened on another device. The public URL contains only the view token; the independent update token stays in the traveler's browser and is sent only in the `X-Share-Update-Token` header. Share sessions expire after 48 hours, and an hourly server job removes expired records.
+
+| Environment | Database | Share-link persistence |
+|---|---|---|
+| Default local profile | In-memory H2 | Lost whenever the local Spring Boot process restarts |
+| `prod` profile | PostgreSQL from `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` | Survives web-service restarts and deploys while the database remains available |
+
+Render's free web service can spin down after 15 minutes without inbound traffic and may take about a minute to wake. Free Render PostgreSQL is intended for demos rather than durable production: it is limited to 1 GB, expires 30 days after creation, and has no backups. Upgrade or migrate the database before that deadline if shared journeys must remain available. See Render's official [Blueprint specification](https://render.com/docs/blueprint-spec) and [free-instance limits](https://render.com/docs/free).
 
 ## Real external integrations
 
@@ -102,7 +124,7 @@ For a same-day end-to-end state-machine check, open <http://localhost:8080/?qaJo
 
 - Airport maps, walking time, security queues, airline eligibility rules, and a globally authoritative bag-drop desk feed are not available.
 - Browser speech quality depends on installed operating-system voices.
-- Family sharing is deliberately account-free and stores only a short, privacy-minimized journey snapshot in the local in-memory H2 database. A link expires after 48 hours by default and is also lost when this local service restarts; there is no caregiver account or messaging service.
+- Family sharing is deliberately account-free and stores only a short, privacy-minimized journey snapshot. The default local profile uses in-memory H2 and loses links on restart; the `prod` profile uses PostgreSQL and preserves them until their 48-hour expiry while that database remains available. There is no caregiver account or messaging service.
 - Provider plans, quotas, historical coverage, and field availability vary. Missing data is shown as missing and should be confirmed with airport staff and airport displays.
 
 ## Privacy and verification
@@ -119,9 +141,13 @@ The files in `test-fixtures/documents/` are generated test artifacts, not travel
 | `booking-page-screenshot.png` | `BOOKING_CONFIRMATION` | Does not imply check-in; begin with `CHECK_IN`. |
 | `non-flight-document.png` | `UNKNOWN` | Require confirmation/manual flight number and date; never infer check-in. |
 
-The extraction schema accepts only `BOARDING_PASS`, `ITINERARY`, `E_TICKET`, `BOOKING_CONFIRMATION`, or `UNKNOWN`. Unknown provider labels are normalized to `UNKNOWN`. Only `document_type` is required by the extraction schema so a non-flight file can return `UNKNOWN` without inventing a flight number or date. Name, PNR, booking-reference, ticket-number, passport, and barcode fields are not requested or exposed by the public extraction DTO.
+The extraction schema accepts only `BOARDING_PASS`, `ITINERARY`, `E_TICKET`, `BOOKING_CONFIRMATION`, or `UNKNOWN`. Unknown provider labels are normalized to `UNKNOWN`. It requires a `document_type` and a `segments` array; a non-flight file returns `UNKNOWN` with an empty array instead of inventing a flight number or date. Name, PNR, booking-reference, ticket-number, passport, and barcode fields are not requested or exposed by the public extraction DTO.
+
+Document extraction returns explicit `segments[]` rather than silently selecting an itinerary leg. A document with multiple flight segments requires the traveler to choose the intended segment; a document with one segment still requires confirmation before the live lookup. Only a high-confidence `BOARDING_PASS` classification (at least `0.85`) can imply that check-in is complete and skip `CHECK_IN`. An itinerary, e-ticket, booking confirmation, `UNKNOWN`, or lower-confidence boarding-pass classification never skips check-in automatically.
 
 BA117 is a real British Airways LHR → JFK flight. The repository's PDF and screenshot fixtures—including the older `output/pdf/ba117-live-privacy-safe-test.pdf` artifact—are privacy-safe synthetic test materials, not valid travel credentials. Values printed on a fixture never fill a live provider field unless the UI explicitly labels them as document evidence.
+
+No additional real traveler document was supplied for this workspace run. The five files in `test-fixtures/documents/` are the complete document test set used here, and all five are synthetic.
 
 Before a submission build:
 

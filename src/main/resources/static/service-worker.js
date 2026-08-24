@@ -1,13 +1,26 @@
 'use strict';
 
 const CACHE_PREFIX = 'onestep-flight-shell-';
-const CACHE_NAME = CACHE_PREFIX + 'v6';
+const CACHE_NAME = CACHE_PREFIX + 'v12';
 const APP_SHELL = ['/', '/index.html', '/styles.css', '/app.js', '/share.html', '/share.css', '/share.js'];
+
+function fetchFresh(request) {
+  return fetch(new Request(request, { cache: 'reload' }));
+}
+
+async function cacheFreshResponse(request, cacheKey) {
+  const response = await fetchFresh(request);
+  if (response && response.ok) {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(cacheKey, response.clone());
+  }
+  return response;
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => Promise.all(APP_SHELL.map((path) => cacheFreshResponse(path, path))))
       .then(() => self.skipWaiting())
   );
 });
@@ -31,15 +44,18 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/api/') || url.pathname.toLowerCase().endsWith('.pdf')) return;
 
   if (request.mode === 'navigate') {
+    const fallbackPath = url.pathname.startsWith('/share/') ? '/share.html' : '/index.html';
     event.respondWith(
-      fetch(request).catch(() => (url.pathname.startsWith('/share/') ? caches.match('/share.html') : caches.match('/index.html'))
-        .then((cached) => cached || caches.match('/')))
+      cacheFreshResponse(request, fallbackPath)
+        .catch(() => caches.match(fallbackPath)
+          .then((cached) => cached || caches.match('/')))
     );
     return;
   }
 
   if (!APP_SHELL.includes(url.pathname)) return;
   event.respondWith(
-    caches.match(url.pathname).then((cached) => cached || fetch(request))
+    cacheFreshResponse(request, url.pathname)
+      .catch(() => caches.match(url.pathname))
   );
 });

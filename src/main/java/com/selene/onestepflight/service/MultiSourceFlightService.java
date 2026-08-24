@@ -1,5 +1,6 @@
 package com.selene.onestepflight.service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -12,10 +13,17 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.selene.onestepflight.dto.FieldCandidate;
 import com.selene.onestepflight.dto.FieldProvenance;
@@ -25,21 +33,85 @@ import com.selene.onestepflight.dto.ProviderFlightResult;
 
 @Service
 public class MultiSourceFlightService {
+	private static final Duration CACHE_TTL = Duration.ofMinutes(5);
+	private static final Duration REFRESH_COOLDOWN = Duration.ofSeconds(30);
+	private static final Duration AGGREGATE_TIMEOUT = Duration.ofSeconds(15);
+	private static final Duration AERODATABOX_TIMEOUT = Duration.ofSeconds(8);
+	private static final Duration SERPAPI_TIMEOUT = Duration.ofSeconds(10);
+	private static final Duration ROUTE_HINT_STAGGER = Duration.ofMillis(200);
+	private static final Duration SUFFICIENT_RESULT_GRACE = Duration.ofMillis(300);
 
 	private final List<OperationalFlightDataProvider> providers;
+	private final Duration cacheTtl;
+	private final Duration refreshCooldown;
+	private final Duration aggregateTimeout;
+	private final Duration aeroDataBoxTimeout;
+	private final Duration serpApiTimeout;
+	private final Executor executor;
+	private final Map<QueryKey, CachedSnapshot> cache = new ConcurrentHashMap<>();
+	private final Map<QueryKey, CompletableFuture<MultiSourceFlightSnapshot>> inFlight = new ConcurrentHashMap<>();
+	private final Map<QueryKey, Instant> lastForcedRefresh = new ConcurrentHashMap<>();
 
+	@Autowired
 	public MultiSourceFlightService(List<OperationalFlightDataProvider> providers) {
-		this.providers = List.copyOf(providers);
+		this(providers, CACHE_TTL, REFRESH_COOLDOWN, AGGREGATE_TIMEOUT,
+				AERODATABOX_TIMEOUT, SERPAPI_TIMEOUT, ForkJoinPool.commonPool());
+	}
+
+	MultiSourceFlightService(List<OperationalFlightDataProvider> providers, Duration cacheTtl,
+			Duration refreshCooldown, Duration aggregateTimeout, Duration aeroDataBoxTimeout,
+			Duration serpApiTimeout, Executor executor) {
+		this.providers = providers.stream().sorted(Comparator.comparingInt(this::providerPriority)).toList();
+		this.cacheTtl = cacheTtl;
+		this.refreshCooldown = refreshCooldown;
+		this.aggregateTimeout = aggregateTimeout;
+		this.aeroDataBoxTimeout = aeroDataBoxTimeout;
+		this.serpApiTimeout = serpApiTimeout;
+		this.executor = executor;
 	}
 
 	public MultiSourceFlightSnapshot findFlight(String flightNumber, LocalDate departureDate,
 			String departureAirportHint, String arrivalAirportHint, boolean refresh) {
+		QueryKey key = new QueryKey(normalizeUpper(flightNumber), departureDate);
+		Instant now = Instant.now();
+		CachedSnapshot cached = cache.get(key);
+		if (!refresh && isFresh(cached, now)) return cached.snapshot();
+		if (refresh) {
+			boolean refreshAllowed = claimForcedRefresh(key, now);
+			if (isFresh(cached, now) && !refreshAllowed) return cached.snapshot();
+		}
+
+		CompletableFuture<MultiSourceFlightSnapshot> ownCall = new CompletableFuture<>();
+		CompletableFuture<MultiSourceFlightSnapshot> existing = inFlight.putIfAbsent(key, ownCall);
+		if (existing != null) return awaitCombined(existing);
+		try {
+			MultiSourceFlightSnapshot snapshot = loadFlight(flightNumber, departureDate,
+					departureAirportHint, arrivalAirportHint, refresh);
+			cache.put(key, new CachedSnapshot(snapshot, Instant.now()));
+			ownCall.complete(snapshot);
+			return snapshot;
+		} catch (RuntimeException exception) {
+			ownCall.completeExceptionally(exception);
+			throw exception;
+		} finally {
+			inFlight.remove(key, ownCall);
+		}
+	}
+
+	private MultiSourceFlightSnapshot loadFlight(String flightNumber, LocalDate departureDate,
+			String departureAirportHint, String arrivalAirportHint, boolean refresh) {
+		Instant deadline = Instant.now().plus(aggregateTimeout);
 		OperationalFlightDataProvider aeroDataBox = providers.stream()
 				.filter(provider -> "AERODATABOX".equals(provider.providerName()))
 				.findFirst().orElse(null);
-		ProviderFlightResult aeroDataBoxResult = aeroDataBox == null ? null
-				: safeCall(aeroDataBox, flightNumber, departureDate,
-						departureAirportHint, arrivalAirportHint, refresh);
+		Map<String, CompletableFuture<ProviderFlightResult>> calls = new LinkedHashMap<>();
+		CompletableFuture<ProviderFlightResult> aeroDataBoxCall = null;
+		if (aeroDataBox != null) {
+			aeroDataBoxCall = startProviderCall(aeroDataBox, flightNumber, departureDate,
+					departureAirportHint, arrivalAirportHint, refresh, aeroDataBoxTimeout, deadline);
+			calls.put(aeroDataBox.providerName(), aeroDataBoxCall);
+		}
+		ProviderFlightResult aeroDataBoxResult = awaitRouteHint(aeroDataBox, aeroDataBoxCall, deadline);
 		String effectiveDepartureHint = preferredHint(departureAirportHint,
 				aeroDataBoxResult == null || !aeroDataBoxResult.successful()
 						? null : aeroDataBoxResult.departureAirport());
@@ -47,75 +119,73 @@ public class MultiSourceFlightService {
 				aeroDataBoxResult == null || !aeroDataBoxResult.successful()
 						? null : aeroDataBoxResult.arrivalAirport());
 
-		Map<String, CompletableFuture<ProviderFlightResult>> secondStageCalls = new LinkedHashMap<>();
 		for (OperationalFlightDataProvider provider : providers) {
 			if (provider == aeroDataBox) continue;
-			secondStageCalls.put(provider.providerName(), CompletableFuture.supplyAsync(() -> safeCall(provider,
-					flightNumber, departureDate, effectiveDepartureHint, effectiveArrivalHint, refresh)));
+			calls.put(provider.providerName(), startProviderCall(provider, flightNumber, departureDate,
+					effectiveDepartureHint, effectiveArrivalHint, refresh, providerBudget(provider), deadline));
 		}
-		CompletableFuture.allOf(secondStageCalls.values().toArray(CompletableFuture[]::new)).join();
 		Map<String, ProviderFlightResult> providerResults = new LinkedHashMap<>();
+		if (aeroDataBoxResult != null) providerResults.put(aeroDataBox.providerName(), aeroDataBoxResult);
+		collectProviderResults(calls, providerResults, deadline);
+		Map<String, ProviderFlightResult> orderedResults = new LinkedHashMap<>();
 		for (OperationalFlightDataProvider provider : providers) {
-			if (provider == aeroDataBox) {
-				providerResults.put(provider.providerName(), aeroDataBoxResult);
-			} else {
-				providerResults.put(provider.providerName(), secondStageCalls.get(provider.providerName()).join());
-			}
+			ProviderFlightResult result = providerResults.get(provider.providerName());
+			if (result != null) orderedResults.put(provider.providerName(), result);
 		}
+		providerResults = orderedResults;
 		List<ProviderFlightResult> successful = providerResults.values().stream()
 				.filter(ProviderFlightResult::successful).toList();
 		if (successful.isEmpty()) throw new AllFlightProvidersUnavailableException(providerResults);
 
 		Map<String, FieldProvenance> provenance = new LinkedHashMap<>();
 		Choice<String> selectedFlightNumber = choose("flightNumber", successful,
-				ProviderFlightResult::flightNumber, this::normalizeUpper, FieldPolicy.PLANNED, provenance);
+				ProviderFlightResult::flightNumber, FieldPolicy.PLANNED, provenance);
 		Choice<LocalDate> selectedDepartureDate = choose("departureDate", successful,
-				ProviderFlightResult::departureDate, Objects::toString, FieldPolicy.PLANNED, provenance);
+				ProviderFlightResult::departureDate, FieldPolicy.PLANNED, provenance);
 		Choice<String> departureAirport = choose("departureAirport", successful,
-				ProviderFlightResult::departureAirport, this::normalizeUpper, FieldPolicy.PLANNED, provenance);
+				ProviderFlightResult::departureAirport, FieldPolicy.PLANNED, provenance);
 		Choice<String> departureAirportName = chooseAirportName("departureAirportName", successful,
 				ProviderFlightResult::departureAirport, ProviderFlightResult::departureAirportName,
 				departureAirport.value(), provenance);
 		Choice<String> arrivalAirport = choose("arrivalAirport", successful,
-				ProviderFlightResult::arrivalAirport, this::normalizeUpper, FieldPolicy.PLANNED, provenance);
+				ProviderFlightResult::arrivalAirport, FieldPolicy.PLANNED, provenance);
 		Choice<String> arrivalAirportName = chooseAirportName("arrivalAirportName", successful,
 				ProviderFlightResult::arrivalAirport, ProviderFlightResult::arrivalAirportName,
 				arrivalAirport.value(), provenance);
 		Choice<OffsetDateTime> scheduledDeparture = choose("scheduledDeparture", successful,
-				ProviderFlightResult::scheduledDeparture, this::normalizeTime, FieldPolicy.PLANNED, provenance);
+				ProviderFlightResult::scheduledDeparture, FieldPolicy.PLANNED, provenance);
 		Choice<OffsetDateTime> estimatedDeparture = choose("estimatedDeparture", successful,
-				ProviderFlightResult::estimatedDeparture, this::normalizeTime, FieldPolicy.OPERATIONAL, provenance);
+				ProviderFlightResult::estimatedDeparture, FieldPolicy.OPERATIONAL, provenance);
 		Choice<OffsetDateTime> actualDeparture = choose("actualDeparture", successful,
-				ProviderFlightResult::actualDeparture, this::normalizeTime, FieldPolicy.OPERATIONAL, provenance);
+				ProviderFlightResult::actualDeparture, FieldPolicy.OPERATIONAL, provenance);
 		Choice<OffsetDateTime> scheduledArrival = choose("scheduledArrival", successful,
-				ProviderFlightResult::scheduledArrival, this::normalizeTime, FieldPolicy.PLANNED, provenance);
+				ProviderFlightResult::scheduledArrival, FieldPolicy.PLANNED, provenance);
 		Choice<OffsetDateTime> estimatedArrival = choose("estimatedArrival", successful,
-				ProviderFlightResult::estimatedArrival, this::normalizeTime, FieldPolicy.OPERATIONAL, provenance);
+				ProviderFlightResult::estimatedArrival, FieldPolicy.OPERATIONAL, provenance);
 		Choice<OffsetDateTime> actualArrival = choose("actualArrival", successful,
-				ProviderFlightResult::actualArrival, this::normalizeTime, FieldPolicy.OPERATIONAL, provenance);
+				ProviderFlightResult::actualArrival, FieldPolicy.OPERATIONAL, provenance);
 		Choice<OffsetDateTime> boardingTime = choose("boardingTime", successful,
-				ProviderFlightResult::boardingTime, this::normalizeTime, FieldPolicy.OPERATIONAL, provenance);
+				ProviderFlightResult::boardingTime, FieldPolicy.OPERATIONAL, provenance);
 		Choice<String> terminal = choose("terminal", successful, ProviderFlightResult::terminal,
-				this::normalizeTerminal, FieldPolicy.OPERATIONAL, provenance);
-		Choice<String> gate = choose("gate", successful, ProviderFlightResult::gate,
-				this::normalizeGate, FieldPolicy.OPERATIONAL, provenance);
-		Choice<String> checkIn = choose("checkInDeskOrZone", successful,
-				ProviderFlightResult::checkInDeskOrZone, this::normalizeLocationText, FieldPolicy.OPERATIONAL, provenance);
-		Choice<String> bagDrop = choose("dedicatedBagDropDesk", successful,
-				ProviderFlightResult::dedicatedBagDropDesk, this::normalizeLocationText, FieldPolicy.OPERATIONAL, provenance);
-		Choice<String> arrivalBaggageBelt = choose("arrivalBaggageBelt", successful,
-				ProviderFlightResult::arrivalBaggageBelt, this::normalizeLocationText,
 				FieldPolicy.OPERATIONAL, provenance);
+		Choice<String> gate = choose("gate", successful, ProviderFlightResult::gate,
+				FieldPolicy.OPERATIONAL, provenance);
+		Choice<String> checkIn = choose("checkInDeskOrZone", successful,
+				ProviderFlightResult::checkInDeskOrZone, FieldPolicy.OPERATIONAL, provenance);
+		Choice<String> bagDrop = choose("dedicatedBagDropDesk", successful,
+				ProviderFlightResult::dedicatedBagDropDesk, FieldPolicy.OPERATIONAL, provenance);
+		Choice<String> arrivalBaggageBelt = choose("arrivalBaggageBelt", successful,
+				ProviderFlightResult::arrivalBaggageBelt, FieldPolicy.OPERATIONAL, provenance);
 		Choice<String> status = choose("status", successful, ProviderFlightResult::status,
-				this::normalizeStatusGroup, FieldPolicy.OPERATIONAL, provenance);
+				FieldPolicy.OPERATIONAL, provenance);
 		Choice<Integer> departureDelay = choose("departureDelayMinutes", successful,
-				ProviderFlightResult::departureDelayMinutes, Objects::toString, FieldPolicy.OPERATIONAL, provenance);
+				ProviderFlightResult::departureDelayMinutes, FieldPolicy.OPERATIONAL, provenance);
 		Choice<Integer> arrivalDelay = choose("arrivalDelayMinutes", successful,
-				ProviderFlightResult::arrivalDelayMinutes, Objects::toString, FieldPolicy.OPERATIONAL, provenance);
+				ProviderFlightResult::arrivalDelayMinutes, FieldPolicy.OPERATIONAL, provenance);
 		Choice<String> sourceUrl = choose("sourceUrl", successful, ProviderFlightResult::sourceUrl,
-				this::normalizeText, FieldPolicy.PLANNED, provenance);
+				FieldPolicy.PLANNED, provenance);
 		Choice<String> codeshare = choose("codeshare", successful, ProviderFlightResult::codeshare,
-				this::normalizeUpper, FieldPolicy.PLANNED, provenance);
+				FieldPolicy.PLANNED, provenance);
 
 		if (departureAirport.value() == null || arrivalAirport.value() == null || scheduledDeparture.value() == null) {
 			throw new AllFlightProvidersUnavailableException(providerResults);
@@ -148,6 +218,181 @@ public class MultiSourceFlightService {
 				Map.copyOf(provenance), conflicts, retrievedAt, freshestUpdatedAt);
 	}
 
+	private CompletableFuture<ProviderFlightResult> startProviderCall(OperationalFlightDataProvider provider,
+			String flightNumber, LocalDate departureDate, String departureHint, String arrivalHint,
+			boolean refresh, Duration timeout, Instant aggregateDeadline) {
+		Duration bounded = boundedTimeout(timeout, aggregateDeadline);
+		if (bounded.isZero() || bounded.isNegative()) {
+			return CompletableFuture.completedFuture(providerTimeout(provider));
+		}
+		return CompletableFuture.supplyAsync(() -> safeCall(provider, flightNumber, departureDate,
+				departureHint, arrivalHint, refresh), executor)
+				.completeOnTimeout(providerTimeout(provider), Math.max(1, bounded.toMillis()), TimeUnit.MILLISECONDS);
+	}
+
+	private ProviderFlightResult awaitRouteHint(OperationalFlightDataProvider provider,
+			CompletableFuture<ProviderFlightResult> call, Instant aggregateDeadline) {
+		if (provider == null || call == null) return null;
+		Duration wait = boundedTimeout(ROUTE_HINT_STAGGER, aggregateDeadline);
+		if (wait.isZero() || wait.isNegative()) return null;
+		try {
+			return call.get(Math.max(1, wait.toMillis()), TimeUnit.MILLISECONDS);
+		} catch (TimeoutException exception) {
+			return null;
+		} catch (InterruptedException exception) {
+			Thread.currentThread().interrupt();
+			return ProviderFlightResult.failure(provider.providerName(), "UPSTREAM_ERROR",
+					provider.providerName() + "_INTERRUPTED", Instant.now());
+		} catch (ExecutionException exception) {
+			return ProviderFlightResult.failure(provider.providerName(), "UPSTREAM_ERROR",
+					provider.providerName() + "_UNEXPECTED_ERROR", Instant.now());
+		}
+	}
+
+	private void collectProviderResults(Map<String, CompletableFuture<ProviderFlightResult>> calls,
+			Map<String, ProviderFlightResult> results, Instant aggregateDeadline) {
+		Map<String, CompletableFuture<ProviderFlightResult>> pending = new LinkedHashMap<>(calls);
+		results.keySet().forEach(pending::remove);
+		Instant sufficientResultDeadline = hasSufficientSuccess(results.values())
+				? Instant.now().plus(SUFFICIENT_RESULT_GRACE) : null;
+		while (!pending.isEmpty()) {
+			for (var iterator = pending.entrySet().iterator(); iterator.hasNext();) {
+				var entry = iterator.next();
+				if (!entry.getValue().isDone()) continue;
+				results.put(entry.getKey(), completedResult(entry.getKey(), entry.getValue()));
+				iterator.remove();
+			}
+			if (sufficientResultDeadline == null && hasSufficientSuccess(results.values())) {
+				sufficientResultDeadline = Instant.now().plus(SUFFICIENT_RESULT_GRACE);
+			}
+			if (pending.isEmpty()) return;
+			Instant waitDeadline = sufficientResultDeadline == null
+					? aggregateDeadline : earlier(aggregateDeadline, sufficientResultDeadline);
+			Duration remaining = Duration.between(Instant.now(), waitDeadline);
+			if (remaining.isZero() || remaining.isNegative()) {
+				boolean hasSufficientResult = hasSufficientSuccess(results.values());
+				for (var entry : pending.entrySet()) {
+					entry.getValue().cancel(true);
+					OperationalFlightDataProvider provider = providerNamed(entry.getKey());
+					results.put(entry.getKey(), hasSufficientResult
+							? providerPending(provider) : providerTimeout(provider));
+				}
+				return;
+			}
+			try {
+				CompletableFuture.anyOf(pending.values().toArray(CompletableFuture[]::new))
+						.get(Math.max(1, remaining.toMillis()), TimeUnit.MILLISECONDS);
+			} catch (TimeoutException exception) {
+				// The next loop classifies unfinished providers against the active deadline.
+			} catch (InterruptedException exception) {
+				Thread.currentThread().interrupt();
+				for (var entry : pending.entrySet()) {
+					entry.getValue().cancel(true);
+					results.put(entry.getKey(), ProviderFlightResult.failure(entry.getKey(), "UPSTREAM_ERROR",
+							entry.getKey() + "_INTERRUPTED", Instant.now()));
+				}
+				return;
+			} catch (ExecutionException exception) {
+				// Individual failures are converted when their completed future is drained.
+			}
+		}
+	}
+
+	private ProviderFlightResult completedResult(String providerName,
+			CompletableFuture<ProviderFlightResult> call) {
+		try {
+			return call.get();
+		} catch (InterruptedException exception) {
+			Thread.currentThread().interrupt();
+			return ProviderFlightResult.failure(providerName, "UPSTREAM_ERROR",
+					providerName + "_INTERRUPTED", Instant.now());
+		} catch (ExecutionException | java.util.concurrent.CancellationException exception) {
+			return ProviderFlightResult.failure(providerName, "UPSTREAM_ERROR",
+					providerName + "_UNEXPECTED_ERROR", Instant.now());
+		}
+	}
+
+	private OperationalFlightDataProvider providerNamed(String providerName) {
+		return providers.stream().filter(provider -> providerName.equals(provider.providerName()))
+				.findFirst().orElseThrow();
+	}
+
+	private Duration providerBudget(OperationalFlightDataProvider provider) {
+		return switch (provider.providerName()) {
+			case "AERODATABOX" -> aeroDataBoxTimeout;
+			case "SERPAPI" -> serpApiTimeout;
+			default -> aggregateTimeout;
+		};
+	}
+
+	private Instant earlier(Instant first, Instant second) {
+		return first.isBefore(second) ? first : second;
+	}
+
+	private ProviderFlightResult providerTimeout(OperationalFlightDataProvider provider) {
+		return ProviderFlightResult.failure(provider.providerName(), "UPSTREAM_ERROR",
+				provider.providerName() + "_TIMEOUT", Instant.now());
+	}
+
+	private ProviderFlightResult providerPending(OperationalFlightDataProvider provider) {
+		return ProviderFlightResult.failure(provider.providerName(), "PENDING",
+				provider.providerName() + "_PENDING", Instant.now());
+	}
+
+	private boolean hasSufficientSuccess(Iterable<ProviderFlightResult> results) {
+		for (ProviderFlightResult result : results) {
+			if (result != null && result.successful()
+					&& result.flightNumber() != null && result.departureDate() != null
+					&& result.departureAirport() != null && result.arrivalAirport() != null
+					&& result.scheduledDeparture() != null) return true;
+		}
+		return false;
+	}
+
+	private Duration boundedTimeout(Duration providerTimeout, Instant deadline) {
+		Duration remaining = Duration.between(Instant.now(), deadline);
+		if (remaining.isNegative()) return Duration.ZERO;
+		return remaining.compareTo(providerTimeout) < 0 ? remaining : providerTimeout;
+	}
+
+	private MultiSourceFlightSnapshot awaitCombined(CompletableFuture<MultiSourceFlightSnapshot> existing) {
+		try {
+			return existing.get(Math.max(1, aggregateTimeout.toMillis()), TimeUnit.MILLISECONDS);
+		} catch (InterruptedException exception) {
+			Thread.currentThread().interrupt();
+			throw new IllegalStateException("Flight lookup was interrupted", exception);
+		} catch (TimeoutException exception) {
+			throw new AllFlightProvidersUnavailableException(Map.of());
+		} catch (ExecutionException exception) {
+			if (exception.getCause() instanceof RuntimeException runtimeException) throw runtimeException;
+			throw new IllegalStateException("Flight lookup failed", exception.getCause());
+		}
+	}
+
+	private boolean isFresh(CachedSnapshot cached, Instant now) {
+		return cached != null && Duration.between(cached.cachedAt(), now).compareTo(cacheTtl) < 0;
+	}
+
+	private boolean claimForcedRefresh(QueryKey key, Instant now) {
+		while (true) {
+			Instant previous = lastForcedRefresh.get(key);
+			if (previous != null && Duration.between(previous, now).compareTo(refreshCooldown) < 0) return false;
+			if (previous == null) {
+				if (lastForcedRefresh.putIfAbsent(key, now) == null) return true;
+			} else if (lastForcedRefresh.replace(key, previous, now)) {
+				return true;
+			}
+		}
+	}
+
+	private int providerPriority(OperationalFlightDataProvider provider) {
+		return switch (provider.providerName()) {
+			case "AERODATABOX" -> 0;
+			case "SERPAPI" -> 1;
+			default -> 2;
+		};
+	}
+
 	private ProviderFlightResult safeCall(OperationalFlightDataProvider provider, String flightNumber,
 			LocalDate departureDate, String departureHint, String arrivalHint, boolean refresh) {
 		try {
@@ -163,13 +408,13 @@ public class MultiSourceFlightService {
 	}
 
 	private <T> Choice<T> choose(String field, List<ProviderFlightResult> results,
-			Function<ProviderFlightResult, T> getter, Function<T, String> normalizer,
-			FieldPolicy policy, Map<String, FieldProvenance> provenance) {
+			Function<ProviderFlightResult, T> getter, FieldPolicy policy,
+			Map<String, FieldProvenance> provenance) {
 		List<ValueCandidate<T>> candidates = results.stream()
 				.filter(result -> policy != FieldPolicy.OPERATIONAL || !isScheduleOnly(result))
 				.map(result -> new ValueCandidate<>(getter.apply(result), result))
 				.filter(candidate -> hasValue(candidate.value()))
-				.sorted(this.<T>valueCandidateComparator(policy).reversed())
+				.sorted(this.<T>valueCandidateComparator(field, policy).reversed())
 				.toList();
 		if (candidates.isEmpty()) return new Choice<>(null, null);
 		ValueCandidate<T> selected = candidates.get(0);
@@ -178,10 +423,13 @@ public class MultiSourceFlightService {
 						candidate.result().sourceUpdatedAt(), candidate.result().retrievedAt(), candidate.result().live(),
 						candidate.result().quality()))
 				.toList();
-		long distinct = candidates.stream().map(candidate -> normalizer.apply(candidate.value()))
-				.filter(Objects::nonNull).distinct().count();
+		// Run the field-aware pairwise comparison as well as computing the
+		// canonical keys. Check-in values are intentionally compatible when one
+		// source only knows the area and another adds a counter range.
+		List<T> values = candidates.stream().map(ValueCandidate::value).toList();
+		boolean conflict = FlightFieldSemantics.hasConflict(field, values);
 		FieldProvenance source = new FieldProvenance(stringValue(selected.value()), selected.result().provider(),
-				selected.result().sourceUpdatedAt(), selected.result().retrievedAt(), selected.result().live(), distinct > 1,
+				selected.result().sourceUpdatedAt(), selected.result().retrievedAt(), selected.result().live(), conflict,
 				displayCandidates);
 		provenance.put(field, source);
 		return new Choice<>(selected.value(), source);
@@ -195,13 +443,13 @@ public class MultiSourceFlightService {
 				.filter(result -> Objects.equals(normalizeUpper(airportGetter.apply(result)),
 						normalizeUpper(selectedAirport)))
 				.toList();
-		return choose(field, matchingAirport, nameGetter, ignored -> normalizeUpper(selectedAirport),
-				FieldPolicy.PLANNED, provenance);
+		return choose(field, matchingAirport, nameGetter, FieldPolicy.PLANNED, provenance);
 	}
 
-	private <T> Comparator<ValueCandidate<T>> valueCandidateComparator(FieldPolicy policy) {
+	private <T> Comparator<ValueCandidate<T>> valueCandidateComparator(String field, FieldPolicy policy) {
 		return Comparator.<ValueCandidate<T>>comparingInt(candidate -> policy == FieldPolicy.OPERATIONAL
 				? operationalQualityScore(candidate.result()) : plannedQualityScore(candidate.result()))
+				.thenComparingInt(candidate -> FlightFieldSemantics.specificity(field, candidate.value()))
 				.thenComparingInt(candidate -> candidate.result().sourceUpdatedAt() == null ? 0 : 1)
 				.thenComparing(candidate -> candidate.result().sourceUpdatedAt(),
 						Comparator.nullsFirst(Comparator.naturalOrder()))
@@ -234,9 +482,11 @@ public class MultiSourceFlightService {
 		addIdentityConflict(conflicts, "arrivalAirport", provenance.get("arrivalAirport"), detectedAt);
 		addLiveValueConflict(conflicts, "terminal", provenance.get("terminal"), detectedAt);
 		addLiveValueConflict(conflicts, "gate", provenance.get("gate"), detectedAt);
+		addLiveCheckInConflict(conflicts, provenance.get("checkInDeskOrZone"), detectedAt);
 		addCancellationConflict(conflicts, provenance.get("status"), detectedAt);
 		addLiveTimeConflict(conflicts, "estimatedDeparture", provenance.get("estimatedDeparture"), detectedAt);
 		addLiveTimeConflict(conflicts, "actualDeparture", provenance.get("actualDeparture"), detectedAt);
+		addLiveTimeConflict(conflicts, "boardingTime", provenance.get("boardingTime"), detectedAt);
 		return List.copyOf(conflicts);
 	}
 
@@ -253,13 +503,24 @@ public class MultiSourceFlightService {
 		if (source == null) return;
 		List<FieldCandidate> liveCandidates = source.candidateValues().stream()
 				.filter(this::isLiveOperationalCandidate).toList();
-		long distinct = liveCandidates.stream().map(candidate -> "terminal".equals(field)
-				? normalizeTerminal(candidate.value()) : normalizeGate(candidate.value()))
-				.filter(Objects::nonNull).distinct().count();
-		if (liveCandidates.size() < 2 || distinct < 2) return;
+		if (liveCandidates.size() < 2 || !FlightFieldSemantics.hasConflict(field,
+				liveCandidates.stream().map(FieldCandidate::value).toList())) return;
 		addCriticalProviderConflict(conflicts, field, source,
 				"两个实时运营来源报告了不同的" + ("terminal".equals(field) ? "航站楼" : "登机口") + "，请先向工作人员核对。",
 				"Two live operational sources report different " + field + " values. Stop and confirm with staff.",
+				detectedAt);
+	}
+
+	private void addLiveCheckInConflict(List<FlightFieldConflict> conflicts,
+			FieldProvenance source, Instant detectedAt) {
+		if (source == null) return;
+		List<FieldCandidate> liveCandidates = source.candidateValues().stream()
+				.filter(this::isLiveOperationalCandidate).toList();
+		if (liveCandidates.size() < 2 || !FlightFieldSemantics.hasConflict("checkInDeskOrZone",
+				liveCandidates.stream().map(FieldCandidate::value).toList())) return;
+		addCriticalProviderConflict(conflicts, "checkInDeskOrZone", source,
+				"两个实时运营来源报告了互相矛盾的值机区域或柜台范围，请先向工作人员核对。",
+				"Two live operational sources report conflicting check-in areas or counter ranges. Stop and confirm with staff.",
 				detectedAt);
 	}
 
@@ -267,7 +528,7 @@ public class MultiSourceFlightService {
 			FieldProvenance source, Instant detectedAt) {
 		if (source == null) return;
 		List<String> groups = source.candidateValues().stream().map(FieldCandidate::value)
-				.map(this::normalizeStatusGroup).filter(Objects::nonNull).distinct().toList();
+				.map(FlightFieldSemantics::normalizeStatusGroup).filter(Objects::nonNull).distinct().toList();
 		if (!groups.contains("CANCELLED") || groups.size() < 2) return;
 		addCriticalProviderConflict(conflicts, "status", source,
 				"一个来源报告航班已取消，另一个来源未报告取消，请先向工作人员核对。",
@@ -277,16 +538,18 @@ public class MultiSourceFlightService {
 	private void addLiveTimeConflict(List<FlightFieldConflict> conflicts, String field,
 			FieldProvenance source, Instant detectedAt) {
 		if (source == null) return;
-		List<OffsetDateTime> times = source.candidateValues().stream()
+		List<Instant> times = source.candidateValues().stream()
 				.filter(this::isLiveOperationalCandidate)
-				.map(FieldCandidate::value).map(this::parseTime).filter(Objects::nonNull).toList();
+				.map(FieldCandidate::value).map(FlightFieldSemantics::instant).filter(Objects::nonNull).toList();
 		if (times.size() < 2) return;
-		Instant earliest = times.stream().map(OffsetDateTime::toInstant).min(Comparator.naturalOrder()).orElseThrow();
-		Instant latest = times.stream().map(OffsetDateTime::toInstant).max(Comparator.naturalOrder()).orElseThrow();
+		Instant earliest = times.stream().min(Comparator.naturalOrder()).orElseThrow();
+		Instant latest = times.stream().max(Comparator.naturalOrder()).orElseThrow();
 		if (Math.abs(ChronoUnit.MINUTES.between(earliest, latest)) < 15) return;
+		boolean boarding = "boardingTime".equals(field);
 		addCriticalProviderConflict(conflicts, field, source,
-				"两个实时运营来源报告的起飞时间相差至少 15 分钟，请先向工作人员核对。",
-				"Two live operational sources report departure times at least 15 minutes apart. Stop and confirm with staff.",
+				"两个实时运营来源报告的" + (boarding ? "登机时间" : "起飞时间") + "相差至少 15 分钟，请先向工作人员核对。",
+				"Two live operational sources report " + (boarding ? "boarding" : "departure")
+						+ " times at least 15 minutes apart. Stop and confirm with staff.",
 				detectedAt);
 	}
 
@@ -321,49 +584,6 @@ public class MultiSourceFlightService {
 		return value == null ? null : value.toString().replaceAll("\\s", "").toUpperCase(Locale.ROOT);
 	}
 
-	private String normalizeTerminal(Object value) {
-		return value == null ? null : value.toString().replaceAll("(?i)terminal", "")
-				.replaceAll("[\\s\\p{Punct}]", "").toUpperCase(Locale.ROOT);
-	}
-
-	private String normalizeGate(Object value) {
-		String normalized = normalizeLocationText(value);
-		return normalized == null ? null : normalized.replaceFirst("^([A-Z]+)0+([0-9]+)$", "$1$2");
-	}
-
-	private String normalizeLocationText(Object value) {
-		return value == null ? null : value.toString().replaceAll("[\\s\\p{Punct}]", "")
-				.toUpperCase(Locale.ROOT);
-	}
-
-	private String normalizeText(Object value) {
-		return value == null ? null : value.toString().trim().toUpperCase(Locale.ROOT);
-	}
-
-	private String normalizeStatusGroup(Object value) {
-		if (value == null) return null;
-		String status = value.toString().replaceAll("[\\s_-]", "").toUpperCase(Locale.ROOT);
-		if (status.contains("CANCEL")) return "CANCELLED";
-		if (status.contains("ARRIV")) return "ARRIVED";
-		if (status.contains("DEPART")) return "DEPARTED";
-		if (status.contains("BOARD")) return "BOARDING";
-		if (status.contains("DELAY") || status.contains("LATE")) return "DELAYED";
-		if (status.contains("SCHEDULE") || status.contains("EXPECTED") || status.contains("ONTIME")) return "NORMAL";
-		return status;
-	}
-
-	private String normalizeTime(OffsetDateTime value) {
-		return value == null ? null : value.toInstant().toString();
-	}
-
-	private OffsetDateTime parseTime(String value) {
-		try {
-			return value == null ? null : OffsetDateTime.parse(value);
-		} catch (RuntimeException exception) {
-			return null;
-		}
-	}
-
 	private Integer delayMinutes(OffsetDateTime scheduled, OffsetDateTime effective) {
 		return scheduled == null || effective == null ? null
 				: Math.max(0, Math.toIntExact(ChronoUnit.MINUTES.between(scheduled.toInstant(), effective.toInstant())));
@@ -383,6 +603,12 @@ public class MultiSourceFlightService {
 	}
 
 	private record Choice<T>(T value, FieldProvenance provenance) {
+	}
+
+	private record QueryKey(String flightNumber, LocalDate departureDate) {
+	}
+
+	private record CachedSnapshot(MultiSourceFlightSnapshot snapshot, Instant cachedAt) {
 	}
 
 	private enum FieldPolicy {

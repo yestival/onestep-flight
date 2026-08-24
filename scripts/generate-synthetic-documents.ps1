@@ -120,13 +120,15 @@ New-SyntheticPdf -Filename 'booking-confirmation.pdf' -Heading 'BOOKING CONFIRMA
     'Fixture expectation: start with CHECK_IN'
 )
 
-New-SyntheticPdf -Filename 'e-ticket-itinerary.pdf' -Heading 'E-TICKET ITINERARY' -Lines @(
-    'Flight: BA 117',
-    'Departure date: 2026-08-24',
-    'Route: LHR to JFK',
-    'Scheduled departure: 08:20 local time',
+New-SyntheticPdf -Filename 'e-ticket-itinerary.pdf' -Heading 'TRAVEL ITINERARY - TWO FLIGHT SEGMENTS' -Lines @(
+    'Outbound flight: BA 117',
+    'Departure: 2026-08-24 08:20 local time, LHR',
+    'Scheduled arrival: 2026-08-24 11:10 local time, JFK',
+    'Return flight: BA 178',
+    'Departure: 2026-09-02 08:00 local time, JFK',
+    'Scheduled arrival: 2026-09-02 20:00 local time, LHR',
     'This itinerary is not a boarding pass',
-    'Fixture expectation: start with CHECK_IN'
+    'Fixture expectation: choose a segment, then start with CHECK_IN'
 )
 
 New-SyntheticPdf -Filename 'boarding-pass.pdf' -Heading 'BOARDING PASS' -Lines @(

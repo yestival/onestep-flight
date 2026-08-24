@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const BASE_URL = process.env.ONESTEP_BASE_URL || 'http://localhost:8080';
 const SKIP_DOCUMENTS = process.env.ONESTEP_SKIP_DOCUMENTS === 'true';
+const CURRENT_ROUND = process.env.ONESTEP_CURRENT_ROUND === 'true';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FIXTURE_DIR = path.join(ROOT, 'test-fixtures', 'documents');
 const FIXTURES = [
@@ -33,6 +34,23 @@ const summary = {
   sharing: { created: false, familyPageLoaded: false, synchronizedWithin15Seconds: false, syncLatencyMs: null, stopped: false },
   png: { downloaded: false },
   documents: [],
+  currentRound: {
+    initialLocale: { browserSpanish: false, savedChineseWins: false },
+    liveLookup: { reachedConfirmation: false, providerResults: {}, selectedFields: {} },
+    confirmationTimes: false,
+    checkInFlow: { unsureStaysOnQuestion: false, yesSkips: false, backAllowsChange: false, noShowsCheckIn: false },
+    mobileHierarchy: false,
+    completeDestination: { zh: null, en: null, passed: false },
+    speech: { text: null, rate: null, lang: null, passed: false },
+    staffCard: false,
+    roundedCorners: false,
+    singleBackArrow: false,
+    footer: false,
+    sharingOrigin: false,
+    itinerary: null,
+    boardingPass: null,
+    desktopNoOverflow: false
+  },
   passed: false
 };
 
@@ -84,6 +102,8 @@ class CdpSession {
     this.listeners = new Map();
     this.documentResponses = [];
     this.documentRequests = new Map();
+    this.flightResponses = [];
+    this.flightRequests = new Map();
   }
 
   async connect() {
@@ -143,8 +163,10 @@ function installSafeDiagnostics(page) {
   page.on('Network.responseReceived', ({ requestId, response }) => {
     try {
       const url = new URL(response.url);
-      if (url.pathname === '/api/documents/boarding-pass') {
+      if (url.pathname === '/api/documents/boarding-pass' || url.pathname === '/api/documents/travel-document') {
         page.documentRequests.set(requestId, { status: response.status });
+      } else if (url.pathname === '/api/journeys/resolve-flight') {
+        page.flightRequests.set(requestId, { status: response.status });
       }
     } catch {
       // Ignore malformed/non-HTTP URLs; no response content is logged.
@@ -152,8 +174,10 @@ function installSafeDiagnostics(page) {
   });
   page.on('Network.loadingFinished', async ({ requestId }) => {
     const metadata = page.documentRequests.get(requestId);
-    if (!metadata) return;
+    const flightMetadata = page.flightRequests.get(requestId);
+    if (!metadata && !flightMetadata) return;
     page.documentRequests.delete(requestId);
+    page.flightRequests.delete(requestId);
     let parsed = null;
     try {
       const result = await page.send('Network.getResponseBody', { requestId });
@@ -162,14 +186,61 @@ function installSafeDiagnostics(page) {
     } catch {
       // The status is still recorded without exposing an unreadable response.
     }
-    page.documentResponses.push({
-      status: metadata.status,
-      documentType: parsed && typeof parsed.documentType === 'string' ? parsed.documentType : null,
-      boardingPassDetected: Boolean(parsed && parsed.boardingPassDetected),
-      requiresDocumentConfirmation: Boolean(parsed && parsed.requiresDocumentConfirmation),
-      needsReviewFields: Array.isArray(parsed && parsed.needsReviewFields)
-        ? parsed.needsReviewFields.filter((field) => typeof field === 'string').slice(0, 20) : []
-    });
+    if (metadata) {
+      const segmentList = Array.isArray(parsed && parsed.segments) ? parsed.segments : [];
+      page.documentResponses.push({
+        status: metadata.status,
+        documentType: parsed && typeof parsed.documentType === 'string' ? parsed.documentType : null,
+        boardingPassDetected: Boolean(parsed && parsed.boardingPassDetected),
+        requiresDocumentConfirmation: Boolean(parsed && parsed.requiresDocumentConfirmation),
+        documentTypeConfidence: Number(parsed && parsed.fields && parsed.fields.document_type && parsed.fields.document_type.confidence) || 0,
+        segmentCount: segmentList.length,
+        segments: segmentList.slice(0, 8).map((segment) => ({
+          flightNumber: segment.flightNumber || null,
+          departureDate: segment.departureDate || null,
+          departureAirport: segment.departureAirport || null,
+          arrivalAirport: segment.arrivalAirport || null,
+          scheduledDeparture: segment.scheduledDeparture || null,
+          scheduledArrival: segment.scheduledArrival || null,
+          terminal: segment.terminal || null,
+          gate: segment.gate || null
+        })),
+        needsReviewFields: Array.isArray(parsed && parsed.needsReviewFields)
+          ? parsed.needsReviewFields.filter((field) => typeof field === 'string').slice(0, 30) : []
+      });
+    }
+    if (flightMetadata) {
+      const providerResults = {};
+      for (const [provider, result] of Object.entries(parsed && parsed.providerResults || {})) {
+        providerResults[provider] = {
+          outcome: result && result.outcome || null,
+          errorCode: result && result.errorCode || null,
+          quality: result && result.quality || null,
+          fromCache: Boolean(result && result.fromCache)
+        };
+      }
+      page.flightResponses.push({
+        status: flightMetadata.status,
+        providerResults,
+        selectedFields: parsed ? {
+          flightNumber: parsed.flightNumber || null,
+          departureDate: parsed.departureDate || null,
+          departureAirport: parsed.departureAirport || null,
+          arrivalAirport: parsed.arrivalAirport || null,
+          scheduledDeparture: parsed.scheduledDeparture || null,
+          estimatedDeparture: parsed.estimatedDeparture || null,
+          scheduledArrival: parsed.scheduledArrival || null,
+          estimatedArrival: parsed.estimatedArrival || null,
+          terminal: parsed.terminal || null,
+          gate: parsed.gate || null,
+          checkInDeskOrZone: parsed.checkInDeskOrZone || null,
+          status: parsed.status || null,
+          arrivalBaggageBelt: parsed.arrivalBaggageBelt || null,
+          dataSource: parsed.liveDataSource || parsed.dataSource || null,
+          demo: Boolean(parsed.demo)
+        } : {}
+      });
+    }
   });
 }
 
@@ -310,6 +381,8 @@ async function enterQaJourney(page) {
   if (conflictButtonVisible) await click(page, '[data-action="confirm-conflicts"]');
   await click(page, '[data-action="continue"]');
   await activeScreen(page, 'step', 30000);
+  await waitFor(page, `(() => { const e = document.querySelector('[data-checkin-question]'); return e && !e.hidden; })()`, 'check-in status question', 30000);
+  await click(page, '[data-action="checkin-status"][data-answer="no"]');
   await waitFor(page, `document.querySelector('[data-action-title]').textContent.trim() === '现在办理值机'`, 'QA CHECK_IN', 30000);
   summary.qaJourney.observed.push('CHECK_IN');
 
@@ -450,6 +523,223 @@ async function runStage(name, work) {
   }
 }
 
+async function testInitialBrowserLocale(port, pages) {
+  const page = await createPage(port, 'about:blank', 'initial-locale');
+  pages.push(page);
+  const origin = new URL(BASE_URL).origin;
+  const injected = await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
+    try { if (location.origin === ${JSON.stringify(origin)}) localStorage.removeItem('onestep-flight-locale'); } catch {}
+    try { Object.defineProperty(navigator, 'languages', { configurable: true, get: () => ['es-ES', 'en-US'] }); } catch {}
+    try { Object.defineProperty(navigator, 'language', { configurable: true, get: () => 'es-ES' }); } catch {}
+  })();` });
+  await navigate(page, `${BASE_URL}/`);
+  summary.currentRound.initialLocale.browserSpanish = await evaluate(page,
+    `document.documentElement.lang === 'es' && document.querySelector('#locale-select').value === 'es'`);
+  if (injected.identifier) await page.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: injected.identifier });
+  await evaluate(page, `localStorage.setItem('onestep-flight-locale', 'zh')`);
+  await navigate(page, `${BASE_URL}/`);
+  summary.currentRound.initialLocale.savedChineseWins = await evaluate(page,
+    `document.documentElement.lang === 'zh-CN' && document.querySelector('#locale-select').value === 'zh'`);
+}
+
+async function testCurrentRoundLiveUi(port, pages) {
+  const page = await createPage(port, `${BASE_URL}/`, 'current-round-live');
+  pages.push(page);
+  await setValue(page, '#locale-select', 'zh');
+  await page.send('Emulation.setDeviceMetricsOverride', { width: 360, height: 800, deviceScaleFactor: 1, mobile: true });
+  await click(page, '[data-action="manual"]');
+  await setValue(page, '#flight-input', 'BA117');
+  await setValue(page, '#date-input', '2026-08-24');
+  await evaluate(page, `document.querySelector('[data-action="manual-submit"]').requestSubmit()`);
+  await waitFor(page, `(() => {
+    const confirm = document.querySelector('[data-screen="confirm"]');
+    const error = document.querySelector('[data-screen="error"]');
+    return confirm && !confirm.hidden || error && !error.hidden;
+  })()`, 'current-round live flight result', 30000);
+  if (await evaluate(page, `!document.querySelector('[data-screen="error"]').hidden`)) {
+    throw new Error('The one permitted live-flight browser query did not reach confirmation');
+  }
+  await waitFor(page, `document.querySelector('[data-flight-number]').textContent.replace(/\\s/g, '') === 'BA117'`, 'BA117 confirmation');
+  summary.currentRound.liveLookup.reachedConfirmation = true;
+  const flightCaptureStarted = Date.now();
+  while (!page.flightResponses.length && Date.now() - flightCaptureStarted < 3000) await delay(50);
+  if (page.flightResponses.length) {
+    const response = page.flightResponses.at(-1);
+    summary.currentRound.liveLookup.providerResults = response.providerResults;
+    summary.currentRound.liveLookup.selectedFields = response.selectedFields;
+  }
+  summary.currentRound.confirmationTimes = await evaluate(page, `(() => {
+    const departure = document.querySelector('[data-route-departure-time]');
+    const arrival = document.querySelector('[data-route-arrival-time]');
+    const departureLabel = document.querySelector('[data-route-departure-label]');
+    const arrivalLabel = document.querySelector('[data-route-arrival-label]');
+    return [departure, arrival, departureLabel, arrivalLabel].every(Boolean)
+      && departure.textContent.trim() !== '—' && arrival.textContent.trim() !== '—'
+      && departureLabel.textContent.trim().length > 0 && arrivalLabel.textContent.trim().length > 0;
+  })()`);
+  const conflictVisible = await evaluate(page, `(() => { const e = document.querySelector('[data-action="confirm-conflicts"]'); return e && !e.hidden; })()`);
+  if (conflictVisible) await click(page, '[data-action="confirm-conflicts"]');
+  await click(page, '[data-action="continue"]');
+  await activeScreen(page, 'step', 15000);
+  await waitFor(page, `(() => { const e = document.querySelector('[data-checkin-question]'); return e && !e.hidden; })()`, 'check-in question');
+
+  await click(page, '[data-action="checkin-status"][data-answer="unsure"]');
+  await waitFor(page, `(() => { const e = document.querySelector('[data-staff-overlay]'); return e && !e.hidden; })()`, 'unsure staff card');
+  summary.currentRound.staffCard = await evaluate(page, `(() => {
+    const card = document.querySelector('.staff-card').getBoundingClientRect();
+    const close = document.querySelector('[data-action="close-staff"]');
+    const box = close.getBoundingClientRect();
+    return document.querySelector('[data-staff-instruction-en]').textContent.trim() === 'Please show this screen to an airport staff member.'
+      && document.querySelector('[data-staff-instruction-primary]').textContent.trim() === '请把这个页面拿给机场工作人员看。'
+      && close.getAttribute('aria-label') === '关闭' && box.width >= 48 && box.height >= 48
+      && box.left >= card.left && box.right <= card.right && box.top >= card.top && box.bottom <= card.bottom;
+  })()`);
+  await click(page, '[data-action="close-staff"]');
+  summary.currentRound.checkInFlow.unsureStaysOnQuestion = await evaluate(page,
+    `!document.querySelector('[data-checkin-question]').hidden && document.querySelector('[data-staff-overlay]').hidden`);
+
+  await click(page, '[data-action="checkin-status"][data-answer="yes"]');
+  await waitFor(page, `(() => { const e = document.querySelector('[data-step-question]'); return e && !e.hidden; })()`, 'baggage question after checked in');
+  summary.currentRound.checkInFlow.yesSkips = await evaluate(page,
+    `document.querySelector('[data-checkin-question]').hidden && !document.querySelector('[data-step-question]').hidden`);
+  await click(page, '.screen-step [data-action="journey-back"]');
+  await waitFor(page, `(() => { const e = document.querySelector('[data-checkin-question]'); return e && !e.hidden; })()`, 'returned check-in question');
+  summary.currentRound.checkInFlow.backAllowsChange = await evaluate(page,
+    `document.querySelector('[data-action="checkin-status"][data-answer="yes"]').getAttribute('aria-pressed') !== 'true'`);
+  await click(page, '[data-action="checkin-status"][data-answer="no"]');
+  await waitFor(page, `(() => { const e = document.querySelector('[data-step-result]'); return e && !e.hidden; })()`, 'check-in action');
+  summary.currentRound.checkInFlow.noShowsCheckIn = await evaluate(page,
+    `document.querySelector('[data-destination-primary]').textContent.includes('值机')`);
+
+  const visual = await evaluate(page, `(() => {
+    const progress = document.querySelector('.step-progress');
+    const destination = document.querySelector('[data-destination-primary]');
+    const english = document.querySelector('[data-destination-primary-en]');
+    const primaryButton = document.querySelector('[data-complete-action]');
+    const assistance = document.querySelector('.step-assistance-actions');
+    const back = document.querySelector('.screen-step [data-action="journey-back"]');
+    const end = document.querySelector('.journey-end-action');
+    const time = document.querySelector('.step-time-status');
+    const label = document.querySelector('[data-action-destination] .destination-label');
+    const before = (first, second) => Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
+    const enStyle = getComputedStyle(english);
+    const primaryStyle = getComputedStyle(destination);
+    return {
+      progressHeight: progress.getBoundingClientRect().height,
+      destinationBottom: destination.getBoundingClientRect().bottom,
+      zh: destination.textContent.trim(), en: english.textContent.trim(),
+      englishVisible: !english.hidden && enStyle.display !== 'none',
+      englishFirst: before(english, destination), sameColor: enStyle.color === primaryStyle.color,
+      labelHidden: !label || label.hidden || getComputedStyle(label).display === 'none',
+      order: before(progress, destination) && before(destination, primaryButton) && before(primaryButton, assistance)
+        && before(assistance, back) && before(back, end) && before(end, time),
+      noOverflow: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) <= innerWidth + 1,
+      radii: [document.querySelector('.button'), document.querySelector('.flight-card'),
+        document.querySelector('.step-time-status'), document.querySelector('.staff-card')]
+        .filter(Boolean).map((element) => parseFloat(getComputedStyle(element).borderTopLeftRadius) || 0),
+      backSvgCount: back.querySelectorAll(':scope > svg').length,
+      backText: back.textContent.trim(),
+      backBefore: getComputedStyle(back, '::before').content
+    };
+  })()`);
+  summary.currentRound.completeDestination.zh = visual.zh;
+  summary.currentRound.completeDestination.en = visual.en;
+  summary.currentRound.completeDestination.passed = visual.zh.includes('值机') && visual.en.toLowerCase().includes('check in')
+    && visual.englishVisible && visual.englishFirst && visual.sameColor && visual.labelHidden;
+  summary.currentRound.mobileHierarchy = visual.progressHeight <= 64 && visual.destinationBottom <= 800 && visual.order && visual.noOverflow;
+  summary.currentRound.roundedCorners = visual.radii.length >= 4 && visual.radii.every((radius) => radius >= 10);
+  summary.currentRound.singleBackArrow = visual.backSvgCount === 1 && !/[←↩]/.test(visual.backText)
+    && (visual.backBefore === 'none' || visual.backBefore === 'normal' || visual.backBefore === '"none"');
+
+  await evaluate(page, `(() => {
+    window.__speechCapture = { cancelCount: 0, speaking: false };
+    Object.defineProperty(window, 'SpeechSynthesisUtterance', { configurable: true, value: function (text) { this.text = text; } });
+    Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
+      get speaking() { return window.__speechCapture.speaking; }, pending: false,
+      getVoices() { return [{ lang: 'zh-CN', name: 'Test Chinese' }, { lang: 'en-US', name: 'Test English' }]; },
+      speak(utterance) { window.__speechCapture.speaking = true; window.__speechCapture.text = utterance.text; window.__speechCapture.rate = utterance.rate; window.__speechCapture.lang = utterance.lang; window.__speechCapture.voice = utterance.voice && utterance.voice.lang; },
+      cancel() { window.__speechCapture.speaking = false; window.__speechCapture.cancelCount += 1; }
+    }});
+    return true;
+  })()`);
+  await click(page, '[data-action="speak"]');
+  const speech = await evaluate(page, `window.__speechCapture`);
+  summary.currentRound.speech = {
+    text: speech.text || null, rate: speech.rate || null, lang: speech.lang || null,
+    passed: speech.text === visual.zh && speech.rate >= 0.85 && speech.rate <= 0.9 && speech.lang === 'zh-CN'
+  };
+  await click(page, '[data-action="speak"]');
+
+  await setValue(page, '#locale-select', 'en');
+  const englishOnly = await evaluate(page, `(() => {
+    const primary = document.querySelector('[data-destination-primary]');
+    const duplicate = document.querySelector('[data-destination-primary-en]');
+    return primary.lang === 'en' && primary.textContent.trim().length > 0 && duplicate.hidden;
+  })()`);
+  summary.locales.englishHasNoDuplicateDestination = englishOnly;
+  await setValue(page, '#locale-select', 'zh');
+  summary.currentRound.footer = await evaluate(page,
+    `document.querySelector('.site-footer').textContent.trim() === '© 2026 OneStep Flight · 无障碍乘机指引'`);
+
+  await click(page, '[data-action="family"]');
+  await click(page, '[data-action="create-family-share"]');
+  await waitFor(page, `document.querySelector('[data-family-share-url]').value.includes('/share/')`, 'share URL');
+  const shareUrl = await evaluate(page, `document.querySelector('[data-family-share-url]').value`);
+  summary.currentRound.sharingOrigin = shareUrl.startsWith(new URL(BASE_URL).origin + '/share/')
+    && await evaluate(page, `!document.querySelector('[data-share-local-warning]').hidden`);
+  const family = await createPage(port, shareUrl, 'current-round-family');
+  pages.push(family);
+  await page.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+  summary.currentRound.desktopNoOverflow = await hasNoHorizontalOverflow(page);
+  await family.send('Emulation.setDeviceMetricsOverride', { width: 360, height: 800, deviceScaleFactor: 1, mobile: true });
+  await waitFor(family, `(() => { const e = document.querySelector('[data-view="journey"]'); return e && !e.hidden; })()`, 'shared journey');
+  summary.currentRound.sharingOrigin = summary.currentRound.sharingOrigin
+    && await hasNoHorizontalOverflow(family)
+    && await evaluate(family, `document.querySelector('footer').textContent.includes('© 2026 OneStep Flight')`);
+}
+
+async function testCurrentRoundDocument(port, pages, fixtureName, kind) {
+  const page = await createPage(port, `${BASE_URL}/`, `current-round-${kind}`);
+  pages.push(page);
+  const result = await uploadFixture(page, fixtureName);
+  await activeScreen(page, 'confirm', 70000);
+  if (kind === 'itinerary') {
+    const ui = await evaluate(page, `(() => {
+      const selector = document.querySelector('[data-segment-selector]');
+      const options = Array.from(document.querySelectorAll('[data-segment-options] [data-action="select-segment"]'));
+      const continueButton = document.querySelector('[data-action="continue"]');
+      return { visible: selector && !selector.hidden, optionCount: options.length, continueDisabled: continueButton.disabled };
+    })()`);
+    if (ui.optionCount) {
+      await click(page, '[data-segment-options] [data-action="select-segment"]');
+      await waitFor(page, `document.querySelector('[data-flight-number]').textContent.replace(/\\s/g, '').length > 2`, 'selected itinerary segment');
+    }
+    summary.currentRound.itinerary = { ...result, selectorVisible: ui.visible, optionCount: ui.optionCount,
+      requiredChoice: ui.visible && ui.optionCount > 1 && ui.continueDisabled };
+  } else {
+    const presetReady = result.boardingPassDetected && result.segmentCount === 1;
+    summary.currentRound.boardingPass = { ...result, presetExpected: presetReady };
+  }
+}
+
+async function runCurrentRound(port, pages) {
+  await testInitialBrowserLocale(port, pages);
+  await testCurrentRoundLiveUi(port, pages);
+  await testCurrentRoundDocument(port, pages, 'e-ticket-itinerary.pdf', 'itinerary');
+  await testCurrentRoundDocument(port, pages, 'boarding-pass.pdf', 'boarding-pass');
+  const current = summary.currentRound;
+  summary.passed = Object.values(current.initialLocale).every(Boolean)
+    && current.liveLookup.reachedConfirmation && current.confirmationTimes
+    && Object.values(current.checkInFlow).every(Boolean)
+    && current.mobileHierarchy && current.completeDestination.passed && current.speech.passed
+    && current.staffCard && current.roundedCorners && current.singleBackArrow && current.footer
+    && current.sharingOrigin && current.desktopNoOverflow
+    && current.itinerary && current.itinerary.success && current.itinerary.requiredChoice
+    && current.boardingPass && current.boardingPass.success
+    && summary.locales.englishHasNoDuplicateDestination
+    && summary.console.errors === 0 && summary.console.javascriptExceptions === 0;
+}
+
 function safeRemoveTemp(directory, prefix) {
   const resolved = path.resolve(directory);
   const tempRoot = path.resolve(os.tmpdir());
@@ -489,12 +779,16 @@ async function main() {
     browser = await new CdpSession(version.webSocketDebuggerUrl, 'browser').connect();
     await browser.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: downloadDir, eventsEnabled: true }).catch(() => {});
 
-    const basePage = await createPage(port, `${BASE_URL}/`, 'base');
-    pages.push(basePage);
-    await runStage('locales', () => testLocalesAndResponsive(basePage));
-    await runStage('realFlight', () => testRealFlight(basePage));
-    await runStage('qaJourney', () => testSharingAndQa(port, browser, downloadDir, pages));
-    if (!SKIP_DOCUMENTS) await runStage('documents', () => testFixtures(port, pages));
+    if (CURRENT_ROUND) {
+      await runCurrentRound(port, pages);
+    } else {
+      const basePage = await createPage(port, `${BASE_URL}/`, 'base');
+      pages.push(basePage);
+      await runStage('locales', () => testLocalesAndResponsive(basePage));
+      await runStage('realFlight', () => testRealFlight(basePage));
+      await runStage('qaJourney', () => testSharingAndQa(port, browser, downloadDir, pages));
+      if (!SKIP_DOCUMENTS) await runStage('documents', () => testFixtures(port, pages));
+    }
   } finally {
     pages.forEach((page) => page.close());
     if (browser) browser.close();
@@ -504,15 +798,17 @@ async function main() {
     safeRemoveTemp(downloadDir, 'onestep-cdp-download-');
   }
 
-  summary.passed = Object.values(summary.locales).every(Boolean)
-    && Object.values(summary.responsive).every(Boolean)
-    && summary.realFlight.confirmationReached && summary.realFlight.demo === false
-    && summary.qaJourney.passed
-    && summary.sharing.created && summary.sharing.familyPageLoaded
-    && summary.sharing.synchronizedWithin15Seconds && summary.sharing.stopped
-    && summary.png.downloaded
-    && (SKIP_DOCUMENTS || summary.documents.length === FIXTURES.length && summary.documents.every((item) => item.success))
-    && summary.console.errors === 0 && summary.console.javascriptExceptions === 0;
+  if (!CURRENT_ROUND) {
+    summary.passed = Object.values(summary.locales).every(Boolean)
+      && Object.values(summary.responsive).every(Boolean)
+      && summary.realFlight.confirmationReached && summary.realFlight.demo === false
+      && summary.qaJourney.passed
+      && summary.sharing.created && summary.sharing.familyPageLoaded
+      && summary.sharing.synchronizedWithin15Seconds && summary.sharing.stopped
+      && summary.png.downloaded
+      && (SKIP_DOCUMENTS || summary.documents.length === FIXTURES.length && summary.documents.every((item) => item.success))
+      && summary.console.errors === 0 && summary.console.javascriptExceptions === 0;
+  }
   console.log(JSON.stringify(summary, null, 2));
   if (!summary.passed) process.exitCode = 1;
 }

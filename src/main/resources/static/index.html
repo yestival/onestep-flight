@@ -34,7 +34,7 @@
           </div>
           <div class="welcome-actions">
             <button class="button button-primary button-large" type="button" data-action="upload">
-              <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 14v5h14v-5"/></svg><span data-i18n="upload">上传预订确认、电子客票或登机牌</span>
+              <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 14v5h14v-5"/></svg><span data-i18n="upload">上传出行行程单或登机牌</span>
             </button>
             <button class="button button-secondary button-large" type="button" data-action="manual">
               <svg class="button-icon outline" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span data-i18n="manual">手动输入航班号</span>
@@ -42,7 +42,7 @@
             <button class="text-button" type="button" data-action="family" data-i18n="family">分享行程给家属</button>
             <label class="visually-hidden" for="ticket-file" data-i18n="fileLabel">选择预订确认、电子客票或登机牌文件</label>
             <input id="ticket-file" type="file" accept="application/pdf,image/jpeg,image/png,.jpg,.jpeg,.png" hidden>
-            <p class="upload-hint" data-i18n="uploadHint">支持 PDF、JPG、JPEG、PNG，也可以上传航空公司预订确认页截图、电子客票行程单或登机牌。</p>
+            <p class="upload-hint" data-i18n="uploadHint">支持航空公司行程单、电子客票、预订确认或登机牌 PDF，也支持这些文件的截图（JPG、JPEG、PNG）。</p>
           </div>
           <aside class="scenario-panel" data-scenario-panel hidden aria-labelledby="scenario-title">
             <strong id="scenario-title" data-i18n="scenarioTitle">模拟场景（不是真实航班）</strong>
@@ -69,6 +69,12 @@
         </div>
       </section>
 
+      <section class="screen screen-upload" data-screen="upload" aria-labelledby="upload-title" hidden>
+        <button class="home-back-button" type="button" data-action="home"><span aria-hidden="true">←</span> <span data-i18n="backHome">返回首页</span></button>
+        <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="uploadContext">选择旅行文件</span></p><h1 id="upload-title" data-i18n="uploadTitle">选择或上传文件</h1><p class="lead" data-i18n="uploadHint">支持航空公司行程单、电子客票、预订确认或登机牌 PDF，也支持这些文件的截图（JPG、JPEG、PNG）。</p></div>
+        <button class="button button-primary button-large" type="button" data-action="choose-file" data-i18n="chooseFile">选择文件</button>
+      </section>
+
       <section class="screen screen-loading" data-screen="loading" aria-labelledby="loading-title" hidden>
         <div class="loading-scene">
           <div class="flight-path" aria-hidden="true"></div>
@@ -87,20 +93,37 @@
       </section>
 
       <section class="screen screen-confirm" data-screen="confirm" aria-labelledby="confirm-title" hidden>
+        <button class="home-back-button" type="button" data-action="home"><span aria-hidden="true">←</span> <span data-i18n="backHome">返回首页</span></button>
         <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="checkDetails">请确认</span></p><h1 id="confirm-title" data-i18n="confirmTitle">这是你的航班吗？</h1></div>
+        <section class="departure-passed-confirmation" data-departure-passed-confirmation hidden aria-labelledby="departure-passed-title">
+          <button class="home-back-button" type="button" data-action="home"><span aria-hidden="true">←</span> <span data-i18n="backHome">返回首页</span></button>
+          <p class="eyebrow"><span class="eyebrow-line"></span><span>ONESTEP FLIGHT</span></p>
+          <h1 id="departure-passed-title" data-i18n="departurePassedTitle">这趟航班已经离港</h1>
+          <p class="lead" data-i18n="departurePassedLead">点击下方“请工作人员帮忙”，并前往航空公司服务柜台出示给工作人员。</p>
+          <dl class="departure-passed-flight">
+            <div><dt data-i18n="flightLabel">航班号</dt><dd data-departure-passed-flight>—</dd></div>
+            <div><dt data-i18n="dateLabel">出发日期</dt><dd data-departure-passed-date>—</dd></div>
+            <div><dt data-i18n="status">状态</dt><dd data-departure-passed-status>已离港</dd></div>
+          </dl>
+          <p class="departure-passed-reference" data-departure-passed-reference hidden></p>
+          <div class="choice-actions departure-passed-actions">
+            <button class="button button-primary button-large" type="button" data-action="staff" data-i18n="askForHelp">请工作人员帮忙</button>
+            <button class="button button-secondary button-large" type="button" data-action="new-flight-info" data-i18n="enterNewFlight">输入新的航班信息</button>
+            <button class="button button-secondary button-large" type="button" data-action="end-journey" data-i18n="endJourney">结束本次指引</button>
+          </div>
+        </section>
+        <section class="segment-selector" data-segment-selector hidden aria-labelledby="segment-selector-title">
+          <p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="multipleSegments">多个航段</span></p>
+          <h2 id="segment-selector-title" data-i18n="chooseSegment">请选择你现在要乘坐的航班</h2>
+          <p data-i18n="chooseSegmentLead">选择后才会查询这一个航段的实时信息。</p>
+          <div class="segment-options" data-segment-options></div>
+        </section>
         <article class="flight-card" aria-label="航班信息">
-          <div class="flight-card-top"><span class="demo-tag" data-flight-source>演示数据</span><span class="flight-number" data-flight-number>—</span></div>
-          <div class="route-summary"><div><span class="airport-city" data-departure-name>—</span><strong class="airport-code" data-departure-airport>—</strong></div><svg class="route-arrow" viewBox="0 0 32 20" aria-hidden="true" focusable="false"><path d="M2 10h26m-7-7 7 7-7 7"/></svg><div class="align-right"><span class="airport-city" data-arrival-name>—</span><strong class="airport-code" data-arrival-airport>—</strong></div></div>
-          <div class="flight-details"><div><span data-i18n="dateLabel">出发日期</span><strong data-departure-date>—</strong></div><div><span data-i18n="departure">计划起飞</span><strong data-scheduled-departure>—</strong></div><div><span data-i18n="estimatedDeparture">预计起飞</span><strong data-estimated-departure>—</strong></div><div><span data-i18n="boardingTime">登机时间</span><strong data-boarding-time>—</strong></div><div><span data-i18n="terminal">航站楼</span><strong data-terminal>—</strong></div><div><span data-i18n="gate">登机口</span><strong data-gate>—</strong></div><div><span data-i18n="checkInArea">值机 / 托运区域</span><strong data-check-in-area>—</strong></div><div><span data-i18n="seat">座位</span><strong data-seat>—</strong></div><div><span data-i18n="status">状态</span><strong data-flight-status>—</strong></div></div>
+          <div class="flight-card-top confirm-flight-number-row"><span class="flight-number" data-flight-number>—</span></div>
+          <div class="route-summary"><div><span class="airport-city" data-departure-name>—</span><strong class="airport-code" data-departure-airport>—</strong><span class="airport-time-label" data-route-departure-label>计划起飞 · 当地时间</span><time class="airport-local-time" data-route-departure-time>—</time></div><svg class="route-arrow" viewBox="0 0 32 20" aria-hidden="true" focusable="false"><path d="M2 10h26m-7-7 7 7-7 7"/></svg><div class="align-right"><span class="airport-city" data-arrival-name>—</span><strong class="airport-code" data-arrival-airport>—</strong><span class="airport-time-label" data-route-arrival-label>计划到达 · 当地时间</span><time class="airport-local-time" data-route-arrival-time>—</time></div></div>
+          <div class="flight-details flight-details-core"><div><span data-i18n="terminal">航站楼</span><strong data-terminal>—</strong></div><div><span data-i18n="gate">登机口</span><strong data-gate>—</strong></div><div><span data-i18n="boardingTime">登机时间</span><strong data-boarding-time>—</strong></div><div><span data-i18n="checkInArea">值机 / 托运区域</span><strong data-check-in-area>—</strong></div></div>
         </article>
-        <div class="time-status" data-time-status hidden>
-          <div><span data-i18n="airportLocalTime">机场当地时间</span><strong data-airport-local-time>—</strong></div>
-          <div><span data-i18n="timeUntilDeparture">距离预计起飞</span><strong data-departure-countdown>—</strong></div>
-          <p data-data-freshness>—</p>
-        </div>
         <div class="flight-change-alert" data-flight-change-alert role="alert" hidden></div>
-        <p class="demo-disclaimer" data-demo-disclaimer data-i18n="demoDisclaimer">演示数据：尚未连接真实航班服务</p>
-        <p class="extraction-note" data-extraction-note hidden></p>
         <div class="field-review" data-field-review role="group" aria-labelledby="review-title" hidden>
           <p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="reviewNeeded">需要你确认</span></p>
           <h2 id="review-title" data-review-question>请核对这项信息</h2>
@@ -118,6 +141,18 @@
           <button class="button button-primary button-large icon-button" type="button" data-action="continue"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.6 2.7L16.5 9"/></svg><span data-button-label data-i18n="yesContinue">是，继续</span></button>
           <button class="button button-secondary button-large icon-button" type="button" data-action="manual"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/></svg><span data-button-label data-i18n="editFlight">不是，我要修改</span></button>
         </div>
+        <details class="confirm-flight-details">
+          <summary data-i18n="allFlightInfo">查看全部航班信息</summary>
+          <div class="flight-details flight-details-expanded"><div><span data-i18n="dateLabel">出发日期</span><strong data-departure-date>—</strong></div><div><span data-i18n="departure">计划起飞</span><strong data-scheduled-departure>—</strong></div><div><span data-i18n="estimatedDeparture">预计起飞</span><strong data-estimated-departure>—</strong></div><div><span data-i18n="seat">座位</span><strong data-seat>—</strong></div><div><span data-i18n="status">状态</span><strong data-flight-status>—</strong></div></div>
+        </details>
+        <div class="confirm-source-row"><span data-i18n="flightSourceLabel">航班信息来源</span><strong data-flight-source>演示数据</strong></div>
+        <div class="time-status confirm-time-status" data-time-status hidden>
+          <div><span data-i18n="airportLocalTime">机场当地时间</span><strong data-airport-local-time>—</strong></div>
+          <div><span data-i18n="timeUntilDeparture">距离预计起飞</span><strong data-departure-countdown>—</strong></div>
+          <p data-data-freshness>—</p>
+        </div>
+        <p class="demo-disclaimer" data-demo-disclaimer data-i18n="demoDisclaimer">演示数据：尚未连接真实航班服务</p>
+        <p class="extraction-note" data-extraction-note hidden></p>
         <button class="button button-secondary button-large refresh-flight-button" type="button" data-action="refresh-flight" data-i18n="refreshLive" hidden>刷新实时信息</button>
         <p class="refresh-status" data-refresh-status aria-live="polite"></p>
         <details class="evidence-panel confirm-data-sources" data-evidence-panel hidden>
@@ -131,6 +166,7 @@
       </section>
 
       <section class="screen screen-manual" data-screen="manual" aria-labelledby="manual-title" hidden>
+        <button class="home-back-button" type="button" data-action="home"><span aria-hidden="true">←</span> <span data-i18n="backHome">返回首页</span></button>
         <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="manualContext">填写航班信息</span></p><h1 id="manual-title" data-i18n="manualTitle">输入你的航班信息</h1><p class="lead" data-i18n="manualLead">请输入航班号和出发日期。</p></div>
         <form class="manual-form" data-action="manual-submit">
           <div class="manual-fields"><div><label for="flight-input" data-i18n="flightLabel">航班号</label><input id="flight-input" name="flight" type="text" data-placeholder="flightPlaceholder" placeholder="例如 BA 117" autocomplete="off" spellcheck="false" required></div><div><label for="date-input" data-i18n="dateLabel">出发日期</label><input id="date-input" name="departureDate" type="date" value="2026-09-03" required></div></div>
@@ -147,12 +183,16 @@
 
       <section class="screen screen-step" data-screen="step" aria-labelledby="step-title" hidden>
         <div class="step-progress"><span data-step-label>当前步骤</span><span data-step-count>已完成 0 个阶段</span></div>
-        <div class="time-status" data-time-status hidden>
-          <div><span data-i18n="airportLocalTime">机场当地时间</span><strong data-airport-local-time>—</strong></div>
-          <div><span data-i18n="timeUntilDeparture">距离预计起飞</span><strong data-departure-countdown>—</strong></div>
-          <p data-data-freshness>—</p>
-        </div>
         <div class="flight-change-alert" data-flight-change-alert role="alert" hidden></div>
+        <div data-checkin-question hidden>
+          <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="checkInContext">确认值机状态</span></p><h1 id="checkin-title" data-i18n="checkInQuestion">你已经完成值机，或已经拿到登机牌了吗？</h1><p class="lead" data-i18n="checkInQuestionLead">如果你已经取得登机牌，通常表示已经值机。</p></div>
+          <div class="checkin-preset" data-checkin-preset hidden>
+            <strong data-i18n="boardingPassCheckIn">已从登机牌判断：你已经值机</strong>
+            <p data-i18n="boardingPassCheckInLead">请确认后继续；如果实际情况不同，可以更改。</p>
+            <div class="step-actions"><button class="button button-primary button-large" type="button" data-action="checkin-status" data-answer="yes" data-i18n="checkInPresetContinue">是，继续</button><button class="button button-secondary button-large" type="button" data-action="checkin-preset-wrong" data-i18n="thisIsWrong">这不对</button></div>
+          </div>
+          <div class="step-actions" data-checkin-choices><button class="button button-primary button-large" type="button" data-action="checkin-status" data-answer="yes" data-i18n="checkInYes">✓ 是，我已经完成值机</button><button class="button button-secondary button-large" type="button" data-action="checkin-status" data-answer="no" data-i18n="checkInNo">还没有</button><button class="button button-secondary button-large" type="button" data-action="checkin-status" data-answer="unsure" data-i18n="checkInUnsure">我不确定</button></div>
+        </div>
         <div data-step-question>
           <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="baggageContext">确认行李情况</span></p><h1 id="step-title" data-question-title>你有需要托运的行李吗？</h1><p class="lead" data-question-description>如果你的行李需要交给航空公司，请选择“有”。随身携带的小包不算托运行李。</p></div>
           <div class="step-actions"><button class="button button-primary button-large" type="button" data-action="baggage" data-answer="yes" data-i18n="baggageYes">有，需要托运</button><button class="button button-secondary button-large" type="button" data-action="baggage" data-answer="no" data-i18n="baggageNo">没有</button><button class="button button-secondary button-large" type="button" data-action="baggage" data-answer="unsure" data-i18n="baggageUnsure">我不确定</button></div>
@@ -161,10 +201,9 @@
           <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="nextAction">现在要做的事</span></p><h1 id="action-title" data-action-title>—</h1><p class="lead" data-action-description>—</p></div>
           <div class="action-summary">
             <div class="action-destination" data-action-destination>
-              <span class="destination-label" data-i18n="destination">现在前往</span>
-              <strong class="destination-primary" data-destination-primary>—</strong>
+              <strong class="destination-primary" lang="zh-CN" data-destination-primary>—</strong>
               <strong class="destination-primary destination-primary-en" lang="en" data-destination-primary-en hidden>—</strong>
-              <span class="destination-secondary" data-destination-context>—</span>
+              <span class="destination-secondary" lang="zh-CN" data-destination-context>—</span>
               <span class="destination-secondary destination-en" lang="en" data-destination-context-en hidden>—</span>
             </div>
             <div class="action-time" data-action-time>
@@ -182,15 +221,26 @@
         <div class="journey-primary-action">
           <button class="button button-primary button-large journey-primary icon-button" type="button" data-action="complete-action" data-complete-action hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.6 2.7L16.5 9"/></svg><span data-complete-action-label>我已完成</span></button>
         </div>
+        <div class="departure-exception-actions" data-departure-exception-actions hidden>
+          <button class="button button-primary button-large" type="button" data-action="staff" data-i18n="askForHelp">请工作人员帮忙</button>
+          <button class="button button-secondary button-large" type="button" data-action="new-flight-info" data-i18n="enterNewFlight">输入新的航班信息</button>
+        </div>
         <div class="step-assistance-actions">
-          <button class="support-button assistance-button" type="button" data-action="speak" aria-label="朗读当前步骤"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 10v4h4l5 4V6l-5 4H4zm12 0a4 4 0 010 4m2-7a8 8 0 010 10"/></svg><span data-i18n="speak">朗读当前步骤</span></button>
+          <button class="support-button assistance-button" type="button" data-action="speak" aria-label="朗读这一步"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 10v4h4l5 4V6l-5 4H4zm12 0a4 4 0 010 4m2-7a8 8 0 010 10"/></svg><span data-i18n="speak">朗读这一步</span></button>
           <button class="support-button assistance-button staff-help-button" type="button" data-action="staff"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a4 4 0 110 8 4 4 0 010-8zM5 21a7 7 0 0114 0M19 8v6m-3-3h6"/></svg><span data-i18n="askForHelp">请工作人员帮忙</span></button>
           <button class="support-button assistance-button family-help-button" type="button" data-action="family"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.3 4.5 9.7 8 8 9.7a15 15 0 006.3 6.3l1.7-1.7 3.5 2.4v2.1a2 2 0 01-2 2C9.6 20.8 3.2 14.4 3.2 6.5a2 2 0 012-2h2.1z"/><path d="M15 4a3 3 0 110 6m-2.5 2.2a5.5 5.5 0 016.5.8"/></svg><span data-i18n="contactFamily">分享行程给家属</span></button>
         </div>
         <div class="journey-secondary-actions journey-secondary-actions-single">
           <button class="button button-secondary journey-back icon-button" type="button" data-action="journey-back" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7M8 12h11"/></svg><span data-i18n="backStep">返回上一步</span></button>
         </div>
-        <div class="journey-end-action"><button class="text-button end-journey-link icon-button" type="button" data-action="end-journey"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/></svg><span data-i18n="endJourney">结束本次指引</span></button></div>
+        <div class="journey-end-time-stack">
+          <div class="journey-end-action"><button class="end-journey-link icon-button" type="button" data-action="end-journey"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/></svg><span data-i18n="endJourney">结束本次指引</span></button></div>
+          <div class="time-status step-time-status" data-time-status hidden>
+            <div><span data-i18n="airportLocalTime">机场当地时间</span><strong data-airport-local-time>—</strong></div>
+            <div><span data-i18n="timeUntilDeparture">距离预计起飞</span><strong data-departure-countdown>—</strong></div>
+            <p data-data-freshness>—</p>
+          </div>
+        </div>
         <p class="offline-status" data-offline-status role="status" aria-live="polite" hidden></p>
         <button class="button button-secondary arrival-refresh-button" type="button" data-action="refresh-arrival" hidden><span data-i18n="refreshArrival">刷新到达信息</span></button>
         <p class="refresh-status" data-refresh-status aria-live="polite"></p>
@@ -205,7 +255,40 @@
       </section>
     </main>
 
-    <div class="staff-overlay" data-staff-overlay hidden role="dialog" aria-modal="true" aria-labelledby="staff-title"><div class="staff-card"><button class="card-close" type="button" data-action="close-staff" data-i18n="close">关闭</button><div class="staff-completed" data-staff-completed><p data-staff-completed-primary>我已完成：尚未开始</p><p lang="en" data-staff-completed-en>Completed: not started</p></div><div class="staff-flight-strip" data-staff-flight-strip hidden><strong data-staff-flight>—</strong><time data-staff-date-primary>—</time><time lang="en" data-staff-date-en>—</time></div><h1 id="staff-title" data-staff-title><span data-staff-title-primary>请帮助我</span><span lang="en" data-staff-title-en>Please help me</span></h1><div class="staff-explanation"><p data-staff-primary>您好，我需要乘机帮助。可以请您帮我吗？</p><p lang="en" data-staff-en>Hello. I need help with my flight. Could you please help me?</p></div><dl class="assistance-facts" data-staff-facts></dl><button class="button button-primary button-large" type="button" data-action="copy-staff" data-i18n="copyCard">复制大字卡内容</button></div></div>
+    <footer class="site-footer"><span data-i18n="globalFooter">© 2026 OneStep Flight · 无障碍乘机指引</span></footer>
+
+    <div class="staff-overlay" data-staff-overlay hidden role="dialog" aria-modal="true" aria-labelledby="staff-title">
+      <div class="staff-card">
+        <div class="staff-card-header">
+          <div class="staff-card-instruction">
+            <p lang="zh-CN" data-staff-instruction-primary>请把这个页面拿给机场工作人员看。</p>
+            <p lang="en" data-staff-instruction-en>Please show this screen to an airport staff member.</p>
+          </div>
+          <button class="card-close" type="button" data-action="close-staff" data-i18n="close" aria-label="关闭">关闭</button>
+        </div>
+        <div class="staff-completed" data-staff-completed>
+          <p lang="zh-CN" data-staff-completed-primary>我已完成：尚未开始</p>
+          <p lang="en" data-staff-completed-en>Completed: not started</p>
+        </div>
+        <div class="staff-flight-strip" data-staff-flight-strip hidden>
+          <strong data-staff-flight>—</strong>
+          <span class="staff-flight-dates">
+            <time lang="zh-CN" data-staff-date-primary>—</time>
+            <time lang="en" data-staff-date-en>—</time>
+          </span>
+        </div>
+        <h1 id="staff-title" data-staff-title>
+          <span lang="zh-CN" data-staff-title-primary>请帮助我</span>
+          <span lang="en" data-staff-title-en>Please help me</span>
+        </h1>
+        <div class="staff-explanation">
+          <p lang="zh-CN" data-staff-primary>您好，我需要乘机帮助。可以请您帮我吗？</p>
+          <p lang="en" data-staff-en>Hello. I need help with my flight. Could you please help me?</p>
+        </div>
+        <dl class="assistance-facts" data-staff-facts></dl>
+        <button class="button button-primary button-large" type="button" data-action="copy-staff" data-i18n="copyCard">复制大字卡内容</button>
+      </div>
+    </div>
     <div class="confirm-overlay" data-family-overlay hidden role="dialog" aria-modal="true" aria-labelledby="family-title"><div class="confirm-card family-card"><button class="card-close" type="button" data-action="close-family" data-i18n="close">关闭</button><h1 id="family-title" data-i18n="familyTitle">分享行程给家属</h1><p data-i18n="familyLead">创建一个 48 小时有效的只读链接。链接只包含必要的航班与当前步骤信息。</p><p class="share-local-warning" data-share-local-warning hidden data-i18n="localhostWarning">当前是 localhost：其他设备无法打开这个地址。请部署到可访问的网址后再分享。</p><p class="share-status" data-share-status role="status" aria-live="polite"></p><div class="share-link-box" data-share-link-box hidden><label for="family-share-url" data-i18n="shareLinkLabel">家属查看链接</label><input id="family-share-url" type="url" readonly data-family-share-url><p data-share-expiry></p></div><div class="family-actions"><button class="button button-primary" type="button" data-action="create-family-share" data-i18n="createShare">创建实时共享链接</button><button class="button button-secondary" type="button" data-action="preview-family-share" data-i18n="previewShare" hidden>预览家属页面</button><button class="button button-secondary" type="button" data-action="share-family" data-i18n="shareLink" hidden>分享实时链接</button><button class="button button-secondary" type="button" data-action="share-family-card" data-i18n="sharePng">分享或保存 PNG 卡片</button><button class="button button-secondary" type="button" data-action="copy-family" data-i18n="copyCurrent">复制当前步骤</button><button class="text-button stop-share-button" type="button" data-action="stop-family-share" data-i18n="stopShare" hidden>停止共享</button></div></div></div>
     <div class="confirm-overlay" data-end-overlay hidden role="dialog" aria-modal="true" aria-labelledby="end-title"><div class="confirm-card"><h1 id="end-title" data-i18n="endConfirmTitle">确定要结束本次指引吗？</h1><p data-i18n="endConfirmLead">结束后，当前步骤记录会从这台设备清除。</p><div class="choice-actions"><button class="button button-primary button-large" type="button" data-action="cancel-end" data-i18n="continueJourney">继续指引</button><button class="button button-secondary button-large" type="button" data-action="confirm-end" data-i18n="confirmEnd">结束并返回首页</button></div></div></div>
     <div class="confirm-overlay" data-board-overlay hidden role="dialog" aria-modal="true" aria-labelledby="board-confirm-title"><div class="confirm-card"><h1 id="board-confirm-title" data-i18n="boardConfirmTitle">确认你已经登机吗？</h1><p data-i18n="boardConfirmLead">确认后将进入机上模式，到达后继续提供下机指引。</p><div class="choice-actions"><button class="button button-primary button-large" type="button" data-action="confirm-board" data-i18n="confirmBoard">是，我已经登机</button><button class="button button-secondary button-large" type="button" data-action="cancel-board" data-i18n="cancelBoard">返回，再检查一下</button></div></div></div>

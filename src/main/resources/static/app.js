@@ -10,7 +10,7 @@
   var currentScreen = 'welcome';
   var navigationHistory = [];
   var journeyHistory = [];
-  var currentLocale = normalizeLocale(localStorage.getItem(LOCALE_KEY));
+  var currentLocale = detectInitialLocale();
   var loadingTimer;
   var loadingTimeout;
   var requestSequence = 0;
@@ -33,6 +33,14 @@
   var shareSession = readStoredJson(SHARE_SESSION_KEY);
   var shareSyncTimer = null;
   var arrivalRefreshFlightKey = null;
+  var documentSegments = [];
+  var selectedDocumentSegmentIndex = null;
+  var documentRootFields = {};
+  var documentRootReviewFields = [];
+  var flightRequestController = null;
+  var lookupInFlight = false;
+  var speakingActive = false;
+  var checkInStatusAnswer = null;
   var qaJourneyEnabled = new URLSearchParams(window.location.search).get('qaJourney') === 'true';
   var activeDialog = null;
   var REFRESH_COOLDOWN_MS = 60000;
@@ -43,13 +51,13 @@
     zh: {
       eyebrow: '你的乘机助手', welcomeTitle: '现在，只做下一步', welcomeLead: '上传旅行文件或输入航班信息，我们每次只告诉你现在应该做什么。',
       upload: '上传预订确认、电子客票或登机牌', uploadHint: '支持 PDF、JPG、JPEG、PNG，也可以上传航空公司预订确认页截图、电子客票行程单或登机牌。', manual: '手动输入航班号', family: '分享行程给家属', privacy: '旅行文件只用于生成乘机指引',
-      languageLabel: '选择语言', back: '返回', backStep: '← 返回上一步', fileLabel: '选择预订确认、电子客票或登机牌文件', loadingTitle: '正在准备你的乘机步骤', checkDetails: '请确认', confirmTitle: '这是你的航班吗？', departure: '计划起飞', terminal: '航站楼', gate: '登机口', status: '状态', notPublished: '尚未公布', demoDisclaimer: '演示数据', yesContinue: '是，继续', editFlight: '不是，我要修改', manualContext: '填写航班信息', baggageContext: '确认行李情况', manualTitle: '输入你的航班信息', manualLead: '请输入航班号和出发日期。', flightLabel: '航班号', dateLabel: '出发日期', flightPlaceholder: '例如 BA 117', searchLiveFlight: '查询真实航班', useDemoFlight: '使用 BA 117 演示航班', demoHint: '演示数据', nextAction: '现在要做的事', baggageYes: '有，需要托运', baggageNo: '没有', baggageUnsure: '我不确定', speak: '朗读当前步骤', staff: '请工作人员帮忙', contactFamily: '分享行程给家属', endJourney: '结束本次指引', askForHelp: '请工作人员帮忙', destination: '现在前往', couldNotLoad: '暂时无法读取', errorTitle: '暂时无法继续', errorLead: '请检查输入或网络连接，然后重试。你也可以手动输入，或向工作人员求助。', retry: '重试', enterManually: '手动输入航班', askStaff: '请工作人员帮忙', technicalDetails: '查看技术详情', returnHome: '返回首页', endConfirmTitle: '确定要结束本次指引吗？', endConfirmLead: '结束后，当前步骤记录会从这台设备清除。', continueJourney: '继续指引', confirmEnd: '结束并返回首页', refreshLive: '刷新实时信息', refreshArrival: '重新查询行李转盘', reviewNeeded: '需要你确认', reviewCorrect: '这项信息正确', reviewEdit: '信息不对，手动修改', reviewOnSite: '这项未读取到，稍后现场确认', reviewWrongOnSite: '这项不对，标记为现场确认', currentStep: '当前步骤', boardConfirmTitle: '确认你已经登机吗？', boardConfirmLead: '确认后将进入机上模式，抵达后仍会继续指引。', confirmBoard: '是，我已经登机', cancelBoard: '返回，再检查一下', landedConfirmTitle: '确认你已经下飞机吗？', landedConfirmLead: '确认后，我们会继续指引你领取行李或前往出口。', confirmLanded: '是，我已经下飞机', cancelLanded: '返回，再检查一下', flightDuration: '预计飞行时间', estimatedArrival: '预计到达', timeUntilArrival: '距离预计到达', destinationLocalTime: '目的地当地时间', estimatedDeparture: '预计起飞', boardingTime: '登机时间', seat: '座位', airportLocalTime: '机场当地时间', timeUntilDeparture: '距离预计起飞', whyThisStep: '为什么是这一步？', journeyTimeline: '查看本次行程记录', scenarioTitle: '模拟场景', scenarioLead: '仅供本地流程演示。', conflictTitle: '信息有关键冲突，请先停下来', conflictLead: '请向机场工作人员核对文件和实时屏幕后，再继续。', confirmConflicts: '我已向工作人员核对，继续', checkInArea: '值机 / 托运区域', close: '关闭', copyCard: '复制大字卡内容', familyTitle: '分享行程给家属', familyLead: '创建一个 48 小时有效的只读链接。链接只包含必要的航班与当前步骤信息。', localhostWarning: '当前是 localhost：其他设备无法打开这个地址。请部署到可访问的网址后再分享。', shareLinkLabel: '家属查看链接', createShare: '创建实时共享链接', previewShare: '预览家属页面', shareLink: '分享实时链接', sharePng: '分享或保存 PNG 卡片', copyCurrent: '复制当前步骤', stopShare: '停止共享'
+      languageLabel: '选择语言', back: '返回', backStep: '返回上一步', fileLabel: '选择预订确认、电子客票或登机牌文件', loadingTitle: '正在准备你的乘机步骤', checkDetails: '请确认', confirmTitle: '这是你的航班吗？', departure: '计划起飞', terminal: '航站楼', gate: '登机口', status: '状态', notPublished: '尚未公布', demoDisclaimer: '演示数据', yesContinue: '是，继续', editFlight: '不是，我要修改', manualContext: '填写航班信息', baggageContext: '确认行李情况', manualTitle: '输入你的航班信息', manualLead: '请输入航班号和出发日期。', flightLabel: '航班号', dateLabel: '出发日期', flightPlaceholder: '例如 BA 117', searchLiveFlight: '查询真实航班', useDemoFlight: '使用 BA 117 演示航班', demoHint: '演示数据', nextAction: '现在要做的事', baggageYes: '有，需要托运', baggageNo: '没有', baggageUnsure: '我不确定', speak: '朗读当前步骤', staff: '请工作人员帮忙', contactFamily: '分享行程给家属', endJourney: '结束本次指引', askForHelp: '请工作人员帮忙', destination: '现在前往', couldNotLoad: '暂时无法读取', errorTitle: '暂时无法继续', errorLead: '请检查输入或网络连接，然后重试。你也可以手动输入，或向工作人员求助。', retry: '重试', enterManually: '手动输入航班', askStaff: '请工作人员帮忙', technicalDetails: '查看技术详情', returnHome: '返回首页', endConfirmTitle: '确定要结束本次指引吗？', endConfirmLead: '结束后，当前步骤记录会从这台设备清除。', continueJourney: '继续指引', confirmEnd: '结束并返回首页', refreshLive: '刷新实时信息', refreshArrival: '重新查询行李转盘', reviewNeeded: '需要你确认', reviewCorrect: '这项信息正确', reviewEdit: '信息不对，手动修改', reviewOnSite: '这项未读取到，稍后现场确认', reviewWrongOnSite: '这项不对，标记为现场确认', currentStep: '当前步骤', boardConfirmTitle: '确认你已经登机吗？', boardConfirmLead: '确认后将进入机上模式，抵达后仍会继续指引。', confirmBoard: '是，我已经登机', cancelBoard: '返回，再检查一下', landedConfirmTitle: '确认你已经下飞机吗？', landedConfirmLead: '确认后，我们会继续指引你领取行李或前往出口。', confirmLanded: '是，我已经下飞机', cancelLanded: '返回，再检查一下', flightDuration: '预计飞行时间', estimatedArrival: '预计到达', timeUntilArrival: '距离预计到达', destinationLocalTime: '目的地当地时间', estimatedDeparture: '预计起飞', boardingTime: '登机时间', seat: '座位', airportLocalTime: '机场当地时间', timeUntilDeparture: '距离预计起飞', whyThisStep: '为什么是这一步？', journeyTimeline: '查看本次行程记录', scenarioTitle: '模拟场景', scenarioLead: '仅供本地流程演示。', conflictTitle: '信息有关键冲突，请先停下来', conflictLead: '请向机场工作人员核对文件和实时屏幕后，再继续。', confirmConflicts: '我已向工作人员核对，继续', checkInArea: '值机 / 托运区域', close: '关闭', copyCard: '复制大字卡内容', familyTitle: '分享行程给家属', familyLead: '创建一个 48 小时有效的只读链接。链接只包含必要的航班与当前步骤信息。', localhostWarning: '当前是 localhost：其他设备无法打开这个地址。请部署到可访问的网址后再分享。', shareLinkLabel: '家属查看链接', createShare: '创建实时共享链接', previewShare: '预览家属页面', shareLink: '分享实时链接', sharePng: '分享或保存 PNG 卡片', copyCurrent: '复制当前步骤', stopShare: '停止共享'
     },
     en: {
-      eyebrow: 'Your flight companion', welcomeTitle: 'Now, take the next step', welcomeLead: 'Upload a travel document or enter flight details. We show one action at a time.', upload: 'Upload booking confirmation, e-ticket, or boarding pass', uploadHint: 'PDF, JPG, JPEG, and PNG are supported, including booking screenshots, e-ticket itineraries, and boarding passes.', manual: 'Enter flight number manually', family: 'Share journey with family', privacy: 'Your travel document is only used to create flight guidance', languageLabel: 'Choose language', back: 'Back', backStep: '← Go back', fileLabel: 'Choose a booking confirmation, e-ticket, or boarding pass', loadingTitle: 'Preparing your next step', checkDetails: 'Please confirm', confirmTitle: 'Is this your flight?', departure: 'Scheduled departure', terminal: 'Terminal', gate: 'Gate', status: 'Status', notPublished: 'Not published', demoDisclaimer: 'Demo data', yesContinue: 'Yes, continue', editFlight: 'No, edit it', manualContext: 'Enter flight details', baggageContext: 'Confirm your baggage', manualTitle: 'Enter your flight details', manualLead: 'Enter the flight number and departure date.', flightLabel: 'Flight number', dateLabel: 'Departure date', flightPlaceholder: 'For example BA 117', searchLiveFlight: 'Search live flight', useDemoFlight: 'Use BA 117 demo flight', demoHint: 'Demo data', nextAction: 'Your next action', baggageYes: 'Yes, I have bags to check', baggageNo: 'No', baggageUnsure: 'I am not sure', speak: 'Read this step aloud', staff: 'Ask a member of staff', contactFamily: 'Share journey with family', endJourney: 'End this journey', askForHelp: 'Ask a member of staff', destination: 'Go now to', couldNotLoad: 'Unable to load', errorTitle: 'We cannot continue right now', errorLead: 'Check your details or connection, then try again. You can also enter the flight manually or ask staff for help.', retry: 'Try again', enterManually: 'Enter flight manually', askStaff: 'Ask a member of staff', technicalDetails: 'View technical details', returnHome: 'Return home', endConfirmTitle: 'End this journey?', endConfirmLead: 'Your current step history will be cleared from this device.', continueJourney: 'Continue journey', confirmEnd: 'End and return home', refreshLive: 'Refresh live information', refreshArrival: 'Check baggage belt again', reviewNeeded: 'Please confirm this', reviewCorrect: 'This information is correct', reviewEdit: 'This is wrong; edit manually', reviewOnSite: 'Not found; confirm it at the airport', reviewWrongOnSite: 'This is wrong; confirm it at the airport', currentStep: 'Current step', boardConfirmTitle: 'Have you boarded the aircraft?', boardConfirmLead: 'After confirmation, onboard mode will continue guiding you through arrival.', confirmBoard: 'Yes, I have boarded', cancelBoard: 'Go back and check again', landedConfirmTitle: 'Have you left the aircraft?', landedConfirmLead: 'After confirmation, guidance will continue to baggage claim or the exit.', confirmLanded: 'Yes, I have left the aircraft', cancelLanded: 'Go back and check again', flightDuration: 'Estimated flight time', estimatedArrival: 'Expected arrival', timeUntilArrival: 'Until expected arrival', destinationLocalTime: 'Destination local time', estimatedDeparture: 'Estimated departure', boardingTime: 'Boarding time', seat: 'Seat', airportLocalTime: 'Airport local time', timeUntilDeparture: 'Until expected departure', whyThisStep: 'Why this step?', journeyTimeline: 'View this journey timeline', scenarioTitle: 'Simulated scenarios', scenarioLead: 'For local journey demonstrations only.', conflictTitle: 'Critical details conflict — stop here', conflictLead: 'Confirm the document and live screen with airport staff before continuing.', confirmConflicts: 'I confirmed with staff; continue', checkInArea: 'Check-in / bag-drop area', close: 'Close', copyCard: 'Copy card text', familyTitle: 'Share journey with family', familyLead: 'Create a read-only link that remains active for 48 hours. It includes only essential flight and current-step details.', localhostWarning: 'This is localhost. Other devices cannot open this address. Deploy the app to an accessible URL before sharing.', shareLinkLabel: 'Family viewing link', createShare: 'Create live sharing link', previewShare: 'Preview family page', shareLink: 'Share live link', sharePng: 'Share or save PNG card', copyCurrent: 'Copy current step', stopShare: 'Stop sharing'
+      eyebrow: 'Your flight companion', welcomeTitle: 'Now, take the next step', welcomeLead: 'Upload a travel document or enter flight details. We show one action at a time.', upload: 'Upload booking confirmation, e-ticket, or boarding pass', uploadHint: 'PDF, JPG, JPEG, and PNG are supported, including booking screenshots, e-ticket itineraries, and boarding passes.', manual: 'Enter flight number manually', family: 'Share journey with family', privacy: 'Your travel document is only used to create flight guidance', languageLabel: 'Choose language', back: 'Back', backStep: 'Go back', fileLabel: 'Choose a booking confirmation, e-ticket, or boarding pass', loadingTitle: 'Preparing your next step', checkDetails: 'Please confirm', confirmTitle: 'Is this your flight?', departure: 'Scheduled departure', terminal: 'Terminal', gate: 'Gate', status: 'Status', notPublished: 'Not published', demoDisclaimer: 'Demo data', yesContinue: 'Yes, continue', editFlight: 'No, edit it', manualContext: 'Enter flight details', baggageContext: 'Confirm your baggage', manualTitle: 'Enter your flight details', manualLead: 'Enter the flight number and departure date.', flightLabel: 'Flight number', dateLabel: 'Departure date', flightPlaceholder: 'For example BA 117', searchLiveFlight: 'Search live flight', useDemoFlight: 'Use BA 117 demo flight', demoHint: 'Demo data', nextAction: 'Your next action', baggageYes: 'Yes, I have bags to check', baggageNo: 'No', baggageUnsure: 'I am not sure', speak: 'Read this step aloud', staff: 'Ask a member of staff', contactFamily: 'Share journey with family', endJourney: 'End this journey', askForHelp: 'Ask a member of staff', destination: 'Go now to', couldNotLoad: 'Unable to load', errorTitle: 'We cannot continue right now', errorLead: 'Check your details or connection, then try again. You can also enter the flight manually or ask staff for help.', retry: 'Try again', enterManually: 'Enter flight manually', askStaff: 'Ask a member of staff', technicalDetails: 'View technical details', returnHome: 'Return home', endConfirmTitle: 'End this journey?', endConfirmLead: 'Your current step history will be cleared from this device.', continueJourney: 'Continue journey', confirmEnd: 'End and return home', refreshLive: 'Refresh live information', refreshArrival: 'Check baggage belt again', reviewNeeded: 'Please confirm this', reviewCorrect: 'This information is correct', reviewEdit: 'This is wrong; edit manually', reviewOnSite: 'Not found; confirm it at the airport', reviewWrongOnSite: 'This is wrong; confirm it at the airport', currentStep: 'Current step', boardConfirmTitle: 'Have you boarded the aircraft?', boardConfirmLead: 'After confirmation, onboard mode will continue guiding you through arrival.', confirmBoard: 'Yes, I have boarded', cancelBoard: 'Go back and check again', landedConfirmTitle: 'Have you left the aircraft?', landedConfirmLead: 'After confirmation, guidance will continue to baggage claim or the exit.', confirmLanded: 'Yes, I have left the aircraft', cancelLanded: 'Go back and check again', flightDuration: 'Estimated flight time', estimatedArrival: 'Expected arrival', timeUntilArrival: 'Until expected arrival', destinationLocalTime: 'Destination local time', estimatedDeparture: 'Estimated departure', boardingTime: 'Boarding time', seat: 'Seat', airportLocalTime: 'Airport local time', timeUntilDeparture: 'Until expected departure', whyThisStep: 'Why this step?', journeyTimeline: 'View this journey timeline', scenarioTitle: 'Simulated scenarios', scenarioLead: 'For local journey demonstrations only.', conflictTitle: 'Critical details conflict — stop here', conflictLead: 'Confirm the document and live screen with airport staff before continuing.', confirmConflicts: 'I confirmed with staff; continue', checkInArea: 'Check-in / bag-drop area', close: 'Close', copyCard: 'Copy card text', familyTitle: 'Share journey with family', familyLead: 'Create a read-only link that remains active for 48 hours. It includes only essential flight and current-step details.', localhostWarning: 'This is localhost. Other devices cannot open this address. Deploy the app to an accessible URL before sharing.', shareLinkLabel: 'Family viewing link', createShare: 'Create live sharing link', previewShare: 'Preview family page', shareLink: 'Share live link', sharePng: 'Share or save PNG card', copyCurrent: 'Copy current step', stopShare: 'Stop sharing'
     },
     es: {
-      eyebrow: 'Tu asistente de vuelo', welcomeTitle: 'Ahora, solo el siguiente paso', welcomeLead: 'Sube un documento de viaje o introduce los datos del vuelo. Mostramos una sola acción cada vez.', upload: 'Subir confirmación de reserva, billete electrónico o tarjeta de embarque', uploadHint: 'Se admiten PDF, JPG, JPEG y PNG, incluidas capturas de reserva, itinerarios electrónicos y tarjetas de embarque.', manual: 'Introducir el vuelo manualmente', family: 'Compartir el viaje con la familia', privacy: 'Tu documento solo se usa para crear las indicaciones del viaje', languageLabel: 'Elegir idioma', back: 'Volver', backStep: '← Volver', fileLabel: 'Elegir confirmación, billete electrónico o tarjeta de embarque', loadingTitle: 'Preparando tu siguiente paso', checkDetails: 'Confirma los datos', confirmTitle: '¿Es este tu vuelo?', departure: 'Salida programada', terminal: 'Terminal', gate: 'Puerta', status: 'Estado', notPublished: 'Aún no publicado', demoDisclaimer: 'Datos de demostración', yesContinue: 'Sí, continuar', editFlight: 'No, modificar', manualContext: 'Datos del vuelo', baggageContext: 'Confirmar el equipaje', manualTitle: 'Introduce los datos de tu vuelo', manualLead: 'Introduce el número de vuelo y la fecha de salida.', flightLabel: 'Número de vuelo', dateLabel: 'Fecha de salida', flightPlaceholder: 'Por ejemplo BA 117', searchLiveFlight: 'Buscar vuelo real', useDemoFlight: 'Usar vuelo BA 117 de demostración', demoHint: 'Datos de demostración', nextAction: 'Tu siguiente acción', baggageYes: 'Sí, tengo equipaje para facturar', baggageNo: 'No', baggageUnsure: 'No estoy seguro', speak: 'Leer este paso', staff: 'Pedir ayuda al personal', contactFamily: 'Compartir el viaje con la familia', endJourney: 'Finalizar este viaje', askForHelp: 'Pedir ayuda al personal', destination: 'Ve ahora a', couldNotLoad: 'No se puede cargar', errorTitle: 'No podemos continuar ahora', errorLead: 'Comprueba los datos o la conexión y vuelve a intentarlo. También puedes introducir el vuelo o pedir ayuda.', retry: 'Reintentar', enterManually: 'Introducir vuelo manualmente', askStaff: 'Pedir ayuda al personal', technicalDetails: 'Ver detalles técnicos', returnHome: 'Volver al inicio', endConfirmTitle: '¿Finalizar este viaje?', endConfirmLead: 'El historial del paso actual se borrará de este dispositivo.', continueJourney: 'Continuar el viaje', confirmEnd: 'Finalizar y volver al inicio', refreshLive: 'Actualizar información', refreshArrival: 'Volver a consultar la cinta', reviewNeeded: 'Confirma este dato', reviewCorrect: 'Este dato es correcto', reviewEdit: 'No es correcto; modificar', reviewOnSite: 'No encontrado; confirmar en el aeropuerto', reviewWrongOnSite: 'No es correcto; confirmar en el aeropuerto', currentStep: 'Paso actual', boardConfirmTitle: '¿Ya has embarcado?', boardConfirmLead: 'Tras confirmar, el modo a bordo seguirá guiándote hasta la llegada.', confirmBoard: 'Sí, ya he embarcado', cancelBoard: 'Volver y comprobar', landedConfirmTitle: '¿Ya has bajado del avión?', landedConfirmLead: 'Tras confirmar, te guiaremos a la recogida de equipaje o a la salida.', confirmLanded: 'Sí, ya he bajado', cancelLanded: 'Volver y comprobar', flightDuration: 'Duración estimada', estimatedArrival: 'Llegada estimada', timeUntilArrival: 'Tiempo hasta la llegada', destinationLocalTime: 'Hora local del destino', estimatedDeparture: 'Salida estimada', boardingTime: 'Hora de embarque', seat: 'Asiento', airportLocalTime: 'Hora local del aeropuerto', timeUntilDeparture: 'Tiempo hasta la salida', whyThisStep: '¿Por qué este paso?', journeyTimeline: 'Ver el historial del viaje', scenarioTitle: 'Escenarios simulados', scenarioLead: 'Solo para probar el recorrido local.', conflictTitle: 'Hay un conflicto importante: detente', conflictLead: 'Confirma el documento y la pantalla con el personal antes de continuar.', confirmConflicts: 'Lo confirmé con el personal; continuar', checkInArea: 'Zona de facturación / entrega', close: 'Cerrar', copyCard: 'Copiar el texto de la tarjeta', familyTitle: 'Compartir el viaje con la familia', familyLead: 'Crea un enlace de solo lectura válido durante 48 horas. Solo incluye el vuelo y el paso actual imprescindibles.', localhostWarning: 'Esta dirección es localhost y no se puede abrir en otro dispositivo. Despliega la aplicación en una URL accesible antes de compartir.', shareLinkLabel: 'Enlace para la familia', createShare: 'Crear enlace en directo', previewShare: 'Vista previa familiar', shareLink: 'Compartir enlace en directo', sharePng: 'Compartir o guardar tarjeta PNG', copyCurrent: 'Copiar el paso actual', stopShare: 'Dejar de compartir'
+      eyebrow: 'Tu asistente de vuelo', welcomeTitle: 'Ahora, solo el siguiente paso', welcomeLead: 'Sube un documento de viaje o introduce los datos del vuelo. Mostramos una sola acción cada vez.', upload: 'Subir confirmación de reserva, billete electrónico o tarjeta de embarque', uploadHint: 'Se admiten PDF, JPG, JPEG y PNG, incluidas capturas de reserva, itinerarios electrónicos y tarjetas de embarque.', manual: 'Introducir el vuelo manualmente', family: 'Compartir el viaje con la familia', privacy: 'Tu documento solo se usa para crear las indicaciones del viaje', languageLabel: 'Elegir idioma', back: 'Volver', backStep: 'Volver', fileLabel: 'Elegir confirmación, billete electrónico o tarjeta de embarque', loadingTitle: 'Preparando tu siguiente paso', checkDetails: 'Confirma los datos', confirmTitle: '¿Es este tu vuelo?', departure: 'Salida programada', terminal: 'Terminal', gate: 'Puerta', status: 'Estado', notPublished: 'Aún no publicado', demoDisclaimer: 'Datos de demostración', yesContinue: 'Sí, continuar', editFlight: 'No, modificar', manualContext: 'Datos del vuelo', baggageContext: 'Confirmar el equipaje', manualTitle: 'Introduce los datos de tu vuelo', manualLead: 'Introduce el número de vuelo y la fecha de salida.', flightLabel: 'Número de vuelo', dateLabel: 'Fecha de salida', flightPlaceholder: 'Por ejemplo BA 117', searchLiveFlight: 'Buscar vuelo real', useDemoFlight: 'Usar vuelo BA 117 de demostración', demoHint: 'Datos de demostración', nextAction: 'Tu siguiente acción', baggageYes: 'Sí, tengo equipaje para facturar', baggageNo: 'No', baggageUnsure: 'No estoy seguro', speak: 'Leer este paso', staff: 'Pedir ayuda al personal', contactFamily: 'Compartir el viaje con la familia', endJourney: 'Finalizar este viaje', askForHelp: 'Pedir ayuda al personal', destination: 'Ve ahora a', couldNotLoad: 'No se puede cargar', errorTitle: 'No podemos continuar ahora', errorLead: 'Comprueba los datos o la conexión y vuelve a intentarlo. También puedes introducir el vuelo o pedir ayuda.', retry: 'Reintentar', enterManually: 'Introducir vuelo manualmente', askStaff: 'Pedir ayuda al personal', technicalDetails: 'Ver detalles técnicos', returnHome: 'Volver al inicio', endConfirmTitle: '¿Finalizar este viaje?', endConfirmLead: 'El historial del paso actual se borrará de este dispositivo.', continueJourney: 'Continuar el viaje', confirmEnd: 'Finalizar y volver al inicio', refreshLive: 'Actualizar información', refreshArrival: 'Volver a consultar la cinta', reviewNeeded: 'Confirma este dato', reviewCorrect: 'Este dato es correcto', reviewEdit: 'No es correcto; modificar', reviewOnSite: 'No encontrado; confirmar en el aeropuerto', reviewWrongOnSite: 'No es correcto; confirmar en el aeropuerto', currentStep: 'Paso actual', boardConfirmTitle: '¿Ya has embarcado?', boardConfirmLead: 'Tras confirmar, el modo a bordo seguirá guiándote hasta la llegada.', confirmBoard: 'Sí, ya he embarcado', cancelBoard: 'Volver y comprobar', landedConfirmTitle: '¿Ya has bajado del avión?', landedConfirmLead: 'Tras confirmar, te guiaremos a la recogida de equipaje o a la salida.', confirmLanded: 'Sí, ya he bajado', cancelLanded: 'Volver y comprobar', flightDuration: 'Duración estimada', estimatedArrival: 'Llegada estimada', timeUntilArrival: 'Tiempo hasta la llegada', destinationLocalTime: 'Hora local del destino', estimatedDeparture: 'Salida estimada', boardingTime: 'Hora de embarque', seat: 'Asiento', airportLocalTime: 'Hora local del aeropuerto', timeUntilDeparture: 'Tiempo hasta la salida', whyThisStep: '¿Por qué este paso?', journeyTimeline: 'Ver el historial del viaje', scenarioTitle: 'Escenarios simulados', scenarioLead: 'Solo para probar el recorrido local.', conflictTitle: 'Hay un conflicto importante: detente', conflictLead: 'Confirma el documento y la pantalla con el personal antes de continuar.', confirmConflicts: 'Lo confirmé con el personal; continuar', checkInArea: 'Zona de facturación / entrega', close: 'Cerrar', copyCard: 'Copiar el texto de la tarjeta', familyTitle: 'Compartir el viaje con la familia', familyLead: 'Crea un enlace de solo lectura válido durante 48 horas. Solo incluye el vuelo y el paso actual imprescindibles.', localhostWarning: 'Esta dirección es localhost y no se puede abrir en otro dispositivo. Despliega la aplicación en una URL accesible antes de compartir.', shareLinkLabel: 'Enlace para la familia', createShare: 'Crear enlace en directo', previewShare: 'Vista previa familiar', shareLink: 'Compartir enlace en directo', sharePng: 'Compartir o guardar tarjeta PNG', copyCurrent: 'Copiar el paso actual', stopShare: 'Dejar de compartir'
     }
   };
 
@@ -61,13 +69,58 @@
   };
 
   Object.assign(translations.zh, {
-    scenarioNormal: '正常', scenarioGateChange: '登机口变更', scenarioDelay: '延误', scenarioCancel: '取消', scenarioStale: '过期数据'
+    upload: '上传出行行程单或登机牌',
+    uploadHint: '支持航空公司行程单、电子客票、预订确认或登机牌 PDF，也支持这些文件的截图（JPG、JPEG、PNG）。',
+    fileLabel: '选择航空公司行程单、电子客票、预订确认或登机牌',
+    speak: '朗读这一步',
+    scenarioNormal: '正常', scenarioGateChange: '登机口变更', scenarioDelay: '延误', scenarioCancel: '取消', scenarioStale: '过期数据',
+    backStep: '返回上一步', departureLocalTime: '起飞时间（出发地当地时间）', arrivalLocalTime: '到达时间（目的地当地时间）',
+    scheduledDepartureLocal: '计划起飞 · 出发地当地时间', estimatedDepartureLocal: '预计起飞 · 出发地当地时间', actualDepartureLocal: '实际起飞 · 出发地当地时间',
+    scheduledArrivalLocal: '计划到达 · 目的地当地时间', estimatedArrivalLocal: '预计到达 · 目的地当地时间', actualArrivalLocal: '实际到达 · 目的地当地时间',
+    multipleSegments: '多个航段', chooseSegment: '请选择你现在要乘坐的航班', chooseSegmentLead: '选择后才会查询这一个航段的实时信息。', selectSegment: '选择这个航段', selectedSegment: '已选择',
+    checkInContext: '确认值机状态', checkInQuestion: '你已经完成值机，或已经拿到登机牌了吗？', checkInQuestionLead: '如果你已经取得登机牌，通常表示已经值机。',
+    boardingPassCheckIn: '已从登机牌判断：你已经值机', boardingPassCheckInLead: '请确认后继续；如果实际情况不同，可以更改。', checkInPresetContinue: '是，继续', thisIsWrong: '这不对',
+    checkInYes: '✓ 是，我已经完成值机', checkInNo: '还没有', checkInUnsure: '我不确定', stopSpeaking: '停止朗读',
+    staffCardInstruction: '请把这个页面拿给机场工作人员看。', globalFooter: '© 2026 OneStep Flight · 无障碍乘机指引',
+    allFlightInfo: '查看全部航班信息', flightSourceLabel: '航班信息来源',
+    departurePassedTitle: '这趟航班已经离港', departurePassedLead: '点击下方“请工作人员帮忙”，并前往航空公司服务柜台出示给工作人员。',
+    enterNewFlight: '输入新的航班信息', backHome: '返回首页', uploadContext: '选择旅行文件', uploadTitle: '选择或上传文件', chooseFile: '选择文件'
   });
   Object.assign(translations.en, {
-    scenarioNormal: 'Normal', scenarioGateChange: 'Gate change', scenarioDelay: 'Delay', scenarioCancel: 'Cancellation', scenarioStale: 'Stale data'
+    upload: 'Upload travel itinerary or boarding pass',
+    uploadHint: 'Upload an airline itinerary, e-ticket, booking confirmation, or boarding pass as a PDF or screenshot (JPG, JPEG, or PNG).',
+    fileLabel: 'Choose an airline itinerary, e-ticket, booking confirmation, or boarding pass',
+    speak: 'Read this step aloud',
+    scenarioNormal: 'Normal', scenarioGateChange: 'Gate change', scenarioDelay: 'Delay', scenarioCancel: 'Cancellation', scenarioStale: 'Stale data',
+    backStep: 'Go back', departureLocalTime: 'Departure (origin local time)', arrivalLocalTime: 'Arrival (destination local time)',
+    scheduledDepartureLocal: 'Scheduled departure · Origin local time', estimatedDepartureLocal: 'Estimated departure · Origin local time', actualDepartureLocal: 'Actual departure · Origin local time',
+    scheduledArrivalLocal: 'Scheduled arrival · Destination local time', estimatedArrivalLocal: 'Estimated arrival · Destination local time', actualArrivalLocal: 'Actual arrival · Destination local time',
+    multipleSegments: 'Multiple flight segments', chooseSegment: 'Choose the flight you are taking now', chooseSegmentLead: 'We will look up live information only after you choose a segment.', selectSegment: 'Choose this segment', selectedSegment: 'Selected',
+    checkInContext: 'Confirm check-in status', checkInQuestion: 'Have you checked in or received your boarding pass?', checkInQuestionLead: 'If you already have a boarding pass, you are usually checked in.',
+    boardingPassCheckIn: 'Your boarding pass indicates that you are checked in', boardingPassCheckInLead: 'Confirm to continue, or change this if it is not correct.', checkInPresetContinue: 'Yes, continue', thisIsWrong: 'This is not correct',
+    checkInYes: '✓ Yes, I have checked in', checkInNo: 'Not yet', checkInUnsure: 'I am not sure', stopSpeaking: 'Stop reading',
+    staffCardInstruction: 'Please show this screen to an airport staff member.', globalFooter: '© 2026 OneStep Flight · Accessible air-travel guidance',
+    allFlightInfo: 'View all flight information', flightSourceLabel: 'Flight information source',
+    departurePassedTitle: 'This flight has departed', departurePassedLead: 'Select “Ask a member of staff” below, then go to the airline service desk and show it to a staff member.',
+    enterNewFlight: 'Enter new flight information', backHome: 'Return home', uploadContext: 'Choose a travel document', uploadTitle: 'Choose or upload a file', chooseFile: 'Choose file'
   });
   Object.assign(translations.es, {
-    scenarioNormal: 'Normal', scenarioGateChange: 'Cambio de puerta', scenarioDelay: 'Retraso', scenarioCancel: 'Cancelación', scenarioStale: 'Datos antiguos'
+    upload: 'Subir itinerario de viaje o tarjeta de embarque',
+    uploadHint: 'Sube un itinerario de la aerolínea, billete electrónico, confirmación de reserva o tarjeta de embarque en PDF o como captura (JPG, JPEG o PNG).',
+    fileLabel: 'Elegir itinerario, billete electrónico, confirmación de reserva o tarjeta de embarque',
+    speak: 'Leer este paso en voz alta',
+    scenarioNormal: 'Normal', scenarioGateChange: 'Cambio de puerta', scenarioDelay: 'Retraso', scenarioCancel: 'Cancelación', scenarioStale: 'Datos antiguos',
+    backStep: 'Volver', departureLocalTime: 'Salida (hora local de origen)', arrivalLocalTime: 'Llegada (hora local de destino)',
+    scheduledDepartureLocal: 'Salida programada · Hora local de origen', estimatedDepartureLocal: 'Salida estimada · Hora local de origen', actualDepartureLocal: 'Salida real · Hora local de origen',
+    scheduledArrivalLocal: 'Llegada programada · Hora local de destino', estimatedArrivalLocal: 'Llegada estimada · Hora local de destino', actualArrivalLocal: 'Llegada real · Hora local de destino',
+    multipleSegments: 'Varios tramos', chooseSegment: 'Elige el vuelo que vas a tomar ahora', chooseSegmentLead: 'Solo consultaremos la información en directo después de elegir un tramo.', selectSegment: 'Elegir este tramo', selectedSegment: 'Seleccionado',
+    checkInContext: 'Confirmar la facturación', checkInQuestion: '¿Ya has facturado o recibido tu tarjeta de embarque?', checkInQuestionLead: 'Si ya tienes una tarjeta de embarque, normalmente ya has facturado.',
+    boardingPassCheckIn: 'La tarjeta de embarque indica que ya has facturado', boardingPassCheckInLead: 'Confirma para continuar o cambia esta respuesta si no es correcta.', checkInPresetContinue: 'Sí, continuar', thisIsWrong: 'Esto no es correcto',
+    checkInYes: '✓ Sí, ya he facturado', checkInNo: 'Todavía no', checkInUnsure: 'No estoy seguro', stopSpeaking: 'Detener la lectura',
+    staffCardInstruction: 'Muestre esta pantalla al personal del aeropuerto.', globalFooter: '© 2026 OneStep Flight · Guía accesible para viajar en avión',
+    allFlightInfo: 'Ver toda la información del vuelo', flightSourceLabel: 'Fuente de información del vuelo',
+    departurePassedTitle: 'Este vuelo ya ha salido', departurePassedLead: 'Pulsa «Pedir ayuda al personal» y ve al mostrador de atención de la aerolínea para mostrárselo al personal.',
+    enterNewFlight: 'Introducir un vuelo nuevo', backHome: 'Volver al inicio', uploadContext: 'Elegir un documento de viaje', uploadTitle: 'Elegir o subir un archivo', chooseFile: 'Elegir archivo'
   });
 
   var completionLabels = {
@@ -79,8 +132,7 @@
     BOARD_NOW: ['我已经登机', 'I have boarded', 'Ya he embarcado'],
     IN_FLIGHT: ['我已经下飞机', 'I have left the aircraft', 'Ya he bajado del avión'],
     BAGGAGE_CLAIM: ['我已经拿到行李', 'I have collected my baggage', 'Ya recogí mi equipaje'],
-    EXIT_AIRPORT: ['我已经到达出口', 'I have reached the exit', 'Ya llegué a la salida'],
-    ASK_FOR_HELP: ['我已经获得帮助，重新检查', 'I have received help; check again', 'Ya recibí ayuda; comprobar de nuevo']
+    EXIT_AIRPORT: ['我已经到达出口', 'I have reached the exit', 'Ya llegué a la salida']
   };
 
   var statusLabels = {
@@ -95,6 +147,7 @@
     flight_number: ['航班号', 'Flight number', 'Número de vuelo'],
     departure_date: ['出发日期', 'Departure date', 'Fecha de salida'],
     scheduled_departure: ['计划起飞时间', 'Scheduled departure', 'Salida programada'],
+    scheduled_arrival: ['计划到达时间', 'Scheduled arrival', 'Llegada programada'],
     boarding_time: ['登机时间', 'Boarding time', 'Hora de embarque'],
     departure_airport: ['出发机场', 'Departure airport', 'Aeropuerto de salida'],
     arrival_airport: ['到达机场', 'Arrival airport', 'Aeropuerto de llegada'],
@@ -104,9 +157,9 @@
   };
 
   var loadingMessages = [
-    ['正在连接 OneStep Flight', 'Connecting to OneStep Flight', 'Conectando con OneStep Flight'],
-    ['正在取得航班信息', 'Getting flight information', 'Obteniendo información del vuelo'],
-    ['正在准备你的乘机步骤', 'Preparing your next step', 'Preparando tu siguiente paso']
+    ['正在查找航班', 'Finding your flight', 'Buscando tu vuelo'],
+    ['正在核对航站楼和时间', 'Checking the terminal and times', 'Comprobando la terminal y los horarios'],
+    ['正在整理下一步', 'Preparing your next step', 'Preparando tu siguiente paso']
   ];
 
   var uploadLoadingMessages = [
@@ -116,7 +169,36 @@
   ];
 
   function normalizeLocale(value) {
-    return ['zh', 'en', 'es'].indexOf(value) >= 0 ? value : 'zh';
+    var locale = String(value || '').trim().toLowerCase();
+    return ['zh', 'en', 'es'].indexOf(locale) >= 0 ? locale : 'en';
+  }
+
+  function localeFromLanguageTag(value) {
+    var primaryLanguage = String(value || '').trim().toLowerCase().split(/[-_]/)[0];
+    return ['zh', 'en', 'es'].indexOf(primaryLanguage) >= 0 ? primaryLanguage : null;
+  }
+
+  function resolveLocalePreference(stored, languages, language) {
+    var storedLocale = String(stored || '').trim().toLowerCase();
+    if (['zh', 'en', 'es'].indexOf(storedLocale) >= 0) return storedLocale;
+
+    var preferences = Array.isArray(languages) ? languages : [];
+    for (var index = 0; index < preferences.length; index += 1) {
+      var matchedLocale = localeFromLanguageTag(preferences[index]);
+      if (matchedLocale) return matchedLocale;
+    }
+
+    return localeFromLanguageTag(language) || 'en';
+  }
+
+  function detectInitialLocale() {
+    var stored = null;
+    try { stored = localStorage.getItem(LOCALE_KEY); } catch (error) { /* Use browser language. */ }
+    return resolveLocalePreference(stored, navigator.languages, navigator.language);
+  }
+
+  function storeLocale(locale) {
+    try { localStorage.setItem(LOCALE_KEY, locale); } catch (error) { /* Page remains usable. */ }
   }
 
   function readStoredJson(key) {
@@ -142,6 +224,27 @@
     return currentLocale === 'zh' ? zh : currentLocale === 'es' ? (es || en) : en;
   }
 
+  function localeLanguageTag(locale) {
+    return locale === 'zh' ? 'zh-CN' : locale;
+  }
+
+  function setBilingualContent(element, primaryText, englishText, heading) {
+    if (!element) return;
+    element.replaceChildren();
+    var primary = document.createElement('span');
+    primary.className = heading ? 'bilingual-heading-primary' : 'bilingual-primary';
+    primary.lang = localeLanguageTag(currentLocale);
+    primary.textContent = primaryText || '';
+    element.appendChild(primary);
+    if (currentLocale !== 'en' && englishText && englishText !== primaryText) {
+      var english = document.createElement('span');
+      english.className = heading ? 'bilingual-heading-secondary' : 'bilingual-secondary';
+      english.lang = 'en';
+      english.textContent = englishText;
+      element.appendChild(english);
+    }
+  }
+
   function setHidden(element, hidden) {
     if (element) element.hidden = hidden;
   }
@@ -164,9 +267,13 @@
       localeSelect.value = currentLocale;
       localeSelect.setAttribute('aria-label', t('languageLabel'));
     }
-    localStorage.setItem(LOCALE_KEY, currentLocale);
     var speakButton = document.querySelector('[data-action="speak"]');
-    if (speakButton) speakButton.setAttribute('aria-label', t('speak'));
+    if (speakButton) {
+      speakButton.setAttribute('aria-label', speakingActive ? t('stopSpeaking') : t('speak'));
+      speakButton.setAttribute('aria-pressed', String(speakingActive));
+      var speakLabel = speakButton.querySelector('span');
+      if (speakLabel) speakLabel.textContent = speakingActive ? t('stopSpeaking') : t('speak');
+    }
     document.querySelector('[data-action="home"]').setAttribute('aria-label', localeText('返回欢迎页', 'Return to welcome page', 'Volver a la bienvenida'));
     document.querySelector('.brand-copy small').textContent = localeText('一步乘机', 'Flight assistant', 'Asistente de vuelo');
     var progressBar = document.querySelector('.progress-track');
@@ -190,6 +297,17 @@
     persistJourney();
   }
 
+  function setLookupBusy(busy) {
+    lookupInFlight = Boolean(busy);
+    document.querySelectorAll('[data-action="upload"], [data-action="demo-flight"], [data-action="manual-submit"] button[type="submit"], [data-action="continue"], [data-action="new-flight-info"]').forEach(function (button) {
+      var continueBlocked = button.dataset.action === 'continue' && (documentSegments.length > 1
+        && selectedDocumentSegmentIndex == null || departureStopReason(currentFlight)
+        || currentFlight && currentFlight.requiresUserConfirmation && !conflictsConfirmed);
+      button.disabled = lookupInFlight || Boolean(continueBlocked);
+    });
+    document.getElementById('main-content').setAttribute('aria-busy', String(lookupInFlight));
+  }
+
   function announce(message) {
     var region = document.querySelector('[data-live-region]');
     region.textContent = '';
@@ -197,6 +315,7 @@
   }
 
   function showScreen(name) {
+    if (currentScreen !== name) stopSpeech(false);
     currentScreen = name;
     screens.forEach(function (screen) {
       var active = screen.dataset.screen === name;
@@ -219,9 +338,12 @@
 
   function fetchJson(url, options) {
     var settings = options || {};
+    var onResponse = settings.onResponse;
+    delete settings.onResponse;
     settings.headers = settings.headers || {};
     settings.headers.Accept = 'application/json';
     return fetch(url, settings).then(function (response) {
+      if (onResponse) onResponse(response);
       return response.json().catch(function () { return null; }).then(function (payload) {
         if (!response.ok) {
           var error = new Error('Request failed with status ' + response.status);
@@ -231,6 +353,34 @@
         }
         return payload;
       });
+    });
+  }
+
+  function postFlightJson(url, payload, onResponse) {
+    if (flightRequestController) flightRequestController.abort();
+    var controller = new AbortController();
+    flightRequestController = controller;
+    var didTimeout = false;
+    var timeout = window.setTimeout(function () {
+      didTimeout = true;
+      controller.abort();
+    }, 20000);
+    return fetchJson(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+      onResponse: onResponse
+    }).catch(function (error) {
+      if (didTimeout || error && error.name === 'AbortError') {
+        var timeoutError = new Error('Flight request timed out after 20 seconds');
+        timeoutError.code = 'CLIENT_FLIGHT_TIMEOUT';
+        throw timeoutError;
+      }
+      throw error;
+    }).finally(function () {
+      window.clearTimeout(timeout);
+      if (flightRequestController === controller) flightRequestController = null;
     });
   }
 
@@ -338,17 +488,25 @@
     return String(value || '').replace(pattern, '').trim();
   }
 
-  function formatTerminalValue(value) {
+  function formatTerminalForLocale(value, locale) {
     if (!value) return null;
     var clean = stripFieldPrefix(value, /^(terminal|航站楼|航廈)\s*/i);
-    return localeText(clean + '号航站楼', 'Terminal ' + clean, 'Terminal ' + clean);
+    clean = clean.replace(/^t\s*(?=\d)/i, '').replace(/\s+/g, ' ').trim();
+    if (!clean) return null;
+    var normalized = normalizeLocale(locale || currentLocale);
+    return normalized === 'zh' ? clean + ' 号航站楼' : 'Terminal ' + clean;
   }
 
-  function formatGateValue(value) {
+  function formatTerminalValue(value) { return formatTerminalForLocale(value, currentLocale); }
+
+  function formatGateForLocale(value, locale) {
     if (!value) return null;
     var clean = stripFieldPrefix(value, /^(gate|登机口|puerta)\s*/i);
-    return localeText(clean + '登机口', 'Gate ' + clean, 'Puerta ' + clean);
+    var normalized = normalizeLocale(locale || currentLocale);
+    return normalized === 'zh' ? clean + ' 登机口' : normalized === 'es' ? 'Puerta ' + clean : 'Gate ' + clean;
   }
+
+  function formatGateValue(value) { return formatGateForLocale(value, currentLocale); }
 
   function parseCounterLocation(value) {
     var raw = String(value || '').trim();
@@ -370,9 +528,9 @@
     if (!parsed.area && !parsed.counters) return stripFieldPrefix(parsed.raw,
       /^(check[- ]?in\s*(desk|counter|area|zone)?|counter|desk|值机(柜台|区)?|mostradores?|zona de facturación)\s*/i);
     if (normalized === 'zh') {
-      return (parsed.area ? parsed.area + '区' : '')
+      return (parsed.area ? parsed.area + ' 区' : '')
         + (parsed.area && parsed.counters ? ' ' : '')
-        + (parsed.counters ? parsed.counters + '号' : '') + (genericCounter ? '柜台' : '值机柜台');
+        + (parsed.counters ? parsed.counters + ' 号' + (genericCounter ? '柜台' : '值机柜台') : '');
     }
     if (normalized === 'es') {
       return (parsed.area ? 'Zona ' + parsed.area + ' de facturación' : '')
@@ -386,23 +544,29 @@
 
   function formatCheckInValue(value) { return formatCheckInForLocale(value, currentLocale, false); }
 
-  function formatBagDropValue(value) {
+  function formatBagDropForLocale(value, locale) {
     if (!value) return null;
     var parsed = parseCounterLocation(value);
+    var normalized = normalizeLocale(locale || currentLocale);
     if (parsed.area || parsed.counters) {
-      if (currentLocale === 'zh') return (parsed.area ? parsed.area + '区' : '') + (parsed.area && parsed.counters ? ' ' : '') + (parsed.counters ? parsed.counters + '号' : '') + '行李托运柜台';
-      if (currentLocale === 'es') return 'Entrega de equipaje ' + (parsed.area ? 'en la zona ' + parsed.area : '') + (parsed.area && parsed.counters ? ', ' : '') + (parsed.counters ? 'mostradores ' + parsed.counters : '');
+      if (normalized === 'zh') return (parsed.area ? parsed.area + ' 区' : '') + (parsed.area && parsed.counters ? ' ' : '') + (parsed.counters ? parsed.counters + ' 号' : '') + '行李托运柜台';
+      if (normalized === 'es') return 'Entrega de equipaje ' + (parsed.area ? 'en la zona ' + parsed.area : '') + (parsed.area && parsed.counters ? ', ' : '') + (parsed.counters ? 'mostradores ' + parsed.counters : '');
       return 'Bag drop ' + (parsed.area ? 'area ' + parsed.area : '') + (parsed.area && parsed.counters ? ', ' : '') + (parsed.counters ? 'counters ' + parsed.counters : '');
     }
     var clean = stripFieldPrefix(value, /^(bag\s*drop|baggage\s*drop|托运(柜台|区)?|entrega de equipaje)\s*/i);
-    return localeText('行李托运柜台 ' + clean, 'Bag drop ' + clean, 'Entrega de equipaje ' + clean);
+    return normalized === 'zh' ? '行李托运柜台 ' + clean : normalized === 'es' ? 'Entrega de equipaje ' + clean : 'Bag drop ' + clean;
   }
 
-  function formatBeltValue(value) {
+  function formatBagDropValue(value) { return formatBagDropForLocale(value, currentLocale); }
+
+  function formatBeltForLocale(value, locale) {
     if (!value) return null;
     var clean = stripFieldPrefix(value, /^(belt|carousel|行李转盘|cinta)\s*/i);
-    return localeText(clean + '号行李转盘', 'Belt ' + clean, 'Cinta ' + clean);
+    var normalized = normalizeLocale(locale || currentLocale);
+    return normalized === 'zh' ? clean + ' 号行李转盘' : normalized === 'es' ? 'Cinta ' + clean : 'Baggage belt ' + clean;
   }
+
+  function formatBeltValue(value) { return formatBeltForLocale(value, currentLocale); }
 
   var documentTypeCopy = {
     BOARDING_PASS: ['登机牌', 'Boarding pass', 'Tarjeta de embarque'],
@@ -416,6 +580,102 @@
     return textFor(documentTypeCopy[String(value || 'UNKNOWN').toUpperCase()] || documentTypeCopy.UNKNOWN);
   }
 
+  function preferredOperationalTime(flight, phase) {
+    var prefix = phase === 'arrival' ? 'Arrival' : 'Departure';
+    var actual = flight['actual' + prefix];
+    if (actual) return { value: actual, label: 'actual' + prefix + 'Local' };
+    var estimated = flight['estimated' + prefix];
+    if (estimated) return { value: estimated, label: 'estimated' + prefix + 'Local' };
+    return { value: flight['scheduled' + prefix], label: 'scheduled' + prefix + 'Local' };
+  }
+
+  function isDepartureStopReason(reason) {
+    return reason === 'DEPARTURE_TIME_PASSED' || reason === 'FLIGHT_ALREADY_DEPARTED';
+  }
+
+  function isDepartureStopAction(action) {
+    return Boolean(action && isDepartureStopReason(action.reason));
+  }
+
+  function utcOffsetMinutes(value) {
+    var normalized = String(value || '').trim().toUpperCase();
+    if (normalized === 'Z') return 0;
+    var match = normalized.match(/^([+-])(\d{2}):?(\d{2})$/);
+    if (!match) return null;
+    var hours = Number(match[2]);
+    var minutes = Number(match[3]);
+    if (hours > 18 || minutes > 59) return null;
+    return (match[1] === '-' ? -1 : 1) * (hours * 60 + minutes);
+  }
+
+  function departureLocalDate(value, departureOffset) {
+    var raw = String(value || '').trim();
+    if (!/T.*(?:Z|[+-]\d{2}:?\d{2})$/i.test(raw)) return null;
+    var instant = Date.parse(raw);
+    if (!Number.isFinite(instant)) return null;
+    var offsetMinutes = utcOffsetMinutes(departureOffset);
+    if (offsetMinutes == null) return raw.slice(0, 10);
+    return new Date(instant + offsetMinutes * 60000).toISOString().slice(0, 10);
+  }
+
+  function departureStopReason(flight) {
+    if (documentSegments.length > 1 && selectedDocumentSegmentIndex == null) return null;
+    var selectedDate = journeyContext && journeyContext.departureDate
+      || lastLookupContext && lastLookupContext.departureDate
+      || flight && flight.departureDate;
+    if (!flight || !/^\d{4}-\d{2}-\d{2}$/.test(String(selectedDate || ''))) return null;
+    if (flight.departureDate && flight.departureDate !== selectedDate) return null;
+    var effective = flight.actualDeparture || flight.estimatedDeparture || flight.scheduledDeparture;
+    var dateAnchor = flight.scheduledDeparture || effective;
+    var departureOffset = flight.timeContext && flight.timeContext.departureUtcOffset;
+    if (dateAnchor) {
+      var anchorDate = departureLocalDate(dateAnchor, departureOffset);
+      if (!anchorDate || anchorDate !== selectedDate) return null;
+    }
+    if (effective) {
+      var effectiveDate = departureLocalDate(effective, departureOffset);
+      if (!effectiveDate || effectiveDate !== selectedDate) return null;
+    }
+    var status = String(flight.status || '').trim().toUpperCase();
+    if (flight.actualDeparture || status.indexOf('DEPARTED') === 0 || status.indexOf('ARRIVED') === 0) {
+      return 'FLIGHT_ALREADY_DEPARTED';
+    }
+    if (!effective || status === 'BOARDING') return null;
+    var serverNow = flight.timeContext && flight.timeContext.serverNow;
+    var effectiveMs = Date.parse(effective);
+    var serverNowMs = Date.parse(serverNow || '');
+    return Number.isFinite(effectiveMs) && Number.isFinite(serverNowMs)
+      && serverNowMs - effectiveMs >= 15 * 60 * 1000
+      ? 'DEPARTURE_TIME_PASSED' : null;
+  }
+
+  function departureReferenceText(flight) {
+    var terminal = locationCode(flight && flight.terminal);
+    if (!terminal) return '';
+    return localeText(
+      '参考：' + formatTerminalForLocale(terminal, 'zh') + '；请在现场确认航空公司服务柜台位置。',
+      'Reference: ' + formatTerminalForLocale(terminal, 'en') + '; confirm the airline service-desk location on site.',
+      'Referencia: ' + formatTerminalForLocale(terminal, 'es') + '; confirma allí la ubicación del mostrador de atención de la aerolínea.');
+  }
+
+  function renderDeparturePassedConfirmation(flight) {
+    var screen = document.querySelector('.screen-confirm');
+    var panel = document.querySelector('[data-departure-passed-confirmation]');
+    var reason = departureStopReason(flight);
+    screen.classList.toggle('is-departure-passed', Boolean(reason));
+    screen.setAttribute('aria-labelledby', reason ? 'departure-passed-title' : 'confirm-title');
+    panel.hidden = !reason;
+    if (!reason) return null;
+    document.querySelector('[data-departure-passed-flight]').textContent = formatFlightNumber(flight.flightNumber);
+    document.querySelector('[data-departure-passed-date]').textContent = formatDate(flight.departureDate);
+    document.querySelector('[data-departure-passed-status]').textContent = localeText('已离港', 'Departed', 'Ya ha salido');
+    var reference = document.querySelector('[data-departure-passed-reference]');
+    reference.textContent = departureReferenceText(flight);
+    reference.hidden = !reference.textContent;
+    setDeparturePassedStaffContent();
+    return reason;
+  }
+
   function renderFlight(flight) {
     document.querySelector('[data-flight-number]').textContent = formatFlightNumber(flight.flightNumber);
     document.querySelector('[data-departure-airport]').textContent = flight.departureAirport || '—';
@@ -425,6 +685,12 @@
     document.querySelector('[data-departure-date]').textContent = formatDate(flight.departureDate);
     document.querySelector('[data-scheduled-departure]').textContent = formatAtDeparture(flight.scheduledDeparture, false);
     document.querySelector('[data-estimated-departure]').textContent = formatAtDeparture(flight.estimatedDeparture, false);
+    var departureLocal = preferredOperationalTime(flight, 'departure');
+    var arrivalLocal = preferredOperationalTime(flight, 'arrival');
+    document.querySelector('[data-route-departure-label]').textContent = t(departureLocal.label);
+    document.querySelector('[data-route-departure-time]').textContent = formatAtDeparture(departureLocal.value, true);
+    document.querySelector('[data-route-arrival-label]').textContent = t(arrivalLocal.label);
+    document.querySelector('[data-route-arrival-time]').textContent = formatAtArrival(arrivalLocal.value, true);
     document.querySelector('[data-boarding-time]').textContent = formatAtDeparture(
       flight.documentBoardingTime || (flight.timeContext && flight.timeContext.boardingTime), false);
     document.querySelector('[data-terminal]').textContent = formatTerminalValue(flight.terminal) || '—';
@@ -484,8 +750,9 @@
     var status = statusLabels[flight.status] || statusLabels.UNKNOWN;
     document.querySelector('[data-flight-status]').textContent = textFor(status);
     renderProviderSummary(flight.providerResults);
+    var departureBlock = renderDeparturePassedConfirmation(flight);
     var continueButton = document.querySelector('[data-action="continue"]');
-    if (!continueButton.disabled) continueButton.disabled = Boolean(flight.requiresUserConfirmation && !conflictsConfirmed);
+    continueButton.disabled = Boolean(departureBlock || flight.requiresUserConfirmation && !conflictsConfirmed);
     var continueLabel = continueButton.querySelector('[data-button-label]') || continueButton;
     continueLabel.textContent = fromDocument
       ? localeText('确认并查询实时航班', 'Confirm and check live flight', 'Confirmar y consultar el vuelo real')
@@ -496,6 +763,7 @@
     renderTimeStatus();
     renderEvidence();
     renderConnectivityStatus();
+    renderSegmentSelector();
   }
 
   function scenarioDisplayName(value) {
@@ -604,6 +872,9 @@
       if (quality.indexOf('LIVE') >= 0 || quality.indexOf('REAL') >= 0) return localeText('已取得实时数据', 'live data available', 'datos en directo obtenidos');
       return localeText('已取得数据', 'data available', 'datos obtenidos');
     }
+    if (result && (result.outcome === 'PENDING' || errorCode.indexOf('_PENDING') >= 0)) {
+      return localeText('已有可用结果，本次未继续等待', 'not awaited after a usable result', 'no se esperó tras obtener un resultado utilizable');
+    }
     if (result && result.outcome === 'NOT_CONFIGURED') return localeText('尚未配置', 'not configured', 'sin configurar');
     if (errorCode.indexOf('NO_RESULTS') >= 0) return localeText('该来源没有这条记录', 'no record for this flight', 'esta fuente no tiene este vuelo');
     if (errorCode.indexOf('IDENTITY_MISMATCH') >= 0) return localeText('该来源返回了其他航班', 'returned another flight', 'la fuente devolvió otro vuelo');
@@ -666,28 +937,21 @@
     var status = document.querySelector('[data-loading-status]');
     var progress = document.querySelector('[data-progress]');
     var progressBar = document.querySelector('.progress-track');
-    var index = 0;
     status.textContent = textFor(messages[0]);
-    progress.style.width = '15%';
-    progressBar.setAttribute('aria-valuenow', '15');
+    progress.style.width = '10%';
+    progressBar.setAttribute('aria-valuenow', '10');
     clearInterval(loadingTimer);
     clearTimeout(loadingTimeout);
-    loadingTimer = setInterval(function () {
-      index += 1;
-      if (index < messages.length) {
-        status.textContent = textFor(messages[index]);
-        progress.style.width = (index === 1 ? '54%' : '86%');
-        progressBar.setAttribute('aria-valuenow', index === 1 ? '54' : '86');
-      }
-    }, 650);
-    return new Promise(function (resolve) {
-      loadingTimeout = setTimeout(function () {
-        clearInterval(loadingTimer);
-        progress.style.width = '100%';
-        progressBar.setAttribute('aria-valuenow', '100');
-        resolve();
-      }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 150 : 1900);
-    });
+  }
+
+  function updateLoadingProgress(percent, messages, messageIndex) {
+    var value = Math.max(0, Math.min(100, Number(percent) || 0));
+    var progress = document.querySelector('[data-progress]');
+    var progressBar = document.querySelector('.progress-track');
+    var status = document.querySelector('[data-loading-status]');
+    if (progress) progress.style.width = value + '%';
+    if (progressBar) progressBar.setAttribute('aria-valuenow', String(value));
+    if (status && messages && messages[messageIndex]) status.textContent = textFor(messages[messageIndex]);
   }
 
   function resolvePayload(flightNumber, departureDate, demo, documentResult, demoScenario, refresh) {
@@ -701,7 +965,120 @@
     };
   }
 
+  function extractionToFlight(result) {
+    return {
+      flightNumber: result.flightNumber,
+      departureDate: result.departureDate,
+      departureAirport: result.departureAirport || null,
+      departureAirportName: result.departureAirport || null,
+      arrivalAirport: result.arrivalAirport || null,
+      arrivalAirportName: result.arrivalAirport || null,
+      scheduledDeparture: result.scheduledDeparture || null,
+      scheduledArrival: result.scheduledArrival || null,
+      documentBoardingTime: result.boardingTime || null,
+      terminal: result.terminal || null,
+      gate: result.gate || null,
+      seat: result.seat || null,
+      status: 'UNKNOWN',
+      delayMinutes: null,
+      lastUpdated: result.extractedAt,
+      dataSource: result.dataSource,
+      documentType: result.documentType || 'UNKNOWN',
+      requiresDocumentConfirmation: Boolean(result.requiresDocumentConfirmation),
+      boardingPassDetected: Boolean(result.boardingPassDetected),
+      live: false,
+      demo: false
+    };
+  }
+
+  function renderSegmentSelector() {
+    var selector = document.querySelector('[data-segment-selector]');
+    var options = document.querySelector('[data-segment-options]');
+    if (!selector || !options) return;
+    var multiple = documentSegments.length > 1;
+    selector.hidden = !multiple;
+    options.replaceChildren();
+    if (multiple) {
+      documentSegments.forEach(function (segment, index) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'segment-option';
+        button.dataset.action = 'select-segment';
+        button.dataset.segmentIndex = String(index);
+        button.setAttribute('aria-pressed', String(index === selectedDocumentSegmentIndex));
+        var route = (segment.departureAirport || '—') + ' → ' + (segment.arrivalAirport || '—');
+        var heading = document.createElement('strong');
+        heading.textContent = formatFlightNumber(segment.flightNumber || '—') + ' · ' + route;
+        var details = document.createElement('span');
+        details.textContent = formatDate(segment.departureDate) + (segment.scheduledDeparture
+          ? ' · ' + String(segment.scheduledDeparture).replace('T', ' ') : '');
+        var choice = document.createElement('span');
+        choice.className = 'segment-choice-label';
+        choice.textContent = index === selectedDocumentSegmentIndex ? t('selectedSegment') : t('selectSegment');
+        button.append(heading, details, choice);
+        options.append(button);
+      });
+    }
+    var awaitingSelection = multiple && selectedDocumentSegmentIndex == null;
+    var flightCard = document.querySelector('.screen-confirm .flight-card');
+    var choices = document.querySelector('.screen-confirm .confirm-choice-actions');
+    if (flightCard) flightCard.hidden = awaitingSelection;
+    if (choices) choices.hidden = awaitingSelection;
+    if (awaitingSelection) {
+      var fieldReview = document.querySelector('.screen-confirm [data-field-review]');
+      var conflictCard = document.querySelector('.screen-confirm [data-conflict-card]');
+      if (fieldReview) fieldReview.hidden = true;
+      if (conflictCard) conflictCard.hidden = true;
+    }
+    var continueButton = document.querySelector('[data-action="continue"]');
+    if (continueButton) continueButton.disabled = lookupInFlight || awaitingSelection
+      || Boolean(currentFlight && (departureStopReason(currentFlight)
+        || currentFlight.requiresUserConfirmation && !conflictsConfirmed));
+  }
+
+  function selectDocumentSegment(index) {
+    if (!pendingDocument || !documentSegments[index]) return;
+    selectedDocumentSegmentIndex = index;
+    var segment = documentSegments[index];
+    var selectedFields = Object.assign({}, segment.fields || {});
+    if (documentRootFields.document_type) {
+      selectedFields.document_type = documentRootFields.document_type;
+    }
+    var reviewPrefix = 'segments[' + index + '].';
+    var selectedReviewFields = documentRootReviewFields
+      .filter(function (field) { return String(field).indexOf(reviewPrefix) === 0; })
+      .map(function (field) { return String(field).substring(reviewPrefix.length); });
+    pendingDocument = Object.assign({}, pendingDocument, {
+      flightNumber: segment.flightNumber || null,
+      departureDate: segment.departureDate || null,
+      departureAirport: segment.departureAirport || null,
+      arrivalAirport: segment.arrivalAirport || null,
+      scheduledDeparture: segment.scheduledDeparture || null,
+      scheduledArrival: segment.scheduledArrival || null,
+      boardingTime: segment.boardingTime || null,
+      terminal: segment.terminal || null,
+      gate: segment.gate || null,
+      seat: segment.seat || null,
+      fields: selectedFields,
+      needsReviewFields: selectedReviewFields,
+      confirmedReviewFields: (pendingDocument.confirmedReviewFields || []).indexOf('document_type') >= 0 ? ['document_type'] : [],
+      onSiteReviewFields: (pendingDocument.onSiteReviewFields || []).indexOf('document_type') >= 0 ? ['document_type'] : [],
+      segments: [segment]
+    });
+    beginFlight(extractionToFlight(pendingDocument), pendingDocument);
+    renderSegmentSelector();
+    persistJourney();
+    announce(localeText('已选择航段，请确认后查询实时信息。', 'Segment selected. Confirm it to look up live information.', 'Tramo seleccionado. Confírmalo para consultar la información en directo.'));
+  }
+
   function startFlightLookup(flightNumber, departureDate, demo, documentResult, demoScenario) {
+    if (lookupInFlight) return;
+    if (!documentResult) {
+      documentSegments = [];
+      selectedDocumentSegmentIndex = null;
+      documentRootFields = {};
+      documentRootReviewFields = [];
+    }
     var normalized = normalizeFlightNumber(flightNumber);
     var activeRequest = ++requestSequence;
     var origin = currentScreen === 'loading' ? 'welcome' : currentScreen;
@@ -713,13 +1090,17 @@
     };
     currentError = null;
     retryRequest = function () { startFlightLookup(normalized, departureDate, demo, documentResult, demoScenario); };
-    var animation = runLoading(loadingMessages);
+    setLookupBusy(true);
+    runLoading(loadingMessages);
 
-    Promise.all([postJson('/api/journeys/resolve-flight',
-      resolvePayload(normalized, departureDate, demo, documentResult, demoScenario, false)), animation]).then(function (values) {
+    postFlightJson('/api/journeys/resolve-flight',
+      resolvePayload(normalized, departureDate, demo, documentResult, demoScenario, false), function () {
+        updateLoadingProgress(72, loadingMessages, 1);
+      }).then(function (flight) {
       if (activeRequest !== requestSequence) return;
-      beginFlight(values[0], documentResult);
-      recordLiveChanges(values[0].latestChanges);
+      updateLoadingProgress(100, loadingMessages, 2);
+      beginFlight(flight, documentResult);
+      recordLiveChanges(flight.latestChanges);
       navigationHistory.push(origin);
       showScreen('confirm');
       announce(localeText('航班信息已准备好，请确认。', 'Flight details ready. Please confirm.', 'Los datos del vuelo están listos. Confírmalos.'));
@@ -728,49 +1109,37 @@
       clearInterval(loadingTimer);
       clearTimeout(loadingTimeout);
       showError(error, retryRequest);
-    });
+    }).finally(function () { setLookupBusy(false); });
   }
 
   function uploadDocument(file) {
+    if (lookupInFlight) return;
     var activeRequest = ++requestSequence;
     var formData = new FormData();
     formData.append('file', file);
     currentError = null;
     retryRequest = function () { uploadDocument(file); };
-    var animation = runLoading(uploadLoadingMessages);
-    var extraction = fetchJson('/api/documents/boarding-pass', { method: 'POST', body: formData });
+    setLookupBusy(true);
+    runLoading(uploadLoadingMessages);
+    var extraction = fetchJson('/api/documents/boarding-pass', {
+      method: 'POST', body: formData,
+      onResponse: function () { updateLoadingProgress(72, uploadLoadingMessages, 1); }
+    });
 
-    Promise.all([extraction, animation]).then(function (values) {
+    extraction.then(function (result) {
       if (activeRequest !== requestSequence) return;
-      var result = values[0];
+      updateLoadingProgress(100, uploadLoadingMessages, 2);
       lastLookupContext = {
         flightNumber: normalizeFlightNumber(result.flightNumber),
         departureDate: result.departureDate || null,
         departureAirport: result.departureAirport || null,
         arrivalAirport: result.arrivalAirport || null
       };
-      var extractedFlight = {
-        flightNumber: result.flightNumber,
-        departureDate: result.departureDate,
-        departureAirport: result.departureAirport || '—',
-        departureAirportName: result.departureAirport || '—',
-        arrivalAirport: result.arrivalAirport || '—',
-        arrivalAirportName: result.arrivalAirport || '—',
-        scheduledDeparture: result.scheduledDeparture || null,
-        documentBoardingTime: result.boardingTime,
-        terminal: result.terminal,
-        gate: result.gate,
-        seat: result.seat,
-        status: 'UNKNOWN',
-        delayMinutes: null,
-        lastUpdated: result.extractedAt,
-        dataSource: result.dataSource,
-        documentType: result.documentType || 'UNKNOWN',
-        requiresDocumentConfirmation: Boolean(result.requiresDocumentConfirmation),
-        boardingPassDetected: Boolean(result.boardingPassDetected),
-        live: false,
-        demo: false
-      };
+      documentSegments = Array.isArray(result.segments) ? result.segments.slice() : [];
+      selectedDocumentSegmentIndex = documentSegments.length === 1 ? 0 : null;
+      documentRootFields = Object.assign({}, result.fields || {});
+      documentRootReviewFields = Array.isArray(result.needsReviewFields) ? result.needsReviewFields.slice() : [];
+      var extractedFlight = extractionToFlight(result);
       beginFlight(extractedFlight, result);
       recordJourneyEvent('DOCUMENT_EXTRACTED',
         'Nutrient 已从隐私安全文件提取字段',
@@ -783,14 +1152,15 @@
       clearInterval(loadingTimer);
       clearTimeout(loadingTimeout);
       showError(error, retryRequest);
-    });
+    }).finally(function () { setLookupBusy(false); });
   }
 
   function beginFlight(flight, documentResult) {
+    var requestedDepartureDate = lastLookupContext && lastLookupContext.departureDate;
     currentFlight = flight;
     lastLookupContext = {
       flightNumber: normalizeFlightNumber(flight.flightNumber),
-      departureDate: flight.departureDate || null,
+      departureDate: requestedDepartureDate || flight.departureDate || null,
       departureAirport: flight.departureAirport || null,
       arrivalAirport: flight.arrivalAirport || null
     };
@@ -802,21 +1172,31 @@
     conflictsConfirmed = false;
     lastRefreshAttemptAt = 0;
     currentError = null;
+    checkInStatusAnswer = null;
     renderFlight(flight);
     persistJourney();
   }
 
   function resolveUploadedFlight() {
     if (!currentFlight || !pendingDocument) return;
+    if (documentSegments.length > 1 && selectedDocumentSegmentIndex == null) {
+      announce(t('chooseSegment'));
+      return;
+    }
+    if (lookupInFlight) return;
     var activeRequest = ++requestSequence;
     var previousEvents = journeyEvents.slice();
     currentError = null;
     retryRequest = resolveUploadedFlight;
-    var animation = runLoading(loadingMessages);
+    setLookupBusy(true);
+    runLoading(loadingMessages);
     var request = resolvePayload(currentFlight.flightNumber, currentFlight.departureDate, false, pendingDocument, null, false);
-    Promise.all([postJson('/api/journeys/resolve-flight', request), animation]).then(function (values) {
+    postFlightJson('/api/journeys/resolve-flight', request, function () {
+      updateLoadingProgress(72, loadingMessages, 1);
+    }).then(function (flight) {
       if (activeRequest !== requestSequence) return;
-      currentFlight = values[0];
+      updateLoadingProgress(100, loadingMessages, 2);
+      currentFlight = flight;
       journeyEvents = previousEvents;
       conflictsConfirmed = false;
       lastRefreshAttemptAt = 0;
@@ -830,7 +1210,7 @@
       clearInterval(loadingTimer);
       clearTimeout(loadingTimeout);
       showError(error, retryRequest);
-    });
+    }).finally(function () { setLookupBusy(false); });
   }
 
   function confirmDocumentField(markForOnSiteReview) {
@@ -861,7 +1241,7 @@
     var terminalChange = latestFlightChange('TERMINAL_CHANGED');
     return {
       flightNumber: currentFlight.flightNumber,
-      departureDate: currentFlight.departureDate,
+      departureDate: lastLookupContext && lastLookupContext.departureDate || currentFlight.departureDate,
       flightSnapshot: currentFlight,
       demo: Boolean(currentFlight.demo),
       demoScenario: currentFlight.demoScenario || null,
@@ -882,6 +1262,30 @@
       conflictsConfirmed: conflictsConfirmed,
       refreshRequested: false
     };
+  }
+
+  function buildCheckInQuestion() {
+    return {
+      stepType: 'CHECK_IN_QUESTION',
+      actionCode: null,
+      titleZh: translations.zh.checkInQuestion,
+      titleEn: translations.en.checkInQuestion,
+      titleEs: translations.es.checkInQuestion,
+      descriptionZh: translations.zh.checkInQuestionLead,
+      descriptionEn: translations.en.checkInQuestionLead,
+      descriptionEs: translations.es.checkInQuestionLead,
+      presetDismissed: false,
+      urgency: 'NORMAL',
+      reason: 'TRAVELER_CHECK_IN_CONFIRMATION',
+      lastUpdated: calibratedNowIso()
+    };
+  }
+
+  function showCheckInQuestion() {
+    currentAction = buildCheckInQuestion();
+    checkInStatusAnswer = journeyContext && journeyContext.boardingPassDetected ? 'yes' : null;
+    renderJourneyResponse();
+    persistJourney();
   }
 
   function buildQaAction() {
@@ -919,7 +1323,7 @@
     if (!beginRefreshAttempt()) return;
     document.querySelectorAll('[data-action="refresh-flight"]').forEach(function (button) { button.disabled = true; });
     setRefreshStatus('CHECKING');
-    postJson('/api/journeys/refresh-flight', currentFlight).then(function (flight) {
+    postFlightJson('/api/journeys/refresh-flight', currentFlight).then(function (flight) {
       currentFlight = flight;
       if (journeyContext) journeyContext.flightSnapshot = flight;
       recordLiveChanges(flight.latestChanges);
@@ -934,6 +1338,21 @@
     }).finally(updateRefreshButtonCooldown);
   }
 
+  function beginNewFlightInformation() {
+    requestSequence += 1;
+    clearInterval(loadingTimer);
+    clearTimeout(loadingTimeout);
+    clearJourney();
+    fileInput.value = '';
+    showScreen('manual');
+    var flightField = document.getElementById('flight-input');
+    var dateField = document.getElementById('date-input');
+    flightField.value = '';
+    dateField.value = '';
+    flightField.focus({ preventScroll: true });
+    announce(localeText('请输入新的航班号和出发日期。', 'Enter the new flight number and departure date.', 'Introduce el nuevo número de vuelo y la fecha de salida.'));
+  }
+
   function refreshArrivalInfo(force) {
     if (!currentFlight || !journeyContext || !journeyContext.boarded) return;
     if (!navigator.onLine) {
@@ -945,7 +1364,7 @@
     if (!force && !beginRefreshAttempt()) return;
     if (force) lastRefreshAttemptAt = Date.now();
     setRefreshStatus('CHECKING_ARRIVAL');
-    postJson('/api/journeys/refresh-flight', currentFlight).then(function (flight) {
+    postFlightJson('/api/journeys/refresh-flight', currentFlight).then(function (flight) {
       currentFlight = flight;
       journeyContext.flightSnapshot = flight;
       recordLiveChanges(flight.latestChanges);
@@ -1066,10 +1485,11 @@
     journeyContext.flightSnapshot = currentFlight;
     journeyContext.conflictsConfirmed = conflictsConfirmed;
     document.querySelector('.screen-step').setAttribute('aria-busy', 'true');
+    document.querySelectorAll('.screen-step [data-action="complete-action"], .screen-step [data-action="baggage"], .screen-step [data-action="checkin-status"]').forEach(function (button) { button.disabled = true; });
     retryRequest = function () { requestNextAction(refreshRequested); };
     if (refreshRequested) setRefreshStatus('CHECKING');
 
-    postJson('/api/journeys/next-action', journeyContext).then(function (response) {
+    postFlightJson('/api/journeys/next-action', journeyContext).then(function (response) {
       if (activeRequest !== requestSequence) return;
       journeyContext.refreshRequested = false;
       currentFlight = response.flight;
@@ -1092,6 +1512,7 @@
       }
     }).finally(function () {
       document.querySelector('.screen-step').removeAttribute('aria-busy');
+      document.querySelectorAll('.screen-step [data-action="baggage"], .screen-step [data-action="checkin-status"]').forEach(function (button) { button.disabled = false; });
       updateRefreshButtonCooldown();
     });
   }
@@ -1114,19 +1535,50 @@
     COMPLETE: { title: 'Has completado las indicaciones', description: 'Buen viaje.' }
   };
 
-  function actionLocaleText(action, part) {
+  function actionTextForLocale(action, part, locale) {
     if (!action) return '';
-    if (currentLocale === 'zh') return action[part + 'Zh'] || '';
-    if (currentLocale === 'en') return action[part + 'En'] || '';
+    if (isDepartureStopAction(action)) {
+      var departureCopy = {
+        title: {
+          zh: '这趟航班已经离港',
+          en: 'This flight has departed',
+          es: 'Este vuelo ya ha salido'
+        },
+        description: {
+          zh: '点击下方“请工作人员帮忙”，并前往航空公司服务柜台出示给工作人员。',
+          en: 'Select “Ask a member of staff” below, then go to the airline service desk and show it to a staff member.',
+          es: 'Pulsa «Pedir ayuda al personal» y ve al mostrador de atención de la aerolínea para mostrárselo al personal.'
+        }
+      };
+      return departureCopy[part] && departureCopy[part][locale] || '';
+    }
+    if (locale === 'zh') return action[part + 'Zh'] || '';
+    if (locale === 'en') return action[part + 'En'] || '';
     var key = action.stepType === 'BAGGAGE_QUESTION' ? 'BAGGAGE_QUESTION' : action.actionCode || 'COMPLETE';
     return action[part + 'Es'] || spanishActionCopy[key] && spanishActionCopy[key][part] || action[part + 'En'] || '';
   }
 
+  function actionLocaleText(action, part) {
+    return actionTextForLocale(action, part, currentLocale);
+  }
+
+  function setBilingualActionText(element, action, part, heading) {
+    setBilingualContent(element, actionTextForLocale(action, part, currentLocale),
+      actionTextForLocale(action, part, 'en'), heading);
+  }
+
+  function setLocalizedStepText(element, action, part) {
+    if (!element) return;
+    element.textContent = actionTextForLocale(action, part, currentLocale);
+    element.lang = localeLanguageTag(currentLocale);
+  }
+
   function renderJourneyResponse() {
     if (!currentAction) return;
+    stopSpeech(false);
     if (currentAction.stepType === 'COMPLETE') {
-      document.querySelector('[data-complete-title]').textContent = actionLocaleText(currentAction, 'title');
-      document.querySelector('[data-complete-description]').textContent = actionLocaleText(currentAction, 'description');
+      setBilingualActionText(document.querySelector('[data-complete-title]'), currentAction, 'title', true);
+      setBilingualActionText(document.querySelector('[data-complete-description]'), currentAction, 'description', false);
       document.querySelector('[data-complete-flight]').textContent = formatFlightNumber(currentFlight.flightNumber)
         + ' · ' + (currentFlight.arrivalAirport || '—');
       setStaffContent(
@@ -1144,16 +1596,25 @@
     }
 
     showScreen('step');
-    var question = currentAction.stepType === 'BAGGAGE_QUESTION';
-    document.querySelector('[data-step-question]').hidden = !question;
+    var baggageQuestion = currentAction.stepType === 'BAGGAGE_QUESTION';
+    var checkInQuestion = currentAction.stepType === 'CHECK_IN_QUESTION';
+    var question = baggageQuestion || checkInQuestion;
+    var departureException = isDepartureStopAction(currentAction);
+    var helpOnlyAction = currentAction.actionCode === 'ASK_FOR_HELP';
+    document.querySelector('[data-step-question]').hidden = !baggageQuestion;
+    document.querySelector('[data-checkin-question]').hidden = !checkInQuestion;
     document.querySelector('[data-step-result]').hidden = question;
+    document.querySelector('.screen-step').classList.toggle('is-departure-exception', departureException);
+    var exceptionActions = document.querySelector('[data-departure-exception-actions]');
+    if (exceptionActions) exceptionActions.hidden = !departureException;
+    document.querySelector('.screen-step .step-assistance-actions').hidden = departureException;
     var completeButton = document.querySelector('[data-complete-action]');
-    completeButton.hidden = question;
+    completeButton.hidden = question || helpOnlyAction;
     var refreshCooldownRemaining = Math.max(0, REFRESH_COOLDOWN_MS - (Date.now() - lastRefreshAttemptAt));
     completeButton.disabled = !question && currentAction.actionCode === 'WAIT'
       && (!navigator.onLine || Boolean(lastRefreshAttemptAt && refreshCooldownRemaining > 0));
     document.querySelectorAll('.screen-step [data-action="journey-back"]').forEach(function (backButton) {
-      backButton.hidden = !currentFlight;
+      backButton.hidden = !currentFlight || departureException;
     });
     document.querySelector('[data-step-label]').textContent = t('currentStep');
     var completedStages = completedStageCount();
@@ -1162,25 +1623,44 @@
       completedStages + (completedStages === 1 ? ' stage completed' : ' stages completed'),
       completedStages + (completedStages === 1 ? ' etapa completada' : ' etapas completadas'));
 
-    if (question) {
-      document.querySelector('[data-question-title]').textContent = actionLocaleText(currentAction, 'title');
-      document.querySelector('[data-question-description]').textContent = actionLocaleText(currentAction, 'description');
+    if (checkInQuestion) {
+      var usePreset = Boolean(journeyContext && journeyContext.boardingPassDetected && !currentAction.presetDismissed);
+      document.querySelector('[data-checkin-preset]').hidden = !usePreset;
+      document.querySelector('[data-checkin-choices]').hidden = usePreset;
+      setLocalizedStepText(document.getElementById('checkin-title'), currentAction, 'title');
+      setLocalizedStepText(document.querySelector('[data-checkin-question] .lead'), currentAction, 'description');
+      document.querySelectorAll('[data-action="checkin-status"]').forEach(function (button) {
+        button.setAttribute('aria-pressed', String(button.dataset.answer === checkInStatusAnswer));
+      });
+      document.querySelector('.screen-step').setAttribute('aria-labelledby', 'checkin-title');
+      setStaffContent(
+        '请帮我确认是否已经值机', 'Please help me confirm whether I am checked in',
+        '您好，我不确定自己是否已经办理值机。请帮我确认登机牌或旅行文件，并告诉我下一步。',
+        'Hello. I am not sure whether I have checked in. Please check my boarding pass or travel document and tell me the next step.'
+      );
+    } else if (baggageQuestion) {
+      setLocalizedStepText(document.querySelector('[data-question-title]'), currentAction, 'title');
+      setLocalizedStepText(document.querySelector('[data-question-description]'), currentAction, 'description');
       document.querySelector('.screen-step').setAttribute('aria-labelledby', 'step-title');
       setBaggageStaffContent();
     } else {
-      document.querySelector('[data-action-title]').textContent = actionLocaleText(currentAction, 'title');
-      document.querySelector('[data-action-description]').textContent = actionLocaleText(currentAction, 'description');
+      setLocalizedStepText(document.querySelector('[data-action-title]'), currentAction, 'title');
+      setLocalizedStepText(document.querySelector('[data-action-description]'), currentAction, 'description');
       renderActionDestination();
       renderActionTime();
       renderInFlightDetails();
-      var completionLabel = completeButton.querySelector('[data-complete-action-label]') || completeButton;
-      completionLabel.textContent = textFor(completionLabels[currentAction.actionCode]
-        || ['我已完成', 'I have completed this', 'He completado este paso']);
+      if (!helpOnlyAction) {
+        var completionLabel = completeButton.querySelector('[data-complete-action-label]') || completeButton;
+        completionLabel.textContent = textFor(completionLabels[currentAction.actionCode]
+          || ['我已完成', 'I have completed this', 'He completado este paso']);
+      }
       var sourceNote = document.querySelector('[data-action-source]');
       if (sourceNote) sourceNote.hidden = true;
       document.querySelector('.screen-step').setAttribute('aria-labelledby', 'action-title');
       setStaffForAction(currentAction);
     }
+    var regularStaffButton = document.querySelector('.screen-step .step-assistance-actions .staff-help-button');
+    if (regularStaffButton) regularStaffButton.hidden = departureException;
     var arrivalRefresh = document.querySelector('[data-action="refresh-arrival"]');
     if (arrivalRefresh) {
       arrivalRefresh.hidden = question || currentAction.actionCode !== 'BAGGAGE_CLAIM'
@@ -1226,61 +1706,100 @@
     var dedicatedBagDrop = locationCode(currentFlight && currentFlight.dedicatedBagDropDesk);
     var baggageBelt = baggageBeltCode();
     var arrival = currentFlight && (currentFlight.arrivalAirportName || currentFlight.arrivalAirport);
+    var airlineValue = currentFlight && (currentFlight.airlineName || currentFlight.airline);
+    var airlineName = typeof airlineValue === 'string' ? airlineValue.trim() || null : null;
+    var airlineZh = airlineName ? airlineName + ' ' : '航空公司 ';
+    var airlineEn = airlineName || 'airline';
+    var airlineEs = airlineName || 'la aerolínea';
+    var terminalZh = formatTerminalForLocale(terminal, 'zh');
+    var terminalEn = formatTerminalForLocale(terminal, 'en');
+    var terminalEs = formatTerminalForLocale(terminal, 'es');
+    var gateZh = formatGateForLocale(gate, 'zh');
+    var gateEn = formatGateForLocale(gate, 'en');
+    var gateEs = formatGateForLocale(gate, 'es');
+    var gateEsSentence = gateEs && gateEs.replace(/^Puerta/, 'puerta');
+    var checkInZh = formatCheckInForLocale(checkIn, 'zh');
+    var checkInEn = formatCheckInForLocale(checkIn, 'en');
+    var checkInEs = formatCheckInForLocale(checkIn, 'es');
     var copy = {
       primaryZh: '向工作人员确认具体位置',
       primaryEn: 'Ask staff to confirm the exact location',
       primaryEs: 'Pide al personal que confirme el lugar exacto',
-      contextZh: formatTerminalValue(terminal) || '',
-      contextEn: terminal ? 'Terminal ' + terminal : '',
-      contextEs: terminal ? 'Terminal ' + terminal : ''
+      contextZh: terminalZh || '',
+      contextEn: terminalEn || '',
+      contextEs: terminalEs || ''
     };
 
-    if (code === 'CHECK_IN') {
-      copy.primaryZh = checkIn
-        ? '前往航空公司' + formatCheckInValue(checkIn)
-        : '先找航空公司工作人员确认值机位置';
-      copy.primaryEn = checkIn
-        ? 'Go to airline ' + formatCheckInForLocale(checkIn, 'en')
-        : 'Ask airline staff to confirm the check-in location first';
-      copy.primaryEs = checkIn
-        ? 'Ve a la ' + formatCheckInForLocale(checkIn, 'es') + ' de la aerolínea'
-        : 'Pide al personal de la aerolínea que confirme la zona de facturación';
+    if (isDepartureStopAction(currentAction)) {
+      copy.primaryZh = '前往航空公司服务柜台，请工作人员帮忙';
+      copy.primaryEn = 'Go to the airline service desk and ask for help';
+      copy.primaryEs = 'Ve al mostrador de atención de la aerolínea y pide ayuda';
+      copy.contextZh = terminalZh
+        ? '参考：' + terminalZh + '；请在现场确认服务柜台位置。'
+        : '请在现场确认航空公司服务柜台位置。';
+      copy.contextEn = terminalEn
+        ? 'Reference: ' + terminalEn + '; confirm the service-desk location on site.'
+        : 'Confirm the airline service-desk location on site.';
+      copy.contextEs = terminalEs
+        ? 'Referencia: ' + terminalEs + '; confirma allí la ubicación del mostrador de atención.'
+        : 'Confirma allí la ubicación del mostrador de atención de la aerolínea.';
+    } else if (code === 'CHECK_IN') {
+      if (checkIn) {
+        copy.primaryZh = '前往' + airlineZh + checkInZh + '办理值机';
+        copy.primaryEn = 'Go to ' + airlineEn + ' ' + checkInEn.replace(/^Check-in/, 'check-in') + ' to check in';
+        copy.primaryEs = 'Ve a la ' + checkInEs.replace(/^Zona/, 'zona') + ' de ' + airlineEs + ' para facturar';
+      } else if (terminal) {
+        copy.primaryZh = '前往' + terminalZh + '的' + airlineZh.trim() + '值机区办理值机';
+        copy.primaryEn = 'Go to the ' + airlineEn + ' check-in area in ' + terminalEn + ' to check in';
+        copy.primaryEs = 'Ve a la zona de facturación de ' + airlineEs + ' en la ' + terminalEs + ' para facturar';
+        copy.contextZh = copy.contextEn = copy.contextEs = '';
+      } else {
+        copy.primaryZh = '请航空公司工作人员确认值机位置并协助办理值机';
+        copy.primaryEn = 'Ask airline staff to confirm where to check in and help you complete check-in';
+        copy.primaryEs = 'Pide al personal de la aerolínea que confirme dónde facturar y te ayude a hacerlo';
+      }
     } else if (code === 'BAG_DROP') {
-      copy.primaryZh = dedicatedBagDrop
-        ? '前往' + formatBagDropValue(dedicatedBagDrop)
-        : checkIn
-          ? '前往航空公司' + formatCheckInForLocale(checkIn, 'zh', true) + '，询问行李托运位置'
-          : '向工作人员确认行李托运位置';
-      copy.primaryEn = dedicatedBagDrop
-        ? 'Go to baggage drop desk ' + dedicatedBagDrop
-        : checkIn
-          ? 'Go to airline check-in area ' + checkIn + ' and ask for baggage drop'
-          : 'Ask staff to confirm the baggage drop location';
-      copy.primaryEs = dedicatedBagDrop
-        ? 'Ve a la entrega de equipaje ' + dedicatedBagDrop
-        : checkIn
-          ? 'Ve a la ' + formatCheckInForLocale(checkIn, 'es') + ' y pregunta por la entrega de equipaje'
-          : 'Pide al personal que confirme dónde entregar el equipaje';
+      if (dedicatedBagDrop) {
+        copy.primaryZh = '前往' + airlineZh + formatBagDropForLocale(dedicatedBagDrop, 'zh') + '托运行李';
+        copy.primaryEn = 'Go to ' + airlineEn + ' ' + formatBagDropForLocale(dedicatedBagDrop, 'en').replace(/^Bag/, 'bag') + ' to drop off your baggage';
+        copy.primaryEs = 'Ve a la ' + formatBagDropForLocale(dedicatedBagDrop, 'es').replace(/^Entrega/, 'entrega') + ' de ' + airlineEs + ' para entregar el equipaje';
+      } else if (checkIn) {
+        copy.primaryZh = '前往' + airlineZh + formatCheckInForLocale(checkIn, 'zh', true) + '，询问托运位置并托运行李';
+        copy.primaryEn = 'Go to ' + airlineEn + ' ' + checkInEn.replace(/^Check-in/, 'check-in') + ' and ask where to drop off your baggage';
+        copy.primaryEs = 'Ve a la ' + checkInEs.replace(/^Zona/, 'zona') + ' de ' + airlineEs + ' y pregunta dónde entregar el equipaje';
+      } else if (terminal) {
+        copy.primaryZh = '前往' + terminalZh + '的' + airlineZh.trim() + '柜台，询问托运位置并托运行李';
+        copy.primaryEn = 'Go to the ' + airlineEn + ' counters in ' + terminalEn + ' and ask where to drop off your baggage';
+        copy.primaryEs = 'Ve a los mostradores de ' + airlineEs + ' en la ' + terminalEs + ' y pregunta dónde entregar el equipaje';
+        copy.contextZh = copy.contextEn = copy.contextEs = '';
+      } else {
+        copy.primaryZh = '请工作人员确认行李托运位置并协助托运行李';
+        copy.primaryEn = 'Ask staff to confirm the baggage drop location and help you drop off your baggage';
+        copy.primaryEs = 'Pide al personal que confirme dónde entregar el equipaje y que te ayude a hacerlo';
+      }
     } else if (code === 'SECURITY') {
-      copy.primaryZh = '前往安检入口';
-      copy.primaryEn = 'Go to the security entrance';
-      copy.primaryEs = 'Ve a la entrada del control de seguridad';
+      copy.primaryZh = terminal ? '前往' + terminalZh + '安检入口接受安检' : '前往机场安检入口接受安检';
+      copy.primaryEn = terminal ? 'Go to the security entrance in ' + terminalEn + ' and pass through security' : 'Go to airport security and pass through screening';
+      copy.primaryEs = terminal ? 'Ve al control de seguridad de la ' + terminalEs + ' y pasa el control' : 'Ve al control de seguridad del aeropuerto y pasa el control';
+      copy.contextZh = copy.contextEn = copy.contextEs = '';
     } else if (code === 'GO_TO_GATE') {
-      copy.primaryZh = gate ? '前往' + formatGateValue(gate) : '请工作人员确认登机口';
-      copy.primaryEn = gate ? 'Go to gate ' + gate : 'Ask staff to confirm the gate';
-      copy.primaryEs = gate ? 'Ve a la puerta ' + gate : 'Pide al personal que confirme la puerta';
+      copy.primaryZh = gate ? '前往' + (terminalZh ? terminalZh + '的' : '') + gateZh + '，查看屏幕并等候登机' : '请工作人员确认登机口，然后前往该登机口等候登机';
+      copy.primaryEn = gate ? 'Go to ' + gateEn + (terminalEn ? ' in ' + terminalEn : '') + ', check the screen, and wait to board' : 'Ask staff to confirm the gate, then go there and wait to board';
+      copy.primaryEs = gate ? 'Ve a la ' + gateEsSentence + (terminalEs ? ' de la ' + terminalEs : '') + ', comprueba la pantalla y espera para embarcar' : 'Pide al personal que confirme la puerta; después ve allí y espera para embarcar';
+      copy.contextZh = copy.contextEn = copy.contextEs = '';
     } else if (code === 'WAIT') {
       copy.primaryZh = gate ? '在' + formatGateValue(gate) + '附近等候' : '在航班信息屏幕附近等候';
       copy.primaryEn = gate ? 'Wait near gate ' + gate : 'Wait near a flight information screen';
       copy.primaryEs = gate ? 'Espera cerca de la puerta ' + gate : 'Espera cerca de una pantalla de vuelos';
     } else if (code === 'BOARD_NOW') {
-      copy.primaryZh = gate ? '现在到' + formatGateValue(gate) + '排队登机' : '现在到登机口排队登机';
-      copy.primaryEn = gate ? 'Queue to board now at gate ' + gate : 'Queue at the gate to board now';
-      copy.primaryEs = gate ? 'Haz la fila para embarcar en la puerta ' + gate : 'Haz la fila en la puerta para embarcar';
+      copy.primaryZh = '前往' + (terminalZh ? terminalZh + '的' : '') + (gateZh || '当前航班登机口') + '，排队并出示登机牌登机';
+      copy.primaryEn = 'Go to ' + (gateEn || 'your flight gate') + (terminalEn ? ' in ' + terminalEn : '') + ', queue, and show your boarding pass to board';
+      copy.primaryEs = 'Ve a la ' + (gateEsSentence || 'puerta de tu vuelo') + (terminalEs ? ' de la ' + terminalEs : '') + ', haz la fila y muestra tu tarjeta de embarque';
+      copy.contextZh = copy.contextEn = copy.contextEs = '';
     } else if (code === 'ASK_FOR_HELP') {
-      copy.primaryZh = '把大字卡出示给工作人员';
-      copy.primaryEn = 'Show the large card to a member of staff';
-      copy.primaryEs = 'Muestra la tarjeta grande al personal';
+      copy.primaryZh = '请工作人员查看大字卡并提供帮助';
+      copy.primaryEn = 'Ask a member of staff to read the card and help you';
+      copy.primaryEs = 'Pide al personal que lea la tarjeta y te ayude';
     } else if (code === 'IN_FLIGHT') {
       copy.primaryZh = '飞往 ' + (arrival || '目的地机场');
       copy.primaryEn = 'Flying to ' + (arrival || 'the destination airport');
@@ -1289,16 +1808,16 @@
       copy.contextEn = currentFlight.arrivalAirport ? 'Arrival airport: ' + currentFlight.arrivalAirport : '';
       copy.contextEs = currentFlight.arrivalAirport ? 'Aeropuerto de llegada: ' + currentFlight.arrivalAirport : '';
     } else if (code === 'BAGGAGE_CLAIM') {
-      copy.primaryZh = baggageBelt ? '前往' + formatBeltValue(baggageBelt) : '行李转盘尚未公布，请查看到达屏幕';
-      copy.primaryEn = baggageBelt ? 'Go to baggage belt ' + baggageBelt : 'The baggage belt is not published yet; check the arrivals screen';
-      copy.primaryEs = baggageBelt ? 'Ve a la cinta ' + baggageBelt : 'La cinta aún no está publicada; consulta la pantalla de llegadas';
+      copy.primaryZh = baggageBelt ? '前往' + formatBeltForLocale(baggageBelt, 'zh') + '，核对航班号并领取行李' : '查看到达屏幕确认行李转盘，再前往领取行李';
+      copy.primaryEn = baggageBelt ? 'Go to ' + formatBeltForLocale(baggageBelt, 'en').replace(/^Baggage/, 'baggage') + ', check the flight number, and collect your baggage' : 'Check the arrivals screen for the baggage belt, then go there to collect your baggage';
+      copy.primaryEs = baggageBelt ? 'Ve a la ' + formatBeltForLocale(baggageBelt, 'es').replace(/^Cinta/, 'cinta') + ', comprueba el vuelo y recoge tu equipaje' : 'Consulta la pantalla de llegadas para saber la cinta y ve allí a recoger tu equipaje';
       copy.contextZh = '请在到达屏幕上核对航班 ' + formatFlightNumber(currentFlight.flightNumber);
       copy.contextEn = 'Check flight ' + formatFlightNumber(currentFlight.flightNumber) + ' on the arrivals screen';
       copy.contextEs = 'Comprueba el vuelo ' + formatFlightNumber(currentFlight.flightNumber) + ' en la pantalla de llegadas';
     } else if (code === 'EXIT_AIRPORT') {
-      copy.primaryZh = '按照“到达 / 出口”指示前往出口';
-      copy.primaryEn = 'Follow the Arrivals / Exit signs to the exit';
-      copy.primaryEs = 'Sigue las señales de Llegadas / Salida';
+      copy.primaryZh = '按照“到达 / 出口”指示前往出口并离开机场';
+      copy.primaryEn = 'Follow the Arrivals / Exit signs to the exit and leave the airport';
+      copy.primaryEs = 'Sigue las señales de Llegadas / Salida hasta la salida y abandona el aeropuerto';
       copy.contextZh = currentFlight.arrivalAirport ? '到达机场：' + currentFlight.arrivalAirport : '';
       copy.contextEn = currentFlight.arrivalAirport ? 'Arrival airport: ' + currentFlight.arrivalAirport : '';
       copy.contextEs = currentFlight.arrivalAirport ? 'Aeropuerto de llegada: ' + currentFlight.arrivalAirport : '';
@@ -1312,10 +1831,6 @@
     }
 
     currentDestinationCopy = copy;
-    var label = document.querySelector('[data-action-destination] .destination-label');
-    if (label) label.textContent = code === 'IN_FLIGHT'
-      ? localeText('当前航程', 'Current journey', 'Trayecto actual')
-      : localeText('现在前往', 'Go now to', 'Ve ahora a');
     var primaryCopy = currentLocale === 'zh' ? copy.primaryZh : currentLocale === 'es' ? copy.primaryEs : copy.primaryEn;
     var contextCopy = currentLocale === 'zh' ? copy.contextZh : currentLocale === 'es' ? copy.contextEs : copy.contextEn;
     primary.textContent = primaryCopy;
@@ -1439,6 +1954,14 @@
   }
 
   function sourceDescription(action) {
+    var reason = String(action && action.reason || '').trim();
+    if (!reason) return '';
+    if (isDepartureStopReason(reason)) {
+      return localeText(
+        '所选航班的有效起飞时间已经过去，或实时状态已确认离港；普通乘机步骤已经停止。',
+        'The selected flight’s effective departure time has passed, or live status confirms departure. Normal airport steps have stopped.',
+        'La hora de salida efectiva ya pasó o el estado en directo confirma la salida. Se detuvieron los pasos normales.');
+    }
     if (currentFlight && currentFlight.demo) {
       return currentFlight.demoScenario
         ? localeText('模拟数据', 'Simulated data', 'Datos simulados')
@@ -1671,8 +2194,10 @@
             + ' · ' + (field.sourceLabel || localeText('证据标签缺失', 'evidence label missing', 'etiqueta de evidencia no disponible'));
           list.appendChild(item);
         });
-        documentGroup.appendChild(list);
-        container.appendChild(documentGroup);
+        if (list.childElementCount) {
+          documentGroup.appendChild(list);
+          container.appendChild(documentGroup);
+        }
       }
 
       if (currentFlight && (currentFlight.live || currentFlight.demo)) {
@@ -1755,13 +2280,16 @@
         container.appendChild(liveGroup);
       }
 
-      if (currentAction) {
+      var decisionText = currentAction ? String(sourceDescription(currentAction) || '').trim() : '';
+      if (decisionText) {
         var decisionGroup = evidenceGroup(localeText('行动决策依据', 'Decision evidence', 'Motivo de la decisión'));
         var decision = document.createElement('p');
-        decision.textContent = sourceDescription(currentAction);
+        decision.textContent = decisionText;
         decisionGroup.appendChild(decision);
         container.appendChild(decisionGroup);
       }
+      var stepPanel = container.closest('.step-evidence-panel');
+      if (stepPanel) stepPanel.hidden = !decisionText;
     });
   }
 
@@ -1958,6 +2486,21 @@
     }
   }
 
+  function setDeparturePassedStaffContent() {
+    var flight = formatFlightNumber(currentFlight && currentFlight.flightNumber) || '—';
+    var date = currentFlight && currentFlight.departureDate;
+    var dateZh = formatDateForLocale(date, 'zh-CN');
+    var dateEn = formatDateForLocale(date, 'en-GB');
+    var dateEs = formatDateForLocale(date, 'es-ES');
+    setStaffContent(
+      '航班已经离港，请帮我改签或重新预订',
+      'This flight has departed. Please help me rebook',
+      '航班 ' + flight + '，出发日期 ' + dateZh + '，状态：已离港。请问能否为我改签或重新预订，并告诉我下一步应该去哪里？',
+      'Flight ' + flight + ', departure date ' + dateEn + ', status: departed. Can you rebook me or make a new reservation, and tell me where to go next?',
+      'Este vuelo ya ha salido. Ayúdeme a cambiar la reserva',
+      'Vuelo ' + flight + ', fecha de salida ' + dateEs + ', estado: ya ha salido. ¿Puede cambiar mi reserva o hacer una nueva y decirme adónde debo ir ahora?');
+  }
+
   function setStaffForAction(action) {
     var flight = formatFlightNumber(currentFlight && currentFlight.flightNumber);
     var gate = currentFlight && currentFlight.gate;
@@ -1969,9 +2512,7 @@
       return;
     }
     if (reason === 'DEPARTURE_TIME_PASSED' || reason === 'FLIGHT_ALREADY_DEPARTED') {
-      setStaffContent('请确认我是否还能登机', 'Please confirm whether I can still board',
-        '登机或起飞时间已经过去。请问我现在还能登机吗？',
-        'The boarding or departure time has passed. Can I still board now?');
+      setDeparturePassedStaffContent();
       return;
     }
     var content = {
@@ -2015,12 +2556,12 @@
     setStaffContent(content[0], content[1], content[2], content[3]);
   }
 
-  function setStaffContent(titleZh, titleEn, bodyZh, bodyEn) {
+  function setStaffContent(titleZh, titleEn, bodyZh, bodyEn, titleEs, bodyEs) {
     staffContent = {
       titleZh: titleZh, titleEn: titleEn,
-      titleEs: 'Por favor, ayúdeme con el siguiente paso',
+      titleEs: titleEs || 'Por favor, ayúdeme con el siguiente paso',
       bodyZh: bodyZh, bodyEn: bodyEn,
-      bodyEs: 'Necesito ayuda con mi vuelo. Compruebe la información y dígame adónde debo ir ahora.'
+      bodyEs: bodyEs || 'Necesito ayuda con mi vuelo. Compruebe la información y dígame adónde debo ir ahora.'
     };
     renderStaffCard();
   }
@@ -2034,6 +2575,19 @@
   }
 
   function renderStaffCard() {
+    var instructionEn = document.querySelector('[data-staff-instruction-en]');
+    var instructionPrimary = document.querySelector('[data-staff-instruction-primary]');
+    if (instructionEn) {
+      instructionEn.textContent = translations.en.staffCardInstruction;
+      instructionEn.hidden = currentLocale === 'en';
+    }
+    if (instructionPrimary) {
+      instructionPrimary.textContent = t('staffCardInstruction');
+      instructionPrimary.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale;
+      instructionPrimary.hidden = false;
+    }
+    var closeButton = document.querySelector('[data-action="close-staff"]');
+    if (closeButton) closeButton.setAttribute('aria-label', t('close'));
     var titlePrimary = document.querySelector('[data-staff-title-primary]');
     var titleEn = document.querySelector('[data-staff-title-en]');
     titlePrimary.textContent = currentLocale === 'zh' ? staffContent.titleZh : currentLocale === 'es' ? staffContent.titleEs : staffContent.titleEn;
@@ -2144,8 +2698,12 @@
     var progress = completedProgressText();
     var primaryTitle = currentLocale === 'zh' ? staffContent.titleZh : currentLocale === 'es' ? staffContent.titleEs : staffContent.titleEn;
     var primaryBody = currentLocale === 'zh' ? staffContent.bodyZh : currentLocale === 'es' ? staffContent.bodyEs : staffContent.bodyEn;
-    var heading = progress[currentLocale] + '\n' + primaryTitle + '\n\n' + primaryBody;
-    if (currentLocale !== 'en') heading += '\n\n' + progress.en + '\n' + staffContent.titleEn + '\n\n' + staffContent.bodyEn;
+    var heading = t('staffCardInstruction') + '\n\n' + progress[currentLocale]
+      + '\n' + primaryTitle + '\n\n' + primaryBody;
+    if (currentLocale !== 'en') {
+      heading += '\n\n' + translations.en.staffCardInstruction + '\n\n' + progress.en
+        + '\n' + staffContent.titleEn + '\n\n' + staffContent.bodyEn;
+    }
     return heading + '\n\n'
       + assistanceFacts().map(function (fact) { return fact[0] + ': ' + fact[1]; }).join('\n');
   }
@@ -2154,9 +2712,49 @@
     journeyHistory.push({
       context: JSON.parse(JSON.stringify(journeyContext)),
       action: currentAction,
+      checkInStatusAnswer: checkInStatusAnswer,
       reversibleEvents: journeyEvents.filter(function (event) { return event.reversible; })
         .map(function (event) { return JSON.parse(JSON.stringify(event)); })
     });
+  }
+
+  function answerCheckIn(answer) {
+    if (!journeyContext || !currentAction || currentAction.stepType !== 'CHECK_IN_QUESTION') return;
+    if (answer !== 'unsure') snapshotJourney();
+    var checkedIn = answer === 'yes';
+    checkInStatusAnswer = answer;
+    journeyContext.checkedIn = checkedIn;
+    if (answer === 'no') journeyContext.boardingPassDetected = false;
+    journeyContext.needsAssistance = answer === 'unsure';
+    recordJourneyEvent('CHECK_IN_STATUS_CONFIRMED',
+      answer === 'yes' ? '已回答：已经值机' : answer === 'no' ? '已回答：还没有值机' : '已回答：不确定是否已经值机',
+      answer === 'yes' ? 'Answered: already checked in' : answer === 'no' ? 'Answered: not checked in yet' : 'Answered: unsure about check-in',
+      true);
+    if (answer === 'unsure') {
+      setStaffContent(
+        '请帮我确认值机状态', 'Please help me confirm my check-in status',
+        '请帮我确认我是否已经完成值机，是否还需要领取登机牌。',
+        'Please help me confirm whether I have checked in and whether I still need to collect a boarding pass.',
+        'Ayúdeme a confirmar mi estado de facturación',
+        'Ayúdeme a confirmar si ya he facturado y si todavía necesito recoger una tarjeta de embarque.'
+      );
+      persistJourney();
+      showStaff();
+      return;
+    }
+    journeyContext.needsAssistance = false;
+    persistJourney();
+    requestNextAction(false);
+  }
+
+  function dismissBoardingPassPreset() {
+    if (!currentAction || currentAction.stepType !== 'CHECK_IN_QUESTION') return;
+    currentAction.presetDismissed = true;
+    checkInStatusAnswer = null;
+    journeyContext.boardingPassDetected = false;
+    renderJourneyResponse();
+    persistJourney();
+    announce(localeText('已取消登机牌预设，请选择实际值机状态。', 'Boarding-pass preset cleared. Choose your actual check-in status.', 'Se quitó la opción de la tarjeta de embarque. Elige tu estado real de facturación.'));
   }
 
   function restoreReversibleEvents(events) {
@@ -2192,7 +2790,7 @@
       requestNextAction(true);
       return;
     }
-    if (code === 'ASK_FOR_HELP' && currentAction.reason === 'FLIGHT_CANCELLED') {
+    if (code === 'ASK_FOR_HELP') {
       showStaff();
       return;
     }
@@ -2224,7 +2822,6 @@
     if (code === 'IN_FLIGHT') journeyContext.landed = true;
     if (code === 'BAGGAGE_CLAIM') journeyContext.baggageCollected = true;
     if (code === 'EXIT_AIRPORT') journeyContext.exitedAirport = true;
-    if (code === 'ASK_FOR_HELP') journeyContext.needsAssistance = false;
     var titles = {
       CHECK_IN: ['已完成值机', 'Completed check-in'],
       BAG_DROP: ['已完成行李托运', 'Completed bag drop'],
@@ -2233,8 +2830,7 @@
       BOARD_NOW: ['已确认登机', 'Confirmed boarding'],
       IN_FLIGHT: ['已确认下飞机', 'Confirmed leaving the aircraft'],
       BAGGAGE_CLAIM: ['已领取托运行李', 'Collected checked baggage'],
-      EXIT_AIRPORT: ['已到达机场出口', 'Reached the airport exit'],
-      ASK_FOR_HELP: ['已获得工作人员帮助', 'Received staff assistance']
+      EXIT_AIRPORT: ['已到达机场出口', 'Reached the airport exit']
     };
     var title = titles[code] || ['已完成当前行动', 'Completed the current action'];
     recordJourneyEvent('ACTION_COMPLETED_' + code, title[0], title[1], true,
@@ -2259,6 +2855,9 @@
 
   function goBack() {
     requestSequence += 1;
+    if (flightRequestController) flightRequestController.abort();
+    setLookupBusy(false);
+    stopSpeech(false);
     clearInterval(loadingTimer);
     clearTimeout(loadingTimeout);
     if ((currentScreen === 'step' || currentScreen === 'complete') && journeyHistory.length) {
@@ -2266,6 +2865,7 @@
       journeyContext = previous.context;
       journeyContext.flightSnapshot = currentFlight;
       currentAction = previous.action;
+      checkInStatusAnswer = previous.checkInStatusAnswer == null ? null : previous.checkInStatusAnswer;
       restoreReversibleEvents(previous.reversibleEvents);
       renderJourneyResponse();
       persistJourney();
@@ -2304,12 +2904,13 @@
       })
       : [];
     var lookup = lastLookupContext ? JSON.parse(JSON.stringify(lastLookupContext)) : null;
-    var code = details && details.code || 'REQUEST_FAILED';
+    var code = details && details.code || error && error.code || 'REQUEST_FAILED';
+    var timedOut = code === 'CLIENT_FLIGHT_TIMEOUT';
     currentError = {
       code: code,
-      zh: code.indexOf('INVALID') >= 0 ? '请检查航班号和出发日期，然后重试。' : '暂时无法取得这次航班信息。请重试，或请工作人员帮忙。',
-      en: code.indexOf('INVALID') >= 0 ? 'Check the flight number and departure date, then try again.' : 'We cannot get this flight information right now. Try again or ask a member of staff.',
-      es: code.indexOf('INVALID') >= 0 ? 'Comprueba el número de vuelo y la fecha y vuelve a intentarlo.' : 'No podemos obtener este vuelo ahora. Reinténtalo o pide ayuda al personal.',
+      zh: timedOut ? '航班查询超过 20 秒，已安全停止。请检查网络后重试。' : code.indexOf('INVALID') >= 0 ? '请检查航班号和出发日期，然后重试。' : '暂时无法取得这次航班信息。请重试，或请工作人员帮忙。',
+      en: timedOut ? 'The flight lookup took more than 20 seconds and was stopped safely. Check your connection and try again.' : code.indexOf('INVALID') >= 0 ? 'Check the flight number and departure date, then try again.' : 'We cannot get this flight information right now. Try again or ask a member of staff.',
+      es: timedOut ? 'La consulta tardó más de 20 segundos y se detuvo de forma segura. Comprueba la conexión y vuelve a intentarlo.' : code.indexOf('INVALID') >= 0 ? 'Comprueba el número de vuelo y la fecha y vuelve a intentarlo.' : 'No podemos obtener este vuelo ahora. Reinténtalo o pide ayuda al personal.',
       lookupContext: lookup,
       technicalLines: [code].concat(providerLines)
     };
@@ -2329,35 +2930,53 @@
     announce(currentError[currentLocale] || currentError.en);
   }
 
+  function stopSpeech(showMessage) {
+    if (!('speechSynthesis' in window)) return;
+    var wasSpeaking = speakingActive || window.speechSynthesis.speaking || window.speechSynthesis.pending;
+    window.speechSynthesis.cancel();
+    speakingActive = false;
+    var button = document.querySelector('[data-action="speak"]');
+    if (button) {
+      button.setAttribute('aria-pressed', 'false');
+      button.setAttribute('aria-label', t('speak'));
+      var label = button.querySelector('span');
+      if (label) label.textContent = t('speak');
+    }
+    if (showMessage && wasSpeaking) showToast(localeText('朗读已停止。', 'Reading stopped.', 'Lectura detenida.'));
+  }
+
   function speak() {
     if (!('speechSynthesis' in window)) {
       showToast(localeText('当前浏览器不支持朗读。', 'Speech is not supported in this browser.', 'Este navegador no admite la lectura en voz alta.'));
       return;
     }
-    window.speechSynthesis.cancel();
-    var text;
-    if (currentAction) {
-      var destination = currentDestinationCopy
-        ? (currentLocale === 'zh' ? currentDestinationCopy.primaryZh : currentLocale === 'es' ? currentDestinationCopy.primaryEs : currentDestinationCopy.primaryEn)
-        : localeText('请向工作人员确认位置', 'Confirm the location with staff', 'Confirma el lugar con el personal');
-      var flightDetails;
-      if (isArrivalPhase()) {
-        flightDetails = localeText(
-          ' 目的地：' + destination + '。到达机场：' + (currentFlight.arrivalAirport || '尚未取得') + '。行李转盘：' + (formatBeltValue(currentFlight.arrivalBaggageBelt) || '请查看到达屏幕') + '。',
-          ' Destination: ' + destination + '. Arrival airport: ' + (currentFlight.arrivalAirport || 'not available') + '. Baggage belt: ' + (formatBeltValue(currentFlight.arrivalBaggageBelt) || 'check the arrivals screen') + '.',
-          ' Destino: ' + destination + '. Aeropuerto de llegada: ' + (currentFlight.arrivalAirport || 'no disponible') + '. Cinta: ' + (formatBeltValue(currentFlight.arrivalBaggageBelt) || 'consulta la pantalla de llegadas') + '.');
-      } else {
-        flightDetails = localeText(
-          ' 目的地：' + destination + '。航站楼：' + (formatTerminalValue(currentFlight.terminal) || '尚未公布') + '。登机口：' + (formatGateValue(currentFlight.gate) || '尚未公布') + '。',
-          ' Destination: ' + destination + '. ' + (formatTerminalValue(currentFlight.terminal) || 'Terminal not published') + '. ' + (formatGateValue(currentFlight.gate) || 'Gate not published') + '.',
-          ' Destino: ' + destination + '. ' + (formatTerminalValue(currentFlight.terminal) || 'Terminal no publicada') + '. ' + (formatGateValue(currentFlight.gate) || 'Puerta no publicada') + '.');
-      }
-      text = actionLocaleText(currentAction, 'title') + '. ' + actionLocaleText(currentAction, 'description') + flightDetails;
-    } else {
-      text = t('welcomeTitle');
+    if (speakingActive || window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+      stopSpeech(true);
+      return;
     }
+    var largeTitle = currentAction ? actionLocaleText(currentAction, 'title') : t('welcomeTitle');
+    var destination = currentAction && currentAction.stepType === 'ACTION' && currentDestinationCopy
+      ? (currentLocale === 'zh' ? currentDestinationCopy.primaryZh : currentLocale === 'es' ? currentDestinationCopy.primaryEs : currentDestinationCopy.primaryEn)
+      : '';
+    var text = destination || largeTitle;
     var utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale === 'es' ? 'es-ES' : 'en-US';
+    var voicePrefix = currentLocale === 'zh' ? 'zh' : currentLocale === 'es' ? 'es' : 'en';
+    var matchingVoice = window.speechSynthesis.getVoices().find(function (voice) {
+      return String(voice.lang || '').toLowerCase().indexOf(voicePrefix) === 0;
+    });
+    if (matchingVoice) utterance.voice = matchingVoice;
+    utterance.rate = 0.88;
+    utterance.onend = function () { stopSpeech(false); };
+    utterance.onerror = function () { stopSpeech(false); };
+    speakingActive = true;
+    var button = document.querySelector('[data-action="speak"]');
+    if (button) {
+      button.setAttribute('aria-pressed', 'true');
+      button.setAttribute('aria-label', t('stopSpeaking'));
+      var label = button.querySelector('span');
+      if (label) label.textContent = t('stopSpeaking');
+    }
     window.speechSynthesis.speak(utterance);
   }
 
@@ -2430,9 +3049,16 @@
     return steps;
   }
 
-  function shareDestinationValue() {
+  function effectiveShareActionCode() {
+    if (!currentAction) return null;
+    if (currentAction.actionCode) return currentAction.actionCode;
+    return currentAction.stepType === 'CHECK_IN_QUESTION' && checkInStatusAnswer === 'unsure'
+      ? 'ASK_FOR_HELP' : null;
+  }
+
+  function shareDestinationValue(actionCode) {
     if (!currentAction || !currentFlight) return null;
-    var code = currentAction.actionCode;
+    var code = actionCode || currentAction.actionCode;
     if (code === 'CHECK_IN') return currentFlight.checkInDeskOrZone || currentFlight.checkInCounter || null;
     if (code === 'BAG_DROP') return currentFlight.dedicatedBagDropDesk || currentFlight.checkInDeskOrZone || null;
     if (['GO_TO_GATE', 'WAIT', 'BOARD_NOW'].indexOf(code) >= 0) return currentFlight.gate || null;
@@ -2442,15 +3068,16 @@
   }
 
   function safeSharePayload() {
-    if (!currentFlight || !currentAction) return null;
+    var shareActionCode = effectiveShareActionCode();
+    if (!currentFlight || !currentAction || !shareActionCode) return null;
     return {
       flightNumber: normalizeFlightNumber(currentFlight.flightNumber),
       departureDate: currentFlight.departureDate || null,
       departureAirport: currentFlight.departureAirport || null,
       arrivalAirport: currentFlight.arrivalAirport || null,
-      actionCode: currentAction.actionCode || null,
+      actionCode: shareActionCode,
       urgency: currentAction.urgency || 'NORMAL',
-      destination: shareDestinationValue(),
+      destination: shareDestinationValue(shareActionCode),
       completedSteps: completedStepCodes(),
       terminal: currentFlight.terminal || null,
       gate: currentFlight.gate || null,
@@ -2463,16 +3090,23 @@
     };
   }
 
-  function familyMessage() {
+  function familyMessageForLocale(locale) {
     if (!currentFlight) {
-      return localeText('我正在使用一步乘机。', 'I am using OneStep Flight.', 'Estoy usando OneStep Flight.');
+      return locale === 'zh' ? '我正在使用一步乘机。'
+        : locale === 'es' ? 'Estoy usando OneStep Flight.' : 'I am using OneStep Flight.';
     }
     var sharedFlight = formatFlightNumber(currentFlight.flightNumber);
     var route = (currentFlight.departureAirport || '—') + ' → ' + (currentFlight.arrivalAirport || '—');
-    var step = currentAction ? actionLocaleText(currentAction, 'title') : localeText('正在确认航班', 'Confirming the flight', 'Confirmando el vuelo');
-    return localeText('航班 ' + sharedFlight + ' · ' + route + '\n当前步骤：' + step,
-      'Flight ' + sharedFlight + ' · ' + route + '\nCurrent step: ' + step,
-      'Vuelo ' + sharedFlight + ' · ' + route + '\nPaso actual: ' + step);
+    var step = currentAction ? actionTextForLocale(currentAction, 'title', locale)
+      : locale === 'zh' ? '正在确认航班' : locale === 'es' ? 'Confirmando el vuelo' : 'Confirming the flight';
+    if (locale === 'zh') return '航班 ' + sharedFlight + ' · ' + route + '\n当前步骤：' + step;
+    if (locale === 'es') return 'Vuelo ' + sharedFlight + ' · ' + route + '\nPaso actual: ' + step;
+    return 'Flight ' + sharedFlight + ' · ' + route + '\nCurrent step: ' + step;
+  }
+
+  function familyMessage() {
+    var primary = familyMessageForLocale(currentLocale);
+    return currentLocale === 'en' ? primary : primary + '\n\n' + familyMessageForLocale('en');
   }
 
   function shareViewUrl() {
@@ -2650,10 +3284,18 @@
     context.fillText((payload.departureAirport || '—') + '  →  ' + (payload.arrivalAirport || '—'), 120, 405);
     context.font = '800 72px Arial, sans-serif';
     context.fillStyle = '#172B3B';
-    var y = wrapCanvasText(context, actionLocaleText(currentAction, 'title'), 120, 545, 840, 88);
+    var y = wrapCanvasText(context, actionTextForLocale(currentAction, 'title', currentLocale), 120, 545, 840, 88);
+    if (currentLocale !== 'en') {
+      context.font = '700 52px Arial, sans-serif';
+      y = wrapCanvasText(context, actionTextForLocale(currentAction, 'title', 'en'), 120, y + 12, 840, 66);
+    }
     context.font = '650 40px Arial, sans-serif';
     context.fillStyle = '#344B5D';
-    y = wrapCanvasText(context, familyMessage().split('\n').slice(1).join(' · '), 120, y + 35, 840, 58);
+    y = wrapCanvasText(context, familyMessageForLocale(currentLocale).split('\n').slice(1).join(' · '), 120, y + 35, 840, 58);
+    if (currentLocale !== 'en') {
+      context.font = '600 34px Arial, sans-serif';
+      y = wrapCanvasText(context, familyMessageForLocale('en').split('\n').slice(1).join(' · '), 120, y + 8, 840, 50);
+    }
     var safeFacts = [];
     if (payload.terminal) safeFacts.push(formatTerminalValue(payload.terminal));
     if (payload.gate) safeFacts.push(formatGateValue(payload.gate));
@@ -2663,7 +3305,8 @@
     wrapCanvasText(context, safeFacts.join(' · '), 120, y + 45, 840, 58);
     context.fillStyle = '#687B89';
     context.font = '600 30px Arial, sans-serif';
-    context.fillText(localeText('请以机场屏幕和工作人员为准', 'Confirm with airport screens and staff', 'Confirma con las pantallas y el personal'), 120, 1240);
+    context.fillText(localeText('请以机场屏幕和工作人员为准', 'Confirm with airport screens and staff', 'Confirma con las pantallas y el personal'), 120, currentLocale === 'en' ? 1240 : 1200);
+    if (currentLocale !== 'en') context.fillText('Confirm with airport screens and staff', 120, 1250);
     return new Promise(function (resolve, reject) {
       canvas.toBlob(function (blob) { blob ? resolve(blob) : reject(new Error('png unavailable')); }, 'image/png');
     });
@@ -2738,6 +3381,15 @@
     refreshStatusState = null;
     restoredFromOffline = false;
     currentDestinationCopy = null;
+    checkInStatusAnswer = null;
+    documentSegments = [];
+    selectedDocumentSegmentIndex = null;
+    documentRootFields = {};
+    documentRootReviewFields = [];
+    if (flightRequestController) flightRequestController.abort();
+    flightRequestController = null;
+    setLookupBusy(false);
+    stopSpeech(false);
   }
 
   function returnHome() {
@@ -2762,10 +3414,15 @@
         screen: currentScreen,
         locale: currentLocale,
         document: pendingDocument,
+        documentSegments: documentSegments,
+        selectedDocumentSegmentIndex: selectedDocumentSegmentIndex,
+        documentRootFields: documentRootFields,
+        documentRootReviewFields: documentRootReviewFields,
         conflictsConfirmed: conflictsConfirmed,
         clockAnchor: clockAnchor,
         lastRefreshAttemptAt: lastRefreshAttemptAt,
-        refreshStatusState: refreshStatusState
+        refreshStatusState: refreshStatusState,
+        checkInStatusAnswer: checkInStatusAnswer
       }));
     } catch (error) {
       // The current page remains usable if private browsing blocks session storage.
@@ -2846,6 +3503,7 @@
       return {
         context: safeContextSnapshot(entry.context, safeFlight),
         action: safeActionSnapshot(entry.action),
+        checkInStatusAnswer: entry.checkInStatusAnswer == null ? null : entry.checkInStatusAnswer,
         reversibleEvents: (Array.isArray(entry.reversibleEvents) ? entry.reversibleEvents : []).map(safeEventSnapshot)
       };
     });
@@ -2883,21 +3541,30 @@
       return {
         context: normalizeJourneyContext(entry.context, currentFlight),
         action: entry.action || null,
+        checkInStatusAnswer: entry.checkInStatusAnswer == null ? null : entry.checkInStatusAnswer,
         reversibleEvents: Array.isArray(entry.reversibleEvents) ? entry.reversibleEvents : []
       };
     });
     journeyEvents = Array.isArray(saved.events) ? saved.events : [];
-    currentLocale = normalizeLocale(saved.locale || currentLocale);
     pendingDocument = fromOfflineStorage ? null : saved.document || null;
+    documentSegments = Array.isArray(saved.documentSegments) ? saved.documentSegments.slice()
+      : pendingDocument && Array.isArray(pendingDocument.segments) ? pendingDocument.segments.slice() : [];
+    selectedDocumentSegmentIndex = Number.isInteger(saved.selectedDocumentSegmentIndex)
+      ? saved.selectedDocumentSegmentIndex : documentSegments.length === 1 ? 0 : null;
+    documentRootFields = Object.assign({}, saved.documentRootFields || pendingDocument && pendingDocument.fields || {});
+    documentRootReviewFields = Array.isArray(saved.documentRootReviewFields)
+      ? saved.documentRootReviewFields.slice()
+      : pendingDocument && Array.isArray(pendingDocument.needsReviewFields) ? pendingDocument.needsReviewFields.slice() : [];
     conflictsConfirmed = Boolean(saved.conflictsConfirmed);
     clockAnchor = saved.clockAnchor || null;
     lastRefreshAttemptAt = fromOfflineStorage ? 0 : Number(saved.lastRefreshAttemptAt) || 0;
     refreshStatusState = fromOfflineStorage && !navigator.onLine ? { code: 'OFFLINE_SNAPSHOT', details: {} }
       : saved.refreshStatusState || null;
+    checkInStatusAnswer = saved.checkInStatusAnswer || (journeyContext && journeyContext.checkedIn ? 'yes' : null);
     restoredFromOffline = fromOfflineStorage;
     lastLookupContext = {
       flightNumber: normalizeFlightNumber(currentFlight.flightNumber),
-      departureDate: currentFlight.departureDate || null,
+      departureDate: journeyContext && journeyContext.departureDate || currentFlight.departureDate || null,
       departureAirport: currentFlight.departureAirport || null,
       arrivalAirport: currentFlight.arrivalAirport || null
     };
@@ -2937,9 +3604,10 @@
     var actionElement = event.target.closest('[data-action]');
     if (!actionElement) return;
     var action = actionElement.dataset.action;
-    if (action === 'upload') fileInput.click();
+    if (action === 'upload') navigate('upload');
+    if (action === 'choose-file') fileInput.click();
     if (action === 'home') {
-      if (currentFlight && currentScreen !== 'welcome') showEndConfirmation(); else returnHome();
+      if ((journeyContext || currentAction) && currentScreen !== 'welcome') showEndConfirmation(); else returnHome();
     }
     if (action === 'journey-back') goBack();
     if (action === 'manual') {
@@ -2955,6 +3623,12 @@
       startFlightLookup('BA117', today, true, null, actionElement.dataset.scenario);
     }
     if (action === 'continue') {
+      if (departureStopReason(currentFlight)) {
+        renderDeparturePassedConfirmation(currentFlight);
+        showScreen('confirm');
+        announce(localeText('这趟航班已经离港，请不要开始普通乘机步骤。', 'This flight has departed. Do not start the normal airport steps.', 'Este vuelo ya ha salido. No inicies los pasos normales del aeropuerto.'));
+        return;
+      }
       if (pendingDocument && !currentFlight.timeContext) {
         resolveUploadedFlight();
         return;
@@ -2969,7 +3643,7 @@
           formatFlightNumber(currentFlight.flightNumber));
       }
       persistJourney();
-      requestNextAction(false);
+      showCheckInQuestion();
     }
     if (action === 'confirm-conflicts') {
       conflictsConfirmed = true;
@@ -2981,6 +3655,9 @@
     }
     if (action === 'review-confirm') confirmDocumentField(false);
     if (action === 'review-edit') confirmDocumentField(true);
+    if (action === 'select-segment') selectDocumentSegment(Number(actionElement.dataset.segmentIndex));
+    if (action === 'checkin-status') answerCheckIn(actionElement.dataset.answer);
+    if (action === 'checkin-preset-wrong') dismissBoardingPassPreset();
     if (action === 'baggage') answerBaggage(actionElement.dataset.answer);
     if (action === 'complete-action') completeCurrentAction();
     if (action === 'retry' && retryRequest) retryRequest();
@@ -3006,6 +3683,7 @@
     if (action === 'finish-home') returnHome();
     if (action === 'refresh-flight') refreshFlight();
     if (action === 'refresh-arrival') refreshArrivalInfo();
+    if (action === 'new-flight-info') beginNewFlightInformation();
   });
 
   fileInput.addEventListener('change', function () {
@@ -3013,7 +3691,9 @@
   });
 
   document.querySelector('[data-locale-select]').addEventListener('change', function (event) {
+    stopSpeech(false);
     currentLocale = normalizeLocale(event.target.value);
+    storeLocale(currentLocale);
     updateLanguage();
   });
 
@@ -3078,7 +3758,7 @@
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/service-worker.js').catch(function () {
+      navigator.serviceWorker.register('/service-worker.js', { updateViaCache: 'none' }).catch(function () {
         // Offline support is optional; the online journey remains available.
       });
     });

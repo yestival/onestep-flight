@@ -11,7 +11,6 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -46,6 +45,9 @@ public class ResolvedFlightService {
 	}
 
 	public ResolvedFlightContext resolve(ResolveFlightRequest request) {
+		if (request.document() != null && request.document().segments().size() > 1) {
+			throw new InvalidDocumentException("DOCUMENT_SEGMENT_SELECTION_REQUIRED");
+		}
 		String normalizedFlightNumber = flightService.normalize(request.flightNumber());
 		MultiSourceFlightSnapshot snapshot = request.demo() && !isBlank(request.demoScenario()) && !request.refresh()
 				? demoSnapshot(demoScenarioProvider.findInitial(normalizedFlightNumber, request.demoScenario()))
@@ -184,34 +186,32 @@ public class ResolvedFlightService {
 			FlightResponse liveFlight, Instant detectedAt) {
 		if (document == null) return List.of();
 		List<FlightFieldConflict> conflicts = new ArrayList<>();
-		addConflict(conflicts, "flightNumber", normalizeFlight(document.flightNumber()),
-				normalizeFlight(liveFlight.flightNumber()), true, detectedAt);
+		addConflict(conflicts, "flightNumber", document.flightNumber(),
+				liveFlight.flightNumber(), true, detectedAt);
 		addConflict(conflicts, "departureDate", stringValue(document.departureDate()),
 				stringValue(liveFlight.departureDate()), true, detectedAt);
-		addConflict(conflicts, "departureAirport", upper(document.departureAirport()),
-				upper(liveFlight.departureAirport()), true, detectedAt);
-		addConflict(conflicts, "arrivalAirport", upper(document.arrivalAirport()),
-				upper(liveFlight.arrivalAirport()), true, detectedAt);
+		addConflict(conflicts, "departureAirport", document.departureAirport(),
+				liveFlight.departureAirport(), true, detectedAt);
+		addConflict(conflicts, "arrivalAirport", document.arrivalAirport(),
+				liveFlight.arrivalAirport(), true, detectedAt);
 		return conflicts;
 	}
 
 	private void addConflict(List<FlightFieldConflict> conflicts, String field, String documentValue,
 			String liveValue, boolean blocking, Instant detectedAt) {
-		if (isBlank(documentValue) || isBlank(liveValue) || documentValue.equalsIgnoreCase(liveValue)) return;
+		if (FlightFieldSemantics.equivalent(field, documentValue, liveValue)) return;
 		conflicts.add(new FlightFieldConflict(field, documentValue, liveValue, blocking,
 				"文件中的" + field + "与实时航班不一致。请暂停并向工作人员核对。",
 				"The document " + field + " does not match the live flight. Stop and confirm with staff.",
 				detectedAt));
 	}
 
-	private List<FlightChange> findDocumentChanges(String documentTerminal, String documentGate,
+	List<FlightChange> findDocumentChanges(String documentTerminal, String documentGate,
 			FlightResponse liveFlight, Instant detectedAt) {
 		List<FlightChange> changes = new ArrayList<>();
-		addNormalizedChange(changes, "TERMINAL_CHANGED", documentTerminal, liveFlight.terminal(),
-				this::normalizeTerminalOrGate, true,
+		addSemanticChange(changes, "terminal", "TERMINAL_CHANGED", documentTerminal, liveFlight.terminal(), true,
 				"实时航站楼与文件不同", "Live terminal differs from the document", detectedAt);
-		addNormalizedChange(changes, "GATE_CHANGED", documentGate, liveFlight.gate(),
-				this::normalizeTerminalOrGate, true,
+		addSemanticChange(changes, "gate", "GATE_CHANGED", documentGate, liveFlight.gate(), true,
 				"实时登机口与文件不同", "Live gate differs from the document", detectedAt);
 		return changes;
 	}
@@ -219,14 +219,11 @@ public class ResolvedFlightService {
 	private List<FlightChange> findLiveChanges(ResolvedFlightContext previous, FlightResponse flight,
 			OffsetDateTime effectiveDeparture, Instant detectedAt) {
 		List<FlightChange> changes = new ArrayList<>();
-		addNormalizedChange(changes, "TERMINAL_CHANGED", previous.terminal(), flight.terminal(),
-				this::normalizeTerminalOrGate, true,
+		addSemanticChange(changes, "terminal", "TERMINAL_CHANGED", previous.terminal(), flight.terminal(), true,
 				"航站楼发生变化", "Terminal changed", detectedAt);
-		addNormalizedChange(changes, "GATE_CHANGED", previous.gate(), flight.gate(),
-				this::normalizeTerminalOrGate, true,
+		addSemanticChange(changes, "gate", "GATE_CHANGED", previous.gate(), flight.gate(), true,
 				"登机口发生变化", "Gate changed", detectedAt);
-		addNormalizedChange(changes, "STATUS_CHANGED", previous.status(), flight.status(),
-				this::normalizeStatusGroup,
+		addSemanticChange(changes, "status", "STATUS_CHANGED", previous.status(), flight.status(),
 				"CANCELLED".equals(normalizeStatusGroup(previous.status()))
 						!= "CANCELLED".equals(normalizeStatusGroup(flight.status())),
 				"航班状态发生变化", "Flight status changed", detectedAt);
@@ -243,11 +240,10 @@ public class ResolvedFlightService {
 		changes.add(new FlightChange(type, oldValue, newValue, critical, titleZh, titleEn, detectedAt));
 	}
 
-	private void addNormalizedChange(List<FlightChange> changes, String type, String oldValue, String newValue,
-			java.util.function.Function<String, String> normalizer, boolean critical,
+	private void addSemanticChange(List<FlightChange> changes, String field, String type,
+			String oldValue, String newValue, boolean critical,
 			String titleZh, String titleEn, Instant detectedAt) {
-		if (isBlank(oldValue) || isBlank(newValue)
-				|| Objects.equals(normalizer.apply(oldValue), normalizer.apply(newValue))) return;
+		if (FlightFieldSemantics.equivalent(field, oldValue, newValue)) return;
 		changes.add(new FlightChange(type, oldValue, newValue, critical, titleZh, titleEn, detectedAt));
 	}
 
@@ -260,21 +256,8 @@ public class ResolvedFlightService {
 				differenceMinutes >= 15, "预计起飞时间发生变化", "Expected departure time changed", detectedAt));
 	}
 
-	private String normalizeTerminalOrGate(String value) {
-		return isBlank(value) ? null : value.replaceAll("(?i)terminal", "")
-				.replaceAll("[\\s\\p{Punct}]", "").toUpperCase(Locale.ROOT);
-	}
-
 	private String normalizeStatusGroup(String value) {
-		if (isBlank(value)) return null;
-		String status = value.replaceAll("[\\s_-]", "").toUpperCase(Locale.ROOT);
-		if (status.contains("CANCEL")) return "CANCELLED";
-		if (status.contains("ARRIV")) return "ARRIVED";
-		if (status.contains("DEPART")) return "DEPARTED";
-		if (status.contains("BOARD")) return "BOARDING";
-		if (status.contains("DELAY") || status.contains("LATE")) return "DELAYED";
-		if (status.contains("SCHEDULE") || status.contains("EXPECTED") || status.contains("ONTIME")) return "NORMAL";
-		return status;
+		return FlightFieldSemantics.normalizeStatusGroup(value);
 	}
 
 	private OffsetDateTime parseDocumentDateTime(String value, LocalDate date, ZoneOffset offset) {
@@ -298,14 +281,6 @@ public class ResolvedFlightService {
 
 	private Map<String, ExtractedField> safeEvidence(Map<String, ExtractedField> fields) {
 		return fields == null ? Map.of() : Map.copyOf(new LinkedHashMap<>(fields));
-	}
-
-	private String normalizeFlight(String value) {
-		return isBlank(value) ? null : value.replace(" ", "").replace("-", "").toUpperCase(Locale.ROOT);
-	}
-
-	private String upper(String value) {
-		return isBlank(value) ? null : value.toUpperCase(Locale.ROOT);
 	}
 
 	private String firstNonBlank(String first, String second) {

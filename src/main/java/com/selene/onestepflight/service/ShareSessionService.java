@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,14 +20,19 @@ import com.selene.onestepflight.service.ShareSessionAccessException.Reason;
 @Service
 public class ShareSessionService {
 
-	private static final Duration DEFAULT_LIFETIME = Duration.ofHours(48);
 	private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 	private static final Base64.Encoder TOKEN_ENCODER = Base64.getUrlEncoder().withoutPadding();
 
 	private final ShareSessionRepository repository;
+	private final Duration lifetime;
 
-	public ShareSessionService(ShareSessionRepository repository) {
+	public ShareSessionService(ShareSessionRepository repository,
+			@Value("${onestep.share-session.lifetime-hours:48}") long lifetimeHours) {
 		this.repository = repository;
+		if (lifetimeHours <= 0) {
+			throw new IllegalArgumentException("Share-session lifetime must be positive");
+		}
+		this.lifetime = Duration.ofHours(lifetimeHours);
 	}
 
 	@Transactional
@@ -35,7 +41,7 @@ public class ShareSessionService {
 		String viewToken = uniqueViewToken();
 		String updateToken = newToken();
 		ShareSessionEntity entity = new ShareSessionEntity(
-				tokenHash(viewToken), tokenHash(updateToken), now, now.plus(DEFAULT_LIFETIME));
+				tokenHash(viewToken), tokenHash(updateToken), now, now.plus(lifetime));
 		entity.apply(request, now);
 		repository.save(entity);
 		return new ShareSessionCreationResponse(viewToken, updateToken,
@@ -64,6 +70,11 @@ public class ShareSessionService {
 		Instant now = Instant.now();
 		verifyActive(entity, now);
 		entity.revoke(now);
+	}
+
+	@Transactional
+	public long deleteExpiredSessions(Instant cutoff) {
+		return repository.deleteByExpiresAtLessThanEqual(cutoff);
 	}
 
 	private ShareSessionEntity requireActive(String viewToken, Instant now) {

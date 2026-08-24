@@ -1,0 +1,15 @@
+.git
+.github
+.idea
+.vscode
+.codex
+.agents
+target
+output
+data
+test-fixtures
+scripts
+.env
+.env.*
+*.log
+HELP.md

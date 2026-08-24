@@ -52,6 +52,20 @@ class NextActionDocumentAndBaggageTest {
 		assertThat(arrival.destination()).doesNotContain("20-24");
 	}
 
+	@Test
+	void equivalentTerminalAndGateFormattingDoesNotTriggerAChangeAction() {
+		ResolvedFlightContext flight = flight("D 20-24", null);
+		JourneyContext context = new JourneyContext("BA117", LocalDate.of(2026, 8, 24), flight,
+				false, null, "MANUAL_ENTRY", false, true, false, false,
+				true, false, false, false, false, false, false,
+				"Terminal 5", "Gate B 42", true, false);
+
+		NextActionResponse result = service.calculate(flight, context);
+
+		assertThat(result.actionCode()).isEqualTo(ActionCode.GO_TO_GATE);
+		assertThat(result.reason()).isEqualTo("SECURITY_COMPLETED_GATE_AVAILABLE");
+	}
+
 	private JourneyContext journey(ResolvedFlightContext flight, String documentType,
 			boolean boardingPassDetected, boolean checkedIn, Boolean hasCheckedBaggage,
 			boolean bagDropped, boolean boarded, boolean landed, boolean baggageCollected) {

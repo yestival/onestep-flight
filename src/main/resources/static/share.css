@@ -292,3 +292,25 @@ select:focus-visible, a:focus-visible, button:focus-visible {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
   .loading-mark { border-top-color: var(--blue); }
 }
+
+/* Match the primary app's compact mobile header and corner system. */
+:root { --radius-small: 10px; --radius-medium: 16px; --radius-large: 22px; }
+.retry-button, .locale-control select, button, select { border-radius: var(--radius-small); }
+.action-card, .flight-card, .location-card, .destination { border-radius: var(--radius-medium); }
+.state-card { border-radius: var(--radius-large); }
+.destination .destination-english { margin: 7px 0 0; color: var(--navy); }
+.destination [data-destination-primary] { color: var(--navy); }
+.bilingual-primary, .bilingual-heading-primary, .bilingual-secondary, .bilingual-heading-secondary { display: block; color: inherit; }
+.bilingual-secondary, .bilingual-heading-secondary { margin-top: 8px; }
+.bilingual-heading-secondary { font-size: .82em; line-height: 1.25; }
+.action-description .bilingual-secondary, .state-card > p .bilingual-secondary { font-size: .9em; }
+
+@media (max-width: 520px) {
+  .share-shell { padding-inline: 12px; }
+  .share-header { min-height: 58px; }
+  .brand-mark { transform: scale(.72); }
+  .brand small { display: none; }
+  .locale-control select { min-height: 44px; }
+  main { padding-top: 18px; }
+  .action-card, .flight-card, .location-card { border-radius: var(--radius-medium); }
+}

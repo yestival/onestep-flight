@@ -1,7 +1,12 @@
 package com.selene.onestepflight.service;
 
+import java.time.Clock;
+import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Locale;
 
 import org.springframework.stereotype.Service;
@@ -17,6 +22,15 @@ import com.selene.onestepflight.dto.Urgency;
 
 @Service
 public class NextActionService {
+	private final Clock clock;
+
+	public NextActionService() {
+		this(Clock.systemUTC());
+	}
+
+	NextActionService(Clock clock) {
+		this.clock = clock;
+	}
 
 	public NextActionResponse calculate(ResolvedFlightContext flight, JourneyContext context) {
 		if (context.needsAssistance()) {
@@ -39,21 +53,29 @@ public class NextActionService {
 					checkInArea(flight), Urgency.URGENT,
 					"FLIGHT_CANCELLED", "FLIGHT_STATUS", true);
 		}
-		Long minutesFromSnapshot = flight.effectiveDeparture() == null
-				? null : Duration.between(Instant.now(), flight.effectiveDeparture().toInstant()).toMinutes();
-		long minutesUntilDeparture = minutesFromSnapshot == null ? Long.MAX_VALUE : minutesFromSnapshot;
-		if (flight.actualDeparture() != null || status.startsWith("DEPARTED") || status.startsWith("ARRIVED")) {
+		DepartureTiming departureTiming = departureTiming(flight, context.departureDate());
+		if (departureTiming.dateMismatch()) {
 			return action(flight, ActionCode.ASK_FOR_HELP,
-					"航班已经离港，请立即求助", "不要继续按原行程前进，请马上联系航空公司工作人员。",
-					"The flight has departed. Ask for help now", "Do not continue with the old plan. Contact airline staff immediately.",
+					"航班日期和起飞时间需要核对", "当前航班日期与带时区的起飞时间不一致，请先让工作人员核对航班日期。",
+					"Confirm the flight date and departure time", "The flight date does not match the offset-aware departure time. Ask staff to confirm the flight date first.",
 					gateOrTerminal(flight), Urgency.URGENT,
+					"FLIGHT_DATE_TIME_MISMATCH", "FLIGHT_DATE_AND_OFFSET_TIME", true);
+		}
+		long minutesUntilDeparture = departureTiming.minutesUntilDeparture() == null
+				? Long.MAX_VALUE : departureTiming.minutesUntilDeparture();
+		if (departureTiming.currentFlightIdentity()
+				&& (flight.actualDeparture() != null || status.startsWith("DEPARTED") || status.startsWith("ARRIVED"))) {
+			return action(flight, ActionCode.ASK_FOR_HELP,
+					"这趟航班已经离港", "点击下方“请工作人员帮忙”，并前往航空公司服务柜台出示给工作人员。",
+					"This flight has departed", "Select “Ask a member of staff” below, then go to the airline service desk and show the card to a staff member.",
+					"航空公司服务柜台 / Airline service desk", Urgency.URGENT,
 					"FLIGHT_ALREADY_DEPARTED", "LIVE_FLIGHT_STATUS", true);
 		}
-		if (minutesUntilDeparture < -15 && !"BOARDING".equals(status)) {
+		if (departureTiming.passedByAtLeastFifteenMinutes() && !"BOARDING".equals(status)) {
 			return action(flight, ActionCode.ASK_FOR_HELP,
-					"登机时间可能已经错过，请立即求助", "请马上向航空公司或登机口工作人员说明情况。",
-					"Boarding may have closed. Ask for help now", "Tell airline or gate staff what happened immediately.",
-					gateOrTerminal(flight), Urgency.URGENT,
+					"这趟航班已经离港", "点击下方“请工作人员帮忙”，并前往航空公司服务柜台出示给工作人员。",
+					"This flight has departed", "Select “Ask a member of staff” below, then go to the airline service desk and show the card to a staff member.",
+					"航空公司服务柜台 / Airline service desk", Urgency.URGENT,
 					"DEPARTURE_TIME_PASSED", "SERVER_TIME_AND_SCHEDULE", true);
 		}
 
@@ -125,7 +147,7 @@ public class NextActionService {
 		FlightChange latestGateChange = latestChange(flight, "GATE_CHANGED");
 		FlightChange latestTerminalChange = latestChange(flight, "TERMINAL_CHANGED");
 		boolean terminalChanged = latestTerminalChange != null || (!isBlank(context.previousTerminal())
-				&& !context.previousTerminal().equalsIgnoreCase(flight.terminal()));
+				&& !FlightFieldSemantics.equivalent("terminal", context.previousTerminal(), flight.terminal()));
 		if (terminalChanged && !context.atGate()) {
 			String oldTerminal = latestTerminalChange == null ? context.previousTerminal() : latestTerminalChange.oldValue();
 			return action(flight, ActionCode.GO_TO_GATE,
@@ -135,7 +157,7 @@ public class NextActionService {
 					"TERMINAL_CHANGED", "LIVE_FLIGHT_UPDATE", true);
 		}
 		boolean gateChanged = latestGateChange != null || (!isBlank(context.previousGate())
-				&& !context.previousGate().equalsIgnoreCase(flight.gate()));
+				&& !FlightFieldSemantics.equivalent("gate", context.previousGate(), flight.gate()));
 		if (gateChanged) {
 			String oldGate = latestGateChange == null ? context.previousGate() : latestGateChange.oldValue();
 			return action(flight, ActionCode.GO_TO_GATE,
@@ -247,7 +269,49 @@ public class NextActionService {
 						: flight.demoScenario() == null ? "DEMO_FIXTURE" : "SIMULATED_SCENARIO",
 				null,
 				needsOnSiteConfirmation,
-				flight.timeContext() == null ? Instant.now() : flight.timeContext().serverNow());
+				flight.timeContext() == null ? Instant.now(clock) : flight.timeContext().serverNow());
+	}
+
+	private DepartureTiming departureTiming(ResolvedFlightContext flight, LocalDate selectedDepartureDate) {
+		// Recompute from the current refreshed flight. Do not trust a separately
+		// serialized effectiveDeparture value from an older browser snapshot.
+		OffsetDateTime effectiveDeparture = firstNonNull(flight.actualDeparture(),
+				flight.estimatedDeparture(), flight.scheduledDeparture());
+		OffsetDateTime departureDateAnchor = flight.scheduledDeparture() == null
+				? effectiveDeparture : flight.scheduledDeparture();
+		LocalDate refreshedDepartureDate = flight.departureDate();
+		LocalDate currentSelectedDate = selectedDepartureDate == null
+				? refreshedDepartureDate : selectedDepartureDate;
+		boolean identityDatesPresent = currentSelectedDate != null && refreshedDepartureDate != null;
+		boolean dateMismatch = identityDatesPresent
+				&& !currentSelectedDate.equals(refreshedDepartureDate);
+		boolean currentFlightIdentity = identityDatesPresent && !dateMismatch;
+		if (currentFlightIdentity && departureDateAnchor != null) {
+			LocalDate departureLocalDate = departureDateAnchor.toInstant()
+					.atOffset(departureOffset(flight, departureDateAnchor)).toLocalDate();
+			dateMismatch = !currentSelectedDate.equals(departureLocalDate);
+			currentFlightIdentity = !dateMismatch;
+		}
+		Instant now = Instant.now(clock);
+		Long minutesUntilDeparture = !currentFlightIdentity || effectiveDeparture == null
+				? null : Duration.between(now, effectiveDeparture.toInstant()).toMinutes();
+		boolean passedByAtLeastFifteenMinutes = currentFlightIdentity && effectiveDeparture != null
+				&& Duration.between(effectiveDeparture.toInstant(), now).compareTo(Duration.ofMinutes(15)) >= 0;
+		return new DepartureTiming(minutesUntilDeparture, currentFlightIdentity, dateMismatch,
+				passedByAtLeastFifteenMinutes);
+	}
+
+	private ZoneOffset departureOffset(ResolvedFlightContext flight, OffsetDateTime fallback) {
+		String configuredOffset = flight.timeContext() == null ? null : flight.timeContext().departureUtcOffset();
+		if (configuredOffset != null && !configuredOffset.isBlank()) {
+			try {
+				return ZoneOffset.of(configuredOffset.trim());
+			} catch (DateTimeException ignored) {
+				// A malformed client snapshot cannot replace the offset carried by
+				// the freshly resolved provider time.
+			}
+		}
+		return fallback.getOffset();
 	}
 
 	private String normalizedStatus(String status) {
@@ -294,5 +358,18 @@ public class NextActionService {
 				.filter(change -> type.equals(change.type()))
 				.findFirst()
 				.orElse(null);
+	}
+
+	@SafeVarargs
+	private final <T> T firstNonNull(T... values) {
+		for (T value : values) if (value != null) return value;
+		return null;
+	}
+
+	private record DepartureTiming(
+			Long minutesUntilDeparture,
+			boolean currentFlightIdentity,
+			boolean dateMismatch,
+			boolean passedByAtLeastFifteenMinutes) {
 	}
 }

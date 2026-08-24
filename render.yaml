@@ -1,0 +1,49 @@
+services:
+  - type: web
+    name: onestep-flight
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DB_HOST
+        fromDatabase:
+          name: onestep-flight-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: onestep-flight-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: onestep-flight-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: onestep-flight-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: onestep-flight-db
+          property: password
+      - key: NUTRIENT_API_KEY
+        sync: false
+      - key: SERPAPI_API_KEY
+        sync: false
+      - key: AERODATABOX_RAPIDAPI_KEY
+        sync: false
+      - key: VARIFLIGHT_ENABLED
+        value: "false"
+
+databases:
+  - name: onestep-flight-db
+    databaseName: onestep_flight
+    user: onestep_flight
+    plan: free
+    region: frankfurt
+    ipAllowList: []

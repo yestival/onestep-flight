@@ -14,6 +14,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -31,6 +34,7 @@ import tools.jackson.databind.node.ObjectNode;
 public class SerpApiFlightDataProvider implements LiveFlightDataProvider, OperationalFlightDataProvider {
 
 	private static final Duration CACHE_TTL = Duration.ofMinutes(5);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SerpApiFlightDataProvider.class);
 	private final Map<String, CachedFlight> cache = new ConcurrentHashMap<>();
 	private final ObjectMapper objectMapper;
 	private final RestClient restClient;
@@ -38,8 +42,8 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 	public SerpApiFlightDataProvider(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-		requestFactory.setConnectTimeout(Duration.ofSeconds(5));
-		requestFactory.setReadTimeout(Duration.ofSeconds(60));
+		requestFactory.setConnectTimeout(Duration.ofSeconds(3));
+		requestFactory.setReadTimeout(Duration.ofSeconds(7));
 		this.restClient = RestClient.builder()
 				.baseUrl("https://serpapi.com")
 				.requestFactory(requestFactory)
@@ -92,7 +96,7 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 
 	private JsonNode requestFlightResult(String apiKey, String flightNumber) {
 		try {
-			return restClient.get()
+			ResponseEntity<JsonNode> response = restClient.get()
 					.uri(builder -> builder.path("/search")
 							.queryParam("engine", "google")
 							.queryParam("q", "Flight " + flightNumber)
@@ -100,7 +104,10 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 							.queryParam("api_key", apiKey)
 							.build())
 					.retrieve()
-					.body(JsonNode.class);
+					.toEntity(JsonNode.class);
+			LOGGER.info("provider=SERPAPI stage=flight-result httpStatus={} contentType={}",
+					response.getStatusCode().value(), response.getHeaders().getContentType());
+			return response.getBody();
 		} catch (RestClientResponseException exception) {
 			throw new ExternalServiceUnavailableException(httpErrorCode("SERPAPI", exception.getStatusCode().value()));
 		} catch (RestClientException exception) {
@@ -117,7 +124,7 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 		segment.put("arrival_id", arrivalAirport.toUpperCase(Locale.ROOT));
 		segment.put("date", departureDate.toString());
 		try {
-			return restClient.get()
+			ResponseEntity<JsonNode> response = restClient.get()
 					.uri(builder -> builder.path("/search")
 							.queryParam("engine", "google_flights")
 							.queryParam("type", "2")
@@ -129,7 +136,10 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 							.queryParam("api_key", apiKey)
 							.build(Map.of("selectedFlightsJson", selectedFlights.toString())))
 					.retrieve()
-					.body(JsonNode.class);
+					.toEntity(JsonNode.class);
+			LOGGER.info("provider=SERPAPI stage=google-flights-fallback httpStatus={} contentType={}",
+					response.getStatusCode().value(), response.getHeaders().getContentType());
+			return response.getBody();
 		} catch (RestClientResponseException exception) {
 			throw new ExternalServiceUnavailableException(httpErrorCode("SERPAPI", exception.getStatusCode().value()));
 		} catch (RestClientException exception) {

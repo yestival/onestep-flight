@@ -38,8 +38,8 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 
 	public AeroDataBoxFlightDataProvider() {
 		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-		requestFactory.setConnectTimeout(Duration.ofSeconds(5));
-		requestFactory.setReadTimeout(Duration.ofSeconds(15));
+		requestFactory.setConnectTimeout(Duration.ofSeconds(3));
+		requestFactory.setReadTimeout(Duration.ofSeconds(5));
 		this.restClient = RestClient.builder()
 				.baseUrl("https://" + HOST)
 				.requestFactory(requestFactory)

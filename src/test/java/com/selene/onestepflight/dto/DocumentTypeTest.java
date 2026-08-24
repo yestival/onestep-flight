@@ -91,12 +91,44 @@ class DocumentTypeTest {
 		assertThat(response.fields()).containsOnlyKeys("document_type");
 	}
 
+	@Test
+	void boardingPassWithoutOneUsableFlightSegmentCannotSkipCheckIn() {
+		Map<String, ExtractedField> fields = Map.of("document_type",
+				new ExtractedField("BOARDING_PASS", 0.99d, 0, null, "test"));
+		BoardingPassExtractionResponse response = new BoardingPassExtractionResponse(
+				DocumentType.BOARDING_PASS, "BA117", LocalDate.of(2026, 8, 24),
+				"2026-08-24T08:20", null, null, "LHR", "JFK", null, null, null,
+				true, false, fields, List.of(), List.of(), "TEST", Instant.EPOCH);
+
+		assertThat(response.boardingPassDetected()).isFalse();
+	}
+
+	@Test
+	void selectedSegmentIsCanonicalEvenWhenTopLevelInputDisagrees() {
+		Map<String, ExtractedField> fields = Map.of("document_type",
+				new ExtractedField("ITINERARY", 0.99d, 0, null, "test"));
+		DocumentFlightSegment selected = new DocumentFlightSegment("BA178", LocalDate.of(2026, 9, 2),
+				"JFK", "LHR", "2026-09-02T08:00", "2026-09-02T20:00", null,
+				null, null, null, 0.99d, 0, null, Map.of());
+		BoardingPassExtractionResponse response = new BoardingPassExtractionResponse(
+				DocumentType.ITINERARY, "BA117", LocalDate.of(2026, 8, 24), null, null,
+				null, "LHR", "JFK", null, null, null, false, false, fields,
+				List.of(selected), List.of(), "TEST", Instant.EPOCH);
+
+		assertThat(response.flightNumber()).isEqualTo("BA178");
+		assertThat(response.departureDate()).isEqualTo(LocalDate.of(2026, 9, 2));
+		assertThat(response.departureAirport()).isEqualTo("JFK");
+	}
+
 	private BoardingPassExtractionResponse response(DocumentType type, double confidence,
 			boolean callerSuppliedBoardingPassSignal) {
 		Map<String, ExtractedField> fields = Map.of("document_type",
 				new ExtractedField(type.name(), confidence, 0, null, "test"));
+		DocumentFlightSegment segment = new DocumentFlightSegment("BA117", LocalDate.of(2026, 8, 24),
+				"LHR", "JFK", "2026-08-24T08:20", "2026-08-24T11:10", "07:35",
+				null, null, null, 0.99d, 0, null, Map.of());
 		return new BoardingPassExtractionResponse(type, "BA117", LocalDate.of(2026, 8, 24),
-				"2026-08-24T08:20", "07:35", "LHR", "JFK", null, null, null,
-				callerSuppliedBoardingPassSignal, false, fields, List.of(), "TEST", Instant.EPOCH);
+				"2026-08-24T08:20", "2026-08-24T11:10", "07:35", "LHR", "JFK", null, null, null,
+				callerSuppliedBoardingPassSignal, false, fields, List.of(segment), List.of(), "TEST", Instant.EPOCH);
 	}
 }
