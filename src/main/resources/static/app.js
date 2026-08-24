@@ -124,6 +124,10 @@
     enterNewFlight: 'Introducir un vuelo nuevo', backHome: 'Volver al inicio', uploadContext: 'Elegir un documento de viaje', uploadTitle: 'Elegir o subir un archivo', chooseFile: 'Elegir archivo', previewPng: 'Vista previa de la tarjeta PNG'
   });
 
+  translations.zh.copyCard = '复制卡片内容';
+  translations.en.copyCard = 'Copy card content';
+  translations.es.copyCard = 'Copiar contenido de la tarjeta';
+
   var completionLabels = {
     CHECK_IN: ['我已经完成值机，继续', 'I have checked in; continue', 'Ya he facturado; continuar'],
     BAG_DROP: ['我已经托运行李，继续', 'I have dropped off my bags; continue', 'Ya entregué el equipaje; continuar'],
@@ -255,6 +259,8 @@
       element.placeholder = t(element.dataset.placeholder);
     });
     document.documentElement.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale;
+    var dateInput = document.getElementById('date-input');
+    if (dateInput) dateInput.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale;
     document.title = localeText('OneStep Flight | 一步乘机', 'OneStep Flight', 'OneStep Flight | Un paso para volar');
     var localeSelect = document.querySelector('[data-locale-select]');
     if (localeSelect) {

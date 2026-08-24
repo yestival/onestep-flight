@@ -280,6 +280,7 @@ html,body{max-width:100%;overflow-x:hidden}
 button,select{box-sizing:border-box;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere}
 .action-title,.action-description,.destination-primary,.route strong,.flight-facts dd,.location-card dd{overflow-wrap:anywhere;word-break:break-word}
 @media(max-width:420px){.share-shell{padding-inline:10px}.action-card,.flight-card,.location-card,.state-card{padding-inline:16px}.share-header{gap:6px}.locale-control{min-width:0}.locale-control select{min-width:0;width:100%}}
+body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
 
 @media (max-width: 360px) {
   .share-shell { padding-inline: 11px; }

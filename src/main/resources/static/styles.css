@@ -18,9 +18,10 @@ body{font-size:20px;overflow-x:hidden}
 .button{min-height:64px;font-size:18px}
 .home-back-button{display:inline-flex;align-items:center;gap:8px;min-height:48px;margin:0 0 28px;padding:10px 12px;border:0;border-radius:4px;background:transparent;color:var(--accent);font:800 17px var(--body);cursor:pointer}
 .home-back-button:hover{background:#E6EEF5}.home-back-button:focus-visible{outline:4px solid #91BCE0;outline-offset:3px}
-.manual-fields{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px}
+.manual-form,.manual-fields,.manual-fields>div{width:100%;max-width:100%;min-width:0}
+.manual-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:24px}
 .manual-fields label{display:block;margin-bottom:8px}
-.manual-fields input{width:100%;min-height:60px;border:2px solid var(--border);border-radius:4px;background:var(--white);padding:12px 16px;color:var(--navy);font:700 19px var(--data)}
+.manual-fields input{display:block;width:100%;inline-size:100%;max-width:100%;min-width:0;min-height:60px;box-sizing:border-box;margin:0;border:2px solid var(--border);border-radius:4px;background:var(--white);padding:12px 16px;color:var(--navy);font:700 19px var(--data)}
 .manual-fields input[name="flight"]{text-transform:uppercase}
 .manual-actions{margin-top:12px}
 .manual-actions .button{max-width:none}
@@ -455,8 +456,8 @@ button,.button,.support-button,.text-button,input,select{box-sizing:border-box;m
 .button,.icon-button,.support-button{display:flex;align-items:center;justify-content:center;gap:10px;text-align:center;padding-inline:16px}
 .button>span,.support-button>span,.icon-button>span{min-width:0;overflow-wrap:anywhere}
 .manual-fields input{width:100%;max-width:100%;min-width:0;text-align:center;padding-inline:8px}
-.manual-fields input[type="date"]{display:block;-webkit-min-logical-width:0;text-align:center;text-align-last:center}
-.manual-fields input[type="date"]::-webkit-date-and-time-value{min-width:0;text-align:center}
+.manual-fields input[type="date"]{display:block;width:100%;inline-size:100%;max-width:100%;min-width:0;-webkit-min-logical-width:0;margin:0;text-align:center;text-align-last:center;padding-inline:8px}
+.manual-fields input[type="date"]::-webkit-date-and-time-value{display:block;width:100%;min-width:0;margin:0;text-align:center}
 .manual-fields input[type="date"]::-webkit-datetime-edit{display:block;text-align:center;padding:0}
 .manual-fields input[type="date"]::-webkit-calendar-picker-indicator{margin:0;flex:none}
 .staff-card-header [data-staff-instruction-primary]{font-size:clamp(24px,7vw,38px);font-weight:900;line-height:1.2;color:var(--navy)}
@@ -464,3 +465,12 @@ button,.button,.support-button,.text-button,input,select{box-sizing:border-box;m
 .png-preview-card img{display:block;width:100%;height:auto;max-height:75dvh;object-fit:contain;clear:both}
 @media(max-width:420px){.screen,.site-header{width:calc(100% - 20px)}.staff-overlay,.confirm-overlay{padding:6px}.button,.support-button{padding-inline:12px}.route-summary{grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr)}}
 @media(max-width:340px){.screen,.site-header{width:calc(100% - 16px)}.flight-card,.action-summary{padding-inline:12px}.confirm-card,.staff-card{padding-inline:12px}}
+
+body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+.family-actions [data-action="create-family-share"],.family-actions [data-action="share-family"]{order:1;width:100%;min-height:64px;background:var(--accent);border-color:var(--accent);color:var(--white);font-size:18px;font-weight:800}
+.family-actions [data-action="share-family-card"]{order:2;width:100%;min-height:64px;background:var(--navy);border-color:var(--navy);color:var(--white);font-size:18px;font-weight:800}
+.family-actions [data-action="preview-family-share"]{order:3}
+.family-actions [data-action="preview-family-card"]{order:4}
+.family-actions [data-action="preview-family-share"],.family-actions [data-action="preview-family-card"]{justify-self:start;width:auto;min-height:48px;padding:6px 0;border:0;background:transparent;box-shadow:none;color:var(--accent);font-size:16px;text-decoration:underline;text-underline-offset:4px}
+.family-actions [data-action="copy-family"]{order:5;min-height:48px;font-size:15px}
+.family-actions [data-action="stop-family-share"]{order:6}

@@ -2,10 +2,10 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0B1F3A">
   <title>OneStep Flight | 一步乘机</title>
-  <link rel="stylesheet" href="styles.css?v=13">
+  <link rel="stylesheet" href="styles.css?v=14">
 </head>
 <body>
   <div class="app-shell">
@@ -170,7 +170,6 @@
         <form class="manual-form" data-action="manual-submit">
           <div class="manual-fields"><div><label for="flight-input" data-i18n="flightLabel">航班号</label><input id="flight-input" name="flight" type="text" data-placeholder="flightPlaceholder" placeholder="例如 BA 117" autocomplete="off" spellcheck="false" required></div><div><label for="date-input" data-i18n="dateLabel">出发日期</label><input id="date-input" name="departureDate" type="date" value="2026-09-03" required></div></div>
           <div class="choice-actions manual-actions"><button class="button button-primary button-large" type="submit" data-i18n="searchLiveFlight">查询真实航班</button><button class="button button-secondary button-large" type="button" data-action="demo-flight" data-i18n="useDemoFlight">使用 BA 117 演示航班</button></div>
-          <p class="form-hint demo-tagline" data-i18n="demoHint">演示数据</p>
         </form>
       </section>
 
@@ -285,7 +284,7 @@
           <p lang="en" data-staff-en>Hello. I need help with my flight. Could you please help me?</p>
         </div>
         <dl class="assistance-facts" data-staff-facts></dl>
-        <button class="button button-primary button-large" type="button" data-action="copy-staff" data-i18n="copyCard">复制大字卡内容</button>
+        <button class="button button-primary button-large" type="button" data-action="copy-staff" data-i18n="copyCard">复制卡片内容</button>
       </div>
     </div>
     <div class="confirm-overlay" data-family-overlay hidden role="dialog" aria-modal="true" aria-labelledby="family-title"><div class="confirm-card family-card"><button class="card-close" type="button" data-action="close-family" data-i18n="close">关闭</button><h1 id="family-title" data-i18n="familyTitle">分享行程给家属</h1><p data-i18n="familyLead">创建一个 48 小时有效的只读链接。链接只包含必要的航班与当前步骤信息。</p><p class="share-local-warning" data-share-local-warning hidden data-i18n="localhostWarning">当前是 localhost：其他设备无法打开这个地址。请部署到可访问的网址后再分享。</p><p class="share-status" data-share-status role="status" aria-live="polite"></p><div class="share-link-box" data-share-link-box hidden><label for="family-share-url" data-i18n="shareLinkLabel">家属查看链接</label><input id="family-share-url" type="url" readonly data-family-share-url><p data-share-expiry></p></div><div class="family-actions"><button class="button button-primary" type="button" data-action="create-family-share" data-i18n="createShare">创建实时共享链接</button><button class="button button-secondary" type="button" data-action="preview-family-share" data-i18n="previewShare" hidden>预览家属页面</button><button class="button button-secondary" type="button" data-action="share-family" data-i18n="shareLink" hidden>分享实时链接</button><button class="button button-secondary" type="button" data-action="share-family-card" data-i18n="sharePng">分享或保存 PNG 卡片</button><button class="button button-secondary" type="button" data-action="copy-family" data-i18n="copyCurrent">复制当前步骤</button><button class="text-button stop-share-button" type="button" data-action="stop-family-share" data-i18n="stopShare" hidden>停止共享</button></div></div></div>
@@ -295,6 +294,6 @@
     <div class="visually-hidden" role="status" aria-live="assertive" aria-atomic="true" data-live-region></div>
     <div class="toast" role="status" aria-live="polite" data-toast></div>
   </div>
-  <script src="app.js?v=13"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>

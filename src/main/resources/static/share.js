@@ -17,7 +17,7 @@
     zh: {
       pageTitle: 'OneStep Flight · 家属行程', brandSubtitle: '一步乘机', languageLabel: '选择语言',
       loadingTitle: '正在读取共享行程', loadingLead: '请稍候，我们正在取得最新一步。',
-      sharedJourney: '家属共享行程', currentStep: '现在要做的事', autoUpdates: '自动更新', destinationLabel: '现在前往',
+      sharedJourney: '家属共享行程', currentStep: '正在进行的步骤', autoUpdates: '自动更新', destinationLabel: '现在前往',
       flight: '航班', routeLabel: '航线', departureDate: '出发日期', completedSteps: '已完成步骤', completedCount: '已完成 {count} 个步骤',
       knownLocation: '已确认的地点', lastUpdated: '最近更新', airportReminder: '请以机场屏幕和工作人员的最新指引为准。',
       completeTitle: '这段行程已完成', completeLead: '家属已完成本次乘机指引。', stoppedTitle: '共享已停止',
@@ -48,7 +48,7 @@
     en: {
       pageTitle: 'OneStep Flight · Shared journey', brandSubtitle: 'Journey update', languageLabel: 'Choose language',
       loadingTitle: 'Loading the shared journey', loadingLead: 'Please wait while we get the latest step.',
-      sharedJourney: 'Journey shared with family', currentStep: 'What to do now', autoUpdates: 'Updates automatically', destinationLabel: 'Go to',
+      sharedJourney: 'Journey shared with family', currentStep: 'Current step', autoUpdates: 'Updates automatically', destinationLabel: 'Go to',
       flight: 'Flight', routeLabel: 'Route', departureDate: 'Departure date', completedSteps: 'Completed steps', completedCount: '{count} steps completed',
       knownLocation: 'Confirmed locations', lastUpdated: 'Last updated', airportReminder: 'Always follow the latest airport screens and staff instructions.',
       completeTitle: 'This journey is complete', completeLead: 'Your family member has completed this journey.', stoppedTitle: 'Sharing has stopped',
@@ -79,7 +79,7 @@
     es: {
       pageTitle: 'OneStep Flight · Viaje compartido', brandSubtitle: 'Un paso para volar', languageLabel: 'Elegir idioma',
       loadingTitle: 'Cargando el viaje compartido', loadingLead: 'Espera mientras obtenemos el paso más reciente.',
-      sharedJourney: 'Viaje compartido con la familia', currentStep: 'Qué hacer ahora', autoUpdates: 'Se actualiza automáticamente', destinationLabel: 'Ve a',
+      sharedJourney: 'Viaje compartido con la familia', currentStep: 'Paso actual', autoUpdates: 'Se actualiza automáticamente', destinationLabel: 'Ve a',
       flight: 'Vuelo', routeLabel: 'Ruta', departureDate: 'Fecha de salida', completedSteps: 'Pasos completados', completedCount: '{count} pasos completados',
       knownLocation: 'Lugares confirmados', lastUpdated: 'Última actualización', airportReminder: 'Sigue siempre las pantallas del aeropuerto y las indicaciones más recientes del personal.',
       completeTitle: 'Este viaje ha terminado', completeLead: 'Tu familiar ha completado este viaje.', stoppedTitle: 'Se dejó de compartir',
