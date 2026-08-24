@@ -33,6 +33,9 @@
   var shareSession = readStoredJson(SHARE_SESSION_KEY);
   var shareSyncTimer = null;
   var shareCreationInFlight = false;
+  var pngCardCache = null;
+  var pngCardPreparing = null;
+  var pngCardGeneration = 0;
   var arrivalRefreshFlightKey = null;
   var documentSegments = [];
   var selectedDocumentSegmentIndex = null;
@@ -127,6 +130,9 @@
   translations.zh.copyCard = '复制卡片内容';
   translations.en.copyCard = 'Copy card content';
   translations.es.copyCard = 'Copiar contenido de la tarjeta';
+  Object.assign(translations.zh, { datePlaceholder: '请选择出发日期', preparingPng: '正在准备卡片…' });
+  Object.assign(translations.en, { datePlaceholder: 'Choose departure date', preparingPng: 'Preparing card…' });
+  Object.assign(translations.es, { datePlaceholder: 'Elige la fecha de salida', preparingPng: 'Preparando tarjeta…' });
 
   var completionLabels = {
     CHECK_IN: ['我已经完成值机，继续', 'I have checked in; continue', 'Ya he facturado; continuar'],
@@ -261,6 +267,10 @@
     document.documentElement.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale;
     var dateInput = document.getElementById('date-input');
     if (dateInput) dateInput.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale;
+    syncVisibleDates();
+    invalidatePngCard();
+    var familyOverlay = document.querySelector('[data-family-overlay]');
+    if (familyOverlay && !familyOverlay.hidden && currentFlight) prepareFamilyCard().catch(function () {});
     document.title = localeText('OneStep Flight | 一步乘机', 'OneStep Flight', 'OneStep Flight | Un paso para volar');
     var localeSelect = document.querySelector('[data-locale-select]');
     if (localeSelect) {
@@ -295,6 +305,30 @@
     renderConnectivityStatus();
     renderStaffCard();
     persistJourney();
+  }
+
+  function formatVisibleDate(value) {
+    if (!value) return t('datePlaceholder');
+    var parts = value.split('-').map(Number);
+    if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) return t('datePlaceholder');
+    var date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    return new Intl.DateTimeFormat(currentLocale === 'zh' ? 'zh-CN' : currentLocale === 'es' ? 'es-ES' : 'en-GB', {
+      day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC'
+    }).format(date);
+  }
+
+  function syncVisibleDates() {
+    document.querySelectorAll('input[type="date"]').forEach(function (input) {
+      input.lang = localeLanguageTag(currentLocale);
+      var display = input.parentElement && input.parentElement.querySelector('[data-date-display]');
+      if (display) display.textContent = formatVisibleDate(input.value);
+    });
+  }
+
+  function setDateInputValue(input, value) {
+    if (!input) return;
+    input.value = value || '';
+    syncVisibleDates();
   }
 
   function setLookupBusy(busy) {
@@ -1215,7 +1249,7 @@
     var critical = fieldName === 'flight_number' || fieldName === 'departure_date';
     if (markForOnSiteReview && critical) {
       document.getElementById('flight-input').value = currentFlight.flightNumber || '';
-      document.getElementById('date-input').value = currentFlight.departureDate || '';
+      setDateInputValue(document.getElementById('date-input'), currentFlight.departureDate);
       navigate('manual');
       return;
     }
@@ -1342,7 +1376,7 @@
     var flightField = document.getElementById('flight-input');
     var dateField = document.getElementById('date-input');
     flightField.value = '';
-    dateField.value = '';
+    setDateInputValue(dateField, '');
     flightField.focus({ preventScroll: true });
     announce(localeText('请输入新的航班号和出发日期。', 'Enter the new flight number and departure date.', 'Introduce el nuevo número de vuelo y la fecha de salida.'));
   }
@@ -3134,6 +3168,8 @@
     setShareStatus(!currentFlight || !currentAction
       ? localeText('请先查询航班并进入乘机步骤。', 'Search for a flight and start the journey first.', 'Busca un vuelo e inicia el viaje primero.') : '');
     openDialog('[data-family-overlay]', '[data-action="close-family"]');
+    if (currentFlight) prepareFamilyCard().catch(function () {});
+    else setPngPreparing(false);
   }
 
   function closeFamily() {
@@ -3260,13 +3296,103 @@
     return y + lineHeight;
   }
 
-  function createFamilyCardBlob() {
+  function pngError(code, cause) {
+    var error = new Error(code);
+    error.code = code;
+    error.cause = cause || null;
+    return error;
+  }
+
+  function cardPayload() {
     var payload = safeSharePayload();
-    if (!payload) return Promise.reject(new Error('journey unavailable'));
-    var canvas = document.createElement('canvas');
-    canvas.width = 1080;
-    canvas.height = 1350;
-    var context = canvas.getContext('2d');
+    if (payload) return payload;
+    if (!currentFlight) return null;
+    return {
+      flightNumber: normalizeFlightNumber(currentFlight.flightNumber),
+      departureDate: currentFlight.departureDate || null,
+      departureAirport: currentFlight.departureAirport || null,
+      arrivalAirport: currentFlight.arrivalAirport || null,
+      terminal: currentFlight.terminal || null,
+      gate: currentFlight.gate || null,
+      checkInDeskOrZone: currentFlight.checkInDeskOrZone || currentFlight.checkInCounter || null,
+      arrivalBaggageBelt: currentFlight.arrivalBaggageBelt || null
+    };
+  }
+
+  function pngCacheKey() {
+    var payload = cardPayload();
+    return payload ? currentLocale + ':' + JSON.stringify(payload) + ':' + JSON.stringify(currentAction || null) : '';
+  }
+
+  function invalidatePngCard() {
+    pngCardGeneration += 1;
+    if (pngCardCache && pngCardCache.url) URL.revokeObjectURL(pngCardCache.url);
+    pngCardCache = null;
+    pngCardPreparing = null;
+    var preview = document.querySelector('[data-png-preview]');
+    if (preview) preview.hidden = true;
+  }
+
+  function dataUrlToPngBlob(dataUrl) {
+    try {
+      var encoded = String(dataUrl || '').split(',')[1];
+      if (!encoded) throw new Error('missing PNG data');
+      var binary = atob(encoded);
+      var bytes = new Uint8Array(binary.length);
+      for (var index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+      return new Blob([bytes], { type: 'image/png' });
+    } catch (error) {
+      throw pngError('PNG_TO_BLOB_FAILED', error);
+    }
+  }
+
+  function canvasToPngBlob(canvas) {
+    return new Promise(function (resolve, reject) {
+      var settled = false;
+      function fallback(cause) {
+        if (settled) return;
+        try {
+          var blob = dataUrlToPngBlob(canvas.toDataURL('image/png'));
+          settled = true;
+          resolve(blob);
+        } catch (error) {
+          settled = true;
+          reject(error.code ? error : pngError('PNG_TO_BLOB_FAILED', cause || error));
+        }
+      }
+      var timer = window.setTimeout(function () { fallback(new Error('toBlob timeout')); }, 3000);
+      try {
+        if (typeof canvas.toBlob !== 'function') return fallback(new Error('toBlob unavailable'));
+        canvas.toBlob(function (blob) {
+          window.clearTimeout(timer);
+          if (settled) return;
+          if (blob) {
+            settled = true;
+            resolve(blob);
+          } else fallback(new Error('toBlob returned null'));
+        }, 'image/png');
+      } catch (error) {
+        window.clearTimeout(timer);
+        fallback(error);
+      }
+    });
+  }
+
+  function createFamilyCardBlob() {
+    var payload = cardPayload();
+    if (!payload) return Promise.reject(pngError('PNG_RENDER_FAILED', new Error('journey unavailable')));
+    var canvas;
+    var context;
+    try {
+      canvas = document.createElement('canvas');
+      canvas.width = 1080;
+      canvas.height = 1350;
+      context = canvas.getContext('2d');
+      if (!context) throw new Error('2D canvas unavailable');
+    } catch (error) {
+      return Promise.reject(pngError('PNG_RENDER_FAILED', error));
+    }
+    try {
     context.fillStyle = '#F1F3F4';
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = '#172B3B';
@@ -3284,7 +3410,9 @@
     context.fillText((payload.departureAirport || '—') + '  →  ' + (payload.arrivalAirport || '—'), 120, 405);
     context.font = '800 72px Arial, sans-serif';
     context.fillStyle = '#172B3B';
-    var y = wrapCanvasText(context, actionTextForLocale(currentAction, 'title', currentLocale), 120, 545, 840, 88);
+    var cardAction = currentAction ? actionTextForLocale(currentAction, 'title', currentLocale)
+      : localeText('确认航班信息', 'Confirm flight information', 'Confirmar la información del vuelo');
+    var y = wrapCanvasText(context, cardAction, 120, 545, 840, 88);
     context.font = '650 40px Arial, sans-serif';
     context.fillStyle = '#344B5D';
     y = wrapCanvasText(context, familyMessageForLocale(currentLocale).split('\n').slice(1).join(' · '), 120, y + 35, 840, 58);
@@ -3300,42 +3428,126 @@
     context.font = '600 30px Arial, sans-serif';
     wrapCanvasText(context, localeText('生成时间：', 'Generated: ', 'Generado: ') + new Intl.DateTimeFormat(localeLanguageTag(currentLocale), { dateStyle: 'medium', timeStyle: 'short' }).format(new Date()), 120, 1200, 840, 40);
     wrapCanvasText(context, localeText('请以机场屏幕和工作人员为准', 'Confirm with airport screens and staff', 'Confirma con las pantallas y el personal'), 120, 1260, 840, 40);
-    return new Promise(function (resolve, reject) {
-      canvas.toBlob(function (blob) { blob ? resolve(blob) : reject(new Error('png unavailable')); }, 'image/png');
+    } catch (error) {
+      return Promise.reject(pngError('PNG_RENDER_FAILED', error));
+    }
+    return canvasToPngBlob(canvas);
+  }
+
+  function setPngPreparing(preparing) {
+    var button = document.querySelector('[data-action="share-family-card"]');
+    var previewButton = document.querySelector('[data-action="preview-family-card"]');
+    if (button) {
+      button.disabled = preparing || !pngCardCache;
+      button.textContent = preparing ? t('preparingPng') : t('sharePng');
+    }
+    if (previewButton) previewButton.disabled = preparing || !pngCardCache;
+  }
+
+  function reportPngError(error) {
+    var code = error && error.code || 'PNG_RENDER_FAILED';
+    console.error(code, error && error.cause ? error.cause.name || 'Error' : 'Error');
+    var messages = {
+      PNG_RENDER_FAILED: ['卡片绘制失败，请重试。', 'The card could not be drawn. Try again.', 'No se pudo dibujar la tarjeta. Inténtalo de nuevo.'],
+      PNG_TO_BLOB_FAILED: ['卡片图片编码失败，请重试。', 'The card image could not be encoded. Try again.', 'No se pudo codificar la imagen. Inténtalo de nuevo.'],
+      PNG_FILE_FAILED: ['无法准备分享文件，请重试。', 'The sharing file could not be prepared. Try again.', 'No se pudo preparar el archivo. Inténtalo de nuevo.'],
+      PNG_SHARE_FAILED: ['系统分享失败，请重试或预览后保存。', 'System sharing failed. Try again or save from the preview.', 'No se pudo compartir. Inténtalo de nuevo o guarda desde la vista previa.']
+    };
+    var message = messages[code] || messages.PNG_RENDER_FAILED;
+    showToast(currentLocale === 'zh' ? message[0] : currentLocale === 'es' ? message[2] : message[1]);
+  }
+
+  function prepareFamilyCard() {
+    var key = pngCacheKey();
+    if (!key) {
+      invalidatePngCard();
+      setPngPreparing(false);
+      return Promise.reject(pngError('PNG_RENDER_FAILED', new Error('journey unavailable')));
+    }
+    if (pngCardCache && pngCardCache.key === key) return Promise.resolve(pngCardCache);
+    if (pngCardCache && pngCardCache.key !== key) invalidatePngCard();
+    if (pngCardPreparing) return pngCardPreparing;
+    setPngPreparing(true);
+    var generation = pngCardGeneration;
+    var preparation = createFamilyCardBlob().then(function (blob) {
+      if (generation !== pngCardGeneration) {
+        var cancelled = pngError('PNG_RENDER_FAILED', new Error('stale card generation'));
+        cancelled.cancelled = true;
+        throw cancelled;
+      }
+      var file;
+      try {
+        file = new File([blob], 'onestep-flight-journey.png', { type: 'image/png' });
+      } catch (error) {
+        throw pngError('PNG_FILE_FAILED', error);
+      }
+      pngCardCache = { key: key, blob: blob, file: file, url: URL.createObjectURL(blob) };
+      return pngCardCache;
+    }).catch(function (error) {
+      if (generation === pngCardGeneration) pngCardCache = null;
+      if (!error.cancelled && generation === pngCardGeneration) reportPngError(error);
+      throw error;
+    }).finally(function () {
+      if (pngCardPreparing === preparation) {
+        pngCardPreparing = null;
+        setPngPreparing(false);
+      }
     });
+    pngCardPreparing = preparation;
+    return preparation;
+  }
+
+  function showCachedPngPreview(showSaveHint) {
+    if (!pngCardCache) return;
+    var preview = document.querySelector('[data-png-preview]');
+    var image = document.querySelector('[data-png-preview-image]');
+    var hint = document.querySelector('[data-png-save-hint]');
+    if (image) image.src = pngCardCache.url;
+    if (hint) hint.textContent = showSaveHint
+      ? localeText('请长按下方图片保存。', 'Touch and hold the image below to save it.', 'Mantén pulsada la imagen para guardarla.')
+      : localeText('PNG 卡片预览', 'PNG card preview', 'Vista previa de la tarjeta PNG');
+    if (preview) preview.hidden = false;
+  }
+
+  function isIosBrowser() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent)
+      || navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+  }
+
+  function saveCachedPngFallback() {
+    if (isIosBrowser()) {
+      showCachedPngPreview(true);
+      return;
+    }
+    var link = document.createElement('a');
+    link.href = pngCardCache.url;
+    link.download = pngCardCache.file.name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    showToast(localeText('PNG 卡片已下载。', 'PNG card downloaded.', 'Tarjeta PNG descargada.'));
   }
 
   function shareFamilyCard() {
-    createFamilyCardBlob().then(function (blob) {
-      var file = new File([blob], 'onestep-flight-journey.png', { type: 'image/png' });
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        return navigator.share({ files: [file], title: 'OneStep Flight' });
+    if (!pngCardCache) return;
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [pngCardCache.file] })) {
+        var shareResult = navigator.share({ files: [pngCardCache.file], title: 'OneStep Flight' });
+        if (shareResult && typeof shareResult.catch === 'function') shareResult.catch(function (error) {
+          if (error && error.name === 'AbortError') return;
+          reportPngError(pngError('PNG_SHARE_FAILED', error));
+        });
+        return;
       }
-      var link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = file.name;
-      link.click();
-      window.setTimeout(function () { URL.revokeObjectURL(link.href); }, 1000);
-      showToast(localeText('PNG 卡片已保存。', 'PNG card saved.', 'Tarjeta PNG guardada.'));
-    }).catch(function (error) {
-      if (!error || error.name !== 'AbortError') showToast(localeText('暂时无法生成 PNG 卡片。', 'The PNG card could not be created.', 'No se pudo crear la tarjeta PNG.'));
-    });
+      saveCachedPngFallback();
+    } catch (error) {
+      if (error && error.name === 'AbortError') return;
+      reportPngError(pngError('PNG_SHARE_FAILED', error));
+    }
   }
 
   function previewFamilyCard() {
-    var previewWindow = window.open('', '_blank', 'noopener');
-    if (!previewWindow) {
-      showToast(localeText('请允许打开预览窗口。', 'Allow the preview window to open.', 'Permite que se abra la ventana de vista previa.'));
-      return;
-    }
-    createFamilyCardBlob().then(function (blob) {
-      var objectUrl = URL.createObjectURL(blob);
-      previewWindow.location.replace(objectUrl);
-      window.setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 60000);
-    }).catch(function () {
-      previewWindow.close();
-      showToast(localeText('暂时无法生成 PNG 卡片。', 'The PNG card could not be created.', 'No se pudo crear la tarjeta PNG.'));
-    });
+    if (pngCardCache) showCachedPngPreview(false);
   }
 
   function showEndConfirmation() {
@@ -3438,6 +3650,9 @@
     }
     persistOfflineJourney();
     scheduleFamilyShareSync();
+    if (pngCardCache && pngCardCache.key !== pngCacheKey()) invalidatePngCard();
+    var familyOverlay = document.querySelector('[data-family-overlay]');
+    if (familyOverlay && !familyOverlay.hidden && currentFlight && !pngCardCache) prepareFamilyCard().catch(function () {});
   }
 
   function pick(source, fields) {
@@ -3622,7 +3837,7 @@
     if (action === 'manual') {
       if (currentFlight) {
         document.getElementById('flight-input').value = currentFlight.flightNumber || '';
-        document.getElementById('date-input').value = currentFlight.departureDate || '';
+        setDateInputValue(document.getElementById('date-input'), currentFlight.departureDate);
       }
       navigate('manual');
     }
@@ -3698,6 +3913,11 @@
 
   fileInput.addEventListener('change', function () {
     if (fileInput.files.length) uploadDocument(fileInput.files[0]);
+  });
+
+  document.querySelectorAll('input[type="date"]').forEach(function (input) {
+    input.addEventListener('input', syncVisibleDates);
+    input.addEventListener('change', syncVisibleDates);
   });
 
   document.querySelector('[data-locale-select]').addEventListener('change', function (event) {
