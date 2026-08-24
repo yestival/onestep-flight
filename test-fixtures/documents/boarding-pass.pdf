@@ -1,0 +1,56 @@
+%PDF-1.4
+%Synthetic OneStep Flight fixture
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Length 441 >>
+stream
+BT
+/F1 15 Tf
+0.75 0.08 0.08 rg
+52 744 Td
+(SYNTHETIC TEST DOCUMENT \227 NOT VALID FOR TRAVEL) Tj
+/F1 27 Tf
+0.04 0.16 0.35 rg
+0 -55 Td
+(BOARDING PASS) Tj
+/F1 16 Tf
+0.10 0.18 0.28 rg
+0 -36 Td
+(Flight: BA 117) Tj
+0 -36 Td
+(Departure date: 2026-08-24) Tj
+0 -36 Td
+(Route: LHR to JFK) Tj
+0 -36 Td
+(Boarding time: 07:35 local time) Tj
+0 -36 Td
+(Departure terminal: 5    Gate: B42) Tj
+0 -36 Td
+(Check-in completed - fixture may skip CHECK_IN) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000043 00000 n 
+0000000092 00000 n 
+0000000149 00000 n 
+0000000275 00000 n 
+0000000377 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+868
+%%EOF

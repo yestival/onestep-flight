@@ -1,0 +1,134 @@
+# OneStep Flight / 一步乘机
+
+OneStep Flight is an accessible flight companion that combines document evidence, multiple operational flight sources, airport-local time, and journey progress to show one clear next action at a time.
+
+Built for the DevNetwork **[API + Cloud + AI] Hackathon 2026**, including the Nutrient DWS Challenge and SerpApi Best AI Use Case tracks.
+
+> **Where Nutrient is critical:** Nutrient DWS turns an uploaded boarding pass or ticket into structured, cited evidence that OneStep can verify against operational sources, so a traveler does not have to interpret a dense travel document alone.
+
+## Run locally
+
+Requirements: Java 17 and the included Maven Wrapper.
+
+Configure these environment variables before starting VS Code or the terminal. Never put their values in Java, JavaScript, properties, screenshots, logs, URLs, or Git history.
+
+- `NUTRIENT_API_KEY`
+- `SERPAPI_API_KEY`
+- `AERODATABOX_RAPIDAPI_KEY`
+- `VARIFLIGHT_API_KEY`
+
+Windows PowerShell:
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+Open <http://localhost:8080/>. A safe readiness endpoint is available at <http://localhost:8080/api/integrations/status>; it returns only `READY` or `MISSING`, never secret values.
+
+## Real external integrations
+
+| Integration | Purpose | Reality and safety boundary |
+|---|---|---|
+| Nutrient Data Extraction API | Extract fields and citations from PDF/JPG/PNG travel documents | Real external API when configured; no fixture fallback |
+| SerpApi Flight Result | Flight-result status, route, gate/terminal and operational times when returned | Real external API when configured |
+| AeroDataBox via RapidAPI | Flight-number/date lookup, quality, departure times, terminal, gate and `checkInDesk` | Real external API when configured |
+| VariFlight Tripmatch MCP | `searchFlightsByNumber` using JSON-RPC/MCP over JSON or SSE | Real external API when configured |
+
+AeroDataBox `departure.baggageBelt` is deliberately ignored because it describes the **arrival reclaim carousel**, not a departure bag-drop desk. `checkInDesk` is treated only as a check-in area; when a dedicated bag-drop desk is unknown, OneStep may direct the traveler there to ask staff where bag drop is. OneStep labels a destination as a dedicated bag-drop desk only when a provider explicitly returns a dedicated bag-drop field.
+
+## Multi-source merge and provenance
+
+The live lookup runs in two stages: AeroDataBox first establishes any available route hint, then SerpApi and VariFlight use that hint for stricter matching. Each adapter has a five-minute cache; a forced refresh bypasses it. The merge does not choose by provider name alone. For each field it retains:
+
+- the selected value and provider;
+- the provider's source-update time, when supplied;
+- OneStep's retrieval time;
+- the provider quality/level;
+- every candidate value and whether the sources conflict.
+
+Selection considers explicit field presence, quality, source-update time, and retrieval time. Route identity is checked using normalized flight number, departure date, and known route hints. A multi-record response is never accepted by simply taking its first item.
+
+Partial failure is supported: if one provider succeeds, its verifiable fields may still drive the journey while the UI shows the other providers' states. If all three fail, the API returns `ALL_LIVE_FLIGHT_PROVIDERS_FAILED`; it never substitutes fixture data. During a refresh failure, the browser preserves the last successful snapshot and current action.
+
+Provider failure outcomes distinguish `NOT_CONFIGURED`, `AUTHENTICATION_FAILED`, `FORBIDDEN_OR_QUOTA`, `NOT_FOUND`, `RATE_LIMITED`, `TIMEOUT`, `UPSTREAM_ERROR`, and `PARSE_ERROR`.
+
+## Time and next-action model
+
+The backend computes the operational time context from server time and the departure timestamp's UTC offset. Scheduled, estimated/revised, actual, boarding, effective departure, source-update, and retrieval times remain separate. A missing provider update time remains missing; it is not replaced with the current time.
+
+Deterministic rules return one of `CHECK_IN`, `BAG_DROP`, `SECURITY`, `GO_TO_GATE`, `WAIT`, `BOARD_NOW`, `IN_FLIGHT`, `BAGGAGE_CLAIM`, `EXIT_AIRPORT`, or `ASK_FOR_HELP`.
+
+Completed journey state and the latest flight snapshot are sent to the backend for every decision. Normal step progression rechecks all provider adapters within their cache rules; explicit refresh uses a 60-second browser cooldown and bypasses backend caches. Cancellation, departure, arrival, stale near-departure data, missing gate near departure, and overdue boarding produce stop/help behavior rather than continuing the old plan.
+
+## API overview
+
+- `GET /api/integrations/status` — readiness only, no secret values.
+- `POST /api/documents/boarding-pass` — Nutrient extraction and field evidence.
+- `GET /api/flights/{flightNumber}?departureDate=YYYY-MM-DD&demo=false` — original SerpApi adapter endpoint.
+- `POST /api/journeys/resolve-flight` — merge document evidence with all configured live providers.
+- `POST /api/journeys/next-action` — re-resolve within cache rules and calculate one next action.
+- `POST /api/journeys/refresh-flight` — force a new provider query for the confirmation snapshot.
+- `POST /api/share-sessions` — create a privacy-minimized, read-only family view and return independent view/update tokens.
+- `GET /api/share-sessions/{viewToken}` — read the current shared journey state without login.
+- `PUT /api/share-sessions/{viewToken}` — update it with the private `X-Share-Update-Token` header.
+- `DELETE /api/share-sessions/{viewToken}` — stop sharing with the private `X-Share-Update-Token` header.
+
+The resolved journey response exposes `providerResults`, `fieldProvenance`, `conflicts`, `retrievedAt`, `freshestSourceUpdatedAt`, `stale`, `live`, and `demo` alongside normalized flight, route, times, terminal, gate, check-in area, any explicitly known dedicated bag-drop desk, and the independently modelled arrival baggage belt when published.
+
+For local testing, a generated family URL starts with `http://localhost:8080`; it opens only on the same computer running OneStep Flight. Use an HTTPS deployment (or an intentionally configured reachable host) before sending a link to another device. The view URL never contains the update token, and the update token stays only in the traveler's browser session.
+
+The read-only family page is served at `/share/{viewToken}`. It needs no login, lets the viewer choose 中文/English/Español, and polls the safe snapshot every 13 seconds so meaningful updates can render within 15 seconds while the share remains active.
+
+## Browser walkthrough
+
+1. Open the home page and choose **Upload booking confirmation, e-ticket, or boarding pass**.
+2. Select one file from `test-fixtures/documents/`, or enter `BA117` and `2026-08-24` manually for the real LHR → JFK lookup.
+3. Confirm Nutrient-extracted fields one at a time. The confirmation page then merges the document with configured live providers.
+4. Check provider chips, terminal, gate, check-in area, airport-local time, countdown, freshness, conflicts, and expandable evidence.
+5. Confirm the flight. Answer whether checked baggage is present and complete one action at a time.
+6. Use **返回上一步 / Back one step** at the bottom of the journey; user-entered progress is restored while newer live updates remain intact.
+7. Use **朗读当前步骤 / Read this step aloud** to hear the action, destination, terminal, gate, counter/zone, and time.
+8. Use the single **请工作人员帮忙 / Ask a member of staff** button for the bilingual high-contrast card and copy action.
+9. Use **分享行程给家属 / Share journey with family** to create a live link, preview it in a second tab, share/copy it, or save a privacy-safe PNG card. Meaningful journey changes update the same link; **Stop sharing** revokes it.
+10. Switch 中文/English/Español, reload to verify session recovery, and repeat at 360×800, 390×844, and 200% zoom.
+
+## Safe fixture scenarios
+
+Append `?demoScenarios=true` to the home URL to reveal `NORMAL`, `GATE_CHANGE`, `DELAY`, `CANCEL`, and `STALE`. Every scenario response has `demo=true`, uses a simulated source label, and is never presented as live. The stable BA117 fixture used by **Use BA 117 demo flight** is also explicitly labelled.
+
+For a same-day end-to-end state-machine check, open <http://localhost:8080/?qaJourney=true>. This hidden local QA route first requests the real `BA117 / 2026-08-24 / LHR → JFK` snapshot, labels the page as local journey QA, and lets a tester advance through check-in, bag drop, security, gate, onboard, baggage claim, and exit without waiting for the real flight clock. It never invents a gate, counter, or baggage belt that the live snapshot did not publish, and it does not appear in the ordinary home flow.
+
+## Current prototype limitations
+
+- Airport maps, walking time, security queues, airline eligibility rules, and a globally authoritative bag-drop desk feed are not available.
+- Browser speech quality depends on installed operating-system voices.
+- Family sharing is deliberately account-free and stores only a short, privacy-minimized journey snapshot in the local in-memory H2 database. A link expires after 48 hours by default and is also lost when this local service restarts; there is no caregiver account or messaging service.
+- Provider plans, quotas, historical coverage, and field availability vary. Missing data is shown as missing and should be confirmed with airport staff and airport displays.
+
+## Privacy and verification
+
+### Synthetic document-classification fixtures
+
+The files in `test-fixtures/documents/` are generated test artifacts, not travel documents. Every page or image is prominently marked **SYNTHETIC TEST DOCUMENT — NOT VALID FOR TRAVEL** and contains no passenger name, PNR, booking reference, ticket number, passport data, payment data, or barcode. Regenerate the same privacy-safe artifacts with `scripts/generate-synthetic-documents.ps1` when needed.
+
+| Fixture | Expected `document_type` | Expected journey behavior |
+|---|---|---|
+| `booking-confirmation.pdf` | `BOOKING_CONFIRMATION` | Does not imply check-in; begin with `CHECK_IN` after the flight identity is confirmed. |
+| `e-ticket-itinerary.pdf` | `E_TICKET` or, if the provider identifies the layout more generally, `ITINERARY` | Does not imply check-in; begin with `CHECK_IN`. |
+| `boarding-pass.pdf` | `BOARDING_PASS` | May skip `CHECK_IN` only when the classification confidence is at least `0.85`; otherwise ask for confirmation/manual input. |
+| `booking-page-screenshot.png` | `BOOKING_CONFIRMATION` | Does not imply check-in; begin with `CHECK_IN`. |
+| `non-flight-document.png` | `UNKNOWN` | Require confirmation/manual flight number and date; never infer check-in. |
+
+The extraction schema accepts only `BOARDING_PASS`, `ITINERARY`, `E_TICKET`, `BOOKING_CONFIRMATION`, or `UNKNOWN`. Unknown provider labels are normalized to `UNKNOWN`. Only `document_type` is required by the extraction schema so a non-flight file can return `UNKNOWN` without inventing a flight number or date. Name, PNR, booking-reference, ticket-number, passport, and barcode fields are not requested or exposed by the public extraction DTO.
+
+BA117 is a real British Airways LHR → JFK flight. The repository's PDF and screenshot fixtures—including the older `output/pdf/ba117-live-privacy-safe-test.pdf` artifact—are privacy-safe synthetic test materials, not valid travel credentials. Values printed on a fixture never fill a live provider field unless the UI explicitly labels them as document evidence.
+
+Before a submission build:
+
+```powershell
+node --check src/main/resources/static/app.js
+.\mvnw.cmd test
+.\mvnw.cmd package
+```
+
+Also inspect `git diff --check`, test the full browser walkthrough, confirm that live responses have `demo=false`, and search the repository for accidental credentials before publishing.

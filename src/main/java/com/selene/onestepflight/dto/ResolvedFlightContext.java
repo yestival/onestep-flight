@@ -1,0 +1,60 @@
+package com.selene.onestepflight.dto;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Map;
+
+public record ResolvedFlightContext(
+		String flightNumber,
+		String normalizedFlightNumber,
+		LocalDate departureDate,
+		String documentType,
+		boolean boardingPassDetected,
+		String departureAirport,
+		String departureAirportName,
+		String arrivalAirport,
+		String arrivalAirportName,
+		OffsetDateTime documentScheduledDeparture,
+		OffsetDateTime documentBoardingTime,
+		OffsetDateTime scheduledDeparture,
+		OffsetDateTime estimatedDeparture,
+		OffsetDateTime actualDeparture,
+		OffsetDateTime effectiveDeparture,
+		OffsetDateTime scheduledArrival,
+		OffsetDateTime estimatedArrival,
+		OffsetDateTime actualArrival,
+		String documentTerminal,
+		String documentGate,
+		String terminal,
+		String gate,
+		String seat,
+		String checkInCounter,
+		String checkInDeskOrZone,
+		String dedicatedBagDropDesk,
+		String arrivalBaggageBelt,
+		String status,
+		int delayMinutes,
+		int arrivalDelayMinutes,
+		Instant dataLastUpdatedAt,
+		Instant dataRetrievedAt,
+		Instant retrievedAt,
+		Instant freshestSourceUpdatedAt,
+		String documentDataSource,
+		String liveDataSource,
+		String sourceUrl,
+		String codeshare,
+		boolean live,
+		boolean demo,
+		String demoScenario,
+		boolean checkInCounterNeedsConfirmation,
+		boolean stale,
+		Map<String, ProviderFlightResult> providerResults,
+		Map<String, FieldProvenance> fieldProvenance,
+		Map<String, ExtractedField> documentEvidence,
+		List<FlightFieldConflict> conflicts,
+		boolean requiresUserConfirmation,
+		List<FlightChange> latestChanges,
+		FlightTimeContext timeContext) {
+}
