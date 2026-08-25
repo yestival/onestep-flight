@@ -11,4 +11,10 @@ public interface OperationalFlightDataProvider {
 
 	ProviderFlightResult findFlight(String flightNumber, LocalDate departureDate,
 			String departureAirportHint, String arrivalAirportHint, boolean refresh);
+
+	default ProviderFlightResult findFlight(String flightNumber, LocalDate departureDate,
+			String departureAirportHint, String arrivalAirportHint,
+			String scheduledDepartureHint, boolean refresh) {
+		return findFlight(flightNumber, departureDate, departureAirportHint, arrivalAirportHint, refresh);
+	}
 }

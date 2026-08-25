@@ -3,7 +3,6 @@ package com.selene.onestepflight;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -20,10 +19,7 @@ import com.selene.onestepflight.service.OperationalFlightDataProvider;
 
 @SpringBootTest(properties = {
 		"onestep.providers.variflight.enabled=false",
-		"VARIFLIGHT_API_KEY=fake-test-key",
-		"onestep.rate-limit.share-create-per-hour=1",
-		"onestep.rate-limit.live-flight-per-hour=100",
-		"onestep.rate-limit.document-upload-per-hour=100"
+		"VARIFLIGHT_API_KEY=fake-test-key"
 })
 @AutoConfigureMockMvc
 class RuntimeGuardrailApiTest {
@@ -46,7 +42,7 @@ class RuntimeGuardrailApiTest {
 	}
 
 	@Test
-	void shareCreateReturnsLocalized429WhileShareGetRemainsUnlimited() throws Exception {
+	void repeatedShareCreateFromTheSameIpRemainsAllowed() throws Exception {
 		String request = """
 				{
 				  "flightNumber":"BA117","departureDate":"2026-08-24",
@@ -64,12 +60,7 @@ class RuntimeGuardrailApiTest {
 		mockMvc.perform(post("/api/share-sessions")
 					.remoteAddress("198.51.100.20")
 					.contentType(MediaType.APPLICATION_JSON).content(request))
-				.andExpect(status().isTooManyRequests())
-				.andExpect(header().exists("Retry-After"))
-				.andExpect(jsonPath("$.code").value("SHARE_CREATE_RATE_LIMITED"))
-				.andExpect(jsonPath("$.messageZh").isNotEmpty())
-				.andExpect(jsonPath("$.messageEn").isNotEmpty())
-				.andExpect(jsonPath("$.messageEs").isNotEmpty());
+				.andExpect(status().isCreated());
 
 		mockMvc.perform(get("/api/share-sessions/{token}", viewToken)
 					.remoteAddress("198.51.100.20"))

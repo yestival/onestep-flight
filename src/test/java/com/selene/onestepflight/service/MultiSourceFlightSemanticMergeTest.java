@@ -62,12 +62,28 @@ class MultiSourceFlightSemanticMergeTest {
 						"estimatedDeparture", "boardingTime");
 	}
 
+	@Test
+	void anExactDateProviderOutranksAnAdjacentDateProviderAcrossTheAggregate() {
+		ProviderFlightResult adjacent = withDate(result("AERODATABOX", "BA117", "LHR", "London",
+				"JFK", "New York", "2026-09-05T10:00Z", null, null, null, "EXPECTED"),
+				DATE.plusDays(1));
+		ProviderFlightResult exact = result("SERPAPI", "BA117", "CDG", "Paris",
+				"XMN", "Xiamen", "2026-09-04T16:10Z", null, null, null, "EXPECTED");
+
+		MultiSourceFlightSnapshot snapshot = service(adjacent, exact)
+				.findFlight("BA117", DATE, null, null, false);
+
+		assertThat(snapshot.flight().departureDate()).isEqualTo(DATE);
+		assertThat(snapshot.flight().departureAirport()).isEqualTo("CDG");
+		assertThat(snapshot.fieldProvenance().get("departureDate").candidateValues()).hasSize(1);
+	}
+
 	private MultiSourceFlightService service(ProviderFlightResult... results) {
 		List<OperationalFlightDataProvider> providers = java.util.Arrays.stream(results)
 				.map(result -> new FixedProvider(result.provider(), result))
 				.map(OperationalFlightDataProvider.class::cast)
 				.toList();
-		return new MultiSourceFlightService(providers, Duration.ofMinutes(5), Duration.ofSeconds(30),
+		return new MultiSourceFlightService(providers, Duration.ofMinutes(5),
 				Duration.ofSeconds(2), Duration.ofSeconds(1), Duration.ofSeconds(1), Runnable::run);
 	}
 
@@ -81,6 +97,18 @@ class MultiSourceFlightSemanticMergeTest {
 				departure, departure, null, departure.plusHours(11), null, null, departure.minusMinutes(45),
 				terminal, gate, checkIn, null, null, status, null, null, "LIVE",
 				UPDATED, UPDATED, null, null, true, false);
+	}
+
+	private ProviderFlightResult withDate(ProviderFlightResult result, LocalDate date) {
+		return new ProviderFlightResult(result.provider(), result.outcome(), result.errorCode(), result.flightNumber(),
+				date, result.departureAirport(), result.departureAirportName(), result.arrivalAirport(),
+				result.arrivalAirportName(), result.scheduledDeparture(), result.estimatedDeparture(),
+				result.actualDeparture(), result.scheduledArrival(), result.estimatedArrival(), result.actualArrival(),
+				result.boardingTime(), result.terminal(), result.gate(), result.checkInDeskOrZone(),
+				result.dedicatedBagDropDesk(), result.arrivalBaggageBelt(), result.status(),
+				result.departureDelayMinutes(), result.arrivalDelayMinutes(), result.quality(),
+				result.sourceUpdatedAt(), result.retrievedAt(), result.sourceUrl(), result.codeshare(),
+				result.live(), result.fromCache());
 	}
 
 	private record FixedProvider(String providerName, ProviderFlightResult result)

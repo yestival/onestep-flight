@@ -14,10 +14,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
 import com.selene.onestepflight.dto.BoardingPassExtractionResponse;
+import com.selene.onestepflight.dto.DocumentFlightSegment;
+import com.selene.onestepflight.dto.DocumentType;
 import com.selene.onestepflight.dto.ExtractedField;
 import com.selene.onestepflight.dto.FieldCandidate;
 import com.selene.onestepflight.dto.FieldProvenance;
@@ -31,6 +34,10 @@ import com.selene.onestepflight.dto.ResolvedFlightContext;
 @Service
 public class ResolvedFlightService {
 	private static final double DOCUMENT_AIRPORT_HINT_CONFIDENCE_THRESHOLD = 0.65d;
+	private static final Set<String> ALLOWED_DOCUMENT_EVIDENCE_FIELDS = Set.of(
+			"document_type", "flight_number", "departure_date", "scheduled_departure",
+			"scheduled_arrival", "boarding_time", "departure_airport", "arrival_airport",
+			"terminal", "gate", "seat");
 
 	private final FlightService flightService;
 	private final MultiSourceFlightService multiSourceFlightService;
@@ -47,16 +54,122 @@ public class ResolvedFlightService {
 	}
 
 	public ResolvedFlightContext resolve(ResolveFlightRequest request) {
-		if (request.document() != null && request.document().segments().size() > 1) {
-			throw new InvalidDocumentException("DOCUMENT_SEGMENT_SELECTION_REQUIRED");
-		}
 		String normalizedFlightNumber = flightService.normalize(request.flightNumber());
-		MultiSourceFlightSnapshot snapshot = request.demo() && !isBlank(request.demoScenario()) && !request.refresh()
-				? demoSnapshot(demoScenarioProvider.findInitial(normalizedFlightNumber, request.demoScenario()))
-				: loadFlight(normalizedFlightNumber, request.departureDate(), request.demo(), request.demoScenario(),
-						documentRouteHint(request.document(), "departure_airport"),
-						documentRouteHint(request.document(), "arrival_airport"), request.refresh());
-		return merge(snapshot, request.document(), null, request.demoScenario());
+		BoardingPassExtractionResponse selectedDocument = selectDocumentSegment(
+				request.document(), normalizedFlightNumber, request.departureDate(),
+				request.documentSegmentIndex());
+		MultiSourceFlightSnapshot snapshot;
+		try {
+			snapshot = request.demo() && !isBlank(request.demoScenario()) && !request.refresh()
+					? demoSnapshot(demoScenarioProvider.findInitial(normalizedFlightNumber, request.demoScenario()))
+					: loadFlight(normalizedFlightNumber, request.departureDate(), request.demo(), request.demoScenario(),
+							documentRouteHint(selectedDocument, "departure_airport"),
+							documentRouteHint(selectedDocument, "arrival_airport"),
+							selectedDocument == null ? null : selectedDocument.scheduledDeparture(), request.refresh());
+		} catch (AllFlightProvidersUnavailableException exception) {
+			if (!documentMatchesRequest(selectedDocument, normalizedFlightNumber, request.departureDate())) throw exception;
+			snapshot = documentFallbackSnapshot(normalizedFlightNumber, request.departureDate(),
+					selectedDocument, exception.providerResults());
+		}
+		return merge(snapshot, selectedDocument, null, request.demoScenario());
+	}
+
+	private BoardingPassExtractionResponse selectDocumentSegment(BoardingPassExtractionResponse document,
+			String normalizedFlightNumber, LocalDate requestedDate, Integer requestedSegmentIndex) {
+		if (requestedSegmentIndex != null) {
+			if (document == null || requestedSegmentIndex < 0
+					|| requestedSegmentIndex >= document.segments().size()) {
+				throw new InvalidDocumentException("DOCUMENT_SEGMENT_SELECTION_INVALID");
+			}
+			DocumentFlightSegment requestedSegment = document.segments().get(requestedSegmentIndex);
+			if (!documentSegmentMatchesRequest(requestedSegment, normalizedFlightNumber, requestedDate)) {
+				throw new InvalidDocumentException("DOCUMENT_SEGMENT_SELECTION_INVALID");
+			}
+			return selectedDocumentSegment(document, requestedSegment, requestedSegmentIndex);
+		}
+		if (document == null) return null;
+		if (document.segments().size() <= 1) {
+			return documentMatchesRequest(document, normalizedFlightNumber, requestedDate) ? document : null;
+		}
+		DocumentFlightSegment selected = null;
+		int selectedScore = Integer.MIN_VALUE;
+		int selectedIndex = -1;
+		for (int index = 0; index < document.segments().size(); index++) {
+			DocumentFlightSegment segment = document.segments().get(index);
+			if (!Objects.equals(normalizeDocumentFlight(segment.flightNumber()), normalizedFlightNumber)) continue;
+			if (!Objects.equals(segment.departureDate(), requestedDate)) continue;
+			int score = documentSegmentScore(segment, normalizedFlightNumber, requestedDate);
+			if (score > selectedScore) {
+				selected = segment;
+				selectedScore = score;
+				selectedIndex = index;
+			}
+		}
+		if (selected == null || hasAmbiguousBestDocumentRoute(document, normalizedFlightNumber,
+				requestedDate, selectedScore)) return null;
+		return selectedDocumentSegment(document, selected, selectedIndex);
+	}
+
+	private BoardingPassExtractionResponse selectedDocumentSegment(BoardingPassExtractionResponse document,
+			DocumentFlightSegment selected, int selectedIndex) {
+		Map<String, ExtractedField> evidence = new LinkedHashMap<>(document.fields());
+		evidence.putAll(selected.fields());
+		String prefix = "segments[" + selectedIndex + "].";
+		List<String> reviewFields = document.needsReviewFields().stream()
+				.filter(Objects::nonNull)
+				.filter(field -> !field.startsWith("segments[") || field.startsWith(prefix))
+				.map(field -> field.startsWith(prefix) ? field.substring(prefix.length()) : field)
+				.toList();
+		return new BoardingPassExtractionResponse(document.documentType(), selected.flightNumber(),
+				selected.departureDate(), selected.scheduledDeparture(), selected.scheduledArrival(),
+				selected.boardingTime(), selected.departureAirport(), selected.arrivalAirport(),
+				selected.terminal(), selected.gate(), selected.seat(), false, false,
+				evidence, List.of(selected), reviewFields, document.dataSource(), document.extractedAt());
+	}
+
+	private boolean documentSegmentMatchesRequest(DocumentFlightSegment segment,
+			String normalizedFlightNumber, LocalDate requestedDate) {
+		return segment != null
+				&& Objects.equals(normalizeDocumentFlight(segment.flightNumber()), normalizedFlightNumber)
+				&& Objects.equals(segment.departureDate(), requestedDate);
+	}
+
+	private boolean hasAmbiguousBestDocumentRoute(BoardingPassExtractionResponse document,
+			String flightNumber, LocalDate requestedDate, int selectedScore) {
+		return document.segments().stream()
+				.filter(segment -> Objects.equals(normalizeDocumentFlight(segment.flightNumber()), flightNumber))
+				.filter(segment -> Objects.equals(segment.departureDate(), requestedDate))
+				.filter(segment -> documentSegmentScore(segment, flightNumber, requestedDate) == selectedScore)
+				.map(segment -> normalizeAirport(segment.departureAirport()) + ">"
+						+ normalizeAirport(segment.arrivalAirport()))
+				.distinct().limit(2).count() > 1;
+	}
+
+	private boolean documentMatchesRequest(BoardingPassExtractionResponse document,
+			String flightNumber, LocalDate departureDate) {
+		return document != null
+				&& Objects.equals(normalizeDocumentFlight(document.flightNumber()), flightNumber)
+				&& Objects.equals(document.departureDate(), departureDate);
+	}
+
+	private int documentSegmentScore(DocumentFlightSegment segment, String flightNumber, LocalDate requestedDate) {
+		if (segment == null) return Integer.MIN_VALUE;
+		int score = 0;
+		if (Objects.equals(normalizeDocumentFlight(segment.flightNumber()), flightNumber)) score += 100;
+		if (segment.departureDate() != null && requestedDate != null) {
+			long days = Math.abs(java.time.temporal.ChronoUnit.DAYS.between(
+					segment.departureDate(), requestedDate));
+			if (days == 0) score += 30;
+			else if (days == 1) score += 10;
+		}
+		if (normalizeAirport(segment.departureAirport()) != null) score += 2;
+		if (normalizeAirport(segment.arrivalAirport()) != null) score += 2;
+		if (!isBlank(segment.scheduledDeparture())) score += 1;
+		return score;
+	}
+
+	private String normalizeDocumentFlight(String value) {
+		return value == null ? null : value.replaceAll("[\\s-]", "").toUpperCase(Locale.ROOT);
 	}
 
 	/**
@@ -83,6 +196,19 @@ public class ResolvedFlightService {
 		return normalized;
 	}
 
+	String documentScheduledDepartureHint(BoardingPassExtractionResponse document) {
+		if (document == null || isBlank(document.scheduledDeparture())
+				|| documentFieldNeedsReview(document, "scheduled_departure")) return null;
+		String value = document.scheduledDeparture().trim();
+		ExtractedField evidence = document.fields().get("scheduled_departure");
+		if (evidence != null && (!Double.isFinite(evidence.confidence())
+				|| evidence.confidence() < DOCUMENT_AIRPORT_HINT_CONFIDENCE_THRESHOLD
+				|| evidence.value() == null || !value.equals(evidence.value().trim()))) {
+			return null;
+		}
+		return value;
+	}
+
 	private boolean documentFieldNeedsReview(BoardingPassExtractionResponse document, String fieldName) {
 		return document.needsReviewFields().stream()
 				.filter(Objects::nonNull)
@@ -97,18 +223,30 @@ public class ResolvedFlightService {
 	}
 
 	public ResolvedFlightContext refresh(ResolvedFlightContext previous, boolean refreshRequested) {
-		MultiSourceFlightSnapshot snapshot = loadFlight(previous.flightNumber(), previous.departureDate(), previous.demo(),
-				previous.demoScenario(), previous.departureAirport(), previous.arrivalAirport(), refreshRequested);
-		return merge(snapshot, null, previous, previous.demoScenario());
+		if (!refreshRequested && "DOCUMENT_FALLBACK".equals(previous.liveDataSource())) {
+			return sanitizeDocumentFallback(previous);
+		}
+		try {
+			MultiSourceFlightSnapshot snapshot = loadFlight(previous.flightNumber(), previous.departureDate(), previous.demo(),
+					previous.demoScenario(), previous.departureAirport(), previous.arrivalAirport(),
+					previous.documentScheduledDeparture() == null
+							? null : previous.documentScheduledDeparture().toString(), refreshRequested);
+			return merge(snapshot, null, previous, previous.demoScenario());
+		} catch (AllFlightProvidersUnavailableException exception) {
+			if ("DOCUMENT_FALLBACK".equals(previous.liveDataSource())) return sanitizeDocumentFallback(previous);
+			throw exception;
+		}
 	}
 
 	private MultiSourceFlightSnapshot loadFlight(String flightNumber, LocalDate departureDate, boolean demo,
-			String demoScenario, String departureHint, String arrivalHint, boolean refresh) {
+			String demoScenario, String departureHint, String arrivalHint,
+			String scheduledDepartureHint, boolean refresh) {
 		if (demo && !isBlank(demoScenario)) {
 			return demoSnapshot(demoScenarioProvider.find(flightNumber, demoScenario, refresh));
 		}
 		if (demo) return demoSnapshot(flightService.getFlight(flightNumber, departureDate, true, refresh));
-		return multiSourceFlightService.findFlight(flightNumber, departureDate, departureHint, arrivalHint, refresh);
+		return multiSourceFlightService.findFlight(flightNumber, departureDate, departureHint, arrivalHint,
+				scheduledDepartureHint, refresh);
 	}
 
 	private MultiSourceFlightSnapshot demoSnapshot(FlightResponse flight) {
@@ -116,39 +254,120 @@ public class ResolvedFlightService {
 				flight.dataRetrievedAt(), flight.lastUpdated());
 	}
 
+	private MultiSourceFlightSnapshot documentFallbackSnapshot(String flightNumber, LocalDate departureDate,
+			BoardingPassExtractionResponse document,
+			Map<String, com.selene.onestepflight.dto.ProviderFlightResult> providerResults) {
+		Instant retrievedAt = Instant.now();
+		FlightResponse flight = documentFallbackFlight(
+				flightNumber,
+				departureDate,
+				normalizeAirport(document.departureAirport()),
+				normalizeAirport(document.arrivalAirport()));
+		return new MultiSourceFlightSnapshot(flight, null, null, Map.copyOf(providerResults),
+				Map.of(), List.of(), retrievedAt, null);
+	}
+
+	private ResolvedFlightContext sanitizeDocumentFallback(ResolvedFlightContext previous) {
+		Instant retrievedAt = Instant.now();
+		FlightResponse flight = documentFallbackFlight(flightService.normalize(previous.flightNumber()),
+				previous.departureDate(), normalizeAirport(previous.departureAirport()),
+				normalizeAirport(previous.arrivalAirport()));
+		MultiSourceFlightSnapshot snapshot = new MultiSourceFlightSnapshot(flight, null, null,
+				Map.of(), Map.of(), List.of(), retrievedAt, null);
+		return merge(snapshot, null, previous, previous.demoScenario());
+	}
+
+	private FlightResponse documentFallbackFlight(String flightNumber, LocalDate departureDate,
+			String departureAirport, String arrivalAirport) {
+		return new FlightResponse(
+				flightNumber,
+				departureDate,
+				departureAirport,
+				departureAirport,
+				arrivalAirport,
+				arrivalAirport,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				0,
+				0,
+				null,
+				null,
+				"DOCUMENT_FALLBACK",
+				null,
+				null,
+				false,
+				true,
+				false);
+	}
+
+	private OffsetDateTime parseOffsetDateTime(String value) {
+		if (isBlank(value)) return null;
+		try {
+			return OffsetDateTime.parse(value);
+		} catch (DateTimeParseException ignored) {
+			// A local document time has no trustworthy UTC offset without live data.
+			return null;
+		}
+	}
+
 	private ResolvedFlightContext merge(MultiSourceFlightSnapshot snapshot, BoardingPassExtractionResponse document,
 			ResolvedFlightContext previous, String demoScenario) {
 		FlightResponse liveFlight = snapshot.flight();
+		boolean documentFallback = "DOCUMENT_FALLBACK".equals(liveFlight.dataSource());
+		if (document != null && !documentMatchesFlight(document, liveFlight)) document = null;
+		boolean retainPreviousDocument = previous != null && resolvedIdentityMatchesFlight(previous, liveFlight);
 		Instant detectedAt = Instant.now();
 		ZoneOffset departureOffset = liveFlight.scheduledDeparture() == null
 				? ZoneOffset.UTC : liveFlight.scheduledDeparture().getOffset();
 		Map<String, ExtractedField> evidence = document != null
 				? safeEvidence(document.fields())
-				: previous == null ? Map.of() : safeEvidence(previous.documentEvidence());
+				: !retainPreviousDocument ? Map.of() : safeEvidence(previous.documentEvidence());
 		String documentType = document != null ? document.documentType().name()
-				: previous == null ? "MANUAL_ENTRY" : previous.documentType();
-		boolean boardingPassDetected = document != null ? document.boardingPassDetected()
-				: previous != null && previous.boardingPassDetected();
+				: previous == null ? "MANUAL_ENTRY" : safeDocumentType(previous.documentType());
+		boolean boardingPassDetected = false;
 		String documentTerminal = document != null ? document.terminal()
-				: previous == null ? null : previous.documentTerminal();
+				: !retainPreviousDocument ? null : previous.documentTerminal();
 		String documentGate = document != null ? document.gate()
-				: previous == null ? null : previous.documentGate();
-		String seat = document != null ? document.seat() : previous == null ? null : previous.seat();
-		OffsetDateTime documentScheduled = document != null
+				: !retainPreviousDocument ? null : previous.documentGate();
+		String seat = document != null ? document.seat() : !retainPreviousDocument ? null : previous.seat();
+		OffsetDateTime documentScheduled = documentFallback
+				? document != null ? parseOffsetDateTime(document.scheduledDeparture())
+						: !retainPreviousDocument ? null : previous.documentScheduledDeparture()
+				: document != null
 				? parseDocumentDateTime(document.scheduledDeparture(), document.departureDate(), departureOffset)
-				: previous == null ? null : previous.documentScheduledDeparture();
-		OffsetDateTime documentBoarding = document != null
+				: !retainPreviousDocument ? null : previous.documentScheduledDeparture();
+		OffsetDateTime documentBoarding = documentFallback
+				? document != null ? parseOffsetDateTime(document.boardingTime())
+						: !retainPreviousDocument ? null : previous.documentBoardingTime()
+				: document != null
 				? parseDocumentDateTime(document.boardingTime(), document.departureDate(), departureOffset)
-				: previous == null ? null : previous.documentBoardingTime();
+				: !retainPreviousDocument ? null : previous.documentBoardingTime();
 		OffsetDateTime boardingTime = documentBoarding != null ? documentBoarding : liveFlight.boardingTime();
 		OffsetDateTime effectiveDeparture = firstNonNull(liveFlight.actualDeparture(),
 				liveFlight.estimatedDeparture(), liveFlight.scheduledDeparture());
 		List<FlightFieldConflict> conflicts = new ArrayList<>(snapshot.providerConflicts());
-		if (document != null) conflicts.addAll(findConflicts(document, liveFlight, detectedAt));
+		if (document != null && !documentFallback) conflicts.addAll(findConflicts(document, liveFlight, detectedAt));
 		else if (previous != null && previous.conflicts() != null) {
 			conflicts.addAll(previous.conflicts().stream().filter(FlightFieldConflict::blocking).toList());
 		}
-		List<FlightChange> changes = previous == null
+		if (previous != null && "DOCUMENT_FALLBACK".equals(previous.liveDataSource()) && !documentFallback) {
+			addConflict(conflicts, "departureDate", stringValue(previous.departureDate()),
+					stringValue(liveFlight.departureDate()), true, detectedAt);
+			addConflict(conflicts, "departureAirport", previous.departureAirport(),
+					liveFlight.departureAirport(), true, detectedAt);
+			addConflict(conflicts, "arrivalAirport", previous.arrivalAirport(),
+					liveFlight.arrivalAirport(), true, detectedAt);
+		}
+		List<FlightChange> changes = documentFallback ? List.of() : previous == null
 				? findDocumentChanges(documentTerminal, documentGate, liveFlight, detectedAt)
 				: findLiveChanges(previous, liveFlight, effectiveDeparture, detectedAt);
 		FlightTimeContext timeContext = flightTimeService.build(liveFlight, boardingTime);
@@ -177,8 +396,8 @@ public class ResolvedFlightService {
 				liveFlight.actualArrival(),
 				documentTerminal,
 				documentGate,
-				firstNonBlank(liveFlight.terminal(), documentTerminal),
-				firstNonBlank(liveFlight.gate(), documentGate),
+				documentFallback ? null : firstNonBlank(liveFlight.terminal(), documentTerminal),
+				documentFallback ? null : firstNonBlank(liveFlight.gate(), documentGate),
 				seat,
 				liveFlight.checkInCounter(),
 				liveFlight.checkInCounter(),
@@ -192,8 +411,8 @@ public class ResolvedFlightService {
 				snapshot.retrievedAt(),
 				snapshot.freshestSourceUpdatedAt(),
 				document == null
-						? previous == null ? null : previous.documentDataSource()
-						: document.dataSource(),
+						? !retainPreviousDocument ? null : safeDocumentDataSource(previous.documentDataSource())
+						: safeDocumentDataSource(document.dataSource()),
 				liveFlight.dataSource(),
 				liveFlight.sourceUrl(),
 				liveFlight.codeshare(),
@@ -226,13 +445,13 @@ public class ResolvedFlightService {
 		if (document == null) return List.of();
 		List<FlightFieldConflict> conflicts = new ArrayList<>();
 		addConflict(conflicts, "flightNumber", document.flightNumber(),
-				liveFlight.flightNumber(), true, detectedAt);
+				liveFlight.flightNumber(), false, detectedAt);
 		addConflict(conflicts, "departureDate", stringValue(document.departureDate()),
-				stringValue(liveFlight.departureDate()), true, detectedAt);
+				stringValue(liveFlight.departureDate()), false, detectedAt);
 		addConflict(conflicts, "departureAirport", document.departureAirport(),
-				liveFlight.departureAirport(), true, detectedAt);
+				liveFlight.departureAirport(), false, detectedAt);
 		addConflict(conflicts, "arrivalAirport", document.arrivalAirport(),
-				liveFlight.arrivalAirport(), true, detectedAt);
+				liveFlight.arrivalAirport(), false, detectedAt);
 		return conflicts;
 	}
 
@@ -318,8 +537,70 @@ public class ResolvedFlightService {
 		}
 	}
 
-	private Map<String, ExtractedField> safeEvidence(Map<String, ExtractedField> fields) {
-		return fields == null ? Map.of() : Map.copyOf(new LinkedHashMap<>(fields));
+	Map<String, ExtractedField> safeEvidence(Map<String, ExtractedField> fields) {
+		if (fields == null || fields.isEmpty()) return Map.of();
+		Map<String, ExtractedField> safe = new LinkedHashMap<>();
+		fields.forEach((name, field) -> {
+			if (!ALLOWED_DOCUMENT_EVIDENCE_FIELDS.contains(name) || field == null) return;
+			String value = safeEvidenceValue(name, field.value());
+			if (field.value() != null && value == null) return;
+			double confidence = Double.isFinite(field.confidence())
+					? Math.max(0.0d, Math.min(1.0d, field.confidence())) : 0.0d;
+			safe.put(name, new ExtractedField(value, confidence, field.page(), field.boundingBox(), null));
+		});
+		return Map.copyOf(safe);
+	}
+
+	private String safeEvidenceValue(String name, String value) {
+		if (value == null) return null;
+		String trimmed = value.trim();
+		if (trimmed.isEmpty() || trimmed.length() > 64) return null;
+		return switch (name) {
+			case "document_type" -> DocumentType.fromProviderValue(trimmed).name();
+			case "flight_number" -> {
+				String normalized = normalizeDocumentFlight(trimmed);
+				yield normalized != null && normalized.matches("[A-Z0-9]{2,3}[0-9]{1,4}[A-Z]?")
+						? normalized : null;
+			}
+			case "departure_airport", "arrival_airport" -> normalizeAirport(trimmed);
+			case "departure_date" -> trimmed.matches("[\\p{L}\\p{N} ./\\-]+") ? trimmed : null;
+			case "scheduled_departure", "scheduled_arrival", "boarding_time" ->
+					trimmed.matches("[0-9T:+\\-Z ]+") ? trimmed : null;
+			case "terminal", "gate", "seat" ->
+					trimmed.length() <= 24 && trimmed.matches("[\\p{L}\\p{N} ./\\-]+") ? trimmed : null;
+			default -> null;
+		};
+	}
+
+	private boolean documentMatchesFlight(BoardingPassExtractionResponse document, FlightResponse flight) {
+		return document != null && flight != null
+				&& Objects.equals(normalizeDocumentFlight(document.flightNumber()),
+						normalizeDocumentFlight(flight.flightNumber()))
+				&& Objects.equals(document.departureDate(), flight.departureDate())
+				&& airportHintMatches(document.departureAirport(), flight.departureAirport())
+				&& airportHintMatches(document.arrivalAirport(), flight.arrivalAirport());
+	}
+
+	private boolean resolvedIdentityMatchesFlight(ResolvedFlightContext previous, FlightResponse flight) {
+		return previous != null && flight != null
+				&& Objects.equals(normalizeDocumentFlight(previous.flightNumber()),
+						normalizeDocumentFlight(flight.flightNumber()))
+				&& Objects.equals(previous.departureDate(), flight.departureDate())
+				&& airportHintMatches(previous.departureAirport(), flight.departureAirport())
+				&& airportHintMatches(previous.arrivalAirport(), flight.arrivalAirport());
+	}
+
+	private boolean airportHintMatches(String documentValue, String providerValue) {
+		String documentAirport = normalizeAirport(documentValue);
+		return documentAirport == null || Objects.equals(documentAirport, normalizeAirport(providerValue));
+	}
+
+	private String safeDocumentType(String value) {
+		return "MANUAL_ENTRY".equals(value) ? value : DocumentType.fromProviderValue(value).name();
+	}
+
+	private String safeDocumentDataSource(String value) {
+		return "NUTRIENT_DWS_DATA_EXTRACTION".equals(value) ? value : null;
 	}
 
 	private String firstNonBlank(String first, String second) {

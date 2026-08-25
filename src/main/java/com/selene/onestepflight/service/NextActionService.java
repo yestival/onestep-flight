@@ -12,7 +12,6 @@ import java.util.Locale;
 import org.springframework.stereotype.Service;
 
 import com.selene.onestepflight.dto.ActionCode;
-import com.selene.onestepflight.dto.DocumentType;
 import com.selene.onestepflight.dto.FlightChange;
 import com.selene.onestepflight.dto.JourneyContext;
 import com.selene.onestepflight.dto.JourneyStepType;
@@ -191,8 +190,7 @@ public class NextActionService {
 	}
 
 	boolean isEffectivelyCheckedIn(JourneyContext context) {
-		return context.checkedIn()
-				|| DocumentType.isTrustedBoardingPassSignal(context.documentType(), context.boardingPassDetected());
+		return context.checkedIn();
 	}
 
 	private NextActionResponse afterBoarding(ResolvedFlightContext flight, JourneyContext context) {
@@ -266,7 +264,11 @@ public class NextActionService {
 		return new NextActionResponse(stepType, code, titleZh, descriptionZh, titleEn, descriptionEn,
 				destination, urgency, reason, triggeredBy, flight.liveDataSource(),
 				flight.live() ? "LIVE_PROVIDER_WITHOUT_FIELD_CONFIDENCE"
-						: flight.demoScenario() == null ? "DEMO_FIXTURE" : "SIMULATED_SCENARIO",
+						: "DOCUMENT_FALLBACK".equals(flight.liveDataSource())
+								? "DOCUMENT_FALLBACK_UNVERIFIED"
+								: flight.liveDataSource() != null && flight.liveDataSource().startsWith("MERGED[")
+										? "SCHEDULE_PROVIDER_UNVERIFIED"
+										: flight.demoScenario() == null ? "DEMO_FIXTURE" : "SIMULATED_SCENARIO",
 				null,
 				needsOnSiteConfirmation,
 				flight.timeContext() == null ? Instant.now(clock) : flight.timeContext().serverNow());

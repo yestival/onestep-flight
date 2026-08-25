@@ -18,11 +18,12 @@ const CHROME_CANDIDATES = [
 ].filter(Boolean);
 
 const VIEWPORTS = [
-  { label: '320px', width: 320, height: 900, deviceScaleFactor: 1 },
-  { label: '360px', width: 360, height: 900, deviceScaleFactor: 1 },
+  { label: '320x800', width: 320, height: 800, deviceScaleFactor: 1 },
+  { label: '360x800', width: 360, height: 800, deviceScaleFactor: 1 },
   { label: '375px', width: 375, height: 900, deviceScaleFactor: 1 },
-  { label: '390px', width: 390, height: 900, deviceScaleFactor: 1 },
+  { label: '390x844', width: 390, height: 844, deviceScaleFactor: 1 },
   { label: '412px', width: 412, height: 900, deviceScaleFactor: 1 },
+  { label: 'desktop-1280', width: 1280, height: 900, deviceScaleFactor: 1 },
   { label: '320px at 200%', width: 160, height: 900, deviceScaleFactor: 2 }
 ];
 const LOCALES = ['zh', 'en', 'es'];
@@ -40,6 +41,7 @@ const TARGET_SELECTOR = [
   '.text-button',
   '.scenario-actions button',
   '.end-journey-link',
+  '.flight-candidate',
   '.segment-option'
 ].join(',');
 
@@ -49,14 +51,14 @@ const SCENES = [
   'upload',
   'document-unusable',
   'manual',
+  'manual-partial',
   'error',
   'confirm-flight',
-  'segment-selector',
+  'document-fallback-confirm',
+  'flight-correction',
   'departure-passed',
-  'field-review',
   'conflict',
   'checkin-question',
-  'boarding-pass-preset',
   'baggage-question',
   'formal-action',
   'formal-action-stop',
@@ -261,19 +263,52 @@ async function initializePage(page) {
     const segmentOptions = document.querySelector('[data-segment-options]');
     if (segmentOptions && !segmentOptions.children.length) {
       [
-        ['BA 117', 'LHR to JFK - 2026-08-24'],
-        ['IB 6251', 'MAD to JFK - 2026-08-24']
+        ['MF 825 · XMN → CDG', '25 August 2026'],
+        ['AF 1668 · CDG → MAN', '25 August 2026']
       ].forEach(([title, detail], index) => {
-        const button = document.createElement('button');
-        button.className = 'segment-option';
-        button.type = 'button';
-        button.dataset.segmentIndex = String(index);
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.dataset.action = 'select-segment';
+        item.dataset.segmentIndex = String(index);
+        item.className = 'segment-option' + (index ? '' : ' is-selected');
+        if (!index) item.setAttribute('aria-current', 'true');
         const strong = document.createElement('strong');
         strong.textContent = title;
         const span = document.createElement('span');
         span.textContent = detail;
-        button.append(strong, span);
-        segmentOptions.appendChild(button);
+        item.append(strong, span);
+        segmentOptions.appendChild(item);
+      });
+    }
+    const candidateList = document.querySelector('[data-flight-candidate-list]');
+    if (candidateList && !candidateList.children.length) {
+      const candidate = document.createElement('button');
+      candidate.className = 'flight-candidate';
+      candidate.type = 'button';
+      candidate.dataset.action = 'select-flight-candidate';
+      const strong = document.createElement('strong');
+      strong.textContent = 'BA 117';
+      const span = document.createElement('span');
+      span.textContent = 'LHR → JFK · 2026-08-24';
+      candidate.append(strong, span);
+      candidateList.appendChild(candidate);
+    }
+    const manualSegmentOptions = document.querySelector('[data-manual-segment-options]');
+    if (manualSegmentOptions && !manualSegmentOptions.children.length) {
+      [
+        ['MF 825', 'XMN → CDG · date needed'],
+        ['AF 1668', 'CDG → MAN · incomplete']
+      ].forEach(([title, detail], index) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.disabled = true;
+        item.className = 'segment-option is-incomplete' + (index ? '' : ' is-selected');
+        const strong = document.createElement('strong');
+        strong.textContent = title;
+        const span = document.createElement('span');
+        span.textContent = detail;
+        item.append(strong, span);
+        manualSegmentOptions.appendChild(item);
       });
     }
     document.querySelectorAll(${JSON.stringify(TARGET_SELECTOR)}).forEach((button, index) => {
@@ -323,21 +358,24 @@ function sceneMeasurementExpression(scene, stopLabel) {
         Array.from(container.children).forEach((child) => { child.hidden = false; });
       });
     }
-    function addGrid(selector, columns, singleRow = true) {
-      grids.push({ selector, columns, singleRow });
+    function addGrid(selector, columns, singleRow = true, equalWidth = false) {
+      grids.push({ selector, columns, singleRow, equalWidth });
     }
 
     hide('[data-screen], [data-staff-overlay], .confirm-overlay');
     elements('[data-screen]').forEach((screen) => screen.classList.remove('is-active'));
-    hide('[data-departure-passed-confirmation], [data-segment-selector], [data-field-review], [data-conflict-card]');
-    hide('[data-checkin-question], [data-checkin-preset], [data-checkin-choices], [data-step-question], [data-step-result]');
+    hide('[data-departure-passed-confirmation], [data-segment-selector], [data-manual-document-segments], [data-flight-correction], [data-conflict-card], [data-live-status-unavailable]');
+    hide('[data-checkin-question], [data-checkin-choices], [data-step-question], [data-step-result]');
     hide('[data-complete-action], [data-departure-exception-actions], [data-action="journey-back"], [data-action="refresh-arrival"]');
     hide('[data-share-entry], [data-action="refresh-flight"]');
     hide('[data-scenario-panel]');
+    show('[data-manual-flight-field], [data-manual-date-field]');
     elements('.step-assistance-actions, .confirm-assistance-actions')
       .forEach((group) => group.classList.remove('share-unavailable'));
     const step = document.querySelector('[data-screen="step"]');
     step.classList.remove('is-departure-exception');
+    const confirm = document.querySelector('[data-screen="confirm"]');
+    confirm.classList.remove('is-correcting-flight', 'is-awaiting-segment', 'is-departure-passed');
     show('.step-assistance-actions .staff-help-button');
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
@@ -346,33 +384,46 @@ function sceneMeasurementExpression(scene, stopLabel) {
     if (sceneName === 'welcome' || sceneName === 'upload' || sceneName === 'document-unusable'
         || sceneName === 'manual' || sceneName === 'error') {
       scope = showScreen(sceneName);
+    } else if (sceneName === 'manual-partial') {
+      scope = showScreen('manual');
+      show('[data-manual-document-segments]');
+      hide('[data-manual-flight-field]');
     } else if (sceneName === 'scenario-controls') {
       showScreen('welcome');
       show('[data-scenario-panel]');
       scope = document.querySelector('[data-scenario-panel]');
     } else if (sceneName === 'confirm-flight') {
       scope = showScreen('confirm');
+      show('.screen-confirm > [data-action="journey-back"]');
       hide('[data-departure-passed-confirmation]');
+      show('[data-segment-selector]');
       show('.screen-confirm > .confirm-choice-actions, .screen-confirm > .confirm-assistance-actions');
       showChildren('.screen-confirm > .confirm-assistance-actions');
-      show('.screen-confirm > [data-action="refresh-flight"]');
       addGrid('.screen-confirm > .confirm-choice-actions', 2);
       addGrid('.screen-confirm > .confirm-assistance-actions', 2);
-    } else if (sceneName === 'segment-selector') {
-      showScreen('confirm');
-      hide('.screen-confirm > .confirm-choice-actions, .screen-confirm > .confirm-assistance-actions');
+    } else if (sceneName === 'document-fallback-confirm') {
+      scope = showScreen('confirm');
+      show('.screen-confirm > [data-action="journey-back"]');
       show('[data-segment-selector]');
-      scope = document.querySelector('[data-segment-selector]');
+      show('[data-live-status-unavailable], .screen-confirm > [data-action="refresh-flight"]');
+      show('.screen-confirm > .confirm-choice-actions, .screen-confirm > .confirm-assistance-actions');
+      showChildren('.screen-confirm > .confirm-assistance-actions');
+      addGrid('.screen-confirm > .confirm-choice-actions', 2);
+      addGrid('.screen-confirm > .confirm-assistance-actions', 2);
+    } else if (sceneName === 'flight-correction') {
+      showScreen('confirm');
+      confirm.classList.add('is-correcting-flight');
+      show('[data-flight-correction], [data-flight-candidate-list]');
+      scope = document.querySelector('[data-flight-correction]');
+      addGrid('[data-flight-correction] .flight-correction-actions', 2);
     } else if (sceneName === 'departure-passed') {
       scope = showScreen('confirm');
+      confirm.classList.add('is-departure-passed');
       hide('.screen-confirm > .home-back-button, .screen-confirm > .confirm-choice-actions, .screen-confirm > .confirm-assistance-actions');
       show('[data-departure-passed-confirmation]');
+      show('[data-departure-passed-confirmation] > [data-action="journey-back"]');
       showChildren('[data-departure-passed-confirmation] .confirm-assistance-actions');
       addGrid('[data-departure-passed-confirmation] .confirm-assistance-actions', 2);
-    } else if (sceneName === 'field-review') {
-      scope = showScreen('confirm');
-      hide('.screen-confirm > .confirm-choice-actions, .screen-confirm > .confirm-assistance-actions');
-      show('[data-field-review]');
     } else if (sceneName === 'conflict') {
       scope = showScreen('confirm');
       hide('.screen-confirm > .confirm-choice-actions, .screen-confirm > .confirm-assistance-actions');
@@ -382,12 +433,6 @@ function sceneMeasurementExpression(scene, stopLabel) {
       show('[data-checkin-question], [data-checkin-choices]');
       showChildren('.step-assistance-actions');
       addGrid('[data-checkin-choices]', 3);
-      addGrid('.step-assistance-actions', 3);
-    } else if (sceneName === 'boarding-pass-preset') {
-      scope = showScreen('step');
-      show('[data-checkin-question], [data-checkin-preset]');
-      showChildren('.step-assistance-actions');
-      addGrid('[data-checkin-preset] .two-choice-grid', 2);
       addGrid('.step-assistance-actions', 3);
     } else if (sceneName === 'baggage-question') {
       scope = showScreen('step');
@@ -430,7 +475,7 @@ function sceneMeasurementExpression(scene, stopLabel) {
       scope.hidden = false;
       if (sceneName === 'family-dialog') {
         showChildren('[data-family-overlay] .family-actions');
-        addGrid('[data-family-overlay] .family-actions', 2, false);
+        addGrid('[data-family-overlay] .family-actions', 2, true, true);
       }
       if (sceneName === 'board-dialog') addGrid('[data-board-overlay] .two-choice-grid', 2);
       if (sceneName === 'landed-dialog') addGrid('[data-landed-overlay] .two-choice-grid', 2);
@@ -474,6 +519,7 @@ function sceneMeasurementExpression(scene, stopLabel) {
     for (const button of uniqueControls) {
       const id = button.dataset.buttonVisualTestId || '(unassigned)';
       const label = button.innerText.trim().replace(/\\s+/g, ' ') || button.getAttribute('aria-label') || '(icon only)';
+      const accessibleName = button.getAttribute('aria-label') || button.innerText.trim().replace(/\\s+/g, ' ');
       const buttonRect = button.getBoundingClientRect();
       const buttonStyle = getComputedStyle(button);
       const buttonFailures = [];
@@ -578,6 +624,8 @@ function sceneMeasurementExpression(scene, stopLabel) {
         if (paths.length === 0) buttonFailures.push('SVG contains no measurable geometry');
         svgMeasurements.push({
           className: svg.getAttribute('class') || '',
+          ariaHidden: svg.getAttribute('aria-hidden'),
+          focusable: svg.getAttribute('focusable'),
           box: rectValue(svgRect, buttonRect),
           viewBox: viewBoxValue,
           paths
@@ -586,7 +634,8 @@ function sceneMeasurementExpression(scene, stopLabel) {
 
       const textFontSizes = Array.from(new Set(renderedTextRects.map((item) => +item.fontSize.toFixed(2))));
       if ((button.matches('.assistance-button') || button.matches('.dialog-speech-button')) && textFontSizes.length) {
-        const minimumExpected = innerWidth <= 220 ? 18 : Math.min(27, Math.max(21, innerWidth * 0.06));
+        const minimumExpected = innerWidth <= 220 ? 18 : innerWidth >= 768
+          ? 24 : Math.min(27, Math.max(21, innerWidth * 0.06));
         if (Math.min(...textFontSizes) < minimumExpected - 0.2) {
           buttonFailures.push('auxiliary label font is below its responsive minimum');
         }
@@ -596,6 +645,7 @@ function sceneMeasurementExpression(scene, stopLabel) {
         id,
         action: button.dataset.action || '',
         label,
+        accessibleName,
         classes: button.className,
         box: rectValue(buttonRect),
         computedFontSize: parseFloat(buttonStyle.fontSize),
@@ -618,14 +668,32 @@ function sceneMeasurementExpression(scene, stopLabel) {
       const trackCount = template === 'none' ? 0 : template.trim().split(/\\s+/).length;
       const firstTop = rects.length ? rects[0].top : 0;
       const firstRowCount = rects.filter((rect) => Math.abs(rect.top - firstTop) <= 1).length;
+      if (definition.selector === '[data-family-overlay] .family-actions') {
+        const actions = items.map((item) => item.dataset.action || '');
+        if (actions.length !== 2 || actions[0] !== 'share-family' || actions[1] !== 'share-family-card') {
+          failures.push({ type: 'grid', selector: definition.selector,
+            reason: 'family dialog must contain exactly share-family then share-family-card', actions });
+        }
+        if (rects.some((rect) => rect.height < 63.5)) {
+          failures.push({ type: 'grid', selector: definition.selector,
+            reason: 'family share controls must each be at least 64px tall' });
+        }
+      }
       if (trackCount !== definition.columns) {
         failures.push({ type: 'grid', selector: definition.selector, reason: 'expected ' + definition.columns + ' tracks but found ' + trackCount });
       }
       if (definition.singleRow && (items.length !== definition.columns || firstRowCount !== definition.columns)) {
         failures.push({ type: 'grid', selector: definition.selector, reason: 'controls are not one row of ' + definition.columns });
       }
+      const widths = rects.map((rect) => rect.width);
+      const widthDelta = widths.length ? Math.max(...widths) - Math.min(...widths) : 0;
+      if (definition.equalWidth && widthDelta > 1) {
+        failures.push({ type: 'grid', selector: definition.selector,
+          reason: 'controls differ in width by ' + widthDelta.toFixed(2) + 'px' });
+      }
       gridMeasurements.push({ selector: definition.selector, expectedColumns: definition.columns,
-        trackCount, itemCount: items.length, firstRowCount, template });
+        trackCount, itemCount: items.length, firstRowCount, template,
+        equalWidth: definition.equalWidth, widthDelta: +widthDelta.toFixed(2) });
     }
 
     const scrollWidth = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth);
@@ -770,11 +838,12 @@ function validateButtonSvgSafety(run, expectedControls) {
 }
 
 function validateSemanticIconContracts(run, expectedControls) {
-  const expectedStaff = expectedControls.filter((control) => control.classes.includes('staff-help-button'));
+  const expectedStaff = expectedControls.filter((control) => control.action === 'staff');
   const expectedFamily = expectedControls.filter((control) => control.classes.includes('family-help-button'));
-  const staffMeasurements = run.measurements.filter((measurement) => measurement.classes.includes('staff-help-button'));
+  const staffMeasurements = run.measurements.filter((measurement) => measurement.action === 'staff');
   const familyMeasurements = run.measurements.filter((measurement) => measurement.classes.includes('family-help-button'));
   const staffClearances = [];
+  const staffColors = [];
   const familyStructures = [];
   const familyPaintedClearances = [];
 
@@ -786,6 +855,15 @@ function validateSemanticIconContracts(run, expectedControls) {
     ...details
   });
 
+  if (expectedStaff.length !== 5) {
+    fail('semantic-icons', '(staff source count)', 'staff',
+      `expected exactly 5 data-action="staff" controls in the document but found ${expectedStaff.length}`);
+  }
+  const staffWithoutClass = expectedStaff.filter((control) => !control.classes.split(/\s+/).includes('staff-help-button'));
+  if (staffWithoutClass.length) {
+    fail('semantic-icons', '(staff class)', 'staff',
+      `${staffWithoutClass.length} data-action="staff" control(s) lack staff-help-button`);
+  }
   if (staffMeasurements.length !== expectedStaff.length) {
     fail('semantic-icons', '(staff coverage)', 'staff',
       `expected ${expectedStaff.length} staff control(s) but measured ${staffMeasurements.length}`);
@@ -796,18 +874,48 @@ function validateSemanticIconContracts(run, expectedControls) {
   }
 
   for (const measurement of staffMeasurements) {
+    const expectedAccessibleNames = {
+      zh: '请工作人员帮助我',
+      en: 'Ask a member of staff for help',
+      es: 'Pedir ayuda al personal'
+    };
+    if (measurement.accessibleName !== expectedAccessibleNames[run.locale]) {
+      fail(measurement.scene, measurement.id, measurement.label,
+        `staff-help control has incomplete or incorrect accessible name for ${run.locale}`,
+        { expected: expectedAccessibleNames[run.locale], actual: measurement.accessibleName });
+    }
     if (measurement.svgs.length !== 1) {
       fail(measurement.scene, measurement.id, measurement.label,
         `staff-help control must contain exactly one SVG; found ${measurement.svgs.length}`);
       continue;
     }
-    const geometries = measurement.svgs[0].paths;
+    const svg = measurement.svgs[0];
+    if (!svg.viewBox || svg.viewBox.x !== 0 || svg.viewBox.y !== 0
+        || svg.viewBox.width !== 26 || svg.viewBox.height !== 24) {
+      fail(measurement.scene, measurement.id, measurement.label,
+        'staff-help SVG viewBox must be exactly 0 0 26 24', { actual: svg.viewBox });
+    }
+    if (svg.ariaHidden !== 'true' || svg.focusable !== 'false') {
+      fail(measurement.scene, measurement.id, measurement.label,
+        'staff-help SVG must be decorative (aria-hidden="true" and focusable="false")',
+        { ariaHidden: svg.ariaHidden, focusable: svg.focusable });
+    }
+    const geometries = svg.paths;
     const people = geometries.filter((geometry) => geometry.className === 'staff-icon-person');
     const questions = geometries.filter((geometry) => geometry.className === 'staff-icon-question');
     if (people.length !== 1 || questions.length !== 1) {
       fail(measurement.scene, measurement.id, measurement.label,
         `staff-help SVG must contain one person path and one question path; found ${people.length} and ${questions.length}`);
       continue;
+    }
+    const personStroke = people[0].stroke;
+    const questionStroke = questions[0].stroke;
+    staffColors.push({ person: personStroke, question: questionStroke });
+    if (personStroke !== 'rgb(167, 199, 227)' || questionStroke !== 'rgb(255, 209, 102)') {
+      fail(measurement.scene, measurement.id, measurement.label,
+        'staff-help icon colors do not match the accessible two-color contract',
+        { expectedPerson: 'rgb(167, 199, 227)', actualPerson: personStroke,
+          expectedQuestion: 'rgb(255, 209, 102)', actualQuestion: questionStroke });
     }
     const rightClearance = questions[0].paintedClearanceCss && questions[0].paintedClearanceCss.right;
     if (!Number.isFinite(rightClearance)) {
@@ -859,6 +967,10 @@ function validateSemanticIconContracts(run, expectedControls) {
     staff: {
       expectedControls: expectedStaff.length,
       measuredControls: staffMeasurements.length,
+      exactRequiredCount: 5,
+      colors: Array.from(new Map(staffColors.map((colors) => [
+        `${colors.person}:${colors.question}`, colors
+      ])).values()),
       minimumQuestionRightClearanceCss: staffClearances.length ? Math.min(...staffClearances) : null
     },
     familyShare: {
@@ -886,7 +998,7 @@ async function runMeasurements(page) {
       width: viewport.width,
       height: viewport.height,
       deviceScaleFactor: viewport.deviceScaleFactor,
-      mobile: true
+      mobile: viewport.width < 768
     });
     for (const locale of LOCALES) {
       await setLocale(page, locale);
@@ -1010,9 +1122,9 @@ function compactSummary(result) {
     ['done', (measurement) => measurement.action === 'complete-action'],
     ['speaker', (measurement) => measurement.action === 'speak'],
     ['share', (measurement) => measurement.classes.includes('family-help-button')],
-    ['staff-person', (measurement) => measurement.classes.includes('staff-help-button'),
+    ['staff-person', (measurement) => measurement.action === 'staff',
       (geometry) => geometry.className === 'staff-icon-person'],
-    ['staff-question', (measurement) => measurement.classes.includes('staff-help-button'),
+    ['staff-question', (measurement) => measurement.action === 'staff',
       (geometry) => geometry.className === 'staff-icon-question']
   ];
 

@@ -17,9 +17,7 @@ import com.selene.onestepflight.dto.ShareSessionCreationResponse;
 import com.selene.onestepflight.dto.ShareSessionRequest;
 import com.selene.onestepflight.dto.ShareSessionViewResponse;
 import com.selene.onestepflight.service.ShareSessionService;
-import com.selene.onestepflight.service.IpRateLimitService;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 
@@ -30,17 +28,13 @@ public class ShareSessionController {
 	private static final String SHARE_TOKEN_PATTERN = "[A-Za-z0-9_-]{43}";
 
 	private final ShareSessionService service;
-	private final IpRateLimitService rateLimitService;
 
-	public ShareSessionController(ShareSessionService service, IpRateLimitService rateLimitService) {
+	public ShareSessionController(ShareSessionService service) {
 		this.service = service;
-		this.rateLimitService = rateLimitService;
 	}
 
 	@PostMapping
-	public ResponseEntity<ShareSessionCreationResponse> create(@Valid @RequestBody ShareSessionRequest request,
-			HttpServletRequest servletRequest) {
-		rateLimitService.check(IpRateLimitService.Category.SHARE_CREATE, servletRequest);
+	public ResponseEntity<ShareSessionCreationResponse> create(@Valid @RequestBody ShareSessionRequest request) {
 		return ResponseEntity.status(201).cacheControl(CacheControl.noStore()).body(service.create(request));
 	}
 

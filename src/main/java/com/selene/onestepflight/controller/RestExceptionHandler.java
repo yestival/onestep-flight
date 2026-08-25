@@ -11,7 +11,6 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import com.selene.onestepflight.dto.ApiError;
 import com.selene.onestepflight.dto.ProviderAggregateError;
-import com.selene.onestepflight.dto.RateLimitError;
 import com.selene.onestepflight.service.AllFlightProvidersUnavailableException;
 import com.selene.onestepflight.service.FlightNotFoundException;
 import com.selene.onestepflight.service.FlightConflictConfirmationRequiredException;
@@ -19,45 +18,16 @@ import com.selene.onestepflight.service.ExternalServiceNotConfiguredException;
 import com.selene.onestepflight.service.ExternalServiceUnavailableException;
 import com.selene.onestepflight.service.InvalidDocumentException;
 import com.selene.onestepflight.service.InvalidFlightNumberException;
-import com.selene.onestepflight.service.IpRateLimitService;
-import com.selene.onestepflight.service.RateLimitExceededException;
 
 @RestControllerAdvice
 public class RestExceptionHandler {
-	@ExceptionHandler(RateLimitExceededException.class)
-	public ResponseEntity<RateLimitError> handleRateLimit(RateLimitExceededException exception) {
-		String code;
-		String zh;
-		String en;
-		String es;
-		if (exception.category() == IpRateLimitService.Category.DOCUMENT_UPLOAD) {
-			code = "DOCUMENT_UPLOAD_RATE_LIMITED";
-			zh = "本小时上传次数已用完，请稍后再试或手动输入航班信息。";
-			en = "The hourly document upload limit has been reached. Try later or enter the flight manually.";
-			es = "Se alcanzó el límite de cargas de esta hora. Inténtalo más tarde o introduce el vuelo manualmente.";
-		} else if (exception.category() == IpRateLimitService.Category.SHARE_CREATE) {
-			code = "SHARE_CREATE_RATE_LIMITED";
-			zh = "本小时创建共享链接的次数已用完，请稍后再试。";
-			en = "The hourly share-link limit has been reached. Try again later.";
-			es = "Se alcanzó el límite de enlaces compartidos de esta hora. Inténtalo más tarde.";
-		} else {
-			code = "LIVE_FLIGHT_RATE_LIMITED";
-			zh = "本小时实时航班查询次数已用完，请稍后再试。";
-			en = "The hourly live-flight lookup limit has been reached. Try again later.";
-			es = "Se alcanzó el límite de consultas de vuelos de esta hora. Inténtalo más tarde.";
-		}
-		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-				.header("Retry-After", Long.toString(exception.retryAfterSeconds()))
-				.body(new RateLimitError(code, zh, en, es, exception.retryAfterSeconds(), Instant.now()));
-	}
-
 	@ExceptionHandler(AllFlightProvidersUnavailableException.class)
 	public ResponseEntity<ProviderAggregateError> handleAllProvidersUnavailable(
 			AllFlightProvidersUnavailableException exception) {
 		return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(new ProviderAggregateError(
 				"ALL_LIVE_FLIGHT_PROVIDERS_FAILED",
-				"所有实时航班来源暂时都无法提供可核对的数据。不会自动改用演示数据；请重试或请工作人员帮助。",
-				"No live flight source returned verifiable data. Demo data was not substituted; try again or ask staff for help.",
+				"暂时没有更新到实时航班状态。请稍后重试。",
+				"Live flight status is not available right now. Please try again later.",
 				exception.providerResults(), Instant.now()));
 	}
 
@@ -111,13 +81,6 @@ public class RestExceptionHandler {
 
 	@ExceptionHandler(InvalidDocumentException.class)
 	public ResponseEntity<ApiError> handleInvalidDocument(InvalidDocumentException exception) {
-		if ("DOCUMENT_SEGMENT_SELECTION_REQUIRED".equals(exception.code())) {
-			return ResponseEntity.badRequest().body(new ApiError(
-					exception.code(),
-					"这份文件包含多个航段。请先选择一个航段，再继续查询实时航班。",
-					"This document contains multiple flight segments. Select one segment before checking live flight data.",
-					Instant.now()));
-		}
 		return ResponseEntity.badRequest().body(new ApiError(
 				exception.code(),
 				"请选择不超过 10MB 的 PDF、JPEG 或 PNG 文件。",

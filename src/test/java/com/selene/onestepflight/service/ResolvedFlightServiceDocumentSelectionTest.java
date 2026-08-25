@@ -1,9 +1,11 @@
 package com.selene.onestepflight.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -13,31 +15,196 @@ import com.selene.onestepflight.dto.BoardingPassExtractionResponse;
 import com.selene.onestepflight.dto.DocumentFlightSegment;
 import com.selene.onestepflight.dto.DocumentType;
 import com.selene.onestepflight.dto.ExtractedField;
+import com.selene.onestepflight.dto.FlightResponse;
+import com.selene.onestepflight.dto.ProviderFlightResult;
 import com.selene.onestepflight.dto.ResolveFlightRequest;
+import com.selene.onestepflight.dto.ResolvedFlightContext;
 
 class ResolvedFlightServiceDocumentSelectionTest {
 
+	private static final LocalDate DATE = LocalDate.of(2026, 8, 24);
+
 	@Test
-	void refusesToResolveAMultiSegmentDocumentUntilTravelerSelectsOne() {
-		DocumentFlightSegment outbound = segment("BA117", LocalDate.of(2026, 8, 24), "LHR", "JFK");
-		DocumentFlightSegment inbound = segment("BA178", LocalDate.of(2026, 9, 2), "JFK", "LHR");
-		Map<String, ExtractedField> evidence = Map.of("document_type",
-				new ExtractedField("ITINERARY", 0.99d, 0, null, "test"));
-		BoardingPassExtractionResponse document = new BoardingPassExtractionResponse(
-				DocumentType.ITINERARY, null, null, null, null, null, null, null,
-				null, null, null, false, false, evidence, List.of(outbound, inbound),
-				List.of(), "TEST", Instant.EPOCH);
-		ResolvedFlightService service = new ResolvedFlightService(null, null, null, null);
+	void selectsTheMatchingLegWithoutRejectingTheOriginalMultiSegmentDocument() {
+		CapturingMultiSource flights = new CapturingMultiSource(false);
+		ResolvedFlightService service = service(flights);
+		List<DocumentFlightSegment> originalSegments = List.of(
+				segment("AF1668", LocalDate.of(2026, 8, 25), "CDG", "MAN"),
+				segment("MF825", DATE, "XMN", "CDG"));
+		BoardingPassExtractionResponse document = document(originalSegments);
+
+		ResolvedFlightContext result = service.resolve(new ResolveFlightRequest(
+				"mf-825", DATE, false, null, document, false));
+
+		assertThat(result.flightNumber()).isEqualTo("MF825");
+		assertThat(flights.departureHint).isEqualTo("XMN");
+		assertThat(flights.arrivalHint).isEqualTo("CDG");
+		assertThat(result.boardingPassDetected()).isFalse();
+		assertThat(document.segments()).containsExactlyElementsOf(originalSegments);
+	}
+
+	@Test
+	void explicitSegmentIndexSelectsThatExactLegAndPreservesTheOriginalOrder() {
+		CapturingMultiSource flights = new CapturingMultiSource(false);
+		ResolvedFlightService service = service(flights);
+		DocumentFlightSegment first = segment("MF825", DATE, "XMN", "CDG");
+		DocumentFlightSegment second = segment("MF825", DATE, "CDG", "MAN");
+		List<DocumentFlightSegment> originalSegments = List.of(first, second);
+		BoardingPassExtractionResponse document = document(originalSegments);
+
+		service.resolve(new ResolveFlightRequest(
+				"MF825", DATE, false, null, document, 1, false));
+
+		assertThat(flights.departureHint).isEqualTo("CDG");
+		assertThat(flights.arrivalHint).isEqualTo("MAN");
+		assertThat(document.segments()).containsExactly(first, second);
+	}
+
+	@Test
+	void mismatchedExplicitIndexIsRejectedBeforeAnyLiveLookup() {
+		CapturingMultiSource flights = new CapturingMultiSource(false);
+		ResolvedFlightService service = service(flights);
+		DocumentFlightSegment requestedIdentity = segment("MF825", DATE, "XMN", "CDG");
+		DocumentFlightSegment other = segment("AF1668", DATE.plusDays(1), "CDG", "MAN");
+		BoardingPassExtractionResponse document = document(List.of(requestedIdentity, other));
 
 		assertThatThrownBy(() -> service.resolve(new ResolveFlightRequest(
-				"BA117", LocalDate.of(2026, 8, 24), false, null, document, false)))
+				"MF825", DATE, false, null, document, 1, false)))
 				.isInstanceOf(InvalidDocumentException.class)
-				.hasMessage("DOCUMENT_SEGMENT_SELECTION_REQUIRED");
+				.hasMessage("DOCUMENT_SEGMENT_SELECTION_INVALID");
+
+		assertThat(flights.calls).isZero();
+		assertThat(document.segments()).containsExactly(requestedIdentity, other);
+	}
+
+	@Test
+	void fallsBackToTheMatchingDocumentLegWhenEveryLiveProviderFailsAndKeepsItOnRefresh() {
+		CapturingMultiSource flights = new CapturingMultiSource(true);
+		ResolvedFlightService service = service(flights);
+		BoardingPassExtractionResponse document = document(List.of(
+				segmentWithPrintedOperations("MF825", DATE, "XMN", "CDG"),
+				segment("AF1668", LocalDate.of(2026, 8, 25), "CDG", "MAN")));
+
+		ResolvedFlightContext result = service.resolve(new ResolveFlightRequest(
+				"MF825", DATE, false, null, document, false));
+
+		assertThat(result.live()).isFalse();
+		assertThat(result.liveDataSource()).isEqualTo("DOCUMENT_FALLBACK");
+		assertThat(result.departureAirport()).isEqualTo("XMN");
+		assertThat(result.arrivalAirport()).isEqualTo("CDG");
+		assertThat(result.status()).isNull();
+		assertThat(result.scheduledDeparture()).isNull();
+		assertThat(result.dataRetrievedAt()).isNull();
+		assertThat(result.documentGate()).isEqualTo("B12");
+		assertThat(result.gate()).isNull();
+		assertThat(result.providerResults()).containsKey("AERODATABOX");
+		ResolvedFlightContext restored = service.refresh(result, false);
+		assertThat(restored.liveDataSource()).isEqualTo("DOCUMENT_FALLBACK");
+		assertThat(restored.gate()).isNull();
+		assertThat(flights.calls).isEqualTo(1);
+		assertThat(service.refresh(result, true).liveDataSource()).isEqualTo("DOCUMENT_FALLBACK");
+		assertThat(flights.calls).isEqualTo(2);
+	}
+
+	@Test
+	void neverBuildsAFallbackByCombiningARequestWithADifferentDocumentIdentity() {
+		ResolvedFlightService service = service(new CapturingMultiSource(true));
+		BoardingPassExtractionResponse document = document(List.of(
+				segment("AF1668", LocalDate.of(2026, 8, 25), "CDG", "MAN")));
+
+		assertThatThrownBy(() -> service.resolve(new ResolveFlightRequest(
+				"MF825", DATE, false, null, document, false)))
+				.isInstanceOf(AllFlightProvidersUnavailableException.class);
+	}
+
+	@Test
+	void liveSuccessNeverMergesFieldsFromTheSameFlightOnADifferentDate() {
+		ResolvedFlightService service = service(new CapturingMultiSource(false));
+		BoardingPassExtractionResponse document = document(List.of(
+				segmentWithPrintedOperations("MF825", DATE.plusDays(1), "XMN", "CDG")));
+
+		ResolvedFlightContext result = service.resolve(new ResolveFlightRequest(
+				"MF825", DATE, false, null, document, false));
+
+		assertThat(result.departureDate()).isEqualTo(DATE);
+		assertThat(result.documentTerminal()).isNull();
+		assertThat(result.documentGate()).isNull();
+		assertThat(result.seat()).isNull();
+	}
+
+	@Test
+	void resolvedEvidenceDropsUnknownKeysAndUntrustedSourceLabels() {
+		ResolvedFlightService service = service(new CapturingMultiSource(false));
+		Map<String, ExtractedField> safe = service.safeEvidence(Map.of(
+				"passenger_name", new ExtractedField("SECRET NAME", 1.0d, 0, null, "private"),
+				"departure_date", new ExtractedField("8月4日", 1.5d, 0, null, "SECRET PNR")));
+
+		assertThat(safe).containsOnlyKeys("departure_date");
+		assertThat(safe.get("departure_date").value()).isEqualTo("8月4日");
+		assertThat(safe.get("departure_date").confidence()).isEqualTo(1.0d);
+		assertThat(safe.get("departure_date").sourceLabel()).isNull();
+	}
+
+	private ResolvedFlightService service(MultiSourceFlightService flights) {
+		return new ResolvedFlightService(new FlightService(null, null), flights, null, new FlightTimeService());
+	}
+
+	private BoardingPassExtractionResponse document(List<DocumentFlightSegment> segments) {
+		return new BoardingPassExtractionResponse(DocumentType.ITINERARY, null, null,
+				null, null, null, null, null, null, null, null,
+				false, false, Map.of(), segments, List.of(), "TEST_DOCUMENT", Instant.EPOCH);
 	}
 
 	private DocumentFlightSegment segment(String flightNumber, LocalDate date, String departure, String arrival) {
 		return new DocumentFlightSegment(flightNumber, date, departure, arrival,
 				date + "T08:20", date + "T11:10", null, null, null, null,
 				0.99d, 0, null, Map.of());
+	}
+
+	private DocumentFlightSegment segmentWithPrintedOperations(String flightNumber, LocalDate date,
+			String departure, String arrival) {
+		return new DocumentFlightSegment(flightNumber, date, departure, arrival,
+				date + "T08:20", date + "T11:10", "07:35", "T3", "B12", "22A",
+				0.99d, 0, null, Map.of());
+	}
+
+	private static final class CapturingMultiSource extends MultiSourceFlightService {
+		private final boolean fail;
+		private String departureHint;
+		private String arrivalHint;
+		private int calls;
+
+		private CapturingMultiSource(boolean fail) {
+			super(List.of());
+			this.fail = fail;
+		}
+
+		@Override
+		public MultiSourceFlightSnapshot findFlight(String flightNumber, LocalDate departureDate,
+				String departureAirportHint, String arrivalAirportHint, boolean refresh) {
+			return findFlight(flightNumber, departureDate, departureAirportHint, arrivalAirportHint, null, refresh);
+		}
+
+		@Override
+		public MultiSourceFlightSnapshot findFlight(String flightNumber, LocalDate departureDate,
+				String departureAirportHint, String arrivalAirportHint,
+				String scheduledDepartureHint, boolean refresh) {
+			this.departureHint = departureAirportHint;
+			this.arrivalHint = arrivalAirportHint;
+			calls++;
+			if (fail) {
+				throw new AllFlightProvidersUnavailableException(Map.of("AERODATABOX",
+						ProviderFlightResult.failure("AERODATABOX", "UPSTREAM_ERROR",
+								"AERODATABOX_HTTP_400", Instant.EPOCH)));
+			}
+			OffsetDateTime scheduled = OffsetDateTime.parse("2026-08-24T08:20:00+08:00");
+			FlightResponse flight = new FlightResponse(flightNumber, departureDate,
+					"XMN", "Xiamen", "CDG", "Paris", scheduled, null, null,
+					scheduled.plusHours(12), null, null, null, null, null, null,
+					"EXPECTED", 0, 0, Instant.EPOCH, Instant.EPOCH, "TEST_LIVE",
+					null, null, true, true, false);
+			return new MultiSourceFlightSnapshot(flight, null, null, Map.of(), Map.of(), List.of(),
+					Instant.EPOCH, Instant.EPOCH);
+		}
 	}
 }

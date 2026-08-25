@@ -10,20 +10,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.selene.onestepflight.dto.FlightResponse;
 import com.selene.onestepflight.service.FlightService;
-import com.selene.onestepflight.service.IpRateLimitService;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/flights")
 public class FlightController {
 
 	private final FlightService flightService;
-	private final IpRateLimitService rateLimitService;
 
-	public FlightController(FlightService flightService, IpRateLimitService rateLimitService) {
+	public FlightController(FlightService flightService) {
 		this.flightService = flightService;
-		this.rateLimitService = rateLimitService;
 	}
 
 	@GetMapping("/{flightNumber}")
@@ -31,9 +26,7 @@ public class FlightController {
 			@PathVariable String flightNumber,
 			@RequestParam(required = false) LocalDate departureDate,
 			@RequestParam(defaultValue = "true") boolean demo,
-			@RequestParam(defaultValue = "false") boolean refresh,
-			HttpServletRequest servletRequest) {
-		if (!demo) rateLimitService.check(IpRateLimitService.Category.LIVE_FLIGHT, servletRequest);
+			@RequestParam(defaultValue = "false") boolean refresh) {
 		return flightService.getFlight(flightNumber, departureDate, demo, refresh);
 	}
 }

@@ -13,8 +13,8 @@ class NextActionDocumentSemanticsTest {
 	private final NextActionService service = new NextActionService();
 
 	@Test
-	void onlyTrustedBoardingPassSignalSkipsCheckIn() {
-		assertThat(service.isEffectivelyCheckedIn(context("BOARDING_PASS", true, false))).isTrue();
+	void onlyTheTravelersExplicitAnswerCountsAsCheckedIn() {
+		assertThat(service.isEffectivelyCheckedIn(context("BOARDING_PASS", true, false))).isFalse();
 		assertThat(service.isEffectivelyCheckedIn(context("BOARDING_PASS", false, false))).isFalse();
 		assertThat(service.isEffectivelyCheckedIn(context("ITINERARY", true, false))).isFalse();
 		assertThat(service.isEffectivelyCheckedIn(context("E_TICKET", true, false))).isFalse();

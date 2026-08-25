@@ -14,11 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.selene.onestepflight.dto.BoardingPassExtractionResponse;
 import com.selene.onestepflight.service.BoardingPassDocumentProcessor;
 import com.selene.onestepflight.service.InvalidDocumentException;
-import com.selene.onestepflight.service.IpRateLimitService;
 import com.selene.onestepflight.service.DocumentResultClassification;
 import com.selene.onestepflight.service.DocumentResultClassifier;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/documents")
@@ -30,18 +27,13 @@ public class DocumentController {
 			MediaType.APPLICATION_PDF_VALUE, MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE);
 
 	private final BoardingPassDocumentProcessor documentProcessor;
-	private final IpRateLimitService rateLimitService;
 
-	public DocumentController(BoardingPassDocumentProcessor documentProcessor,
-			IpRateLimitService rateLimitService) {
+	public DocumentController(BoardingPassDocumentProcessor documentProcessor) {
 		this.documentProcessor = documentProcessor;
-		this.rateLimitService = rateLimitService;
 	}
 
 	@PostMapping(path = {"/travel-document", "/boarding-pass"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public BoardingPassExtractionResponse extractTravelDocument(@RequestPart("file") MultipartFile file,
-			HttpServletRequest servletRequest) {
-		rateLimitService.check(IpRateLimitService.Category.DOCUMENT_UPLOAD, servletRequest);
+	public BoardingPassExtractionResponse extractTravelDocument(@RequestPart("file") MultipartFile file) {
 		if (file.isEmpty()) throw new InvalidDocumentException("DOCUMENT_EMPTY");
 		if (file.getSize() > MAX_FILE_SIZE) throw new InvalidDocumentException("DOCUMENT_TOO_LARGE");
 		String contentType = file.getContentType();

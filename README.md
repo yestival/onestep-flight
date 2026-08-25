@@ -80,7 +80,7 @@ The backend computes the operational time context from server time and the depar
 
 Deterministic rules return one of `CHECK_IN`, `BAG_DROP`, `SECURITY`, `GO_TO_GATE`, `WAIT`, `BOARD_NOW`, `IN_FLIGHT`, `BAGGAGE_CLAIM`, `EXIT_AIRPORT`, or `ASK_FOR_HELP`.
 
-Completed journey state and the latest flight snapshot are sent to the backend for every decision. Normal step progression rechecks all provider adapters within their cache rules; explicit refresh uses a 60-second browser cooldown and bypasses backend caches. Cancellation, departure, arrival, stale near-departure data, missing gate near departure, and overdue boarding produce stop/help behavior rather than continuing the old plan.
+Completed journey state and the latest flight snapshot are sent to the backend for every decision. Normal step progression rechecks all provider adapters within their cache rules; explicit refresh bypasses backend caches and can run again as soon as the current request finishes. Cancellation, departure, arrival, stale near-departure data, missing gate near departure, and overdue boarding produce stop/help behavior rather than continuing the old plan.
 
 ## API overview
 

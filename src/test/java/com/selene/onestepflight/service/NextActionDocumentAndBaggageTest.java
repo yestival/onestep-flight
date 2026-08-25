@@ -20,7 +20,7 @@ class NextActionDocumentAndBaggageTest {
 	private final NextActionService service = new NextActionService();
 
 	@Test
-	void onlyTrustedBoardingPassSignalSkipsCheckIn() {
+	void documentTypeAndBoardingPassSignalNeverSkipCheckIn() {
 		ResolvedFlightContext flight = flight("D 20-24", null);
 
 		for (String type : List.of("BOOKING_CONFIRMATION", "E_TICKET", "ITINERARY", "UNKNOWN")) {
@@ -31,8 +31,8 @@ class NextActionDocumentAndBaggageTest {
 
 		NextActionResponse boardingPass = service.calculate(flight,
 				journey(flight, "BOARDING_PASS", true, false, null, false, false, false, false));
-		assertThat(boardingPass.stepType()).isEqualTo(JourneyStepType.BAGGAGE_QUESTION);
-		assertThat(boardingPass.actionCode()).isNull();
+		assertThat(boardingPass.stepType()).isEqualTo(JourneyStepType.ACTION);
+		assertThat(boardingPass.actionCode()).isEqualTo(ActionCode.CHECK_IN);
 	}
 
 	@Test

@@ -2,20 +2,29 @@ package com.selene.onestepflight.service;
 
 import java.net.ProxySelector;
 import java.net.http.HttpClient;
+import java.time.Clock;
+import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.MonthDay;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -52,11 +61,28 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 			"scheduled_departure", "scheduled_arrival", "boarding_time", "terminal", "gate", "seat");
 	private static final Set<String> REQUIRED_IDENTITY_FIELDS = Set.of(
 			"flight_number", "departure_date", "departure_airport", "arrival_airport");
+	private static final Pattern FULL_CHINESE_DATE = Pattern.compile(
+			"^(\\d{4})\\s*年\\s*(\\d{1,2})\\s*月\\s*(\\d{1,2})\\s*日?$");
+	private static final Pattern CHINESE_MONTH_DAY = Pattern.compile(
+			"^(\\d{1,2})\\s*月\\s*(\\d{1,2})\\s*日?$");
+	private static final Pattern SLASH_MONTH_DAY = Pattern.compile("^(\\d{1,2})/(\\d{1,2})$");
+	private static final Pattern SLASH_FULL_DATE = Pattern.compile("^(\\d{4})/(\\d{1,2})/(\\d{1,2})$");
+	private static final List<DateTimeFormatter> ENGLISH_MONTH_DAY_FORMATTERS = List.of(
+			englishMonthDayFormatter("MMM d"),
+			englishMonthDayFormatter("MMMM d"),
+			englishMonthDayFormatter("d MMM"),
+			englishMonthDayFormatter("d MMMM"));
 
 	private final RestClient restClient;
 	private final ObjectMapper objectMapper;
+	private final Clock clock;
 
+	@Autowired
 	public NutrientBoardingPassDocumentProcessor(ObjectMapper objectMapper) {
+		this(objectMapper, Clock.systemUTC());
+	}
+
+	NutrientBoardingPassDocumentProcessor(ObjectMapper objectMapper, Clock clock) {
 		HttpClient.Builder clientBuilder = HttpClient.newBuilder()
 				.connectTimeout(Duration.ofSeconds(8))
 				.followRedirects(HttpClient.Redirect.NORMAL)
@@ -73,6 +99,7 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 				.requestFactory(new BufferingClientHttpRequestFactory(requestFactory))
 				.build();
 		this.objectMapper = objectMapper;
+		this.clock = Objects.requireNonNull(clock, "clock");
 	}
 
 	@Override
@@ -151,7 +178,7 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 		properties.put("segments", segmentArrayProperty());
 		Map<String, Object> schema = new LinkedHashMap<>();
 		schema.put("type", "object");
-		schema.put("description", "Extract every distinct flight leg into segments. Do not silently choose the first leg and do not guess missing values. Never extract or return passenger names, PNRs, booking references, ticket numbers, passport data, or barcode contents.");
+		schema.put("description", "Extract every distinct flight leg into segments in the same order as the document. Do not silently choose the first leg and do not guess missing values. A departure date visibly shared by a heading or table section may be copied unchanged only to the segments clearly governed by that heading or section; never carry it across a different group, page, or unrelated segment. Never extract or return passenger names, PNRs, booking references, ticket numbers, passport data, or barcode contents.");
 		schema.put("properties", properties);
 		// Non-flight and unclear files return UNKNOWN with an empty segments array;
 		// no flight identity is required or invented.
@@ -162,11 +189,11 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 	private Map<String, Object> segmentArrayProperty() {
 		Map<String, Object> segmentProperties = new LinkedHashMap<>();
 		segmentProperties.put("flight_number", stringProperty("Operating or marketed flight designator, for example BA117. Never return a booking reference, PNR, passenger name, ticket number, or barcode data."));
-		segmentProperties.put("departure_date", stringProperty("Local departure date in ISO YYYY-MM-DD format."));
+		segmentProperties.put("departure_date", stringProperty("Copy the visible local departure date without inventing a year. Accepted visible forms are ISO YYYY-MM-DD, YYYY年M月D日, M月D日, MM/DD or M/D, Aug 4, and 4 Aug. A date printed once in a shared heading may be repeated only for the segments visibly governed by that heading."));
 		segmentProperties.put("departure_airport", stringProperty("Three-letter IATA departure airport code."));
 		segmentProperties.put("arrival_airport", stringProperty("Three-letter IATA arrival airport code."));
 		segmentProperties.put("scheduled_departure", stringProperty("Scheduled local departure date and time in ISO YYYY-MM-DDTHH:mm format when shown."));
-		segmentProperties.put("scheduled_arrival", stringProperty("Scheduled local arrival date and time in ISO YYYY-MM-DDTHH:mm format when shown."));
+		segmentProperties.put("scheduled_arrival", stringProperty("Scheduled local arrival date and time in ISO YYYY-MM-DDTHH:mm format when shown. If the document explicitly marks arrival as next day or +1, preserve that meaning by using the next calendar date here; never change departure_date and never infer a rollover without an explicit marker."));
 		segmentProperties.put("boarding_time", stringProperty("Local boarding time in HH:mm format when shown."));
 		segmentProperties.put("terminal", stringProperty("Departure terminal exactly as printed, without guessing."));
 		segmentProperties.put("gate", stringProperty("Departure gate exactly as printed, without guessing."));
@@ -214,12 +241,9 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 			}
 		}
 
-		double documentTypeConfidence = fields.get("document_type").confidence();
 		if (documentType == DocumentType.UNKNOWN && !needsReview.contains("document_type")) {
 			needsReview.add(0, "document_type");
 		}
-		boolean boardingPassDetected = segments.size() == 1 && hasUsableIdentity(segments.get(0))
-				&& documentType.impliesCheckInCompleted(documentTypeConfidence);
 		return new BoardingPassExtractionResponse(
 				documentType,
 				null,
@@ -232,13 +256,13 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 				null,
 				null,
 				null,
-				boardingPassDetected,
-				documentType.requiresConfirmation(documentTypeConfidence),
+				false,
+				false,
 				fields,
 				segments,
 				List.copyOf(needsReview),
 				"NUTRIENT_DWS_DATA_EXTRACTION",
-				Instant.now());
+				Instant.now(clock));
 	}
 
 	private List<DocumentFlightSegment> parseSegments(JsonNode data, JsonNode metadata,
@@ -266,8 +290,10 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 			segmentFields.put(fieldName, field);
 			double threshold = "flight_number".equals(fieldName) || "departure_date".equals(fieldName)
 					? 0.8d : 0.65d;
+			boolean currentYearMonthDay = "departure_date".equals(fieldName)
+					&& parseMonthDay(normalizeDateText(field.value())) != null;
 			if ((REQUIRED_IDENTITY_FIELDS.contains(fieldName) && field.value() == null)
-					|| (field.value() != null && field.confidence() < threshold)) {
+					|| (field.value() != null && field.confidence() < threshold && !currentYearMonthDay)) {
 				needsReview.add("segments[" + index + "]." + fieldName);
 			}
 		}
@@ -293,10 +319,10 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 	private ExtractedField sanitizeField(String name, ExtractedField field) {
 		String value = switch (name) {
 			case "flight_number" -> normalizeFlightNumber(field.value());
-			case "departure_date" -> {
-				LocalDate date = parseDate(field.value());
-				yield date == null ? null : date.toString();
-			}
+			// Keep the printed date text as evidence. The semantic LocalDate on the
+			// segment is parsed separately and can safely supply the current year when
+			// the document displays only an unambiguous month and day.
+			case "departure_date" -> parseDate(field.value()) == null ? null : field.value().trim();
 			case "departure_airport", "arrival_airport" -> normalizeAirport(field.value());
 			case "scheduled_departure", "scheduled_arrival" -> validDateTime(field.value());
 			case "boarding_time" -> validBoardingTime(field.value());
@@ -304,11 +330,6 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 			default -> null;
 		};
 		return new ExtractedField(value, field.confidence(), field.page(), field.boundingBox(), field.sourceLabel());
-	}
-
-	private boolean hasUsableIdentity(DocumentFlightSegment segment) {
-		return segment.flightNumber() != null && segment.departureDate() != null
-				&& segment.departureAirport() != null && segment.arrivalAirport() != null;
 	}
 
 	private JsonNode segmentMetadata(JsonNode metadata, int index) {
@@ -403,9 +424,80 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 	}
 
 	private LocalDate parseDate(String value) {
+		if (value == null || value.isBlank()) return null;
+		String normalized = normalizeDateText(value);
 		try {
-			return value == null ? null : LocalDate.parse(value);
+			return LocalDate.parse(normalized, DateTimeFormatter.ISO_LOCAL_DATE);
 		} catch (DateTimeParseException exception) {
+			// Continue with the other explicit, unambiguous document formats.
+		}
+
+		Matcher fullChinese = FULL_CHINESE_DATE.matcher(normalized);
+		if (fullChinese.matches()) {
+			return localDate(fullChinese.group(1), fullChinese.group(2), fullChinese.group(3));
+		}
+		Matcher fullSlash = SLASH_FULL_DATE.matcher(normalized);
+		if (fullSlash.matches()) {
+			return localDate(fullSlash.group(1), fullSlash.group(2), fullSlash.group(3));
+		}
+
+		MonthDay monthDay = parseMonthDay(normalized);
+		if (monthDay == null) return null;
+		try {
+			return monthDay.atYear(LocalDate.now(clock).getYear());
+		} catch (DateTimeException exception) {
+			// For example, February 29 without a year in a non-leap current year.
+			return null;
+		}
+	}
+
+	private String normalizeDateText(String value) {
+		return value == null ? "" : value.trim().replaceAll("\\s+", " ");
+	}
+
+	private MonthDay parseMonthDay(String normalized) {
+		if (normalized == null || normalized.isBlank()) return null;
+		MonthDay monthDay = null;
+		Matcher chinese = CHINESE_MONTH_DAY.matcher(normalized);
+		if (chinese.matches()) {
+			monthDay = monthDay(chinese.group(1), chinese.group(2));
+		}
+		if (monthDay == null) {
+			Matcher slash = SLASH_MONTH_DAY.matcher(normalized);
+			if (slash.matches()) monthDay = monthDay(slash.group(1), slash.group(2));
+		}
+		if (monthDay == null) {
+			for (DateTimeFormatter formatter : ENGLISH_MONTH_DAY_FORMATTERS) {
+				try {
+					monthDay = MonthDay.parse(normalized, formatter);
+					break;
+				} catch (DateTimeParseException ignored) {
+					// Try the next exact English month/day order.
+				}
+			}
+		}
+		return monthDay;
+	}
+
+	private static DateTimeFormatter englishMonthDayFormatter(String pattern) {
+		return new DateTimeFormatterBuilder()
+				.parseCaseInsensitive()
+				.appendPattern(pattern)
+				.toFormatter(Locale.ENGLISH);
+	}
+
+	private LocalDate localDate(String year, String month, String day) {
+		try {
+			return LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), Integer.parseInt(day));
+		} catch (DateTimeException | NumberFormatException exception) {
+			return null;
+		}
+	}
+
+	private MonthDay monthDay(String month, String day) {
+		try {
+			return MonthDay.of(Integer.parseInt(month), Integer.parseInt(day));
+		} catch (DateTimeException | NumberFormatException exception) {
 			return null;
 		}
 	}

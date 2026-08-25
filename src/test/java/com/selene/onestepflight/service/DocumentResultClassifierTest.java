@@ -51,6 +51,18 @@ class DocumentResultClassifierTest {
 				.isEqualTo(DocumentResultClassification.PARTIAL);
 	}
 
+	@Test
+	void completeAndPartialLegsAreUsableWithoutDroppingOrReorderingThePartialLeg() {
+		DocumentFlightSegment partialFirst = segment("BA101", null);
+		DocumentFlightSegment completeSecond = segment("BA102", LocalDate.of(2026, 8, 25));
+		DocumentFlightSegment dateOnlyThird = segment(null, LocalDate.of(2026, 8, 26));
+		BoardingPassExtractionResponse response = response(DocumentType.ITINERARY,
+				List.of(partialFirst, completeSecond, dateOnlyThird));
+
+		assertThat(DocumentResultClassifier.classify(response)).isEqualTo(DocumentResultClassification.USABLE);
+		assertThat(response.segments()).containsExactly(partialFirst, completeSecond, dateOnlyThird);
+	}
+
 	private BoardingPassExtractionResponse response(DocumentType type, List<DocumentFlightSegment> segments) {
 		return new BoardingPassExtractionResponse(type, null, null, null, null, null, null, null,
 				null, null, null, false, false, Map.of(), segments, List.of(), "TEST", Instant.EPOCH);

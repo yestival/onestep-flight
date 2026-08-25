@@ -3,6 +3,8 @@ package com.selene.onestepflight.service;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -12,10 +14,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -26,6 +31,7 @@ import org.springframework.web.client.RestClientResponseException;
 import com.selene.onestepflight.dto.ProviderFlightResult;
 
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvider {
@@ -33,14 +39,28 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 	private static final Duration CACHE_TTL = Duration.ofMinutes(5);
 	private static final String HOST = "aerodatabox.p.rapidapi.com";
 	private static final Logger LOGGER = LoggerFactory.getLogger(AeroDataBoxFlightDataProvider.class);
+	private final Supplier<String> apiKeySupplier;
 	private final Map<String, CachedResult> cache = new ConcurrentHashMap<>();
+	private final ObjectMapper objectMapper;
 	private final RestClient restClient;
 
-	public AeroDataBoxFlightDataProvider() {
+	@Autowired
+	public AeroDataBoxFlightDataProvider(ObjectMapper objectMapper) {
+		this(objectMapper, buildRestClient(), () -> System.getenv("AERODATABOX_RAPIDAPI_KEY"));
+	}
+
+	AeroDataBoxFlightDataProvider(ObjectMapper objectMapper, RestClient restClient,
+			Supplier<String> apiKeySupplier) {
+		this.objectMapper = objectMapper;
+		this.restClient = restClient;
+		this.apiKeySupplier = apiKeySupplier;
+	}
+
+	private static RestClient buildRestClient() {
 		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
 		requestFactory.setConnectTimeout(Duration.ofSeconds(3));
 		requestFactory.setReadTimeout(Duration.ofSeconds(5));
-		this.restClient = RestClient.builder()
+		return RestClient.builder()
 				.baseUrl("https://" + HOST)
 				.requestFactory(requestFactory)
 				.build();
@@ -54,8 +74,16 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 	@Override
 	public ProviderFlightResult findFlight(String flightNumber, LocalDate departureDate,
 			String departureAirportHint, String arrivalAirportHint, boolean refresh) {
+		return findFlight(flightNumber, departureDate, departureAirportHint, arrivalAirportHint, null, refresh);
+	}
+
+	@Override
+	public ProviderFlightResult findFlight(String flightNumber, LocalDate departureDate,
+			String departureAirportHint, String arrivalAirportHint,
+			String scheduledDepartureHint, boolean refresh) {
 		Instant attemptedAt = Instant.now();
-		String key = System.getenv("AERODATABOX_RAPIDAPI_KEY");
+		String correlationId = UUID.randomUUID().toString();
+		String key = apiKeySupplier.get();
 		if (key == null || key.isBlank()) {
 			return ProviderFlightResult.failure(providerName(), "NOT_CONFIGURED", "AERODATABOX_NOT_CONFIGURED", attemptedAt);
 		}
@@ -63,9 +91,13 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 		if (departureDate == null) {
 			return ProviderFlightResult.failure(providerName(), "NOT_FOUND", "AERODATABOX_DATE_REQUIRED", attemptedAt);
 		}
+		String normalizedFlightNumber = normalizeFlight(flightNumber);
+		String normalizedDepartureHint = normalizeAirportHint(departureAirportHint);
+		String normalizedArrivalHint = normalizeAirportHint(arrivalAirportHint);
+		String normalizedScheduledHint = scheduledDepartureHint == null ? null : scheduledDepartureHint.trim();
 
-		String cacheKey = flightNumber + ":" + departureDate + ":" + nullToEmpty(departureAirportHint)
-				+ ":" + nullToEmpty(arrivalAirportHint);
+		String cacheKey = normalizedFlightNumber + ":" + departureDate + ":" + nullToEmpty(normalizedDepartureHint)
+				+ ":" + nullToEmpty(normalizedArrivalHint) + ":" + nullToEmpty(normalizedScheduledHint);
 		CachedResult cached = cache.get(cacheKey);
 		if (!refresh && cached != null && Duration.between(cached.cachedAt(), attemptedAt).compareTo(CACHE_TTL) < 0) {
 			return withCacheFlag(cached.result(), true);
@@ -77,42 +109,43 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 							.queryParam("dateLocalRole", "Departure")
 							.queryParam("withAircraftImage", false)
 							.queryParam("withLocation", false)
-							.build(flightNumber, departureDate))
+							.build(normalizedFlightNumber, departureDate))
 					.header("X-RapidAPI-Key", key)
 					.header("X-RapidAPI-Host", HOST)
 					.retrieve()
 					.toEntity(JsonNode.class);
-			LOGGER.info("provider={} stage=flight-request httpStatus={} contentType={}", providerName(),
-					response.getStatusCode().value(), response.getHeaders().getContentType());
-			ProviderFlightResult result = parseResponse(response.getBody(), flightNumber, departureDate,
-					departureAirportHint, arrivalAirportHint, Instant.now());
+			LOGGER.info("provider={} httpStatus={} correlationId={}", providerName(),
+					response.getStatusCode().value(), correlationId);
+			ProviderFlightResult result = parseResponse(response.getBody(), normalizedFlightNumber, departureDate,
+					normalizedDepartureHint, normalizedArrivalHint, normalizedScheduledHint, Instant.now());
 			if (result.successful()) cache.put(cacheKey, new CachedResult(result, Instant.now()));
 			return result;
 		} catch (RestClientResponseException exception) {
-			LOGGER.warn("provider={} stage=flight-request httpStatus={} rootCauseType={} category=HTTP_REJECTED message={}",
-					providerName(), exception.getStatusCode().value(), exception.getClass().getName(),
-					ProviderFailureDiagnostics.safeMessage(exception));
-			return httpFailure(exception.getStatusCode().value(), attemptedAt);
+			ProviderFlightResult failure = httpFailure(exception, attemptedAt);
+			LOGGER.warn("provider={} httpStatus={} category={} errorCode={} correlationId={}",
+					providerName(), exception.getStatusCode().value(), failure.outcome(),
+					failure.errorCode(), correlationId);
+			return failure;
 		} catch (RestClientException exception) {
 			ProviderFailureDiagnostics.Failure failure = ProviderFailureDiagnostics.classify(providerName(), exception);
-			LOGGER.warn("provider={} stage=flight-request httpStatus=none rootCauseType={} category={} message={}",
-					providerName(), failure.rootCauseType(), failure.category(), failure.safeMessage());
+			LOGGER.warn("provider={} httpStatus=none category={} errorCode={} correlationId={}",
+					providerName(), failure.category(), failure.errorCode(), correlationId);
 			return ProviderFlightResult.failure(providerName(), failure.outcome(), failure.errorCode(), attemptedAt);
 		} catch (RuntimeException exception) {
-			LOGGER.warn("provider={} stage=response-parse httpStatus=200 rootCauseType={} category=PARSE_ERROR message={}",
-					providerName(), exception.getClass().getName(), ProviderFailureDiagnostics.safeMessage(exception));
+			LOGGER.warn("provider={} httpStatus=200 category=PARSE_ERROR correlationId={}",
+					providerName(), correlationId);
 			return ProviderFlightResult.failure(providerName(), "PARSE_ERROR", "AERODATABOX_PARSE_ERROR", attemptedAt);
 		}
 	}
 
 	private ProviderFlightResult parseResponse(JsonNode root, String requestedNumber, LocalDate requestedDate,
-			String departureHint, String arrivalHint, Instant retrievedAt) {
+			String departureHint, String arrivalHint, String scheduledDepartureHint, Instant retrievedAt) {
 		JsonNode records = root != null && root.isArray() ? root : root == null ? null : root.path("departures");
 		if (records == null || !records.isArray()) {
 			return ProviderFlightResult.failure(providerName(), "PARSE_ERROR", "AERODATABOX_RESPONSE_NOT_ARRAY", retrievedAt);
 		}
 
-		List<JsonNode> matches = new ArrayList<>();
+		List<ScoredCandidate> matches = new ArrayList<>();
 		Iterator<JsonNode> iterator = records.iterator();
 		while (iterator.hasNext()) {
 			JsonNode candidate = iterator.next();
@@ -123,21 +156,28 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 			String dep = airportCode(departure);
 			String arr = airportCode(arrival);
 			if (!normalizeFlight(requestedNumber).equals(number)) continue;
-			if (scheduled == null || !requestedDate.equals(scheduled.toLocalDate())) continue;
-			if (!isBlank(departureHint) && !departureHint.equalsIgnoreCase(dep)) continue;
-			if (!isBlank(arrivalHint) && !arrivalHint.equalsIgnoreCase(arr)) continue;
-			matches.add(candidate);
+			if (scheduled == null) continue;
+			long dateDistance = Math.abs(ChronoUnit.DAYS.between(requestedDate, scheduled.toLocalDate()));
+			if (dateDistance > 1) continue;
+			int score = dateDistance == 0 ? 100 : 10;
+			if (!isBlank(departureHint) && departureHint.equalsIgnoreCase(dep)) score += 5;
+			if (!isBlank(arrivalHint) && arrivalHint.equalsIgnoreCase(arr)) score += 5;
+			score += timeHintScore(scheduled, scheduledDepartureHint);
+			matches.add(new ScoredCandidate(candidate, score));
 		}
 		if (matches.isEmpty()) {
 			return ProviderFlightResult.failure(providerName(), "NOT_FOUND", "AERODATABOX_FLIGHT_NOT_FOUND", retrievedAt);
 		}
-		long distinctRoutes = matches.stream()
+		int bestScore = matches.stream().mapToInt(ScoredCandidate::score).max().orElseThrow();
+		List<JsonNode> bestMatches = matches.stream().filter(candidate -> candidate.score() == bestScore)
+				.map(ScoredCandidate::item).toList();
+		long distinctRoutes = bestMatches.stream()
 				.map(item -> airportCode(item.path("departure")) + ">" + airportCode(item.path("arrival")))
 				.distinct().count();
 		if (distinctRoutes > 1) {
 			return ProviderFlightResult.failure(providerName(), "PARSE_ERROR", "AERODATABOX_IDENTITY_AMBIGUOUS", retrievedAt);
 		}
-		JsonNode item = matches.stream().max(Comparator.comparing(this::recordRecency,
+		JsonNode item = bestMatches.stream().max(Comparator.comparing(this::recordRecency,
 				Comparator.nullsFirst(Comparator.naturalOrder()))).orElseThrow();
 		JsonNode departure = item.path("departure");
 		JsonNode arrival = item.path("arrival");
@@ -155,7 +195,7 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 				parseInstant(text(item, "updatedAt")), parseInstant(text(departure, "lastUpdatedUtc")));
 
 		return new ProviderFlightResult(providerName(), "SUCCESS", null,
-				normalizeFlight(text(item, "number")), requestedDate,
+				normalizeFlight(text(item, "number")), scheduledDeparture.toLocalDate(),
 				airportCode(departure), airportName(departure), airportCode(arrival), airportName(arrival),
 				scheduledDeparture, estimatedDeparture, actualDeparture, scheduledArrival, estimatedArrival,
 				actualArrival, readTime(departure, "boardingTime"), normalizeTerminal(text(departure, "terminal")),
@@ -177,7 +217,13 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 				readTime(departure, "predictedTime"), readTime(departure, "scheduledTime"));
 	}
 
-	private ProviderFlightResult httpFailure(int status, Instant attemptedAt) {
+	private ProviderFlightResult httpFailure(RestClientResponseException exception, Instant attemptedAt) {
+		int status = exception.getStatusCode().value();
+		if (status == 400) {
+			BadRequestClassification classification = classifyBadRequest(exception.getResponseBodyAsString());
+			return ProviderFlightResult.failure(providerName(), classification.outcome(),
+					classification.errorCode(), attemptedAt);
+		}
 		String outcome = switch (status) {
 			case 401 -> "AUTHENTICATION_FAILED";
 			case 403 -> "FORBIDDEN_OR_QUOTA";
@@ -186,6 +232,111 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 			default -> "UPSTREAM_ERROR";
 		};
 		return ProviderFlightResult.failure(providerName(), outcome, "AERODATABOX_HTTP_" + status, attemptedAt);
+	}
+
+	private BadRequestClassification classifyBadRequest(String responseBody) {
+		String errorText = structuredErrorText(responseBody).toLowerCase(Locale.ROOT);
+		if (errorText.isBlank()) return unknownBadRequest();
+
+		if (containsAny(errorText, "subscription", "pricing plan", "current plan", "plan does not",
+				"tier", "not entitled", "not available for your plan", "provider restriction")) {
+			return new BadRequestClassification("FORBIDDEN_OR_QUOTA", "PLAN_OR_PROVIDER_RESTRICTION");
+		}
+		if (containsAny(errorText, "outside the data coverage", "outside data coverage", "out of coverage",
+				"outside the supported date", "date range limit", "maximum date range", "history limit")) {
+			return new BadRequestClassification("INVALID_REQUEST", "DATE_OUT_OF_COVERAGE");
+		}
+		if (containsAny(errorText, "invalid flight number", "malformed flight number",
+				"flight number format", "invalid searchparam", "invalid search param")) {
+			return new BadRequestClassification("INVALID_REQUEST", "INVALID_FLIGHT_NUMBER");
+		}
+		if (errorText.contains("date") && containsAny(errorText, "invalid", "malformed", "format",
+				"must be", "datefromlocal", "datetolocal")) {
+			return new BadRequestClassification("INVALID_REQUEST", "INVALID_REQUEST_DATE");
+		}
+		if (containsAny(errorText, "missing required", "required parameter", "invalid parameter",
+				"invalid query", "bad request", "request validation")) {
+			return new BadRequestClassification("INVALID_REQUEST", "INVALID_PROVIDER_REQUEST");
+		}
+		return unknownBadRequest();
+	}
+
+	private BadRequestClassification unknownBadRequest() {
+		return new BadRequestClassification("UPSTREAM_ERROR", "AERODATABOX_HTTP_400");
+	}
+
+	private String structuredErrorText(String responseBody) {
+		if (responseBody == null || responseBody.isBlank()) return "";
+		try {
+			JsonNode root = objectMapper.readTree(responseBody);
+			StringBuilder result = new StringBuilder();
+			appendAllowedErrorFields(root, result, 0);
+			return result.length() > 2_000 ? result.substring(0, 2_000) : result.toString();
+		} catch (RuntimeException exception) {
+			return "";
+		}
+	}
+
+	private void appendAllowedErrorFields(JsonNode node, StringBuilder output, int depth) {
+		if (node == null || depth > 4) return;
+		if (node.isObject()) {
+			for (String field : List.of("message", "error", "detail")) {
+				JsonNode value = node.path(field);
+				if (value.isMissingNode() || value.isNull()) continue;
+				appendAllowedErrorValue(value, output, depth + 1);
+			}
+		}
+	}
+
+	private void appendAllowedErrorValue(JsonNode value, StringBuilder output, int depth) {
+		if (output.length() >= 2_000 || value == null || depth > 4) return;
+		if (value.isTextual()) {
+			if (!output.isEmpty()) output.append(' ');
+			output.append(value.asText(), 0, Math.min(value.asText().length(), 500));
+		} else if (value.isObject()) {
+			appendAllowedErrorFields(value, output, depth);
+		} else if (value.isArray()) {
+			for (JsonNode item : value) appendAllowedErrorValue(item, output, depth + 1);
+		}
+	}
+
+	private boolean containsAny(String value, String... candidates) {
+		for (String candidate : candidates) if (value.contains(candidate)) return true;
+		return false;
+	}
+
+	private int timeHintScore(OffsetDateTime scheduled, String hint) {
+		LocalTime hintedTime = parseTimeHint(hint);
+		if (scheduled == null || hintedTime == null) return 0;
+		long difference = Math.abs(ChronoUnit.MINUTES.between(hintedTime, scheduled.toLocalTime()));
+		difference = Math.min(difference, 24 * 60 - difference);
+		if (difference <= 30) return 4;
+		return difference <= 120 ? 2 : 0;
+	}
+
+	private LocalTime parseTimeHint(String value) {
+		if (isBlank(value)) return null;
+		try {
+			return OffsetDateTime.parse(value).toLocalTime();
+		} catch (DateTimeParseException ignored) {
+			// Try a local date-time or time-only document value.
+		}
+		try {
+			return LocalDateTime.parse(value).toLocalTime();
+		} catch (DateTimeParseException ignored) {
+			// Continue with time-only parsing.
+		}
+		try {
+			return LocalTime.parse(value);
+		} catch (DateTimeParseException ignored) {
+			return null;
+		}
+	}
+
+	private String normalizeAirportHint(String value) {
+		if (isBlank(value)) return null;
+		String normalized = value.trim().toUpperCase(Locale.ROOT);
+		return normalized.matches("[A-Z]{3}") ? normalized : null;
 	}
 
 	private ProviderFlightResult withCacheFlag(ProviderFlightResult value, boolean fromCache) {
@@ -300,5 +451,11 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 	}
 
 	private record CachedResult(ProviderFlightResult result, Instant cachedAt) {
+	}
+
+	private record BadRequestClassification(String outcome, String errorCode) {
+	}
+
+	private record ScoredCandidate(JsonNode item, int score) {
 	}
 }

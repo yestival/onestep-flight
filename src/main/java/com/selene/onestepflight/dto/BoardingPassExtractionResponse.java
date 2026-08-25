@@ -56,8 +56,9 @@ public record BoardingPassExtractionResponse(
 			gate = segment.gate();
 			seat = segment.seat();
 		} else if (segments.size() > 1) {
-			// A multi-leg itinerary must be selected by the traveler. Never let a
-			// caller accidentally continue with whichever leg appeared first.
+			// Multi-leg documents keep every segment. The resolution service selects
+			// its lookup leg from the explicit flight-number/date request, never from
+			// an arbitrary top-level value or by discarding the remaining itinerary.
 			flightNumber = null;
 			departureDate = null;
 			scheduledDeparture = null;
@@ -70,15 +71,10 @@ public record BoardingPassExtractionResponse(
 			seat = null;
 		}
 		needsReviewFields = needsReviewFields == null ? List.of() : List.copyOf(needsReviewFields);
-		double confidence = fields.containsKey("document_type") && fields.get("document_type") != null
-				? fields.get("document_type").confidence() : 0.0d;
-		boardingPassDetected = segments.size() == 1 && hasUsableIdentity(segments.get(0))
-				&& documentType.impliesCheckInCompleted(confidence);
-		requiresDocumentConfirmation = segments.size() > 1 || documentType.requiresConfirmation(confidence);
-	}
-
-	private static boolean hasUsableIdentity(DocumentFlightSegment segment) {
-		return segment.flightNumber() != null && segment.departureDate() != null
-				&& segment.departureAirport() != null && segment.arrivalAirport() != null;
+		// Document classification and provider confidence remain internal evidence,
+		// not journey-state authority. In particular, they must never
+		// silently mark check-in complete or inject an extra business branch.
+		boardingPassDetected = false;
+		requiresDocumentConfirmation = false;
 	}
 }

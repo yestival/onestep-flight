@@ -1,0 +1,53 @@
+{
+  "singleSegment": {
+    "documentType": "ITINERARY",
+    "dataSource": "TEST_FIXTURE",
+    "fields": {},
+    "needsReviewFields": [],
+    "segments": [
+      {
+        "flightNumber": "KL1036",
+        "departureDate": null,
+        "departureAirport": "MAN",
+        "arrivalAirport": "AMS",
+        "scheduledDeparture": "2026-08-04T17:30"
+      }
+    ]
+  },
+  "multiSegment": {
+    "documentType": "ITINERARY",
+    "dataSource": "TEST_FIXTURE",
+    "fields": {},
+    "needsReviewFields": [],
+    "segments": [
+      {
+        "flightNumber": "KL1036",
+        "departureDate": null,
+        "departureAirport": "MAN",
+        "arrivalAirport": "AMS",
+        "scheduledDeparture": "2026-08-04T17:30"
+      },
+      {
+        "flightNumber": "MF812",
+        "departureDate": null,
+        "departureAirport": "AMS",
+        "arrivalAirport": "XMN",
+        "scheduledDeparture": "2026-08-04T21:40"
+      },
+      {
+        "flightNumber": "MF825",
+        "departureDate": null,
+        "departureAirport": "XMN",
+        "arrivalAirport": "CDG",
+        "scheduledDeparture": "2026-09-05T00:10"
+      },
+      {
+        "flightNumber": "AF1668",
+        "departureDate": null,
+        "departureAirport": "CDG",
+        "arrivalAirport": "MAN",
+        "scheduledDeparture": "2026-09-05T09:25"
+      }
+    ]
+  }
+}
