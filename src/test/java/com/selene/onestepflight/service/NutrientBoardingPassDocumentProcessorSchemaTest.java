@@ -61,6 +61,26 @@ class NutrientBoardingPassDocumentProcessorSchemaTest {
 	}
 
 	@Test
+	void flightNumberWithTrailingLetterUsesTheSameFormatAsLiveLookup() throws Exception {
+		ObjectMapper mapper = new ObjectMapper();
+		NutrientBoardingPassDocumentProcessor processor =
+				new NutrientBoardingPassDocumentProcessor(mapper);
+		String providerResponse = """
+				{"output":{"data":{"document_type":"ITINERARY","segments":[{
+				"flight_number":"BA 117A","departure_date":"2026-08-24",
+				"departure_airport":"LHR","arrival_airport":"JFK"}]},"metadata":{
+				"document_type":{"confidence":0.99},"segments":[{
+				"flight_number":{"confidence":0.99},"departure_date":{"confidence":0.99},
+				"departure_airport":{"confidence":0.99},"arrival_airport":{"confidence":0.99}}]}}}
+				""";
+
+		var response = processor.toResponse(mapper.readTree(providerResponse));
+
+		assertThat(response.flightNumber()).isEqualTo("BA117A");
+		assertThat(new FlightService(null, null).normalize(response.flightNumber())).isEqualTo("BA117A");
+	}
+
+	@Test
 	void multiSegmentItineraryIsReturnedAsChoicesWithoutSelectingTheFirstLeg() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		NutrientBoardingPassDocumentProcessor processor =

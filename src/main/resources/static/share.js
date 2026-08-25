@@ -31,6 +31,9 @@
       bagDropValue: '{value}号托运行李柜台', baggageBeltValue: '{value}号行李转盘',
       justNow: '刚刚', minutesAgo: '{count}分钟前', hoursAgo: '{count}小时前', daysAgo: '{count}天前', unknownTime: '更新时间未知',
       statusNormal: '航班正常', statusBoarding: '正在登机', statusDelayed: '航班延误', statusDeparted: '已经起飞', statusArrived: '已经到达', statusCancelled: '航班取消',
+      actionConfirmFlightTitle: '正在确认航班', actionConfirmFlightDescription: '旅客正在核对航班号、航线和出发日期。',
+      actionCheckInQuestionTitle: '正在确认值机状态', actionCheckInQuestionDescription: '旅客正在确认是否已经值机或拿到登机牌。',
+      actionBaggageQuestionTitle: '正在确认行李情况', actionBaggageQuestionDescription: '旅客正在确认是否有需要托运的行李。',
       actionCheckInTitle: '先办理值机', actionCheckInDescription: '请前往航空公司值机区域，准备好旅行文件。',
       actionBagDropTitle: '现在托运行李', actionBagDropDescription: '请把需要托运的行李交给航空公司。',
       actionSecurityTitle: '现在前往安检', actionSecurityDescription: '请准备好旅行文件，按照机场指引通过安检。',
@@ -62,6 +65,9 @@
       bagDropValue: 'Bag drop {value}', baggageBeltValue: 'Baggage belt {value}',
       justNow: 'just now', minutesAgo: '{count} min ago', hoursAgo: '{count} hr ago', daysAgo: '{count} days ago', unknownTime: 'update time unavailable',
       statusNormal: 'Flight on time', statusBoarding: 'Boarding now', statusDelayed: 'Flight delayed', statusDeparted: 'Flight departed', statusArrived: 'Flight arrived', statusCancelled: 'Flight cancelled',
+      actionConfirmFlightTitle: 'Confirming the flight', actionConfirmFlightDescription: 'The traveller is checking the flight number, route, and departure date.',
+      actionCheckInQuestionTitle: 'Confirming check-in status', actionCheckInQuestionDescription: 'The traveller is confirming whether check-in or a boarding pass is complete.',
+      actionBaggageQuestionTitle: 'Confirming baggage details', actionBaggageQuestionDescription: 'The traveller is confirming whether any baggage needs to be checked.',
       actionCheckInTitle: 'Check in first', actionCheckInDescription: 'Go to the airline check-in area and have your travel document ready.',
       actionBagDropTitle: 'Drop off checked bags now', actionBagDropDescription: 'Give your checked baggage to the airline.',
       actionSecurityTitle: 'Go through security now', actionSecurityDescription: 'Have your travel document ready and follow the airport signs through security.',
@@ -93,6 +99,9 @@
       bagDropValue: 'Entrega de equipaje {value}', baggageBeltValue: 'Cinta de equipaje {value}',
       justNow: 'ahora mismo', minutesAgo: 'hace {count} min', hoursAgo: 'hace {count} h', daysAgo: 'hace {count} días', unknownTime: 'hora de actualización no disponible',
       statusNormal: 'Vuelo puntual', statusBoarding: 'Embarcando ahora', statusDelayed: 'Vuelo retrasado', statusDeparted: 'Vuelo despegado', statusArrived: 'Vuelo llegado', statusCancelled: 'Vuelo cancelado',
+      actionConfirmFlightTitle: 'Confirmando el vuelo', actionConfirmFlightDescription: 'La persona que viaja está comprobando el número de vuelo, la ruta y la fecha de salida.',
+      actionCheckInQuestionTitle: 'Confirmando la facturación', actionCheckInQuestionDescription: 'La persona que viaja está confirmando si ya ha facturado o recibido la tarjeta de embarque.',
+      actionBaggageQuestionTitle: 'Confirmando el equipaje', actionBaggageQuestionDescription: 'La persona que viaja está confirmando si tiene equipaje para facturar.',
       actionCheckInTitle: 'Primero, factura', actionCheckInDescription: 'Ve a la zona de facturación de la aerolínea y prepara tu documento de viaje.',
       actionBagDropTitle: 'Entrega ahora el equipaje', actionBagDropDescription: 'Entrega a la aerolínea el equipaje que vas a facturar.',
       actionSecurityTitle: 'Pasa ahora el control de seguridad', actionSecurityDescription: 'Prepara tu documento de viaje y sigue las señales del aeropuerto.',
@@ -110,6 +119,9 @@
   };
 
   var actions = {
+    CONFIRM_FLIGHT: ['actionConfirmFlightTitle', 'actionConfirmFlightDescription', null],
+    CHECK_IN_QUESTION: ['actionCheckInQuestionTitle', 'actionCheckInQuestionDescription', null],
+    BAGGAGE_QUESTION: ['actionBaggageQuestionTitle', 'actionBaggageQuestionDescription', null],
     CHECK_IN: ['actionCheckInTitle', 'actionCheckInDescription', 'destinationCheckIn'],
     BAG_DROP: ['actionBagDropTitle', 'actionBagDropDescription', 'destinationBagDrop'],
     SECURITY: ['actionSecurityTitle', 'actionSecurityDescription', 'destinationSecurity'],
@@ -243,7 +255,7 @@
     if (code === 'IN_FLIGHT') return t('destinationFlight', { airport: cleanValue(data.arrivalAirport) || '' }, locale).trim();
     if (code === 'BAGGAGE_CLAIM') return formatBelt(data.arrivalBaggageBelt, locale) || t('destinationBaggage', null, locale);
     var mapped = actions[code];
-    return mapped ? t(mapped[2], null, locale) : null;
+    return mapped && mapped[2] ? t(mapped[2], null, locale) : null;
   }
 
   function statusLabel(value) {

@@ -44,6 +44,10 @@
   var flightRequestController = null;
   var lookupInFlight = false;
   var speakingActive = false;
+  var speechGeneration = 0;
+  var automaticSpeechTimer = null;
+  var lastAutomaticSpeechKey = null;
+  var languageChangeInProgress = false;
   var checkInStatusAnswer = null;
   var qaJourneyEnabled = new URLSearchParams(window.location.search).get('qaJourney') === 'true';
   var activeDialog = null;
@@ -76,60 +80,87 @@
     upload: '上传出行行程单或登机牌',
     uploadHint: '支持航空公司行程单、电子客票、预订确认或登机牌 PDF，也支持这些文件的截图（JPG、JPEG、PNG）。',
     fileLabel: '选择航空公司行程单、电子客票、预订确认或登机牌',
-    speak: '朗读这一步',
+    speak: '朗读', speakAria: '朗读当前内容', stopSpeaking: '停止', stopSpeakingAria: '停止朗读当前内容',
+    helpShort: '求助', helpAria: '请工作人员帮助我', shareShort: '分享', familyAria: '与家属分享实时行程',
     scenarioNormal: '正常', scenarioGateChange: '登机口变更', scenarioDelay: '延误', scenarioCancel: '取消', scenarioStale: '过期数据',
     backStep: '返回上一步', departureLocalTime: '起飞时间（出发地当地时间）', arrivalLocalTime: '到达时间（目的地当地时间）',
     scheduledDepartureLocal: '计划起飞 · 出发地当地时间', estimatedDepartureLocal: '预计起飞 · 出发地当地时间', actualDepartureLocal: '实际起飞 · 出发地当地时间',
     scheduledArrivalLocal: '计划到达 · 目的地当地时间', estimatedArrivalLocal: '预计到达 · 目的地当地时间', actualArrivalLocal: '实际到达 · 目的地当地时间',
     multipleSegments: '多个航段', chooseSegment: '请选择你现在要乘坐的航班', chooseSegmentLead: '选择后才会查询这一个航段的实时信息。', selectSegment: '选择这个航段', selectedSegment: '已选择',
     checkInContext: '确认值机状态', checkInQuestion: '你已经完成值机，或已经拿到登机牌了吗？', checkInQuestionLead: '如果你已经取得登机牌，通常表示已经值机。',
-    boardingPassCheckIn: '已从登机牌判断：你已经值机', boardingPassCheckInLead: '请确认后继续；如果实际情况不同，可以更改。', checkInPresetContinue: '是，继续', thisIsWrong: '这不对',
-    checkInYes: '✓ 是，我已经完成值机', checkInNo: '还没有', checkInUnsure: '我不确定', stopSpeaking: '停止朗读',
+    boardingPassCheckIn: '已从登机牌判断：你已经值机', boardingPassCheckInLead: '请确认后继续；如果实际情况不同，可以更改。', checkInPresetContinue: '继续', thisIsWrong: '这不对',
+    checkInYes: '是', checkInNo: '否', checkInUnsure: '不确定',
+    checkInYesAria: '是，我已经完成值机或拿到登机牌', checkInNoAria: '否，我还没有完成值机', checkInUnsureAria: '我不确定是否已经完成值机',
+    baggageYes: '是', baggageNo: '否', baggageUnsure: '不确定', baggageYesAria: '是，我有需要托运的行李', baggageNoAria: '否，我没有需要托运的行李', baggageUnsureAria: '我不确定是否有需要托运的行李',
+    yesContinue: '是', editFlight: '不是', yesContinueAria: '是，这是我的航班，继续', editFlightAria: '不是，这不是我的航班，修改信息',
+    checkInPresetContinueAria: '继续，确认已经值机', thisIsWrongAria: '这不对，重新选择值机状态',
+    completeShort: '完成', backStep: '返回', backStepAria: '返回上一步', createShare: '创建', previewShare: '预览', shareLink: '分享', sharePng: 'PNG', copyCurrent: '复制', stopShare: '停止',
+    createShareAria: '创建实时共享链接', previewShareAria: '预览家属共享页面', shareLinkAria: '分享实时链接', sharePngAria: '分享或保存 PNG 卡片', copyCurrentAria: '复制当前步骤', stopShareAria: '停止实时共享',
+    refreshShort: '刷新', refreshLiveAria: '刷新实时航班信息', refreshArrivalAria: '重新查询到达行李转盘',
     staffCardInstruction: '请把这个页面拿给工作人员看', globalFooter: '© 2026 OneStep Flight · 无障碍乘机指引',
     allFlightInfo: '查看全部航班信息', flightSourceLabel: '航班信息来源',
     departurePassedTitle: '这趟航班已经离港', departurePassedLead: '点击下方“请工作人员帮忙”，并前往航空公司服务柜台出示给工作人员。',
-    enterNewFlight: '输入新的航班信息', backHome: '返回首页', uploadContext: '选择旅行文件', uploadTitle: '选择或上传文件', chooseFile: '选择文件', previewPng: '预览 PNG 卡片'
+    enterNewFlight: '输入新的航班信息', backHome: '返回首页', uploadContext: '选择旅行文件', uploadTitle: '选择或上传文件', chooseFile: '选择文件', previewPng: '预览', previewPngAria: '预览 PNG 卡片'
   });
   Object.assign(translations.en, {
     upload: 'Upload travel itinerary or boarding pass',
     uploadHint: 'Upload an airline itinerary, e-ticket, booking confirmation, or boarding pass as a PDF or screenshot (JPG, JPEG, or PNG).',
     fileLabel: 'Choose an airline itinerary, e-ticket, booking confirmation, or boarding pass',
-    speak: 'Read this step aloud',
+    speak: 'Read', speakAria: 'Read the current content aloud', stopSpeaking: 'Stop', stopSpeakingAria: 'Stop reading aloud',
+    helpShort: 'Help', helpAria: 'Ask a member of staff for help', shareShort: 'Share', familyAria: 'Share the live journey with family',
     scenarioNormal: 'Normal', scenarioGateChange: 'Gate change', scenarioDelay: 'Delay', scenarioCancel: 'Cancellation', scenarioStale: 'Stale data',
     backStep: 'Go back', departureLocalTime: 'Departure (origin local time)', arrivalLocalTime: 'Arrival (destination local time)',
     scheduledDepartureLocal: 'Scheduled departure · Origin local time', estimatedDepartureLocal: 'Estimated departure · Origin local time', actualDepartureLocal: 'Actual departure · Origin local time',
     scheduledArrivalLocal: 'Scheduled arrival · Destination local time', estimatedArrivalLocal: 'Estimated arrival · Destination local time', actualArrivalLocal: 'Actual arrival · Destination local time',
     multipleSegments: 'Multiple flight segments', chooseSegment: 'Choose the flight you are taking now', chooseSegmentLead: 'We will look up live information only after you choose a segment.', selectSegment: 'Choose this segment', selectedSegment: 'Selected',
     checkInContext: 'Confirm check-in status', checkInQuestion: 'Have you checked in or received your boarding pass?', checkInQuestionLead: 'If you already have a boarding pass, you are usually checked in.',
-    boardingPassCheckIn: 'Your boarding pass indicates that you are checked in', boardingPassCheckInLead: 'Confirm to continue, or change this if it is not correct.', checkInPresetContinue: 'Yes, continue', thisIsWrong: 'This is not correct',
-    checkInYes: '✓ Yes, I have checked in', checkInNo: 'Not yet', checkInUnsure: 'I am not sure', stopSpeaking: 'Stop reading',
+    boardingPassCheckIn: 'Your boarding pass indicates that you are checked in', boardingPassCheckInLead: 'Confirm to continue, or change this if it is not correct.', checkInPresetContinue: 'Continue', thisIsWrong: 'Not right',
+    checkInYes: 'Yes', checkInNo: 'No', checkInUnsure: 'Unsure',
+    checkInYesAria: 'Yes, I have checked in or received my boarding pass', checkInNoAria: 'No, I have not checked in yet', checkInUnsureAria: 'I am unsure whether I have checked in',
+    baggageYes: 'Yes', baggageNo: 'No', baggageUnsure: 'Unsure', baggageYesAria: 'Yes, I have baggage to check', baggageNoAria: 'No, I do not have baggage to check', baggageUnsureAria: 'I am unsure whether I have baggage to check',
+    yesContinue: 'Yes', editFlight: 'No', yesContinueAria: 'Yes, this is my flight; continue', editFlightAria: 'No, this is not my flight; edit the details',
+    checkInPresetContinueAria: 'Continue and confirm that I am checked in', thisIsWrongAria: 'This is not correct; choose my check-in status',
+    completeShort: 'Done', backStep: 'Back', backStepAria: 'Go back to the previous step', createShare: 'Create', previewShare: 'Preview', shareLink: 'Share', sharePng: 'PNG', copyCurrent: 'Copy', stopShare: 'Stop',
+    createShareAria: 'Create a live sharing link', previewShareAria: 'Preview the family sharing page', shareLinkAria: 'Share the live link', sharePngAria: 'Share or save the PNG card', copyCurrentAria: 'Copy the current step', stopShareAria: 'Stop live sharing',
+    refreshShort: 'Refresh', refreshLiveAria: 'Refresh live flight information', refreshArrivalAria: 'Check the arrival baggage belt again',
     staffCardInstruction: 'Show this page to a member of staff', globalFooter: '© 2026 OneStep Flight · Accessible air-travel guidance',
     allFlightInfo: 'View all flight information', flightSourceLabel: 'Flight information source',
     departurePassedTitle: 'This flight has departed', departurePassedLead: 'Select “Ask a member of staff” below, then go to the airline service desk and show it to a staff member.',
-    enterNewFlight: 'Enter new flight information', backHome: 'Return home', uploadContext: 'Choose a travel document', uploadTitle: 'Choose or upload a file', chooseFile: 'Choose file', previewPng: 'Preview PNG card'
+    enterNewFlight: 'Enter new flight information', backHome: 'Return home', uploadContext: 'Choose a travel document', uploadTitle: 'Choose or upload a file', chooseFile: 'Choose file', previewPng: 'Preview', previewPngAria: 'Preview the PNG card'
   });
   Object.assign(translations.es, {
     upload: 'Subir itinerario de viaje o tarjeta de embarque',
     uploadHint: 'Sube un itinerario de la aerolínea, billete electrónico, confirmación de reserva o tarjeta de embarque en PDF o como captura (JPG, JPEG o PNG).',
     fileLabel: 'Elegir itinerario, billete electrónico, confirmación de reserva o tarjeta de embarque',
-    speak: 'Leer este paso en voz alta',
+    speak: 'Leer', speakAria: 'Leer en voz alta el contenido actual', stopSpeaking: 'Detener', stopSpeakingAria: 'Detener la lectura en voz alta',
+    helpShort: 'Ayuda', helpAria: 'Pedir ayuda al personal', shareShort: 'Familia', familyAria: 'Compartir el viaje en directo con la familia',
     scenarioNormal: 'Normal', scenarioGateChange: 'Cambio de puerta', scenarioDelay: 'Retraso', scenarioCancel: 'Cancelación', scenarioStale: 'Datos antiguos',
     backStep: 'Volver', departureLocalTime: 'Salida (hora local de origen)', arrivalLocalTime: 'Llegada (hora local de destino)',
     scheduledDepartureLocal: 'Salida programada · Hora local de origen', estimatedDepartureLocal: 'Salida estimada · Hora local de origen', actualDepartureLocal: 'Salida real · Hora local de origen',
     scheduledArrivalLocal: 'Llegada programada · Hora local de destino', estimatedArrivalLocal: 'Llegada estimada · Hora local de destino', actualArrivalLocal: 'Llegada real · Hora local de destino',
     multipleSegments: 'Varios tramos', chooseSegment: 'Elige el vuelo que vas a tomar ahora', chooseSegmentLead: 'Solo consultaremos la información en directo después de elegir un tramo.', selectSegment: 'Elegir este tramo', selectedSegment: 'Seleccionado',
     checkInContext: 'Confirmar la facturación', checkInQuestion: '¿Ya has facturado o recibido tu tarjeta de embarque?', checkInQuestionLead: 'Si ya tienes una tarjeta de embarque, normalmente ya has facturado.',
-    boardingPassCheckIn: 'La tarjeta de embarque indica que ya has facturado', boardingPassCheckInLead: 'Confirma para continuar o cambia esta respuesta si no es correcta.', checkInPresetContinue: 'Sí, continuar', thisIsWrong: 'Esto no es correcto',
-    checkInYes: '✓ Sí, ya he facturado', checkInNo: 'Todavía no', checkInUnsure: 'No estoy seguro', stopSpeaking: 'Detener la lectura',
+    boardingPassCheckIn: 'La tarjeta de embarque indica que ya has facturado', boardingPassCheckInLead: 'Confirma para continuar o cambia esta respuesta si no es correcta.', checkInPresetContinue: 'Continuar', thisIsWrong: 'No es correcto',
+    checkInYes: 'Sí', checkInNo: 'No', checkInUnsure: 'No sé',
+    checkInYesAria: 'Sí, ya he facturado o recibido mi tarjeta de embarque', checkInNoAria: 'No, todavía no he facturado', checkInUnsureAria: 'No sé si ya he facturado',
+    baggageYes: 'Sí', baggageNo: 'No', baggageUnsure: 'No sé', baggageYesAria: 'Sí, tengo equipaje para facturar', baggageNoAria: 'No, no tengo equipaje para facturar', baggageUnsureAria: 'No sé si tengo equipaje para facturar',
+    yesContinue: 'Sí', editFlight: 'No', yesContinueAria: 'Sí, este es mi vuelo; continuar', editFlightAria: 'No, este no es mi vuelo; modificar los datos',
+    checkInPresetContinueAria: 'Continuar y confirmar que ya he facturado', thisIsWrongAria: 'Esto no es correcto; elegir mi estado de facturación',
+    completeShort: 'Hecho', backStep: 'Volver', backStepAria: 'Volver al paso anterior', createShare: 'Crear', previewShare: 'Vista previa', shareLink: 'Compartir', sharePng: 'PNG', copyCurrent: 'Copiar', stopShare: 'Detener',
+    createShareAria: 'Crear un enlace para compartir en directo', previewShareAria: 'Vista previa de la página familiar', shareLinkAria: 'Compartir el enlace en directo', sharePngAria: 'Compartir o guardar la tarjeta PNG', copyCurrentAria: 'Copiar el paso actual', stopShareAria: 'Detener el enlace en directo',
+    refreshShort: 'Actualizar', refreshLiveAria: 'Actualizar la información del vuelo en directo', refreshArrivalAria: 'Volver a consultar la cinta de equipaje',
     staffCardInstruction: 'Muestre esta página a un miembro del personal', globalFooter: '© 2026 OneStep Flight · Guía accesible para viajar en avión',
     allFlightInfo: 'Ver toda la información del vuelo', flightSourceLabel: 'Fuente de información del vuelo',
     departurePassedTitle: 'Este vuelo ya ha salido', departurePassedLead: 'Pulsa «Pedir ayuda al personal» y ve al mostrador de atención de la aerolínea para mostrárselo al personal.',
-    enterNewFlight: 'Introducir un vuelo nuevo', backHome: 'Volver al inicio', uploadContext: 'Elegir un documento de viaje', uploadTitle: 'Elegir o subir un archivo', chooseFile: 'Elegir archivo', previewPng: 'Vista previa de la tarjeta PNG'
+    enterNewFlight: 'Introducir un vuelo nuevo', backHome: 'Volver al inicio', uploadContext: 'Elegir un documento de viaje', uploadTitle: 'Elegir o subir un archivo', chooseFile: 'Elegir archivo', previewPng: 'Vista previa', previewPngAria: 'Vista previa de la tarjeta PNG'
   });
 
-  translations.zh.copyCard = '复制卡片内容';
-  translations.en.copyCard = 'Copy card content';
-  translations.es.copyCard = 'Copiar contenido de la tarjeta';
+  translations.zh.copyCard = '复制';
+  translations.en.copyCard = 'Copy';
+  translations.es.copyCard = 'Copiar';
+  translations.zh.copyCardAria = '复制工作人员大字卡内容';
+  translations.en.copyCardAria = 'Copy the staff assistance card';
+  translations.es.copyCardAria = 'Copiar la tarjeta de ayuda para el personal';
   Object.assign(translations.zh, { datePlaceholder: '请选择出发日期', preparingPng: '正在准备卡片…' });
   Object.assign(translations.en, { datePlaceholder: 'Choose departure date', preparingPng: 'Preparing card…' });
   Object.assign(translations.es, { datePlaceholder: 'Elige la fecha de salida', preparingPng: 'Preparando tarjeta…' });
@@ -266,6 +297,9 @@
 
   function updateLanguage() {
     Object.keys(translations[currentLocale]).forEach(setText);
+    document.querySelectorAll('[data-i18n-aria]').forEach(function (element) {
+      element.setAttribute('aria-label', t(element.dataset.i18nAria));
+    });
     document.querySelectorAll('[data-placeholder]').forEach(function (element) {
       element.placeholder = t(element.dataset.placeholder);
     });
@@ -282,13 +316,7 @@
       window.OneStepLocale.orderLocaleOptions(localeSelect, currentLocale);
       localeSelect.setAttribute('aria-label', t('languageLabel'));
     }
-    var speakButton = document.querySelector('[data-action="speak"]');
-    if (speakButton) {
-      speakButton.setAttribute('aria-label', speakingActive ? t('stopSpeaking') : t('speak'));
-      speakButton.setAttribute('aria-pressed', String(speakingActive));
-      var speakLabel = speakButton.querySelector('span');
-      if (speakLabel) speakLabel.textContent = speakingActive ? t('stopSpeaking') : t('speak');
-    }
+    updateSpeechButtons();
     document.querySelector('[data-action="home"]').setAttribute('aria-label', localeText('返回欢迎页', 'Return to welcome page', 'Volver a la bienvenida'));
     document.querySelector('.brand-copy small').textContent = localeText('一步乘机', 'Flight assistant', 'Asistente de vuelo');
     var progressBar = document.querySelector('.progress-track');
@@ -309,6 +337,7 @@
     renderRefreshStatus();
     renderConnectivityStatus();
     renderStaffCard();
+    renderShareEntryVisibility();
     persistJourney();
   }
 
@@ -367,6 +396,9 @@
     if (name !== 'loading') {
       document.getElementById('main-content').focus({ preventScroll: true });
     }
+    renderShareEntryVisibility();
+    if (speechViewKey() == null) lastAutomaticSpeechKey = null;
+    queueAutomaticSpeech();
   }
 
   function navigate(name) {
@@ -790,9 +822,10 @@
     var continueButton = document.querySelector('[data-action="continue"]');
     continueButton.disabled = Boolean(departureBlock || flight.requiresUserConfirmation && !conflictsConfirmed);
     var continueLabel = continueButton.querySelector('[data-button-label]') || continueButton;
-    continueLabel.textContent = fromDocument
-      ? localeText('确认并查询实时航班', 'Confirm and check live flight', 'Confirmar y consultar el vuelo real')
-      : t('yesContinue');
+    continueLabel.textContent = t('yesContinue');
+    continueButton.setAttribute('aria-label', fromDocument
+      ? localeText('是，这是我的航班；确认并查询实时航班', 'Yes, this is my flight; confirm and check the live flight', 'Sí, este es mi vuelo; confirmar y consultar el vuelo real')
+      : t('yesContinueAria'));
     renderConflictCard();
     renderFlightChanges();
     updateClockAnchor();
@@ -800,6 +833,8 @@
     renderEvidence();
     renderConnectivityStatus();
     renderSegmentSelector();
+    renderShareEntryVisibility();
+    queueAutomaticSpeech();
   }
 
   function scenarioDisplayName(value) {
@@ -1687,7 +1722,6 @@
 
   function renderJourneyResponse() {
     if (!currentAction) return;
-    stopSpeech(false);
     if (currentAction.stepType === 'COMPLETE') {
       setBilingualActionText(document.querySelector('[data-complete-title]'), currentAction, 'title', true);
       setBilingualActionText(document.querySelector('[data-complete-description]'), currentAction, 'description', false);
@@ -1704,6 +1738,8 @@
       renderJourneyTimeline();
       renderConnectivityStatus();
       announceLatestChangesOr(actionLocaleText(currentAction, 'title'));
+      renderShareEntryVisibility();
+      queueAutomaticSpeech();
       return;
     }
 
@@ -1719,7 +1755,7 @@
     document.querySelector('.screen-step').classList.toggle('is-departure-exception', departureException);
     var exceptionActions = document.querySelector('[data-departure-exception-actions]');
     if (exceptionActions) exceptionActions.hidden = !departureException;
-    document.querySelector('.screen-step .step-assistance-actions').hidden = departureException;
+    document.querySelector('.screen-step .step-assistance-actions').hidden = false;
     var completeButton = document.querySelector('[data-complete-action]');
     completeButton.hidden = question || helpOnlyAction;
     var refreshCooldownRemaining = Math.max(0, REFRESH_COOLDOWN_MS - (Date.now() - lastRefreshAttemptAt));
@@ -1763,8 +1799,14 @@
       renderInFlightDetails();
       if (!helpOnlyAction) {
         var completionLabel = completeButton.querySelector('[data-complete-action-label]') || completeButton;
-        completionLabel.textContent = textFor(completionLabels[currentAction.actionCode]
-          || ['我已完成', 'I have completed this', 'He completado este paso']);
+        var completionAria = textFor(completionLabels[currentAction.actionCode]
+          || ['完成当前行动', 'Complete the current action', 'Completar la acción actual']);
+        completionLabel.textContent = currentAction.actionCode === 'WAIT'
+          ? localeText('刷新', 'Refresh', 'Actualizar') : t('completeShort');
+        completeButton.setAttribute('aria-label', completionAria + localeText(
+          '：' + actionLocaleText(currentAction, 'title'),
+          ': ' + actionLocaleText(currentAction, 'title'),
+          ': ' + actionLocaleText(currentAction, 'title')));
       }
       var sourceNote = document.querySelector('[data-action-source]');
       if (sourceNote) sourceNote.hidden = true;
@@ -1787,6 +1829,8 @@
     renderConnectivityStatus();
     announceLatestChangesOr(actionLocaleText(currentAction, 'title'));
     maybeRefreshArrivalOnEntry();
+    renderShareEntryVisibility();
+    queueAutomaticSpeech();
   }
 
   function locationCode(value) {
@@ -3040,54 +3084,175 @@
     announce(currentError[currentLocale] || currentError.en);
   }
 
-  function stopSpeech(showMessage) {
-    if (!('speechSynthesis' in window)) return;
-    var wasSpeaking = speakingActive || window.speechSynthesis.speaking || window.speechSynthesis.pending;
-    window.speechSynthesis.cancel();
-    speakingActive = false;
-    var button = document.querySelector('[data-action="speak"]');
-    if (button) {
-      button.setAttribute('aria-pressed', 'false');
-      button.setAttribute('aria-label', t('speak'));
-      var label = button.querySelector('span');
-      if (label) label.textContent = t('speak');
+  function speechIsSupported() {
+    return 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
+  }
+
+  function speechViewKey() {
+    if (activeDialog && !activeDialog.hidden) {
+      if (activeDialog.matches('[data-board-overlay]')) return 'dialog:confirm-board';
+      if (activeDialog.matches('[data-landed-overlay]')) return 'dialog:confirm-landed';
     }
+    if (currentScreen === 'confirm' && currentFlight) {
+      if (departureStopReason(currentFlight)) return 'confirm:departure-exception';
+      if (documentSegments.length > 1 && selectedDocumentSegmentIndex == null) return 'confirm:segment-selection';
+      var reviewPanel = document.querySelector('[data-field-review]');
+      if (reviewPanel && !reviewPanel.hidden && reviewPanel.dataset.reviewField) {
+        return 'confirm:field:' + reviewPanel.dataset.reviewField;
+      }
+      return 'confirm:flight:' + normalizeFlightNumber(currentFlight.flightNumber) + ':' + (currentFlight.departureDate || '');
+    }
+    if (currentScreen === 'step' && currentAction) {
+      if (isDepartureStopAction(currentAction)) return 'step:departure-exception';
+      if (currentAction.stepType === 'CHECK_IN_QUESTION') return 'step:check-in-question';
+      if (currentAction.stepType === 'BAGGAGE_QUESTION') return 'step:baggage-question';
+      if (currentAction.stepType === 'ACTION' && currentAction.actionCode) return 'step:action:' + currentAction.actionCode;
+    }
+    if (currentScreen === 'complete' && currentAction && currentAction.stepType === 'COMPLETE') return 'complete';
+    return null;
+  }
+
+  function compactSpeechParts(parts) {
+    var result = [];
+    parts.forEach(function (part) {
+      var value = String(part || '').trim();
+      if (value && result.indexOf(value) < 0) result.push(value);
+    });
+    return result.join(currentLocale === 'zh' ? '。' : '. ');
+  }
+
+  function buildSpeechTextForCurrentView() {
+    if (activeDialog && !activeDialog.hidden) {
+      if (activeDialog.matches('[data-board-overlay]')) return compactSpeechParts([t('boardConfirmTitle'), t('boardConfirmLead')]);
+      if (activeDialog.matches('[data-landed-overlay]')) return compactSpeechParts([t('landedConfirmTitle'), t('landedConfirmLead')]);
+    }
+    if (currentScreen === 'confirm' && currentFlight) {
+      if (departureStopReason(currentFlight)) {
+        return compactSpeechParts([t('departurePassedTitle'), t('departurePassedLead'),
+          formatFlightNumber(currentFlight.flightNumber), formatDate(currentFlight.departureDate)]);
+      }
+      if (documentSegments.length > 1 && selectedDocumentSegmentIndex == null) {
+        return compactSpeechParts([t('chooseSegment'), t('chooseSegmentLead')]);
+      }
+      var reviewPanel = document.querySelector('[data-field-review]');
+      if (reviewPanel && !reviewPanel.hidden) {
+        return compactSpeechParts([
+          document.querySelector('[data-review-question]').textContent,
+          document.querySelector('[data-review-value]').textContent
+        ]);
+      }
+      var route = (currentFlight.departureAirport || '') + ' ' + localeText('到', 'to', 'a') + ' ' + (currentFlight.arrivalAirport || '');
+      var date = formatDateForLocale(currentFlight.departureDate,
+        currentLocale === 'zh' ? 'zh-CN' : currentLocale === 'es' ? 'es-ES' : 'en-GB');
+      return compactSpeechParts([
+        t('confirmTitle'),
+        localeText('航班号 ', 'Flight ', 'Vuelo ') + formatFlightNumber(currentFlight.flightNumber),
+        route,
+        localeText('出发日期 ', 'Departure date ', 'Fecha de salida ') + date
+      ]);
+    }
+    if (currentScreen === 'step' && currentAction) {
+      var title = actionLocaleText(currentAction, 'title');
+      var description = actionLocaleText(currentAction, 'description');
+      if (currentAction.stepType !== 'ACTION') return compactSpeechParts([title, description]);
+      var destination = currentDestinationCopy
+        ? (currentLocale === 'zh' ? currentDestinationCopy.primaryZh : currentLocale === 'es' ? currentDestinationCopy.primaryEs : currentDestinationCopy.primaryEn)
+        : '';
+      var time = document.querySelector('[data-action-time-primary]');
+      return compactSpeechParts([title, destination, time && time.textContent]);
+    }
+    if (currentScreen === 'complete' && currentAction) {
+      return compactSpeechParts([actionLocaleText(currentAction, 'title'), actionLocaleText(currentAction, 'description')]);
+    }
+    return '';
+  }
+
+  function updateSpeechButtons() {
+    document.querySelectorAll('[data-action="speak"]').forEach(function (button) {
+      button.setAttribute('aria-pressed', String(speakingActive));
+      button.setAttribute('aria-label', speakingActive ? t('stopSpeakingAria') : t('speakAria'));
+      var label = button.querySelector('[data-speech-label], span');
+      if (label) label.textContent = speakingActive ? t('stopSpeaking') : t('speak');
+    });
+  }
+
+  function stopSpeech(showMessage) {
+    speechGeneration += 1;
+    window.clearTimeout(automaticSpeechTimer);
+    automaticSpeechTimer = null;
+    var synthesis = speechIsSupported() ? window.speechSynthesis : null;
+    var wasSpeaking = speakingActive || Boolean(synthesis && (synthesis.speaking || synthesis.pending));
+    if (synthesis) {
+      try { synthesis.cancel(); } catch (error) { /* Speech is optional. */ }
+    }
+    speakingActive = false;
+    updateSpeechButtons();
     if (showMessage && wasSpeaking) showToast(localeText('朗读已停止。', 'Reading stopped.', 'Lectura detenida.'));
   }
 
-  function speak() {
-    if (!('speechSynthesis' in window)) {
-      showToast(localeText('当前浏览器不支持朗读。', 'Speech is not supported in this browser.', 'Este navegador no admite la lectura en voz alta.'));
+  function startSpeech(automatic) {
+    var text = buildSpeechTextForCurrentView();
+    if (!text) return;
+    if (!speechIsSupported()) {
+      if (!automatic) showToast(localeText('当前浏览器不支持朗读。', 'Speech is not supported in this browser.', 'Este navegador no admite la lectura en voz alta.'));
       return;
     }
-    if (speakingActive || window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-      stopSpeech(true);
-      return;
-    }
-    var largeTitle = currentAction ? actionLocaleText(currentAction, 'title') : t('welcomeTitle');
-    var destination = currentAction && currentAction.stepType === 'ACTION' && currentDestinationCopy
-      ? (currentLocale === 'zh' ? currentDestinationCopy.primaryZh : currentLocale === 'es' ? currentDestinationCopy.primaryEs : currentDestinationCopy.primaryEn)
-      : '';
-    var text = destination || largeTitle;
+    var generation = ++speechGeneration;
     var utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale === 'es' ? 'es-ES' : 'en-US';
     var voicePrefix = currentLocale === 'zh' ? 'zh' : currentLocale === 'es' ? 'es' : 'en';
-    var matchingVoice = window.speechSynthesis.getVoices().find(function (voice) {
+    var voices = typeof window.speechSynthesis.getVoices === 'function' ? window.speechSynthesis.getVoices() : [];
+    var matchingVoice = voices.find(function (voice) {
       return String(voice.lang || '').toLowerCase().indexOf(voicePrefix) === 0;
     });
     if (matchingVoice) utterance.voice = matchingVoice;
     utterance.rate = 0.88;
-    utterance.onend = function () { stopSpeech(false); };
-    utterance.onerror = function () { stopSpeech(false); };
+    utterance.onend = function () { if (generation === speechGeneration) stopSpeech(false); };
+    utterance.onerror = function () { if (generation === speechGeneration) stopSpeech(false); };
     speakingActive = true;
-    var button = document.querySelector('[data-action="speak"]');
-    if (button) {
-      button.setAttribute('aria-pressed', 'true');
-      button.setAttribute('aria-label', t('stopSpeaking'));
-      var label = button.querySelector('span');
-      if (label) label.textContent = t('stopSpeaking');
+    updateSpeechButtons();
+    try {
+      window.speechSynthesis.speak(utterance);
+    } catch (error) {
+      speakingActive = false;
+      updateSpeechButtons();
+      if (!automatic) showToast(localeText('暂时无法开始朗读。', 'Reading could not start.', 'No se pudo iniciar la lectura.'));
     }
-    window.speechSynthesis.speak(utterance);
+  }
+
+  function queueAutomaticSpeech() {
+    var key = speechViewKey();
+    if (!key) {
+      window.clearTimeout(automaticSpeechTimer);
+      automaticSpeechTimer = null;
+      return;
+    }
+    if (languageChangeInProgress) {
+      window.clearTimeout(automaticSpeechTimer);
+      automaticSpeechTimer = null;
+      lastAutomaticSpeechKey = key;
+      return;
+    }
+    if (key === lastAutomaticSpeechKey) return;
+    window.clearTimeout(automaticSpeechTimer);
+    automaticSpeechTimer = null;
+    stopSpeech(false);
+    lastAutomaticSpeechKey = key;
+    automaticSpeechTimer = window.setTimeout(function () {
+      automaticSpeechTimer = null;
+      if (speechViewKey() === key) startSpeech(true);
+    }, 180);
+  }
+
+  function speak() {
+    if (speakingActive || speechIsSupported() && (window.speechSynthesis.speaking || window.speechSynthesis.pending)) {
+      stopSpeech(true);
+      return;
+    }
+    window.clearTimeout(automaticSpeechTimer);
+    automaticSpeechTimer = null;
+    lastAutomaticSpeechKey = speechViewKey();
+    startSpeech(false);
   }
 
   function showToast(message) {
@@ -3098,6 +3263,7 @@
   }
 
   function showStaff() {
+    stopSpeech(false);
     renderStaffCard();
     openDialog('[data-staff-overlay]', '[data-action="close-staff"]');
   }
@@ -3160,10 +3326,38 @@
   }
 
   function effectiveShareActionCode() {
+    if (currentScreen === 'confirm' && currentFlight) return 'CONFIRM_FLIGHT';
     if (!currentAction) return null;
     if (currentAction.actionCode) return currentAction.actionCode;
-    return currentAction.stepType === 'CHECK_IN_QUESTION' && checkInStatusAnswer === 'unsure'
-      ? 'ASK_FOR_HELP' : null;
+    if (currentAction.stepType === 'CHECK_IN_QUESTION') return 'CHECK_IN_QUESTION';
+    if (currentAction.stepType === 'BAGGAGE_QUESTION') return 'BAGGAGE_QUESTION';
+    if (currentAction.stepType === 'COMPLETE') return 'EXIT_AIRPORT';
+    return null;
+  }
+
+  function canShareCurrentState() {
+    var actionCode = effectiveShareActionCode();
+    var shareableCodes = [
+      'CONFIRM_FLIGHT', 'CHECK_IN_QUESTION', 'BAGGAGE_QUESTION', 'CHECK_IN', 'BAG_DROP',
+      'SECURITY', 'GO_TO_GATE', 'WAIT', 'BOARD_NOW', 'IN_FLIGHT', 'BAGGAGE_CLAIM',
+      'EXIT_AIRPORT', 'ASK_FOR_HELP'
+    ];
+    return Boolean(currentFlight
+      && validDocumentFlightNumber(currentFlight.flightNumber)
+      && validDocumentDepartureDate(currentFlight.departureDate)
+      && /^[A-Z]{3}$/.test(String(currentFlight.departureAirport || '').trim().toUpperCase())
+      && /^[A-Z]{3}$/.test(String(currentFlight.arrivalAirport || '').trim().toUpperCase())
+      && shareableCodes.indexOf(actionCode) >= 0);
+  }
+
+  function renderShareEntryVisibility() {
+    var available = canShareCurrentState();
+    document.querySelectorAll('[data-share-entry]').forEach(function (button) {
+      button.hidden = !available;
+    });
+    document.querySelectorAll('.confirm-assistance-actions, .step-assistance-actions').forEach(function (group) {
+      group.classList.toggle('share-unavailable', !available);
+    });
   }
 
   function shareDestinationValue(actionCode) {
@@ -3179,14 +3373,14 @@
 
   function safeSharePayload() {
     var shareActionCode = effectiveShareActionCode();
-    if (!currentFlight || !currentAction || !shareActionCode) return null;
+    if (!canShareCurrentState() || !shareActionCode) return null;
     return {
       flightNumber: normalizeFlightNumber(currentFlight.flightNumber),
       departureDate: currentFlight.departureDate || null,
       departureAirport: currentFlight.departureAirport || null,
       arrivalAirport: currentFlight.arrivalAirport || null,
       actionCode: shareActionCode,
-      urgency: currentAction.urgency || 'NORMAL',
+      urgency: currentAction && currentAction.urgency || 'NORMAL',
       destination: shareDestinationValue(shareActionCode),
       completedSteps: completedStepCodes(),
       terminal: currentFlight.terminal || null,
@@ -3196,7 +3390,7 @@
       arrivalBaggageBelt: currentFlight.arrivalBaggageBelt || null,
       status: currentFlight.status || null,
       lastUpdated: currentFlight.dataLastUpdatedAt || currentFlight.lastUpdated || new Date().toISOString(),
-      completed: currentAction.stepType === 'COMPLETE' || Boolean(journeyContext && journeyContext.exitedAirport)
+      completed: Boolean(currentAction && currentAction.stepType === 'COMPLETE') || Boolean(journeyContext && journeyContext.exitedAirport)
     };
   }
 
@@ -3232,7 +3426,7 @@
     setHidden(document.querySelector('[data-action="share-family"]'), !active);
     setHidden(document.querySelector('[data-action="stop-family-share"]'), !active);
     var createButton = document.querySelector('[data-action="create-family-share"]');
-    if (createButton) createButton.hidden = active;
+    if (createButton) createButton.hidden = active || !canShareCurrentState();
     var input = document.querySelector('[data-family-share-url]');
     if (input) input.value = url;
     var expiry = document.querySelector('[data-share-expiry]');
@@ -3248,9 +3442,10 @@
   }
 
   function showFamily() {
+    if (!canShareCurrentState() && !(shareSession && shareSession.viewToken)) return;
+    stopSpeech(false);
     renderFamilyShareControls();
-    setShareStatus(!currentFlight || !currentAction
-      ? localeText('请先查询航班并进入乘机步骤。', 'Search for a flight and start the journey first.', 'Busca un vuelo e inicia el viaje primero.') : '');
+    setShareStatus('');
     openDialog('[data-family-overlay]', '[data-action="close-family"]');
     if (currentFlight) prepareFamilyCard().catch(function () {});
     else setPngPreparing(false);
@@ -3264,7 +3459,7 @@
     if (shareCreationInFlight || shareSession && shareSession.viewToken) return;
     var payload = safeSharePayload();
     if (!payload) {
-      setShareStatus(localeText('请先进入乘机步骤。', 'Start the journey first.', 'Inicia el viaje primero.'));
+      setShareStatus(localeText('当前状态无法安全共享。', 'This state cannot be shared safely.', 'Este estado no se puede compartir de forma segura.'));
       return;
     }
     shareCreationInFlight = true;
@@ -3635,6 +3830,7 @@
   }
 
   function showEndConfirmation() {
+    stopSpeech(false);
     openDialog('[data-end-overlay]', '[data-action="cancel-end"]');
   }
 
@@ -3644,10 +3840,13 @@
 
   function showBoardConfirmation() {
     openDialog('[data-board-overlay]', '[data-action="confirm-board"]');
+    queueAutomaticSpeech();
   }
 
   function closeBoardConfirmation() {
+    stopSpeech(false);
     closeDialog('[data-board-overlay]');
+    lastAutomaticSpeechKey = speechViewKey();
   }
 
   function confirmBoarding() {
@@ -3657,10 +3856,13 @@
 
   function showLandedConfirmation() {
     openDialog('[data-landed-overlay]', '[data-action="confirm-landed"]');
+    queueAutomaticSpeech();
   }
 
   function closeLandedConfirmation() {
+    stopSpeech(false);
     closeDialog('[data-landed-overlay]');
+    lastAutomaticSpeechKey = speechViewKey();
   }
 
   function confirmLanding() {
@@ -4016,10 +4218,13 @@
   });
 
   document.querySelector('[data-locale-select]').addEventListener('change', function (event) {
+    languageChangeInProgress = true;
     stopSpeech(false);
     currentLocale = normalizeLocale(event.target.value);
     storeLocale(currentLocale);
     updateLanguage();
+    lastAutomaticSpeechKey = speechViewKey();
+    languageChangeInProgress = false;
   });
 
   document.querySelector('[data-action="manual-submit"]').addEventListener('submit', function (event) {
@@ -4098,6 +4303,7 @@
     pngPreviewButton.type = 'button';
     pngPreviewButton.dataset.action = 'preview-family-card';
     pngPreviewButton.dataset.i18n = 'previewPng';
+    pngPreviewButton.dataset.i18nAria = 'previewPngAria';
     pngShareButton.parentNode.insertBefore(pngPreviewButton, pngShareButton);
   }
   updateLanguage();

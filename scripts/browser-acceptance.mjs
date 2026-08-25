@@ -620,6 +620,8 @@ async function testCurrentRoundLiveUi(port, pages) {
     const back = document.querySelector('.screen-step [data-action="journey-back"]');
     const end = document.querySelector('.journey-end-action');
     const time = document.querySelector('.step-time-status');
+    const actionTitle = document.querySelector('[data-action-title]');
+    const actionTime = document.querySelector('[data-action-time-primary]');
     const label = document.querySelector('[data-action-destination] .destination-label');
     const before = (first, second) => Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
     const enStyle = getComputedStyle(english);
@@ -628,6 +630,7 @@ async function testCurrentRoundLiveUi(port, pages) {
       progressHeight: progress.getBoundingClientRect().height,
       destinationBottom: destination.getBoundingClientRect().bottom,
       zh: destination.textContent.trim(), en: english.textContent.trim(),
+      actionTitle: actionTitle.textContent.trim(), actionTime: actionTime.textContent.trim(),
       englishVisible: !english.hidden && enStyle.display !== 'none',
       englishFirst: before(english, destination), sameColor: enStyle.color === primaryStyle.color,
       labelHidden: !label || label.hidden || getComputedStyle(label).display === 'none',
@@ -652,21 +655,31 @@ async function testCurrentRoundLiveUi(port, pages) {
     && (visual.backBefore === 'none' || visual.backBefore === 'normal' || visual.backBefore === '"none"');
 
   await evaluate(page, `(() => {
-    window.__speechCapture = { cancelCount: 0, speaking: false };
+    window.__speechCapture = { cancelCount: 0, speakCount: 0, speaking: false };
     Object.defineProperty(window, 'SpeechSynthesisUtterance', { configurable: true, value: function (text) { this.text = text; } });
     Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
       get speaking() { return window.__speechCapture.speaking; }, pending: false,
       getVoices() { return [{ lang: 'zh-CN', name: 'Test Chinese' }, { lang: 'en-US', name: 'Test English' }]; },
-      speak(utterance) { window.__speechCapture.speaking = true; window.__speechCapture.text = utterance.text; window.__speechCapture.rate = utterance.rate; window.__speechCapture.lang = utterance.lang; window.__speechCapture.voice = utterance.voice && utterance.voice.lang; },
+      speak(utterance) { window.__speechCapture.speaking = true; window.__speechCapture.speakCount += 1; window.__speechCapture.text = utterance.text; window.__speechCapture.rate = utterance.rate; window.__speechCapture.lang = utterance.lang; window.__speechCapture.voice = utterance.voice && utterance.voice.lang; },
       cancel() { window.__speechCapture.speaking = false; window.__speechCapture.cancelCount += 1; }
     }});
     return true;
   })()`);
   await click(page, '[data-action="speak"]');
-  const speech = await evaluate(page, `window.__speechCapture`);
+  if (await evaluate(page, `window.__speechCapture.speakCount === 0`)) {
+    await click(page, '[data-action="speak"]');
+  }
+  const speech = await evaluate(page, `(() => ({
+    ...window.__speechCapture,
+    everyButtonPressed: Array.from(document.querySelectorAll('[data-action="speak"]'))
+      .every((button) => button.getAttribute('aria-pressed') === 'true')
+  }))()`);
   summary.currentRound.speech = {
     text: speech.text || null, rate: speech.rate || null, lang: speech.lang || null,
-    passed: speech.text === visual.zh && speech.rate >= 0.85 && speech.rate <= 0.9 && speech.lang === 'zh-CN'
+    passed: speech.speakCount === 1 && speech.everyButtonPressed
+      && speech.text.includes(visual.actionTitle) && speech.text.includes(visual.zh)
+      && (visual.actionTime === '—' || speech.text.includes(visual.actionTime))
+      && speech.rate >= 0.85 && speech.rate <= 0.9 && speech.lang === 'zh-CN'
   };
   await click(page, '[data-action="speak"]');
 

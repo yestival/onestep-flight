@@ -11,6 +11,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -29,6 +30,7 @@ import com.selene.onestepflight.dto.ResolvedFlightContext;
 
 @Service
 public class ResolvedFlightService {
+	private static final double DOCUMENT_AIRPORT_HINT_CONFIDENCE_THRESHOLD = 0.65d;
 
 	private final FlightService flightService;
 	private final MultiSourceFlightService multiSourceFlightService;
@@ -52,9 +54,46 @@ public class ResolvedFlightService {
 		MultiSourceFlightSnapshot snapshot = request.demo() && !isBlank(request.demoScenario()) && !request.refresh()
 				? demoSnapshot(demoScenarioProvider.findInitial(normalizedFlightNumber, request.demoScenario()))
 				: loadFlight(normalizedFlightNumber, request.departureDate(), request.demo(), request.demoScenario(),
-						request.document() == null ? null : request.document().departureAirport(),
-						request.document() == null ? null : request.document().arrivalAirport(), request.refresh());
+						documentRouteHint(request.document(), "departure_airport"),
+						documentRouteHint(request.document(), "arrival_airport"), request.refresh());
 		return merge(snapshot, request.document(), null, request.demoScenario());
+	}
+
+	/**
+	 * A document airport is only a route hint, never part of the primary flight
+	 * identity. Keep uncertain values out of provider filters while they have an
+	 * outstanding review marker or low-confidence/mismatched evidence.
+	 */
+	String documentRouteHint(BoardingPassExtractionResponse document, String fieldName) {
+		if (document == null) return null;
+		String value = switch (fieldName) {
+			case "departure_airport" -> document.departureAirport();
+			case "arrival_airport" -> document.arrivalAirport();
+			default -> null;
+		};
+		String normalized = normalizeAirport(value);
+		if (normalized == null || documentFieldNeedsReview(document, fieldName)) return null;
+
+		ExtractedField evidence = document.fields().get(fieldName);
+		if (evidence != null && (!Double.isFinite(evidence.confidence())
+				|| evidence.confidence() < DOCUMENT_AIRPORT_HINT_CONFIDENCE_THRESHOLD
+				|| !normalized.equals(normalizeAirport(evidence.value())))) {
+			return null;
+		}
+		return normalized;
+	}
+
+	private boolean documentFieldNeedsReview(BoardingPassExtractionResponse document, String fieldName) {
+		return document.needsReviewFields().stream()
+				.filter(Objects::nonNull)
+				.map(name -> name.substring(name.lastIndexOf('.') + 1))
+				.anyMatch(fieldName::equalsIgnoreCase);
+	}
+
+	private String normalizeAirport(String value) {
+		if (isBlank(value)) return null;
+		String normalized = value.trim().toUpperCase(Locale.ROOT);
+		return normalized.matches("[A-Z]{3}") ? normalized : null;
 	}
 
 	public ResolvedFlightContext refresh(ResolvedFlightContext previous, boolean refreshRequested) {

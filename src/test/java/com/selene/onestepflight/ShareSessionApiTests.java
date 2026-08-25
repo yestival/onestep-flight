@@ -96,6 +96,42 @@ class ShareSessionApiTests {
 	}
 
 	@Test
+	void earlyJourneyStatesCanEachBeCreatedReadAndUpdated() throws Exception {
+		for (String actionCode : List.of("CONFIRM_FLIGHT", "CHECK_IN_QUESTION", "BAGGAGE_QUESTION")) {
+			JsonNode created = createSession(earlyStateRequest(actionCode, "AWAITING_ANSWER"));
+			String viewToken = created.path("viewToken").asText();
+			String updateToken = created.path("updateToken").asText();
+
+			String initialPublicJson = mockMvc.perform(get("/api/share-sessions/{token}", viewToken))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.flightNumber").value("BA117"))
+					.andExpect(jsonPath("$.departureAirport").value("LHR"))
+					.andExpect(jsonPath("$.arrivalAirport").value("JFK"))
+					.andExpect(jsonPath("$.actionCode").value(actionCode))
+					.andExpect(jsonPath("$.destination").doesNotExist())
+					.andExpect(jsonPath("$.status").value("AWAITING_ANSWER"))
+					.andReturn().getResponse().getContentAsString();
+			assertForbiddenPrivacyFieldsAbsent(initialPublicJson);
+
+			mockMvc.perform(put("/api/share-sessions/{token}", viewToken)
+					.header("X-Share-Update-Token", updateToken)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(earlyStateRequest(actionCode, "ANSWER_CHANGED")))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.actionCode").value(actionCode))
+					.andExpect(jsonPath("$.destination").doesNotExist())
+					.andExpect(jsonPath("$.status").value("ANSWER_CHANGED"));
+
+			String updatedPublicJson = mockMvc.perform(get("/api/share-sessions/{token}", viewToken))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.actionCode").value(actionCode))
+					.andExpect(jsonPath("$.status").value("ANSWER_CHANGED"))
+					.andReturn().getResponse().getContentAsString();
+			assertForbiddenPrivacyFieldsAbsent(updatedPublicJson);
+		}
+	}
+
+	@Test
 	void rejectsWrongUpdateTokenWithoutChangingPublicSnapshot() throws Exception {
 		JsonNode created = createSession();
 		String viewToken = created.path("viewToken").asText();
@@ -202,12 +238,34 @@ class ShareSessionApiTests {
 	}
 
 	private JsonNode createSession() throws Exception {
+		return createSession(initialRequest());
+	}
+
+	private JsonNode createSession(String request) throws Exception {
 		MvcResult result = mockMvc.perform(post("/api/share-sessions")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(initialRequest()))
+				.content(request))
 				.andExpect(status().isCreated())
 				.andReturn();
 		return objectMapper.readTree(result.getResponse().getContentAsString());
+	}
+
+	private String earlyStateRequest(String actionCode, String status) {
+		return """
+				{
+				  "flightNumber": "BA 117",
+				  "departureDate": "2026-08-24",
+				  "departureAirport": "lhr",
+				  "arrivalAirport": "jfk",
+				  "actionCode": "%s",
+				  "urgency": "NORMAL",
+				  "destination": null,
+				  "completedSteps": [],
+				  "status": "%s",
+				  "lastUpdated": "2099-01-01T00:00:00Z",
+				  "completed": false
+				}
+				""".formatted(actionCode, status);
 	}
 
 	private String initialRequest() {

@@ -43,7 +43,7 @@ public class FlightService {
 		}
 
 		String normalized = flightNumber.replaceAll("[\\s-]", "").toUpperCase(Locale.ROOT);
-		if (!normalized.matches("[A-Z0-9]{2,3}\\d{1,4}")) {
+		if (!normalized.matches("[A-Z0-9]{2,3}[0-9]{1,4}[A-Z]?")) {
 			throw new InvalidFlightNumberException();
 		}
 		return normalized;

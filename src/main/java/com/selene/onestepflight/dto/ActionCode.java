@@ -1,6 +1,9 @@
 package com.selene.onestepflight.dto;
 
 public enum ActionCode {
+	CONFIRM_FLIGHT,
+	CHECK_IN_QUESTION,
+	BAGGAGE_QUESTION,
 	CHECK_IN,
 	BAG_DROP,
 	SECURITY,
