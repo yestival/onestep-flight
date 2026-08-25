@@ -12,6 +12,7 @@ import com.selene.onestepflight.dto.Urgency;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -53,7 +54,7 @@ class ShareSessionEntity {
 	@Column(nullable = false, length = 8)
 	private String arrivalAirport;
 
-	@Enumerated(EnumType.STRING)
+	@Convert(converter = ActionCodeAttributeConverter.class)
 	@Column(length = 32)
 	private ActionCode actionCode;
 
@@ -67,7 +68,7 @@ class ShareSessionEntity {
 	@ElementCollection(fetch = FetchType.EAGER)
 	@CollectionTable(name = "share_session_completed_step", joinColumns = @JoinColumn(name = "share_session_id"))
 	@Column(name = "action_code", nullable = false, length = 32)
-	@Enumerated(EnumType.STRING)
+	@Convert(converter = ActionCodeAttributeConverter.class)
 	private Set<ActionCode> completedSteps = EnumSet.noneOf(ActionCode.class);
 
 	@Column(length = 40)

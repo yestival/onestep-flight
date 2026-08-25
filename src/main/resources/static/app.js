@@ -64,13 +64,13 @@
     zh: {
       eyebrow: '你的乘机助手', welcomeTitle: '现在，只做下一步', welcomeLead: '上传旅行文件或输入航班信息，我们每次只告诉你现在应该做什么。',
       upload: '上传预订确认、电子客票或登机牌', uploadHint: '支持 PDF、JPG、JPEG、PNG，也可以上传航空公司预订确认页截图、电子客票行程单或登机牌。', manual: '手动输入航班号', family: '分享行程给家属', privacy: '旅行文件只用于生成乘机指引',
-      languageLabel: '选择语言', back: '返回', backStep: '返回上一步', fileLabel: '选择预订确认、电子客票或登机牌文件', loadingTitle: '正在准备你的乘机步骤', checkDetails: '请确认', confirmTitle: '这是你的航班吗？', departure: '计划起飞', terminal: '航站楼', gate: '登机口', status: '状态', notPublished: '尚未公布', demoDisclaimer: '演示数据', yesContinue: '是，继续', editFlight: '不是，我要修改', manualContext: '填写航班信息', baggageContext: '确认行李情况', manualTitle: '输入你的航班信息', manualLead: '请输入航班号和出发日期。', flightLabel: '航班号', dateLabel: '出发日期', flightPlaceholder: '例如 BA 117', searchLiveFlight: '查询真实航班', useDemoFlight: '使用 BA 117 演示航班', demoHint: '演示数据', nextAction: '现在要做的事', baggageYes: '有，需要托运', baggageNo: '没有', baggageUnsure: '我不确定', speak: '朗读当前步骤', staff: '请工作人员帮忙', contactFamily: '分享行程给家属', endJourney: '结束本次指引', askForHelp: '请工作人员帮忙', destination: '现在前往', couldNotLoad: '暂时无法读取', errorTitle: '实时航班状态暂未更新', errorLead: '请检查输入或网络连接，然后重试。你也可以手动输入航班。', retry: '重试', enterManually: '手动输入航班', askStaff: '请工作人员帮忙', technicalDetails: '查看技术详情', returnHome: '返回首页', endConfirmTitle: '确定要结束本次指引吗？', endConfirmLead: '结束后，当前步骤记录会从这台设备清除。', continueJourney: '继续指引', confirmEnd: '结束并返回首页', refreshLive: '刷新实时信息', refreshArrival: '重新查询行李转盘', reviewNeeded: '需要你确认', reviewCorrect: '这项信息正确', reviewEdit: '信息不对，手动修改', reviewOnSite: '这项未读取到，稍后现场确认', reviewWrongOnSite: '这项不对，标记为现场确认', currentStep: '当前步骤', boardConfirmTitle: '确认你已经登机吗？', boardConfirmLead: '确认后将进入机上模式，抵达后仍会继续指引。', confirmBoard: '是，我已经登机', cancelBoard: '返回，再检查一下', landedConfirmTitle: '确认你已经下飞机吗？', landedConfirmLead: '确认后，我们会继续指引你领取行李或前往出口。', confirmLanded: '是，我已经下飞机', cancelLanded: '返回，再检查一下', flightDuration: '预计飞行时间', estimatedArrival: '预计到达', timeUntilArrival: '距离预计到达', destinationLocalTime: '目的地当地时间', estimatedDeparture: '预计起飞', boardingTime: '登机时间', seat: '座位', airportLocalTime: '机场当地时间', timeUntilDeparture: '距离预计起飞', whyThisStep: '为什么是这一步？', journeyTimeline: '查看本次行程记录', scenarioTitle: '模拟场景', scenarioLead: '仅供本地流程演示。', conflictTitle: '信息有关键冲突，请先停下来', conflictLead: '请向机场工作人员核对文件和实时屏幕后，再继续。', confirmConflicts: '我已向工作人员核对，继续', checkInArea: '值机 / 托运区域', close: '关闭', copyCard: '复制大字卡内容', familyTitle: '分享行程给家属', familyLead: '通过系统分享面板分享 48 小时有效的安全链接或脱敏行程图片。', localhostWarning: '当前是 localhost：其他设备无法打开这个地址。请部署到可访问的网址后再分享。', shareLink: '分享链接', sharePng: '分享图片'
+      languageLabel: '选择语言', back: '返回', backStep: '返回上一步', fileLabel: '选择预订确认、电子客票或登机牌文件', loadingTitle: '正在准备你的乘机步骤', checkDetails: '请确认', confirmTitle: '这是你的航班吗？', departure: '计划起飞', terminal: '航站楼', gate: '登机口', status: '状态', notPublished: '尚未公布', demoDisclaimer: '演示数据', yesContinue: '是，继续', editFlight: '不是，我要修改', manualContext: '填写航班信息', baggageContext: '确认行李情况', manualTitle: '输入你的航班信息', manualLead: '请输入航班号和出发日期。', flightLabel: '航班号', dateLabel: '出发日期', flightPlaceholder: '例如 BA 117', searchLiveFlight: '查询真实航班', useDemoFlight: '使用 BA 117 演示航班', demoHint: '演示数据', nextAction: '现在要做的事', baggageYes: '有，需要托运', baggageNo: '没有', baggageUnsure: '我不确定', speak: '朗读当前步骤', staff: '请工作人员帮忙', contactFamily: '分享行程给家属', endJourney: '结束本次指引', askForHelp: '请工作人员帮忙', destination: '现在前往', couldNotLoad: '暂时无法读取', errorTitle: '实时航班状态暂未更新', errorLead: '请检查输入或网络连接，然后重试。你也可以手动输入航班。', retry: '重试', enterManually: '手动输入航班', askStaff: '请工作人员帮忙', technicalDetails: '查看技术详情', returnHome: '返回首页', endConfirmTitle: '确定要结束本次指引吗？', endConfirmLead: '结束后，当前步骤记录会从这台设备清除。', continueJourney: '继续指引', confirmEnd: '结束并返回首页', refreshLive: '刷新实时信息', refreshArrival: '重新查询行李转盘', reviewNeeded: '需要你确认', reviewCorrect: '这项信息正确', reviewEdit: '信息不对，手动修改', reviewOnSite: '这项未读取到，稍后现场确认', reviewWrongOnSite: '这项不对，标记为现场确认', currentStep: '当前步骤', boardConfirmTitle: '确认你已经登机吗？', boardConfirmLead: '确认后将进入机上模式，抵达后仍会继续指引。', confirmBoard: '是，我已经登机', cancelBoard: '返回，再检查一下', landedConfirmTitle: '确认你已经下飞机吗？', landedConfirmLead: '确认后，我们会继续指引你领取行李或前往出口。', confirmLanded: '是，我已经下飞机', cancelLanded: '返回，再检查一下', flightDuration: '预计飞行时间', estimatedArrival: '预计到达', timeUntilArrival: '距离预计到达', destinationLocalTime: '目的地当地时间', estimatedDeparture: '预计起飞', boardingTime: '登机时间', seat: '座位', airportLocalTime: '机场当地时间', timeUntilDeparture: '距离预计起飞', journeyTimeline: '查看本次行程记录', scenarioTitle: '模拟场景', scenarioLead: '仅供本地流程演示。', conflictTitle: '信息有关键冲突，请先停下来', conflictLead: '请向机场工作人员核对文件和实时屏幕后，再继续。', confirmConflicts: '我已向工作人员核对，继续', checkInArea: '值机 / 托运区域', close: '关闭', copyCard: '复制大字卡内容', familyTitle: '分享行程给家属', familyLead: '通过系统分享面板分享 48 小时有效的安全链接或脱敏行程图片。', localhostWarning: '当前是 localhost：其他设备无法打开这个地址。请部署到可访问的网址后再分享。', shareLink: '分享链接', sharePng: '分享图片'
     },
     en: {
-      eyebrow: 'Your flight companion', welcomeTitle: 'Now, take the next step', welcomeLead: 'Upload a travel document or enter flight details. We show one action at a time.', upload: 'Upload booking confirmation, e-ticket, or boarding pass', uploadHint: 'PDF, JPG, JPEG, and PNG are supported, including booking screenshots, e-ticket itineraries, and boarding passes.', manual: 'Enter flight number manually', family: 'Share journey with family', privacy: 'Your travel document is only used to create flight guidance', languageLabel: 'Choose language', back: 'Back', backStep: 'Go back', fileLabel: 'Choose a booking confirmation, e-ticket, or boarding pass', loadingTitle: 'Preparing your next step', checkDetails: 'Please confirm', confirmTitle: 'Is this your flight?', departure: 'Scheduled departure', terminal: 'Terminal', gate: 'Gate', status: 'Status', notPublished: 'Not published', demoDisclaimer: 'Demo data', yesContinue: 'Yes, continue', editFlight: 'No, edit it', manualContext: 'Enter flight details', baggageContext: 'Confirm your baggage', manualTitle: 'Enter your flight details', manualLead: 'Enter the flight number and departure date.', flightLabel: 'Flight number', dateLabel: 'Departure date', flightPlaceholder: 'For example BA 117', searchLiveFlight: 'Search live flight', useDemoFlight: 'Use BA 117 demo flight', demoHint: 'Demo data', nextAction: 'Your next action', baggageYes: 'Yes, I have bags to check', baggageNo: 'No', baggageUnsure: 'I am not sure', speak: 'Read this step aloud', staff: 'Ask a member of staff', contactFamily: 'Share journey with family', endJourney: 'End this journey', askForHelp: 'Ask a member of staff', destination: 'Go now to', couldNotLoad: 'Unable to load', errorTitle: 'We cannot continue right now', errorLead: 'Check your details or connection, then try again. You can also enter the flight manually or ask staff for help.', retry: 'Try again', enterManually: 'Enter flight manually', askStaff: 'Ask a member of staff', technicalDetails: 'View technical details', returnHome: 'Return home', endConfirmTitle: 'End this journey?', endConfirmLead: 'Your current step history will be cleared from this device.', continueJourney: 'Continue journey', confirmEnd: 'End and return home', refreshLive: 'Refresh live information', refreshArrival: 'Check baggage belt again', reviewNeeded: 'Please confirm this', reviewCorrect: 'This information is correct', reviewEdit: 'This is wrong; edit manually', reviewOnSite: 'Not found; confirm it at the airport', reviewWrongOnSite: 'This is wrong; confirm it at the airport', currentStep: 'Current step', boardConfirmTitle: 'Have you boarded the aircraft?', boardConfirmLead: 'After confirmation, onboard mode will continue guiding you through arrival.', confirmBoard: 'Yes, I have boarded', cancelBoard: 'Go back and check again', landedConfirmTitle: 'Have you left the aircraft?', landedConfirmLead: 'After confirmation, guidance will continue to baggage claim or the exit.', confirmLanded: 'Yes, I have left the aircraft', cancelLanded: 'Go back and check again', flightDuration: 'Estimated flight time', estimatedArrival: 'Expected arrival', timeUntilArrival: 'Until expected arrival', destinationLocalTime: 'Destination local time', estimatedDeparture: 'Estimated departure', boardingTime: 'Boarding time', seat: 'Seat', airportLocalTime: 'Airport local time', timeUntilDeparture: 'Until expected departure', whyThisStep: 'Why this step?', journeyTimeline: 'View this journey timeline', scenarioTitle: 'Simulated scenarios', scenarioLead: 'For local journey demonstrations only.', conflictTitle: 'Critical details conflict — stop here', conflictLead: 'Confirm the document and live screen with airport staff before continuing.', confirmConflicts: 'I confirmed with staff; continue', checkInArea: 'Check-in / bag-drop area', close: 'Close', copyCard: 'Copy card text', familyTitle: 'Share journey with family', familyLead: 'Create a read-only link that remains active for 48 hours. It includes only essential flight and current-step details.', localhostWarning: 'This is localhost. Other devices cannot open this address. Deploy the app to an accessible URL before sharing.', shareLink: 'Share link', sharePng: 'Share image'
+      eyebrow: 'Your flight companion', welcomeTitle: 'Now, take the next step', welcomeLead: 'Upload a travel document or enter flight details. We show one action at a time.', upload: 'Upload booking confirmation, e-ticket, or boarding pass', uploadHint: 'PDF, JPG, JPEG, and PNG are supported, including booking screenshots, e-ticket itineraries, and boarding passes.', manual: 'Enter flight number manually', family: 'Share journey with family', privacy: 'Your travel document is only used to create flight guidance', languageLabel: 'Choose language', back: 'Back', backStep: 'Go back', fileLabel: 'Choose a booking confirmation, e-ticket, or boarding pass', loadingTitle: 'Preparing your next step', checkDetails: 'Please confirm', confirmTitle: 'Is this your flight?', departure: 'Scheduled departure', terminal: 'Terminal', gate: 'Gate', status: 'Status', notPublished: 'Not published', demoDisclaimer: 'Demo data', yesContinue: 'Yes, continue', editFlight: 'No, edit it', manualContext: 'Enter flight details', baggageContext: 'Confirm your baggage', manualTitle: 'Enter your flight details', manualLead: 'Enter the flight number and departure date.', flightLabel: 'Flight number', dateLabel: 'Departure date', flightPlaceholder: 'For example BA 117', searchLiveFlight: 'Search live flight', useDemoFlight: 'Use BA 117 demo flight', demoHint: 'Demo data', nextAction: 'Your next action', baggageYes: 'Yes, I have bags to check', baggageNo: 'No', baggageUnsure: 'I am not sure', speak: 'Read this step aloud', staff: 'Ask a member of staff', contactFamily: 'Share journey with family', endJourney: 'End this journey', askForHelp: 'Ask a member of staff', destination: 'Go now to', couldNotLoad: 'Unable to load', errorTitle: 'We cannot continue right now', errorLead: 'Check your details or connection, then try again. You can also enter the flight manually or ask staff for help.', retry: 'Try again', enterManually: 'Enter flight manually', askStaff: 'Ask a member of staff', technicalDetails: 'View technical details', returnHome: 'Return home', endConfirmTitle: 'End this journey?', endConfirmLead: 'Your current step history will be cleared from this device.', continueJourney: 'Continue journey', confirmEnd: 'End and return home', refreshLive: 'Refresh live information', refreshArrival: 'Check baggage belt again', reviewNeeded: 'Please confirm this', reviewCorrect: 'This information is correct', reviewEdit: 'This is wrong; edit manually', reviewOnSite: 'Not found; confirm it at the airport', reviewWrongOnSite: 'This is wrong; confirm it at the airport', currentStep: 'Current step', boardConfirmTitle: 'Have you boarded the aircraft?', boardConfirmLead: 'After confirmation, onboard mode will continue guiding you through arrival.', confirmBoard: 'Yes, I have boarded', cancelBoard: 'Go back and check again', landedConfirmTitle: 'Have you left the aircraft?', landedConfirmLead: 'After confirmation, guidance will continue to baggage claim or the exit.', confirmLanded: 'Yes, I have left the aircraft', cancelLanded: 'Go back and check again', flightDuration: 'Estimated flight time', estimatedArrival: 'Expected arrival', timeUntilArrival: 'Until expected arrival', destinationLocalTime: 'Destination local time', estimatedDeparture: 'Estimated departure', boardingTime: 'Boarding time', seat: 'Seat', airportLocalTime: 'Airport local time', timeUntilDeparture: 'Until expected departure', journeyTimeline: 'View this journey timeline', scenarioTitle: 'Simulated scenarios', scenarioLead: 'For local journey demonstrations only.', conflictTitle: 'Critical details conflict — stop here', conflictLead: 'Confirm the document and live screen with airport staff before continuing.', confirmConflicts: 'I confirmed with staff; continue', checkInArea: 'Check-in / bag-drop area', close: 'Close', copyCard: 'Copy card text', familyTitle: 'Share journey with family', familyLead: 'Create a read-only link that remains active for 48 hours. It includes only essential flight and current-step details.', localhostWarning: 'This is localhost. Other devices cannot open this address. Deploy the app to an accessible URL before sharing.', shareLink: 'Share link', sharePng: 'Share image'
     },
     es: {
-      eyebrow: 'Tu asistente de vuelo', welcomeTitle: 'Ahora, solo el siguiente paso', welcomeLead: 'Sube un documento de viaje o introduce los datos del vuelo. Mostramos una sola acción cada vez.', upload: 'Subir confirmación de reserva, billete electrónico o tarjeta de embarque', uploadHint: 'Se admiten PDF, JPG, JPEG y PNG, incluidas capturas de reserva, itinerarios electrónicos y tarjetas de embarque.', manual: 'Introducir el vuelo manualmente', family: 'Compartir el viaje con la familia', privacy: 'Tu documento solo se usa para crear las indicaciones del viaje', languageLabel: 'Elegir idioma', back: 'Volver', backStep: 'Volver', fileLabel: 'Elegir confirmación, billete electrónico o tarjeta de embarque', loadingTitle: 'Preparando tu siguiente paso', checkDetails: 'Confirma los datos', confirmTitle: '¿Es este tu vuelo?', departure: 'Salida programada', terminal: 'Terminal', gate: 'Puerta', status: 'Estado', notPublished: 'Aún no publicado', demoDisclaimer: 'Datos de demostración', yesContinue: 'Sí, continuar', editFlight: 'No, modificar', manualContext: 'Datos del vuelo', baggageContext: 'Confirmar el equipaje', manualTitle: 'Introduce los datos de tu vuelo', manualLead: 'Introduce el número de vuelo y la fecha de salida.', flightLabel: 'Número de vuelo', dateLabel: 'Fecha de salida', flightPlaceholder: 'Por ejemplo BA 117', searchLiveFlight: 'Buscar vuelo real', useDemoFlight: 'Usar vuelo BA 117 de demostración', demoHint: 'Datos de demostración', nextAction: 'Tu siguiente acción', baggageYes: 'Sí, tengo equipaje para facturar', baggageNo: 'No', baggageUnsure: 'No estoy seguro', speak: 'Leer este paso', staff: 'Pedir ayuda al personal', contactFamily: 'Compartir el viaje con la familia', endJourney: 'Finalizar este viaje', askForHelp: 'Pedir ayuda al personal', destination: 'Ve ahora a', couldNotLoad: 'No se puede cargar', errorTitle: 'No podemos continuar ahora', errorLead: 'Comprueba los datos o la conexión y vuelve a intentarlo. También puedes introducir el vuelo o pedir ayuda.', retry: 'Reintentar', enterManually: 'Introducir vuelo manualmente', askStaff: 'Pedir ayuda al personal', technicalDetails: 'Ver detalles técnicos', returnHome: 'Volver al inicio', endConfirmTitle: '¿Finalizar este viaje?', endConfirmLead: 'El historial del paso actual se borrará de este dispositivo.', continueJourney: 'Continuar el viaje', confirmEnd: 'Finalizar y volver al inicio', refreshLive: 'Actualizar información', refreshArrival: 'Volver a consultar la cinta', reviewNeeded: 'Confirma este dato', reviewCorrect: 'Este dato es correcto', reviewEdit: 'No es correcto; modificar', reviewOnSite: 'No encontrado; confirmar en el aeropuerto', reviewWrongOnSite: 'No es correcto; confirmar en el aeropuerto', currentStep: 'Paso actual', boardConfirmTitle: '¿Ya has embarcado?', boardConfirmLead: 'Tras confirmar, el modo a bordo seguirá guiándote hasta la llegada.', confirmBoard: 'Sí, ya he embarcado', cancelBoard: 'Volver y comprobar', landedConfirmTitle: '¿Ya has bajado del avión?', landedConfirmLead: 'Tras confirmar, te guiaremos a la recogida de equipaje o a la salida.', confirmLanded: 'Sí, ya he bajado', cancelLanded: 'Volver y comprobar', flightDuration: 'Duración estimada', estimatedArrival: 'Llegada estimada', timeUntilArrival: 'Tiempo hasta la llegada', destinationLocalTime: 'Hora local del destino', estimatedDeparture: 'Salida estimada', boardingTime: 'Hora de embarque', seat: 'Asiento', airportLocalTime: 'Hora local del aeropuerto', timeUntilDeparture: 'Tiempo hasta la salida', whyThisStep: '¿Por qué este paso?', journeyTimeline: 'Ver el historial del viaje', scenarioTitle: 'Escenarios simulados', scenarioLead: 'Solo para probar el recorrido local.', conflictTitle: 'Hay un conflicto importante: detente', conflictLead: 'Confirma el documento y la pantalla con el personal antes de continuar.', confirmConflicts: 'Lo confirmé con el personal; continuar', checkInArea: 'Zona de facturación / entrega', close: 'Cerrar', copyCard: 'Copiar el texto de la tarjeta', familyTitle: 'Compartir el viaje con la familia', familyLead: 'Crea un enlace de solo lectura válido durante 48 horas. Solo incluye el vuelo y el paso actual imprescindibles.', localhostWarning: 'Esta dirección es localhost y no se puede abrir en otro dispositivo. Despliega la aplicación en una URL accesible antes de compartir.', shareLink: 'Compartir enlace', sharePng: 'Compartir imagen'
+      eyebrow: 'Tu asistente de vuelo', welcomeTitle: 'Ahora, solo el siguiente paso', welcomeLead: 'Sube un documento de viaje o introduce los datos del vuelo. Mostramos una sola acción cada vez.', upload: 'Subir confirmación de reserva, billete electrónico o tarjeta de embarque', uploadHint: 'Se admiten PDF, JPG, JPEG y PNG, incluidas capturas de reserva, itinerarios electrónicos y tarjetas de embarque.', manual: 'Introducir el vuelo manualmente', family: 'Compartir el viaje con la familia', privacy: 'Tu documento solo se usa para crear las indicaciones del viaje', languageLabel: 'Elegir idioma', back: 'Volver', backStep: 'Volver', fileLabel: 'Elegir confirmación, billete electrónico o tarjeta de embarque', loadingTitle: 'Preparando tu siguiente paso', checkDetails: 'Confirma los datos', confirmTitle: '¿Es este tu vuelo?', departure: 'Salida programada', terminal: 'Terminal', gate: 'Puerta', status: 'Estado', notPublished: 'Aún no publicado', demoDisclaimer: 'Datos de demostración', yesContinue: 'Sí, continuar', editFlight: 'No, modificar', manualContext: 'Datos del vuelo', baggageContext: 'Confirmar el equipaje', manualTitle: 'Introduce los datos de tu vuelo', manualLead: 'Introduce el número de vuelo y la fecha de salida.', flightLabel: 'Número de vuelo', dateLabel: 'Fecha de salida', flightPlaceholder: 'Por ejemplo BA 117', searchLiveFlight: 'Buscar vuelo real', useDemoFlight: 'Usar vuelo BA 117 de demostración', demoHint: 'Datos de demostración', nextAction: 'Tu siguiente acción', baggageYes: 'Sí, tengo equipaje para facturar', baggageNo: 'No', baggageUnsure: 'No estoy seguro', speak: 'Leer este paso', staff: 'Pedir ayuda al personal', contactFamily: 'Compartir el viaje con la familia', endJourney: 'Finalizar este viaje', askForHelp: 'Pedir ayuda al personal', destination: 'Ve ahora a', couldNotLoad: 'No se puede cargar', errorTitle: 'No podemos continuar ahora', errorLead: 'Comprueba los datos o la conexión y vuelve a intentarlo. También puedes introducir el vuelo o pedir ayuda.', retry: 'Reintentar', enterManually: 'Introducir vuelo manualmente', askStaff: 'Pedir ayuda al personal', technicalDetails: 'Ver detalles técnicos', returnHome: 'Volver al inicio', endConfirmTitle: '¿Finalizar este viaje?', endConfirmLead: 'El historial del paso actual se borrará de este dispositivo.', continueJourney: 'Continuar el viaje', confirmEnd: 'Finalizar y volver al inicio', refreshLive: 'Actualizar información', refreshArrival: 'Volver a consultar la cinta', reviewNeeded: 'Confirma este dato', reviewCorrect: 'Este dato es correcto', reviewEdit: 'No es correcto; modificar', reviewOnSite: 'No encontrado; confirmar en el aeropuerto', reviewWrongOnSite: 'No es correcto; confirmar en el aeropuerto', currentStep: 'Paso actual', boardConfirmTitle: '¿Ya has embarcado?', boardConfirmLead: 'Tras confirmar, el modo a bordo seguirá guiándote hasta la llegada.', confirmBoard: 'Sí, ya he embarcado', cancelBoard: 'Volver y comprobar', landedConfirmTitle: '¿Ya has bajado del avión?', landedConfirmLead: 'Tras confirmar, te guiaremos a la recogida de equipaje o a la salida.', confirmLanded: 'Sí, ya he bajado', cancelLanded: 'Volver y comprobar', flightDuration: 'Duración estimada', estimatedArrival: 'Llegada estimada', timeUntilArrival: 'Tiempo hasta la llegada', destinationLocalTime: 'Hora local del destino', estimatedDeparture: 'Salida estimada', boardingTime: 'Hora de embarque', seat: 'Asiento', airportLocalTime: 'Hora local del aeropuerto', timeUntilDeparture: 'Tiempo hasta la salida', journeyTimeline: 'Ver el historial del viaje', scenarioTitle: 'Escenarios simulados', scenarioLead: 'Solo para probar el recorrido local.', conflictTitle: 'Hay un conflicto importante: detente', conflictLead: 'Confirma el documento y la pantalla con el personal antes de continuar.', confirmConflicts: 'Lo confirmé con el personal; continuar', checkInArea: 'Zona de facturación / entrega', close: 'Cerrar', copyCard: 'Copiar el texto de la tarjeta', familyTitle: 'Compartir el viaje con la familia', familyLead: 'Crea un enlace de solo lectura válido durante 48 horas. Solo incluye el vuelo y el paso actual imprescindibles.', localhostWarning: 'Esta dirección es localhost y no se puede abrir en otro dispositivo. Despliega la aplicación en una URL accesible antes de compartir.', shareLink: 'Compartir enlace', sharePng: 'Compartir imagen'
     }
   };
   translations.zh.technicalDetails = '调试详情';
@@ -805,7 +805,6 @@
     renderFlightChanges();
     updateClockAnchor();
     renderTimeStatus();
-    renderEvidence();
     renderConnectivityStatus();
     renderSegmentSelector();
     renderFlightCorrection();
@@ -1317,22 +1316,17 @@
         showUnusableDocument();
         return;
       }
-      return discoverMissingDocumentDates(result, assessment).then(function (discoveredResult) {
-        if (activeRequest !== requestSequence) return;
-        result = normalizeDocumentResult(discoveredResult);
-        assessment = classifyDocumentResult(result);
-        if (assessment.outcome === 'PARTIAL') {
-          showPartialDocument(result, assessment);
-          return;
-        }
-        setDocumentExtractionState(result, assessment);
-        selectedDocumentSegmentIndex = null;
-        awaitingDocumentSelection = false;
-        navigationHistory.push('welcome');
-        return selectDocumentSegment(usableDocumentSegmentIndexes[0], {
-          activeRequest: activeRequest,
-          fromUpload: true
-        });
+      if (assessment.outcome === 'PARTIAL') {
+        showPartialDocument(result, assessment);
+        return;
+      }
+      setDocumentExtractionState(result, assessment);
+      selectedDocumentSegmentIndex = null;
+      awaitingDocumentSelection = false;
+      navigationHistory.push('welcome');
+      return selectDocumentSegment(usableDocumentSegmentIndexes[0], {
+        activeRequest: activeRequest,
+        fromUpload: true
       });
     }).catch(function (error) {
       if (activeRequest !== requestSequence) return;
@@ -1845,8 +1839,6 @@
           ': ' + actionLocaleText(currentAction, 'title'),
           ': ' + actionLocaleText(currentAction, 'title')));
       }
-      var sourceNote = document.querySelector('[data-action-source]');
-      if (sourceNote) sourceNote.hidden = true;
       document.querySelector('.screen-step').setAttribute('aria-labelledby', 'action-title');
       setStaffForAction(currentAction);
     }
@@ -1858,7 +1850,6 @@
         || !journeyContext || !journeyContext.landed
         || (!currentFlight.live && !currentFlight.demoScenario);
     }
-    renderEvidence();
     renderJourneyTimeline();
     renderTimeStatus();
     renderFlightChanges();
@@ -2146,31 +2137,6 @@
     return count;
   }
 
-  function sourceDescription(action) {
-    var reason = String(action && action.reason || '').trim();
-    if (!reason) return '';
-    if (isDepartureStopReason(reason)) {
-      return localeText(
-        '所选航班的有效起飞时间已经过去，或实时状态已确认离港；普通乘机步骤已经停止。',
-        'The selected flight’s effective departure time has passed, or live status confirms departure. Normal airport steps have stopped.',
-        'La hora de salida efectiva ya pasó o el estado en directo confirma la salida. Se detuvieron los pasos normales.');
-    }
-    if (isDocumentFallbackFlight(currentFlight)) {
-      return localeText(
-        '当前指引仅依据你上传的文件；实时状态暂未更新。',
-        'This guidance uses only the uploaded document; live status has not updated yet.',
-        'Esta guía usa solo el documento subido; el estado en directo aún no se ha actualizado.');
-    }
-    if (currentFlight && currentFlight.demo) {
-      return currentFlight.demoScenario
-        ? localeText('模拟数据', 'Simulated data', 'Datos simulados')
-        : localeText('演示数据', 'Demo data', 'Datos de demostración');
-    }
-    return localeText('依据：你已经完成的步骤、航班时间和最新机场信息。',
-      'Based on your completed steps, flight timing, and the latest available airport information.',
-      'Se basa en los pasos completados, los horarios y la información aeroportuaria disponible.');
-  }
-
   function updateClockAnchor() {
     if (isDocumentFallbackFlight(currentFlight)) return;
     var serverNow = currentFlight && currentFlight.timeContext && currentFlight.timeContext.serverNow;
@@ -2351,18 +2317,6 @@
   function latestFlightChange(type) {
     var changes = currentFlight && Array.isArray(currentFlight.latestChanges) ? currentFlight.latestChanges : [];
     return changes.find(function (change) { return change.type === type; }) || null;
-  }
-
-  function renderEvidence() {
-    var panel = document.querySelector('.step-evidence-panel');
-    var note = document.querySelector('[data-action-source]');
-    var decisionText = currentAction && currentAction.stepType === 'ACTION'
-      ? String(sourceDescription(currentAction) || '').trim() : '';
-    if (panel) panel.hidden = !decisionText;
-    if (note) {
-      note.textContent = decisionText;
-      note.hidden = !decisionText;
-    }
   }
 
   function recordJourneyEvent(type, titleZh, titleEn, reversible, details, stableId) {
@@ -3493,9 +3447,16 @@
       renderFamilyShareControls();
       setShareStatus(localeText('安全链接已准备好。', 'The secure link is ready.', 'El enlace seguro está listo.'));
       return shareSession;
-    }).catch(function () {
+    }).catch(function (error) {
       if (generation !== shareCreationGeneration) return null;
-      setShareStatus(localeText('暂时无法创建链接，请检查网络后重试。', 'The link could not be created. Check your connection and try again.', 'No se pudo crear el enlace. Comprueba la conexión e inténtalo de nuevo.'));
+      var status = Number(error && error.status) || 0;
+      if (status >= 500 && status <= 599) {
+        setShareStatus(localeText('分享服务暂时不可用，请稍后重试。', 'The sharing service is temporarily unavailable. Please try again later.', 'El servicio para compartir no está disponible temporalmente. Inténtalo de nuevo más tarde.'));
+      } else if (!status) {
+        setShareStatus(localeText('网络连接失败，请检查网络后重试。', 'The network connection failed. Check your connection and try again.', 'Falló la conexión de red. Comprueba la conexión e inténtalo de nuevo.'));
+      } else {
+        setShareStatus(localeText('无法创建分享链接，请稍后重试。', 'The sharing link could not be created. Please try again later.', 'No se pudo crear el enlace para compartir. Inténtalo de nuevo más tarde.'));
+      }
       return null;
     }).finally(function () {
       if (generation !== shareCreationGeneration) return;

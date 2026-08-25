@@ -38,9 +38,15 @@ class DocumentResultClassifierTest {
 	}
 
 	@Test
-	void unknownWithCompleteIdentityIsUsable() {
+	void flightNumberAndDepartureDateAloneAreEnoughForLookup() {
+		DocumentFlightSegment lookupReady = segment("BA117", LocalDate.of(2026, 8, 25));
+
+		assertThat(lookupReady.departureAirport()).isNull();
+		assertThat(lookupReady.arrivalAirport()).isNull();
+		assertThat(lookupReady.terminal()).isNull();
+		assertThat(lookupReady.gate()).isNull();
 		assertThat(DocumentResultClassifier.classify(response(DocumentType.UNKNOWN,
-				List.of(segment("BA117", LocalDate.of(2026, 8, 25))))))
+				List.of(lookupReady))))
 				.isEqualTo(DocumentResultClassification.USABLE);
 	}
 

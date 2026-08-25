@@ -46,11 +46,48 @@ class StaticFrontendRegressionTest {
         assertTrue(css.contains("height:var(--manual-control-height);min-height:var(--manual-control-height)"));
         assertTrue(css.contains("border:var(--manual-control-border)"));
         assertTrue(css.contains("padding:var(--manual-control-padding)"));
+        assertTrue(css.contains("--manual-control-font:800 var(--action-control-font-size)/1.05 var(--data)"));
+        assertTrue(css.contains(".manual-fields input{display:block;width:100%;inline-size:100%;max-width:100%;min-width:0;min-height:60px"));
+        assertTrue(css.contains("color:var(--navy);font:var(--manual-control-font)"));
         assertTrue(css.contains("font:var(--manual-control-font)"));
+        assertTrue(css.contains(".date-control-value{display:block;width:100%;min-width:0;padding:0 24px;box-sizing:border-box;color:inherit;font:inherit;line-height:inherit"));
+        assertFalse(css.contains("--manual-control-font:700 16px"));
         assertTrue(css.contains("input.manual-control:focus-visible,.date-control:focus-within"));
         assertTrue(css.contains("input.manual-control:user-invalid,.date-control:has(input:user-invalid)"));
         assertTrue(css.contains("input.manual-control:disabled,.date-control:has(input:disabled)"));
         assertTrue(css.contains(".date-control input[type=\"date\"]{position:absolute;inset:0"));
+    }
+
+    @Test
+    void whyThisStepPanelIsRemovedWithoutRemovingDocumentFailureExplanation() throws IOException {
+        String html = resource("index.html");
+        String css = resource("styles.css");
+        String js = resource("app.js");
+
+        assertFalse(html.contains("step-evidence-panel"));
+        assertFalse(html.contains("data-evidence-panel"));
+        assertFalse(html.contains("data-action-source"));
+        assertFalse(js.contains("whyThisStep"));
+        assertFalse(js.contains("renderEvidence"));
+        assertFalse(js.contains("sourceDescription"));
+        assertFalse(css.contains(".evidence-panel"));
+        assertFalse(css.contains(".evidence-group"));
+        assertTrue(html.contains("data-i18n=\"documentUnusableWhy\">为什么没有读到？"));
+        assertTrue(js.contains("documentUnusableWhy"));
+    }
+
+    @Test
+    void shareCreationSeparatesServerAndNetworkFailures() throws IOException {
+        String js = resource("app.js");
+        String createShare = js.substring(js.indexOf("function createFamilyShare()"),
+                js.indexOf("function shareFamily()"));
+
+        assertTrue(createShare.contains("var status = Number(error && error.status) || 0"));
+        assertTrue(createShare.contains("status >= 500 && status <= 599"));
+        assertTrue(createShare.contains("分享服务暂时不可用，请稍后重试。"));
+        assertTrue(createShare.contains("else if (!status)"));
+        assertTrue(createShare.contains("网络连接失败，请检查网络后重试。"));
+        assertFalse(createShare.contains("暂时无法创建链接，请检查网络后重试。"));
     }
 
     @Test
@@ -102,7 +139,7 @@ class StaticFrontendRegressionTest {
     }
 
     @Test
-    void partialDocumentsDiscoverMissingDatesThenAskOnlyForTheMissingField() throws IOException {
+    void partialDocumentsAskOnlyForTheMissingFieldWithoutPreselectionDateDiscovery() throws IOException {
         String html = resource("index.html");
         String js = resource("app.js");
 
@@ -112,12 +149,18 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("assessment.outcome === 'PARTIAL'"));
         String uploadFlow = js.substring(js.indexOf("function uploadDocument(file)"),
                 js.indexOf("function beginFlight(flight, documentResult)"));
+        assertFalse(uploadFlow.contains("discoverMissingDocumentDates("));
+        assertFalse(uploadFlow.contains("/api/journeys/discover-flight-date"));
         assertTrue(uploadFlow.indexOf("if (assessment.outcome === 'UNUSABLE')")
-                < uploadFlow.indexOf("discoverMissingDocumentDates(result, assessment)"));
-        assertTrue(js.contains("postFlightJson('/api/journeys/discover-flight-date'"));
-        assertTrue(js.contains("flightNumber: normalizeFlightNumber(segments[index].flightNumber)"));
-        assertTrue(js.contains("document: documentForDiscovery"));
-        assertTrue(js.contains("segmentIndex: index"));
+                < uploadFlow.indexOf("if (assessment.outcome === 'PARTIAL')"));
+        assertTrue(uploadFlow.contains("showPartialDocument(result, assessment)"));
+
+        String dateDiscovery = js.substring(js.indexOf("function discoverMissingDocumentDates(result, assessment)"),
+                js.indexOf("function resetDocumentResultState()"));
+        assertTrue(dateDiscovery.contains("postFlightJson('/api/journeys/discover-flight-date'"));
+        assertTrue(dateDiscovery.contains("flightNumber: normalizeFlightNumber(segments[index].flightNumber)"));
+        assertTrue(dateDiscovery.contains("document: documentForDiscovery"));
+        assertTrue(dateDiscovery.contains("segmentIndex: index"));
         assertTrue(js.contains("showPartialDocument(result, assessment)"));
         assertTrue(js.contains("documentSegments = assessment.segments.slice()"));
         assertTrue(js.contains("panel.hidden = !partialDocumentEntry || !documentSegments.length"));
@@ -190,8 +233,12 @@ class StaticFrontendRegressionTest {
         String uploadFlow = js.substring(js.indexOf("function uploadDocument(file)"),
                 js.indexOf("function beginFlight(flight, documentResult)"));
         assertTrue(uploadFlow.contains("if (assessment.segments.length > 1)"));
-        assertTrue(uploadFlow.indexOf("showDocumentSegmentSelection(result, assessment)")
-                < uploadFlow.indexOf("discoverMissingDocumentDates(result, assessment)"));
+        assertTrue(uploadFlow.indexOf("result = normalizeDocumentResult(result)")
+                < uploadFlow.indexOf("var assessment = classifyDocumentResult(result)"));
+        assertTrue(uploadFlow.indexOf("var assessment = classifyDocumentResult(result)")
+                < uploadFlow.indexOf("showDocumentSegmentSelection(result, assessment)"));
+        assertFalse(uploadFlow.contains("discoverMissingDocumentDates("));
+        assertFalse(uploadFlow.contains("/api/journeys/discover-flight-date"));
         String multiSegmentBranch = uploadFlow.substring(
                 uploadFlow.indexOf("if (assessment.segments.length > 1)"),
                 uploadFlow.indexOf("if (assessment.outcome === 'UNUSABLE')"));
@@ -254,7 +301,11 @@ class StaticFrontendRegressionTest {
         assertFalse(normalization.contains("toISOString("));
         assertTrue(uploadFlow.indexOf("result = normalizeDocumentResult(result)")
                 < uploadFlow.indexOf("var assessment = classifyDocumentResult(result)"));
-        assertEquals(2, uploadFlow.split("result = normalizeDocumentResult\\(", -1).length - 1);
+        assertEquals(1, uploadFlow.split("result = normalizeDocumentResult\\(", -1).length - 1);
+        assertTrue(uploadFlow.indexOf("var assessment = classifyDocumentResult(result)")
+                < uploadFlow.indexOf("showDocumentSegmentSelection(result, assessment)"));
+        assertFalse(uploadFlow.contains("discoverMissingDocumentDates("));
+        assertFalse(uploadFlow.contains("/api/journeys/discover-flight-date"));
 
         String multiSegmentBranch = uploadFlow.substring(
                 uploadFlow.indexOf("if (assessment.segments.length > 1)"),
@@ -291,9 +342,6 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("Live flight status has not updated yet. Please confirm whether the itinerary below is yours."));
         assertTrue(css.contains(".welcome-speech-note"));
         assertTrue(js.contains("flight.liveDataSource === 'DOCUMENT_FALLBACK'"));
-        assertTrue(js.contains("当前指引仅依据你上传的文件；实时状态暂未更新。"));
-        assertTrue(js.contains("This guidance uses only the uploaded document; live status has not updated yet."));
-        assertTrue(js.contains("Esta guía usa solo el documento subido; el estado en directo aún no se ha actualizado."));
         assertTrue(js.contains("function normalizeSavedFlight(flight)"));
         assertTrue(js.contains("currentFlight = normalizeSavedFlight(saved.flight)"));
         for (String field : new String[] { "documentScheduledDeparture", "documentBoardingTime",

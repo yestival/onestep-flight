@@ -1,0 +1,50 @@
+{
+  "output": {
+    "data": {
+      "document_type": "ITINERARY",
+      "flight_number_candidates": [
+        { "value": "MF 825", "document_order": 0, "context": "ROUTE" },
+        { "value": "AF 1668", "document_order": 1, "context": "ROUTE" }
+      ],
+      "visible_flight_segment_count": 2,
+      "segments": [
+        {
+          "flight_number": "MF 825",
+          "departure_date": null,
+          "departure_airport": "XMN 高崎机场 T3",
+          "arrival_airport": "Charles de Gaulle",
+          "scheduled_departure": "2026-09-05T00:10",
+          "scheduled_arrival": "2026-09-05T06:55"
+        },
+        {
+          "flight_number": "AF 1668",
+          "departure_date": "2026-09-05",
+          "departure_airport": "CDG 戴高乐机场 T2A",
+          "arrival_airport": "Manchester Airport",
+          "scheduled_departure": "2026-09-05T09:25",
+          "scheduled_arrival": "2026-09-05T10:00"
+        }
+      ]
+    },
+    "metadata": {
+      "document_type": { "confidence": 0.99 },
+      "segments": [
+        {
+          "flight_number": { "confidence": 0.99, "pageIndex": 0 },
+          "departure_airport": { "confidence": 0.98 },
+          "arrival_airport": { "confidence": 0.97 },
+          "scheduled_departure": { "confidence": 0.99 },
+          "scheduled_arrival": { "confidence": 0.98 }
+        },
+        {
+          "flight_number": { "confidence": 0.99, "pageIndex": 0 },
+          "departure_date": { "confidence": 0.99 },
+          "departure_airport": { "confidence": 0.98 },
+          "arrival_airport": { "confidence": 0.97 },
+          "scheduled_departure": { "confidence": 0.99 },
+          "scheduled_arrival": { "confidence": 0.98 }
+        }
+      ]
+    }
+  }
+}

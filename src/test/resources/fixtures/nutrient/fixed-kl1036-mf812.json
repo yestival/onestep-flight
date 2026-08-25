@@ -1,0 +1,49 @@
+{
+  "output": {
+    "data": {
+      "document_type": "ITINERARY",
+      "flight_number_candidates": [
+        { "value": "KL 1036", "document_order": 0, "context": "DEPARTURE_TIME" },
+        { "value": "MF 812", "document_order": 1, "context": "DEPARTURE_TIME" }
+      ],
+      "visible_flight_segment_count": 2,
+      "segments": [
+        {
+          "flight_number": "KL 1036",
+          "departure_date": null,
+          "departure_airport": "MAN Manchester Airport",
+          "arrival_airport": "AMS Amsterdam Schiphol",
+          "scheduled_departure": "2026-08-04T17:30",
+          "scheduled_arrival": "2026-08-04T19:50"
+        },
+        {
+          "flight_number": "MF 812",
+          "departure_date": null,
+          "departure_airport": "AMS Amsterdam Schiphol",
+          "arrival_airport": "XMN 高崎机场",
+          "scheduled_departure": "2026-08-04T21:40",
+          "scheduled_arrival": "2026-08-05T14:20"
+        }
+      ]
+    },
+    "metadata": {
+      "document_type": { "confidence": 0.99 },
+      "segments": [
+        {
+          "flight_number": { "confidence": 0.99, "pageIndex": 0 },
+          "departure_airport": { "confidence": 0.98 },
+          "arrival_airport": { "confidence": 0.98 },
+          "scheduled_departure": { "confidence": 0.99 },
+          "scheduled_arrival": { "confidence": 0.98 }
+        },
+        {
+          "flight_number": { "confidence": 0.99, "pageIndex": 0 },
+          "departure_airport": { "confidence": 0.98 },
+          "arrival_airport": { "confidence": 0.98 },
+          "scheduled_departure": { "confidence": 0.99 },
+          "scheduled_arrival": { "confidence": 0.98 }
+        }
+      ]
+    }
+  }
+}

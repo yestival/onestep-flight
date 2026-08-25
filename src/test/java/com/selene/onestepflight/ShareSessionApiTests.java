@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -96,8 +97,10 @@ class ShareSessionApiTests {
 	}
 
 	@Test
-	void earlyJourneyStatesCanEachBeCreatedReadAndUpdated() throws Exception {
-		for (String actionCode : List.of("CONFIRM_FLIGHT", "CHECK_IN_QUESTION", "BAGGAGE_QUESTION")) {
+	void allShareableActionCodesCanEachBeCreatedReadAndUpdated() throws Exception {
+		for (String actionCode : List.of(
+				"CONFIRM_FLIGHT", "CHECK_IN_QUESTION", "BAGGAGE_QUESTION",
+				"SECURITY", "GO_TO_GATE", "WAIT")) {
 			JsonNode created = createSession(earlyStateRequest(actionCode, "AWAITING_ANSWER"));
 			String viewToken = created.path("viewToken").asText();
 			String updateToken = created.path("updateToken").asText();
@@ -109,6 +112,9 @@ class ShareSessionApiTests {
 					.andExpect(jsonPath("$.arrivalAirport").value("JFK"))
 					.andExpect(jsonPath("$.actionCode").value(actionCode))
 					.andExpect(jsonPath("$.destination").doesNotExist())
+					.andExpect(jsonPath("$.completedSteps", containsInAnyOrder(
+							"CONFIRM_FLIGHT", "CHECK_IN_QUESTION", "BAGGAGE_QUESTION",
+							"SECURITY", "GO_TO_GATE", "WAIT")))
 					.andExpect(jsonPath("$.status").value("AWAITING_ANSWER"))
 					.andReturn().getResponse().getContentAsString();
 			assertForbiddenPrivacyFieldsAbsent(initialPublicJson);
@@ -120,11 +126,17 @@ class ShareSessionApiTests {
 					.andExpect(status().isOk())
 					.andExpect(jsonPath("$.actionCode").value(actionCode))
 					.andExpect(jsonPath("$.destination").doesNotExist())
+					.andExpect(jsonPath("$.completedSteps", containsInAnyOrder(
+							"CONFIRM_FLIGHT", "CHECK_IN_QUESTION", "BAGGAGE_QUESTION",
+							"SECURITY", "GO_TO_GATE", "WAIT")))
 					.andExpect(jsonPath("$.status").value("ANSWER_CHANGED"));
 
 			String updatedPublicJson = mockMvc.perform(get("/api/share-sessions/{token}", viewToken))
 					.andExpect(status().isOk())
 					.andExpect(jsonPath("$.actionCode").value(actionCode))
+					.andExpect(jsonPath("$.completedSteps", containsInAnyOrder(
+							"CONFIRM_FLIGHT", "CHECK_IN_QUESTION", "BAGGAGE_QUESTION",
+							"SECURITY", "GO_TO_GATE", "WAIT")))
 					.andExpect(jsonPath("$.status").value("ANSWER_CHANGED"))
 					.andReturn().getResponse().getContentAsString();
 			assertForbiddenPrivacyFieldsAbsent(updatedPublicJson);
@@ -260,7 +272,10 @@ class ShareSessionApiTests {
 				  "actionCode": "%s",
 				  "urgency": "NORMAL",
 				  "destination": null,
-				  "completedSteps": [],
+				  "completedSteps": [
+				    "CONFIRM_FLIGHT", "CHECK_IN_QUESTION", "BAGGAGE_QUESTION",
+				    "SECURITY", "GO_TO_GATE", "WAIT"
+				  ],
 				  "status": "%s",
 				  "lastUpdated": "2099-01-01T00:00:00Z",
 				  "completed": false
