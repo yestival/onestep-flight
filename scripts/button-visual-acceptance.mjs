@@ -301,7 +301,8 @@ async function initializePage(page) {
       ].forEach(([title, detail], index) => {
         const item = document.createElement('button');
         item.type = 'button';
-        item.disabled = true;
+        item.dataset.action = 'select-segment';
+        item.dataset.segmentIndex = String(index);
         item.className = 'segment-option is-incomplete' + (index ? '' : ' is-selected');
         const strong = document.createElement('strong');
         strong.textContent = title;
@@ -647,6 +648,8 @@ function sceneMeasurementExpression(scene, stopLabel) {
         label,
         accessibleName,
         classes: button.className,
+        darkQuestion: button.classList.contains('button-primary')
+          || Boolean(button.closest('.step-assistance-actions')),
         box: rectValue(buttonRect),
         computedFontSize: parseFloat(buttonStyle.fontSize),
         textFontSizes,
@@ -910,12 +913,16 @@ function validateSemanticIconContracts(run, expectedControls) {
     }
     const personStroke = people[0].stroke;
     const questionStroke = questions[0].stroke;
-    staffColors.push({ person: personStroke, question: questionStroke });
-    if (personStroke !== 'rgb(167, 199, 227)' || questionStroke !== 'rgb(255, 209, 102)') {
+    const expectedQuestionStroke = measurement.darkQuestion
+      ? 'rgb(208, 161, 58)' : 'rgb(154, 107, 0)';
+    staffColors.push({ person: personStroke, question: questionStroke,
+      expectedQuestion: expectedQuestionStroke, darkQuestion: measurement.darkQuestion });
+    if (personStroke !== 'rgb(167, 199, 227)' || questionStroke !== expectedQuestionStroke) {
       fail(measurement.scene, measurement.id, measurement.label,
         'staff-help icon colors do not match the accessible two-color contract',
         { expectedPerson: 'rgb(167, 199, 227)', actualPerson: personStroke,
-          expectedQuestion: 'rgb(255, 209, 102)', actualQuestion: questionStroke });
+          expectedQuestion: expectedQuestionStroke, actualQuestion: questionStroke,
+          darkQuestion: measurement.darkQuestion });
     }
     const rightClearance = questions[0].paintedClearanceCss && questions[0].paintedClearanceCss.right;
     if (!Number.isFinite(rightClearance)) {

@@ -17,46 +17,86 @@ const FIXED_DOCUMENT_SAMPLES = {
   outbound: {
     documentType: 'ITINERARY',
     dataSource: 'FIXED_ACCEPTANCE',
-    extractedAt: '2026-08-25T00:00:00Z',
+    extractedAt: '2026-09-05T00:00:00Z',
     fields: {},
-    needsReviewFields: [],
+    needsReviewFields: ['segments[1].flight_number'],
     segments: [
       {
-        flightNumber: 'MF825', departureDate: '2026-08-25',
+        flightNumber: 'MF825', flightNumberConfidence: 'HIGH',
+        requiresFlightNumberConfirmation: false, flightNumberConfirmedByUser: false,
+        departureDate: '2026-09-05', departureMonthDay: '09-05',
+        dateSource: 'CURRENT_YEAR_FROM_MONTH_DAY',
         departureAirport: 'XMN', arrivalAirport: 'CDG',
-        scheduledDeparture: '2026-08-25T08:00:00+08:00',
-        scheduledArrival: '2026-08-25T14:00:00+02:00',
-        boardingTime: '2026-08-25T07:20:00+08:00', terminal: 'T3', gate: '8'
+        scheduledDeparture: '2026-09-05T00:10:00+08:00',
+        scheduledArrival: '2026-09-05T06:55:00+02:00',
+        terminal: 'T3'
       },
       {
-        flightNumber: 'AF1668', departureDate: '2026-08-25',
+        flightNumber: 'AF1668', flightNumberConfidence: 'MEDIUM',
+        requiresFlightNumberConfirmation: true, flightNumberConfirmedByUser: false,
+        departureDate: '2026-09-05', departureMonthDay: '09-05',
+        dateSource: 'CURRENT_YEAR_FROM_MONTH_DAY',
         departureAirport: 'CDG', arrivalAirport: 'MAN',
-        scheduledDeparture: '2026-08-25T18:00:00+02:00',
-        scheduledArrival: '2026-08-25T18:30:00+01:00',
-        boardingTime: '2026-08-25T17:20:00+02:00', terminal: 'T2E', gate: 'B12'
+        scheduledDeparture: '09:25', scheduledArrival: '10:00', terminal: 'T2E'
       }
     ]
   },
   return: {
     documentType: 'ITINERARY',
     dataSource: 'FIXED_ACCEPTANCE',
-    extractedAt: '2026-08-25T00:00:00Z',
+    extractedAt: '2026-08-04T00:00:00Z',
     fields: {},
     needsReviewFields: [],
     segments: [
       {
-        flightNumber: 'KL1036', departureDate: '2026-09-02',
+        flightNumber: 'KL1036', flightNumberConfidence: 'HIGH',
+        requiresFlightNumberConfirmation: false, flightNumberConfirmedByUser: false,
+        departureDate: '2026-08-04', departureMonthDay: '08-04',
+        dateSource: 'CURRENT_YEAR_FROM_MONTH_DAY',
         departureAirport: 'MAN', arrivalAirport: 'AMS',
-        scheduledDeparture: '2026-09-02T10:40:00+01:00',
-        scheduledArrival: '2026-09-02T13:00:00+02:00',
-        boardingTime: '2026-09-02T10:00:00+01:00', terminal: 'T2', gate: '12'
+        scheduledDeparture: '17:30', scheduledArrival: '19:50', terminal: 'T2'
       },
       {
-        flightNumber: 'MF812', departureDate: '2026-09-02',
+        flightNumber: 'MF812', flightNumberConfidence: 'HIGH',
+        requiresFlightNumberConfirmation: false, flightNumberConfirmedByUser: false,
+        departureDate: '2026-08-04', departureMonthDay: '08-04',
+        dateSource: 'CURRENT_YEAR_FROM_MONTH_DAY',
         departureAirport: 'AMS', arrivalAirport: 'XMN',
-        scheduledDeparture: '2026-09-02T15:30:00+02:00',
-        scheduledArrival: '2026-09-03T09:10:00+08:00',
-        boardingTime: '2026-09-02T14:50:00+02:00', terminal: 'T3', gate: 'G7'
+        scheduledDeparture: '21:40', scheduledArrival: '14:20', terminal: 'T3'
+      }
+    ]
+  },
+  missing: {
+    documentType: 'ITINERARY', dataSource: 'FIXED_ACCEPTANCE', extractedAt: '2026-08-04T00:00:00Z',
+    fields: {}, needsReviewFields: ['segments[1].flight_number'],
+    segments: [
+      {
+        flightNumber: 'KL1036', flightNumberConfidence: 'HIGH', requiresFlightNumberConfirmation: false,
+        flightNumberConfirmedByUser: false, departureDate: '2026-08-04', departureMonthDay: '08-04',
+        dateSource: 'CURRENT_YEAR_FROM_MONTH_DAY', departureAirport: 'MAN', arrivalAirport: 'AMS',
+        scheduledDeparture: '17:30'
+      },
+      {
+        flightNumber: null, flightNumberConfidence: 'LOW', requiresFlightNumberConfirmation: false,
+        flightNumberConfirmedByUser: false, departureDate: null, departureMonthDay: null,
+        dateSource: 'MISSING', departureAirport: 'AMS', arrivalAirport: 'XMN', scheduledDeparture: '21:40'
+      }
+    ]
+  },
+  conflict: {
+    documentType: 'ITINERARY', dataSource: 'FIXED_ACCEPTANCE', extractedAt: '2026-09-05T00:00:00Z',
+    fields: {}, needsReviewFields: ['segments[1].conflict.departure_date'],
+    segments: [
+      {
+        flightNumber: 'MF825', flightNumberConfidence: 'HIGH', requiresFlightNumberConfirmation: false,
+        flightNumberConfirmedByUser: false, departureDate: '2026-09-05', departureMonthDay: '09-05',
+        dateSource: 'CURRENT_YEAR_FROM_MONTH_DAY', departureAirport: 'XMN', arrivalAirport: 'CDG',
+        scheduledDeparture: '00:10'
+      },
+      {
+        flightNumber: 'AF1668', flightNumberConfidence: 'HIGH', requiresFlightNumberConfirmation: false,
+        flightNumberConfirmedByUser: false, departureDate: '2026-09-05', departureMonthDay: '09-05',
+        dateSource: 'CONFLICT', departureAirport: 'CDG', arrivalAirport: 'MAN', scheduledDeparture: '09:25'
       }
     ]
   }
@@ -64,45 +104,45 @@ const FIXED_DOCUMENT_SAMPLES = {
 
 const FIXED_FLIGHTS = {
   MF825: {
-    flightNumber: 'MF825', departureDate: '2026-08-25',
+    flightNumber: 'MF825', departureDate: '2026-09-05',
     departureAirport: 'XMN', departureAirportName: 'Xiamen Gaoqi',
     arrivalAirport: 'CDG', arrivalAirportName: 'Paris Charles de Gaulle',
-    scheduledDeparture: '2026-08-25T08:00:00+08:00',
-    actualDeparture: '2026-08-25T08:12:00+08:00',
-    scheduledArrival: '2026-08-25T14:00:00+02:00',
-    actualArrival: '2026-08-25T14:08:00+02:00',
+    scheduledDeparture: '2026-09-05T00:10:00+08:00',
+    actualDeparture: '2026-09-05T00:22:00+08:00',
+    scheduledArrival: '2026-09-05T06:55:00+02:00',
+    actualArrival: '2026-09-05T07:03:00+02:00',
     terminal: 'T3', gate: '8', checkInDeskOrZone: 'H', seat: '18A',
     status: 'DEPARTED', live: true, verified: true, demo: false,
     liveDataSource: 'FIXED_ACCEPTANCE', dataSource: 'FIXED_ACCEPTANCE',
-    lastUpdated: '2026-08-25T14:30:00Z', dataLastUpdatedAt: '2026-08-25T14:30:00Z',
+    lastUpdated: '2026-09-05T07:00:00Z', dataLastUpdatedAt: '2026-09-05T07:00:00Z',
     conflicts: [], latestChanges: [], requiresUserConfirmation: false,
     providerResults: { fixedAcceptance: { outcome: 'SUCCESS', quality: 'EXACT', fromCache: false } },
     timeContext: {
-      serverNow: '2026-08-25T14:30:00Z', departureUtcOffset: '+08:00', arrivalUtcOffset: '+02:00',
-      effectiveDeparture: '2026-08-25T08:12:00+08:00',
-      effectiveArrival: '2026-08-25T14:08:00+02:00',
-      boardingTime: '2026-08-25T07:20:00+08:00',
-      dataRetrievedAt: '2026-08-25T14:30:00Z', dataLastUpdatedAt: '2026-08-25T14:30:00Z'
+      serverNow: '2026-09-05T07:00:00Z', departureUtcOffset: '+08:00', arrivalUtcOffset: '+02:00',
+      effectiveDeparture: '2026-09-05T00:22:00+08:00',
+      effectiveArrival: '2026-09-05T07:03:00+02:00',
+      boardingTime: '2026-09-04T23:30:00+08:00',
+      dataRetrievedAt: '2026-09-05T07:00:00Z', dataLastUpdatedAt: '2026-09-05T07:00:00Z'
     }
   },
   AF1668: {
-    flightNumber: 'AF1668', departureDate: '2026-08-25',
+    flightNumber: 'AF1668', departureDate: '2026-09-05',
     departureAirport: 'CDG', departureAirportName: 'Paris Charles de Gaulle',
     arrivalAirport: 'MAN', arrivalAirportName: 'Manchester',
-    scheduledDeparture: '2026-08-25T18:00:00+02:00',
-    scheduledArrival: '2026-08-25T18:30:00+01:00',
+    scheduledDeparture: '2026-09-05T09:25:00+02:00',
+    scheduledArrival: '2026-09-05T10:00:00+01:00',
     terminal: 'T2E', gate: 'B12', checkInDeskOrZone: '2E', seat: '22C',
     status: 'SCHEDULED', live: true, verified: true, demo: false,
     liveDataSource: 'FIXED_ACCEPTANCE', dataSource: 'FIXED_ACCEPTANCE',
-    lastUpdated: '2026-08-25T14:30:00Z', dataLastUpdatedAt: '2026-08-25T14:30:00Z',
+    lastUpdated: '2026-09-05T07:00:00Z', dataLastUpdatedAt: '2026-09-05T07:00:00Z',
     conflicts: [], latestChanges: [], requiresUserConfirmation: false,
     providerResults: { fixedAcceptance: { outcome: 'SUCCESS', quality: 'EXACT', fromCache: false } },
     timeContext: {
-      serverNow: '2026-08-25T14:30:00Z', departureUtcOffset: '+02:00', arrivalUtcOffset: '+01:00',
-      effectiveDeparture: '2026-08-25T18:00:00+02:00',
-      effectiveArrival: '2026-08-25T18:30:00+01:00',
-      boardingTime: '2026-08-25T17:20:00+02:00',
-      dataRetrievedAt: '2026-08-25T14:30:00Z', dataLastUpdatedAt: '2026-08-25T14:30:00Z'
+      serverNow: '2026-09-05T07:00:00Z', departureUtcOffset: '+02:00', arrivalUtcOffset: '+01:00',
+      effectiveDeparture: '2026-09-05T09:25:00+02:00',
+      effectiveArrival: '2026-09-05T10:00:00+01:00',
+      boardingTime: '2026-09-05T08:45:00+02:00',
+      dataRetrievedAt: '2026-09-05T07:00:00Z', dataLastUpdatedAt: '2026-09-05T07:00:00Z'
     }
   }
 };
@@ -119,6 +159,17 @@ const summary = {
     repeatCountPerSample: REPEAT_COUNT,
     samples: { outbound: false, return: false },
     noResolverBeforeSelection: false,
+    explicitQueryOnly: false,
+    noSeparateYearInput: false,
+    localSaveOnly: false,
+    mediumConfirmationOnly: false,
+    pageStates: { queryable: false, confirmation: false, missing: false, conflict: false },
+    doubleClickDeduplicated: false,
+    requestCounts: {
+      upload: null, selectSegment: null, openCompletion: null, currentYearDate: null,
+      saveCompletion: null, mediumUnconfirmed: null, mediumConfirmedWithoutQuery: null,
+      explicitQuery: null, rapidDoubleClick: null
+    },
     departedFirst: false,
     backPreservesItinerary: false,
     secondIsNormal: false,
@@ -644,6 +695,30 @@ async function verifyRepeatedSamples(page) {
   await returnFromSegmentSelector(page);
 }
 
+async function verifyFourItineraryStates(page) {
+  await setValue(page, '#locale-select', 'zh');
+  const cases = [
+    ['return', '所有航段均可查询', 'queryable'],
+    ['outbound', '存在待确认字段', 'confirmation'],
+    ['missing', '存在缺失字段', 'missing'],
+    ['conflict', '存在字段冲突', 'conflict']
+  ];
+  const before = await evaluate(page, `window.__fixedAcceptance.resolveRequests.length`);
+  for (const [sample, expectedContext, summaryKey] of cases) {
+    await uploadFixedDocument(page, sample, `state-${summaryKey}`);
+    const state = await evaluate(page, `(() => ({
+      context: document.querySelector('[data-segment-context]').textContent.trim(),
+      title: document.querySelector('[data-segment-title]').textContent.trim(),
+      resolverCount: window.__fixedAcceptance.resolveRequests.length
+    }))()`);
+    requireAcceptance(state.context === expectedContext && state.title && state.resolverCount === before,
+      `itinerary state ${summaryKey} was inconsistent`, state);
+    summary.deterministic.pageStates[summaryKey] = true;
+    await returnFromSegmentSelector(page);
+  }
+  await setValue(page, '#locale-select', 'en');
+}
+
 async function verifyStaffIconContract(page) {
   const controls = await evaluate(page, `Array.from(document.querySelectorAll('[data-action="staff"]')).map((button) => {
     const svg = button.querySelector('svg.staff-help-icon');
@@ -659,9 +734,11 @@ async function verifyStaffIconContract(page) {
           && box.x + box.width + radius <= 26.05 && box.y + box.height + radius <= 24.05 : null
       };
     }) : [];
-    return {
-      classes: button.className,
-      accessibleName: button.getAttribute('aria-label') || button.innerText.trim().replace(/\\s+/g, ' '),
+      return {
+        classes: button.className,
+        darkQuestion: button.classList.contains('button-primary')
+          || Boolean(button.closest('.step-assistance-actions')),
+        accessibleName: button.getAttribute('aria-label') || button.innerText.trim().replace(/\\s+/g, ' '),
       svgCount: button.querySelectorAll('svg').length,
       viewBox: svg && svg.getAttribute('viewBox'),
       ariaHidden: svg && svg.getAttribute('aria-hidden'),
@@ -682,9 +759,11 @@ async function verifyStaffIconContract(page) {
     'staff SVG accessibility or viewBox contract failed', control);
     requireAcceptance(person.length === 1 && question.length === 1,
       'staff SVG must contain one person and one question path', control.geometries);
+    const expectedQuestion = control.darkQuestion ? 'rgb(208, 161, 58)' : 'rgb(154, 107, 0)';
     requireAcceptance(person[0].stroke === 'rgb(167, 199, 227)'
-      && question[0].stroke === 'rgb(255, 209, 102)',
-    'staff SVG colors changed', { person: person[0].stroke, question: question[0].stroke });
+      && question[0].stroke === expectedQuestion,
+    'staff SVG colors changed', { person: person[0].stroke, question: question[0].stroke,
+      expectedQuestion, darkQuestion: control.darkQuestion });
     requireAcceptance(person[0].bounded !== false && question[0].bounded !== false,
       'staff SVG painted geometry leaves the 26 by 24 viewBox', control.geometries);
   }
@@ -731,14 +810,53 @@ async function selectOutboundSegments(page) {
   await uploadFixedDocument(page, 'outbound', 'selected');
   const resolverCount = await evaluate(page, `window.__fixedAcceptance.resolveRequests.length`);
   requireAcceptance(resolverCount === 0, 'resolver ran before final outbound selection', resolverCount);
+  summary.deterministic.requestCounts.upload = 0;
+
+  const selectorState = await evaluate(page, `(() => {
+    const buttons = Array.from(document.querySelectorAll('[data-segment-options] [data-action="select-segment"]'));
+    return buttons.map((button) => ({ disabled: button.disabled, classes: button.className,
+      label: button.innerText.trim().replace(/\\s+/g, ' ') }));
+  })()`);
+  requireAcceptance(selectorState.length === 2 && selectorState.every((segment) => !segment.disabled)
+      && !selectorState[0].classes.includes('is-incomplete')
+      && selectorState[1].classes.includes('is-pending')
+      && !selectorState[1].classes.includes('is-conflict'),
+    'queryable and medium-confidence segments must both remain selectable', selectorState);
 
   await click(page, '[data-segment-options] [data-segment-index="0"]');
+  await waitFor(page, `(() => {
+    const manual = document.querySelector('[data-screen="manual"]');
+    const submit = document.querySelector('[data-action="manual-submit"] button[type="submit"]');
+    return manual && !manual.hidden && submit && !submit.disabled
+      && window.__fixedAcceptance.resolveRequests.length === 0;
+  })()`, 'complete first segment waits for explicit query');
+  await delay(100);
+  requireAcceptance(await evaluate(page, `window.__fixedAcceptance.resolveRequests.length`) === 0,
+    'selecting a complete segment unexpectedly called the live resolver');
+  summary.deterministic.requestCounts.selectSegment = 0;
+  summary.deterministic.requestCounts.openCompletion = 0;
+  summary.deterministic.requestCounts.currentYearDate = 0;
+  summary.deterministic.explicitQueryOnly = true;
+
+  const rapidClicks = await evaluate(page, `(() => {
+    const button = document.querySelector('[data-action="manual-submit"] button[type="submit"]');
+    if (!button || button.disabled) return false;
+    button.click();
+    button.click();
+    return true;
+  })()`);
+  requireAcceptance(rapidClicks, 'query button was unavailable for the double-click guard');
   await waitFor(page, `(() => {
     const panel = document.querySelector('[data-departure-passed-confirmation]');
     return panel && !panel.hidden
       && document.querySelector('[data-departure-passed-flight]').textContent.replace(/\\s+/g, '') === 'MF825'
       && window.__fixedAcceptance.resolveRequests.length === 1;
   })()`, 'departed first segment');
+  requireAcceptance(await evaluate(page, `window.__fixedAcceptance.resolveRequests.length`) === 1,
+    'rapid double-click produced more than one concurrent request');
+  summary.deterministic.doubleClickDeduplicated = true;
+  summary.deterministic.requestCounts.rapidDoubleClick = 1;
+  summary.deterministic.requestCounts.explicitQuery = 1;
   summary.deterministic.departedFirst = true;
   await verifyStaffIconContract(page);
   await verifyStaffSpeech(page);
@@ -758,11 +876,65 @@ async function selectOutboundSegments(page) {
 
   await click(page, '[data-segment-options] [data-segment-index="1"]');
   await waitFor(page, `(() => {
+    const manual = document.querySelector('[data-screen="manual"]');
+    const flight = document.querySelector('#flight-input');
+    const date = document.querySelector('#date-input');
+    const confirmation = document.querySelector('#flight-confirm-input');
+    const primary = document.querySelector('[data-manual-primary]');
+    return manual && !manual.hidden && !document.querySelector('.manual-fields input[maxlength="4"]')
+      && flight && !flight.disabled && flight.value.replace(/\\s+/g, '') === 'AF1668'
+      && date && date.disabled && date.value === '2026-09-05'
+      && confirmation && !confirmation.disabled && !confirmation.checked
+      && primary && primary.dataset.mode === 'save'
+      && window.__fixedAcceptance.resolveRequests.length === 1;
+  })()`, 'medium-confidence segment asks for explicit flight-number confirmation only');
+  summary.deterministic.noSeparateYearInput = true;
+
+  await click(page, '[data-action="manual-submit"] button[type="submit"]');
+  await delay(150);
+  requireAcceptance(await evaluate(page, `window.__fixedAcceptance.resolveRequests.length`) === 1,
+    'unconfirmed medium-confidence flight number reached the live resolver');
+  summary.deterministic.requestCounts.mediumUnconfirmed = 0;
+
+  await evaluate(page, `(() => {
+    const input = document.querySelector('#flight-confirm-input');
+    input.checked = true;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    return input.checked;
+  })()`);
+  await delay(100);
+  requireAcceptance(await evaluate(page, `window.__fixedAcceptance.resolveRequests.length`) === 1,
+    'confirming the flight number unexpectedly called the live resolver');
+  summary.deterministic.mediumConfirmationOnly = true;
+  summary.deterministic.requestCounts.mediumConfirmedWithoutQuery = 0;
+
+  await click(page, '[data-action="manual-submit"] button[type="submit"]');
+  await waitFor(page, `(() => {
+    const selector = document.querySelector('[data-segment-selector]');
+    const second = document.querySelector('[data-segment-options] [data-segment-index="1"]');
+    return selector && !selector.hidden && second && !second.classList.contains('is-pending')
+      && window.__fixedAcceptance.resolveRequests.length === 1;
+  })()`, 'saving confirmation returns to the itinerary without lookup');
+  summary.deterministic.localSaveOnly = true;
+  summary.deterministic.requestCounts.saveCompletion = 0;
+
+  await click(page, '[data-segment-options] [data-segment-index="1"]');
+  await waitFor(page, `(() => {
+    const manual = document.querySelector('[data-screen="manual"]');
+    const flight = document.querySelector('#flight-input');
+    const date = document.querySelector('#date-input');
+    const primary = document.querySelector('[data-manual-primary]');
+    return manual && !manual.hidden && flight.disabled && date.disabled
+      && primary && primary.dataset.mode === 'query'
+      && window.__fixedAcceptance.resolveRequests.length === 1;
+  })()`, 'confirmed segment waits for explicit query');
+  await click(page, '[data-action="manual-submit"] button[type="submit"]');
+  await waitFor(page, `(() => {
     const panel = document.querySelector('[data-departure-passed-confirmation]');
     const heading = document.querySelector('[data-confirm-heading]');
     const continueButton = document.querySelector('.screen-confirm > .confirm-choice-actions [data-action="continue"]');
-    return panel && panel.hidden
-      && heading && getComputedStyle(heading).display !== 'none'
+    return panel && panel.hidden && heading && getComputedStyle(heading).display !== 'none'
       && document.querySelector('#confirm-title').textContent.trim() === '这是你的航班吗？'
       && continueButton && !continueButton.disabled
       && document.querySelector('[data-flight-number]').textContent.replace(/\\s+/g, '') === 'AF1668'
@@ -771,12 +943,23 @@ async function selectOutboundSegments(page) {
   summary.deterministic.secondIsNormal = true;
 
   const requests = await evaluate(page, `window.__fixedAcceptance.resolveRequests`);
-  const expectedSegments = FIXED_DOCUMENT_SAMPLES.outbound.segments;
   requireAcceptance(requests.length === 2
     && requests[0].flightNumber === 'MF825' && requests[0].documentSegmentIndex === 0
     && requests[1].flightNumber === 'AF1668' && requests[1].documentSegmentIndex === 1
-    && JSON.stringify(requests[0].document && requests[0].document.segments) === JSON.stringify(expectedSegments)
-    && JSON.stringify(requests[1].document && requests[1].document.segments) === JSON.stringify(expectedSegments),
+    && requests[0].departureDate === '2026-09-05' && requests[1].departureDate === '2026-09-05'
+    && requests[0].document.segments.length === 2 && requests[1].document.segments.length === 2
+    && requests[0].document.segments[0].flightNumber === 'MF825'
+    && requests[0].document.segments[1].flightNumber === 'AF1668'
+    && requests[0].document.segments[1].departureDate === '2026-09-05'
+    && requests[0].document.segments[1].departureMonthDay === '09-05'
+    && requests[0].document.segments[1].requiresFlightNumberConfirmation === true
+    && requests[0].document.segments[1].flightNumberConfirmedByUser === false
+    && requests[1].document.segments[0].flightNumber === 'MF825'
+    && requests[1].document.segments[1].flightNumber === 'AF1668'
+    && requests[1].document.segments[1].departureDate === '2026-09-05'
+    && requests[1].document.segments[1].departureMonthDay === '09-05'
+    && requests[1].document.segments[1].requiresFlightNumberConfirmation === false
+    && requests[1].document.segments[1].flightNumberConfirmedByUser === true,
   'resolver payload did not preserve the complete ordered itinerary', requests);
   summary.deterministic.resolverPayloadsPreserveAllSegments = true;
 }
@@ -916,6 +1099,7 @@ async function verifyFamilySharing(page) {
 async function runDeterministicContract(page) {
   await testLocalesAndResponsive(page);
   await verifyRepeatedSamples(page);
+  await verifyFourItineraryStates(page);
   await selectOutboundSegments(page);
   await verifyConfirmationSpeech(page);
   await verifyFamilySharing(page);

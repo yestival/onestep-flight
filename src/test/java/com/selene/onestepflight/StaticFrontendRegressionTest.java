@@ -139,33 +139,35 @@ class StaticFrontendRegressionTest {
     }
 
     @Test
-    void partialDocumentsAskOnlyForTheMissingFieldWithoutPreselectionDateDiscovery() throws IOException {
+    void documentCompletionShowsOnlyMissingUntrustedOrConflictingFieldsWithoutYearInput() throws IOException {
         String html = resource("index.html");
         String js = resource("app.js");
 
         assertTrue(js.contains("function classifyDocumentResult(result)"));
         assertTrue(js.contains("if (!segments.length) return { outcome: 'UNUSABLE'"));
-        assertTrue(js.contains("assessment.outcome === 'UNUSABLE'"));
-        assertTrue(js.contains("assessment.outcome === 'PARTIAL'"));
+        String classifier = js.substring(js.indexOf("function classifyDocumentResult(result)"),
+                js.indexOf("function resetDocumentResultState()"));
+        assertTrue(classifier.contains("documentSegmentLookupReady(segment, index, result && result.needsReviewFields)"));
+        assertFalse(classifier.contains("documentSegmentFlightNumberTrusted(segment, index)"));
         String uploadFlow = js.substring(js.indexOf("function uploadDocument(file)"),
                 js.indexOf("function beginFlight(flight, documentResult)"));
         assertFalse(uploadFlow.contains("discoverMissingDocumentDates("));
         assertFalse(uploadFlow.contains("/api/journeys/discover-flight-date"));
-        assertTrue(uploadFlow.indexOf("if (assessment.outcome === 'UNUSABLE')")
-                < uploadFlow.indexOf("if (assessment.outcome === 'PARTIAL')"));
-        assertTrue(uploadFlow.contains("showPartialDocument(result, assessment)"));
-
-        String dateDiscovery = js.substring(js.indexOf("function discoverMissingDocumentDates(result, assessment)"),
-                js.indexOf("function resetDocumentResultState()"));
-        assertTrue(dateDiscovery.contains("postFlightJson('/api/journeys/discover-flight-date'"));
-        assertTrue(dateDiscovery.contains("flightNumber: normalizeFlightNumber(segments[index].flightNumber)"));
-        assertTrue(dateDiscovery.contains("document: documentForDiscovery"));
-        assertTrue(dateDiscovery.contains("segmentIndex: index"));
-        assertTrue(js.contains("showPartialDocument(result, assessment)"));
+        assertFalse(js.contains("function discoverMissingDocumentDates("));
+        assertFalse(js.contains("/api/journeys/discover-flight-date"));
+        assertTrue(uploadFlow.contains("if (assessment.segments.length)"));
+        assertTrue(uploadFlow.contains("showDocumentSegmentSelection(result, assessment)"));
         assertTrue(js.contains("documentSegments = assessment.segments.slice()"));
         assertTrue(js.contains("panel.hidden = !partialDocumentEntry || !documentSegments.length"));
-        assertTrue(js.contains("flightField.hidden = hasFlightNumber && !hasDepartureDate"));
-        assertTrue(js.contains("dateField.hidden = hasDepartureDate && !hasFlightNumber"));
+        assertTrue(js.contains("setManualFieldState(flightField, document.getElementById('flight-input'), !flightTrusted || flightConflict)"));
+        assertTrue(js.contains("setManualFieldState(dateField, document.getElementById('date-input'), !hasDepartureDate || dateConflict)"));
+        assertTrue(js.contains("document.getElementById('flight-confirm-input')"));
+        assertTrue(js.contains("document.getElementById('date-confirm-input')"));
+        assertFalse(js.contains("combineDocumentDepartureYear"));
+        assertFalse(js.contains("year-input"));
+        assertFalse(html.contains("departureYear"));
+        assertFalse(html.contains("data-manual-year"));
+        assertTrue(html.contains("id=\"date-input\" name=\"departureDate\" type=\"date\""));
         assertTrue(html.contains("data-screen=\"document-unusable\""));
         assertTrue(html.contains("data-action=\"choose-other-file\""));
         assertTrue(html.contains("data-manual-partial-notice"));
@@ -187,15 +189,18 @@ class StaticFrontendRegressionTest {
         assertFalse(js.contains("fetchJson('/api/documents/boarding-pass'"));
         assertTrue(js.contains("documentSegments = assessment.segments.slice()"));
         assertTrue(js.contains("usableDocumentSegmentIndexes = assessment.usableIndexes.slice()"));
-        assertFalse(js.contains("selectedDocumentSegmentIndex = usableDocumentSegmentIndexes[0]"));
+        String selectionSetup = js.substring(js.indexOf("function showDocumentSegmentSelection(result, assessment)"),
+                js.indexOf("function selectDocumentSegment(index)"));
+        assertTrue(selectionSetup.contains("selectedDocumentSegmentIndex = null"));
+        assertFalse(selectionSetup.contains("usableDocumentSegmentIndexes[0]"));
         assertTrue(js.contains("function showDocumentSegmentSelection(result, assessment)"));
-        assertTrue(js.contains("function selectDocumentSegment(index, options)"));
+        assertTrue(js.contains("function selectDocumentSegment(index)"));
         assertTrue(js.contains("function returnToDocumentSegmentSelection()"));
         assertTrue(js.contains("selectedDocumentSegmentIndex = null"));
         assertTrue(js.contains("awaitingDocumentSelection = true"));
         assertTrue(js.contains("currentFlight = null"));
         assertTrue(js.contains("item.dataset.action = 'select-segment'"));
-        assertTrue(js.contains("item.disabled = !usable || lookupInFlight"));
+        assertTrue(js.contains("item.disabled = lookupInFlight"));
         assertTrue(js.contains("continueButton.disabled = lookupInFlight || awaitingDocumentSelection || !currentFlight"));
         assertTrue(js.contains("segments: segments, usableIndexes: usableIndexes"));
         assertTrue(js.contains("segments: documentSegments.slice()"));
@@ -229,10 +234,11 @@ class StaticFrontendRegressionTest {
         assertTrue(itinerary.contains("documentSegments.forEach(function (segment, index)"));
         assertTrue(itinerary.contains("is-incomplete"));
         assertTrue(itinerary.contains("aria-current"));
-        assertTrue(itinerary.contains("item.disabled = !usable"));
+        assertTrue(itinerary.contains("item.disabled = lookupInFlight"));
+        assertFalse(itinerary.contains("item.disabled = !usable"));
         String uploadFlow = js.substring(js.indexOf("function uploadDocument(file)"),
                 js.indexOf("function beginFlight(flight, documentResult)"));
-        assertTrue(uploadFlow.contains("if (assessment.segments.length > 1)"));
+        assertTrue(uploadFlow.contains("if (assessment.segments.length)"));
         assertTrue(uploadFlow.indexOf("result = normalizeDocumentResult(result)")
                 < uploadFlow.indexOf("var assessment = classifyDocumentResult(result)"));
         assertTrue(uploadFlow.indexOf("var assessment = classifyDocumentResult(result)")
@@ -240,8 +246,8 @@ class StaticFrontendRegressionTest {
         assertFalse(uploadFlow.contains("discoverMissingDocumentDates("));
         assertFalse(uploadFlow.contains("/api/journeys/discover-flight-date"));
         String multiSegmentBranch = uploadFlow.substring(
-                uploadFlow.indexOf("if (assessment.segments.length > 1)"),
-                uploadFlow.indexOf("if (assessment.outcome === 'UNUSABLE')"));
+                uploadFlow.indexOf("if (assessment.segments.length)"),
+                uploadFlow.indexOf("showUnusableDocument()"));
         assertTrue(multiSegmentBranch.contains("showDocumentSegmentSelection(result, assessment)"));
         assertTrue(multiSegmentBranch.contains("return"));
         assertFalse(multiSegmentBranch.contains("discoverMissingDocumentDates("));
@@ -249,12 +255,21 @@ class StaticFrontendRegressionTest {
         assertFalse(multiSegmentBranch.contains("postFlightJson("));
         assertFalse(multiSegmentBranch.contains("resolveUploadedFlight("));
         assertFalse(multiSegmentBranch.contains("beginFlight("));
-        String selectionFlow = js.substring(js.indexOf("function selectDocumentSegment(index, options)"),
+        String selectionFlow = js.substring(js.indexOf("function selectDocumentSegment(index)"),
                 js.indexOf("function uploadDocument(file)"));
         assertTrue(selectionFlow.indexOf("selectedDocumentSegmentIndex = index")
-                < selectionFlow.indexOf("beginFlight(extractedFlight, selectedResult)"));
-        assertTrue(selectionFlow.indexOf("beginFlight(extractedFlight, selectedResult)")
-                < selectionFlow.indexOf("return resolveUploadedFlight("));
+                < selectionFlow.indexOf("showScreen('manual')"));
+        assertFalse(selectionFlow.contains("resolveUploadedFlight("));
+        assertFalse(selectionFlow.contains("startFlightLookup("));
+        assertFalse(selectionFlow.contains("postFlightJson("));
+        String explicitSubmit = js.substring(
+                js.indexOf("document.querySelector('[data-action=\"manual-submit\"]').addEventListener('submit'"),
+                js.indexOf("['flight-input', 'date-input', 'flight-confirm-input', 'date-confirm-input'].forEach"));
+        assertTrue(explicitSubmit.contains("applyDocumentSegmentCompletion(index, flightNumber, departureDate, {"));
+        assertTrue(explicitSubmit.contains("returnToDocumentSegmentSelection()"));
+        assertFalse(explicitSubmit.contains("startFlightLookup(completed.flightNumber"));
+        assertTrue(explicitSubmit.contains("if (documentSegmentLookupReady(segment, index))"));
+        assertTrue(explicitSubmit.contains("startFlightLookup(segment.flightNumber, segment.departureDate, false, readyResult)"));
         String returnFlow = js.substring(js.indexOf("function returnToDocumentSegmentSelection()"),
                 js.indexOf("function renderErrorMessage()"));
         assertTrue(returnFlow.contains("selectedDocumentSegmentIndex = null"));
@@ -285,6 +300,33 @@ class StaticFrontendRegressionTest {
     }
 
     @Test
+    void liveLookupHasFinalTrustDateConflictAndConcurrencyGuards() throws IOException {
+        String js = resource("app.js");
+        String start = js.substring(js.indexOf("function startFlightLookup("),
+                js.indexOf("function validDocumentFlightNumber("));
+        String guard = js.substring(js.indexOf("function lookupGuardReason("),
+                js.indexOf("function normalizeDocumentSegment("));
+        String submit = js.substring(
+                js.indexOf("document.querySelector('[data-action=\"manual-submit\"]').addEventListener('submit'"),
+                js.indexOf("['flight-input', 'date-input', 'flight-confirm-input', 'date-confirm-input'].forEach"));
+
+        assertTrue(start.contains("if (lookupInFlight) return"));
+        assertTrue(start.contains("var guardReason = lookupGuardReason("));
+        assertTrue(start.indexOf("if (lookupInFlight) return") < start.indexOf("postFlightJson("));
+        assertTrue(start.indexOf("lookupGuardReason(") < start.indexOf("postFlightJson("));
+        assertEquals(1, start.split("postFlightJson\\('/api/journeys/resolve-flight'", -1).length - 1);
+        assertTrue(guard.contains("validDocumentFlightNumber(flightNumber)"));
+        assertTrue(guard.contains("validDocumentDepartureDate(departureDate)"));
+        assertTrue(guard.contains("documentSegmentFlightNumberTrusted(segment, index)"));
+        assertTrue(guard.contains("documentSegmentHasCriticalConflict(index, segment)"));
+        assertFalse(guard.contains("departureAirport"));
+        assertFalse(guard.contains("arrivalAirport"));
+        assertTrue(submit.contains("returnToDocumentSegmentSelection()"));
+        assertTrue(submit.contains("flightConfirmation.checked"));
+        assertTrue(submit.contains("dateConfirmation.checked"));
+    }
+
+    @Test
     void documentSegmentsAreNormalizedBeforeTheirFirstClassification() throws IOException {
         String js = resource("app.js");
         String normalization = js.substring(js.indexOf("function normalizeDocumentSegment(segment)"),
@@ -292,10 +334,12 @@ class StaticFrontendRegressionTest {
         String uploadFlow = js.substring(js.indexOf("function uploadDocument(file)"),
                 js.indexOf("function beginFlight(flight, documentResult)"));
 
-        assertTrue(normalization.contains("segment.departureDate != null"));
+        assertTrue(normalization.contains("String(segment.departureDate || '').trim()"));
         assertTrue(normalization.contains("String(segment.scheduledDeparture || '').trim()"));
         assertTrue(normalization.contains("validDocumentDepartureDate(match[1])"));
-        assertTrue(normalization.contains("Object.assign({}, segment, { departureDate: match[1] })"));
+        assertTrue(normalization.contains("normalized.departureDate = match[1]"));
+        assertTrue(normalization.contains("normalized.departureMonthDay = documentMonthDayFromDate(match[1])"));
+        assertTrue(normalization.contains("validDocumentMonthDay(segment.departureMonthDay)"));
         assertTrue(normalization.contains("normalized.segments.map(normalizeDocumentSegment)"));
         assertFalse(normalization.contains("Date.parse("));
         assertFalse(normalization.contains("toISOString("));
@@ -308,8 +352,8 @@ class StaticFrontendRegressionTest {
         assertFalse(uploadFlow.contains("/api/journeys/discover-flight-date"));
 
         String multiSegmentBranch = uploadFlow.substring(
-                uploadFlow.indexOf("if (assessment.segments.length > 1)"),
-                uploadFlow.indexOf("if (assessment.outcome === 'UNUSABLE')"));
+                uploadFlow.indexOf("if (assessment.segments.length)"),
+                uploadFlow.indexOf("showUnusableDocument()"));
         assertTrue(multiSegmentBranch.contains("showDocumentSegmentSelection(result, assessment)"));
         assertFalse(multiSegmentBranch.contains("discoverMissingDocumentDates("));
         assertFalse(multiSegmentBranch.contains("resolveUploadedFlight("));
@@ -484,14 +528,14 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("No se encontró información del vuelo"));
         assertTrue(js.contains("Only some information was found"));
         assertTrue(js.contains("Solo se encontró parte de la información"));
-        assertTrue(html.contains("styles.css?v=26"));
-        assertTrue(html.contains("locale.js?v=26"));
-        assertTrue(html.contains("app.js?v=26"));
-        assertFalse(html.contains("?v=25"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v26'"));
-        assertFalse(worker.contains("CACHE_PREFIX + 'v25'"));
-        for (String asset : new String[] { "/styles.css?v=26", "/locale.js?v=26", "/app.js?v=26",
-                "/share.css?v=26", "/share.js?v=26" }) {
+        assertTrue(html.contains("styles.css?v=28"));
+        assertTrue(html.contains("locale.js?v=28"));
+        assertTrue(html.contains("app.js?v=28"));
+        assertFalse(html.contains("?v=27"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v28'"));
+        assertFalse(worker.contains("CACHE_PREFIX + 'v27'"));
+        for (String asset : new String[] { "/styles.css?v=28", "/locale.js?v=28", "/app.js?v=28",
+                "/share.css?v=28", "/share.js?v=28" }) {
             assertTrue(worker.contains("'" + asset + "'"), asset);
         }
     }
@@ -514,12 +558,12 @@ class StaticFrontendRegressionTest {
         assertTrue(shareHtml.contains("aria-label=\"Choose language\""));
         assertTrue(index.contains("Now, take the next step"));
         assertTrue(shareHtml.contains("Loading the shared journey"));
-        assertTrue(index.contains("locale.js?v=26"));
-        assertTrue(shareHtml.contains("/share.css?v=26"));
-        assertTrue(shareHtml.contains("/locale.js?v=26"));
-        assertTrue(shareHtml.contains("/share.js?v=26"));
-        assertFalse(index.contains("?v=25"));
-        assertFalse(shareHtml.contains("?v=25"));
+        assertTrue(index.contains("locale.js?v=28"));
+        assertTrue(shareHtml.contains("/share.css?v=28"));
+        assertTrue(shareHtml.contains("/locale.js?v=28"));
+        assertTrue(shareHtml.contains("/share.js?v=28"));
+        assertFalse(index.contains("?v=27"));
+        assertFalse(shareHtml.contains("?v=27"));
         assertTrue(app.contains("window.OneStepLocale.resolveLocalePreference(stored, navigator.languages, navigator.language)"));
         assertTrue(shareJs.contains("window.OneStepLocale.resolveLocalePreference(stored, navigator.languages, navigator.language)"));
         assertTrue(app.contains("window.OneStepLocale.orderLocaleOptions(localeSelect, currentLocale)"));
@@ -572,10 +616,10 @@ class StaticFrontendRegressionTest {
 
         assertTrue(css.contains("--icon-yes:#188A50"));
         assertTrue(css.contains("--icon-no:#C83F4D"));
-        assertTrue(css.contains("--icon-unsure:#B98200"));
+        assertTrue(css.contains("--icon-unsure:#9A6B00"));
         assertTrue(css.contains("--icon-yes-on-dark:#72E3A5"));
         assertTrue(css.contains("--icon-no-on-dark:#FF8F99"));
-        assertTrue(css.contains("--icon-unsure-on-dark:#FFD166"));
+        assertTrue(css.contains("--icon-unsure-on-dark:#D0A13A"));
         assertTrue(css.contains(".answer-choice-grid{grid-template-columns:repeat(3,minmax(44px,1fr))}"));
         assertTrue(css.contains(".two-choice-grid,.confirm-assistance-actions,.short-action-grid,.screen-confirm .confirm-choice-actions{display:grid;grid-template-columns:repeat(2,minmax(44px,1fr))}"));
         assertTrue(css.contains(".step-assistance-actions{grid-template-columns:repeat(3,minmax(44px,1fr))}"));
@@ -588,7 +632,9 @@ class StaticFrontendRegressionTest {
         assertTrue(css.contains(".button-primary .icon-no{color:var(--icon-no-on-dark)}"));
         assertTrue(css.contains(".button-primary .icon-unsure{color:var(--icon-unsure-on-dark)}"));
         assertTrue(css.contains(".staff-help-button .staff-icon-person{color:var(--staff-person-on-dark);stroke:var(--staff-person-on-dark)}"));
-        assertTrue(css.contains(".staff-help-button .staff-icon-question{color:var(--icon-unsure-on-dark);stroke:var(--icon-unsure-on-dark)}"));
+        assertTrue(css.contains(".staff-icon-question{color:var(--icon-unsure);stroke:var(--icon-unsure)}"));
+        assertTrue(css.contains(".button-primary.staff-help-button .staff-icon-question,.step-assistance-actions .staff-help-button .staff-icon-question{color:var(--icon-unsure-on-dark);stroke:var(--icon-unsure-on-dark)}"));
+        assertFalse(css.contains("}.staff-help-button .staff-icon-question{color:var(--icon-unsure-on-dark)"));
         assertTrue(css.contains("stroke-width:2.9"));
         assertTrue(css.contains(":root{--action-control-font-size:clamp(21px,6vw,27px)}"));
         assertTrue(css.contains(":root{--action-control-font-size:18px;--action-control-icon-size:36px;--action-control-text-icon-size:28px}"));
@@ -642,7 +688,8 @@ class StaticFrontendRegressionTest {
         assertTrue(html.contains("class=\"support-button assistance-button staff-help-button\" type=\"button\" data-action=\"staff\""));
         assertTrue(html.contains("class=\"button button-secondary button-large action-full-row staff-help-button\" type=\"button\" data-action=\"staff\""));
         assertTrue(css.contains("--staff-person-on-dark:#A7C7E3"));
-        assertTrue(css.contains("--icon-unsure-on-dark:#FFD166"));
+        assertTrue(css.contains("--icon-unsure:#9A6B00"));
+        assertTrue(css.contains("--icon-unsure-on-dark:#D0A13A"));
         int semanticRuleStart = css.indexOf(".staff-help-button{");
         int semanticRuleEnd = css.indexOf('}', semanticRuleStart);
         assertTrue(semanticRuleStart >= 0 && semanticRuleEnd > semanticRuleStart);

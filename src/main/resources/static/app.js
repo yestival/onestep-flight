@@ -45,6 +45,7 @@
   var awaitingDocumentSelection = false;
   var documentRootFields = {};
   var documentRootReviewFields = [];
+  var confirmedDocumentFlightNumberIndexes = [];
   var flightRequestController = null;
   var lookupInFlight = false;
   var speakingActive = false;
@@ -96,9 +97,13 @@
     backStep: '返回上一步', departureLocalTime: '起飞时间（出发地当地时间）', arrivalLocalTime: '到达时间（目的地当地时间）',
     scheduledDepartureLocal: '计划起飞 · 出发地当地时间', estimatedDepartureLocal: '预计起飞 · 出发地当地时间', actualDepartureLocal: '实际起飞 · 出发地当地时间',
     scheduledArrivalLocal: '计划到达 · 目的地当地时间', estimatedArrivalLocal: '预计到达 · 目的地当地时间', actualArrivalLocal: '实际到达 · 目的地当地时间',
-    selectedSegment: '当前航段', chooseSegment: '选择这一段',
-    itineraryContext: '完整行程', itineraryTitle: '这份文件中的全部航段', itineraryLead: '以下航段按文件中的顺序显示。当前航段已标出。', incompleteSegment: '信息不完整，不能用于查询',
-    segmentSelectionContext: '完整行程', segmentSelectionTitle: '请选择要查询的航段', segmentSelectionLead: '已按文件顺序保留全部航段。选择后才会查询该航段的实时状态。',
+    selectedSegment: '当前航段', chooseSegment: '选择这一段', readySegment: '可以查询', incompleteSegment: '补全这一段', pendingSegment: '请确认航班号', confirmSegment: '处理字段冲突',
+    itineraryContext: '行程航段', itineraryTitle: '这份文件中的全部航段', itineraryLead: '以下航段按文件中的顺序显示。当前航段已标出。',
+    segmentSelectionContext: '行程航段', segmentSelectionTitle: '请选择航段', segmentSelectionLead: '所有航段都可以打开。选择后只会核对或补全；只有点击“查询真实航班”才会查询。',
+    itineraryReadyContext: '所有航段均可查询', itineraryReadyTitle: '所有航段均可查询', itineraryReadyLead: '航班号可信、出发日期完整，且没有未解决的关键冲突。请选择一段，再点击“查询真实航班”。',
+    itineraryPendingContext: '存在待确认字段', itineraryPendingTitle: '请先确认部分航班号', itineraryPendingLead: '中置信度航班号已经预填。确认并保存不会查询真实航班。',
+    itineraryMissingContext: '存在缺失字段', itineraryMissingTitle: '请补全部分航段', itineraryMissingLead: '所有航段都已保留。补全并保存不会查询真实航班。',
+    itineraryConflictContext: '存在字段冲突', itineraryConflictTitle: '请处理识别冲突', itineraryConflictLead: '存在需要核对的识别结果。解决关键冲突前不会查询真实航班。',
     flightCorrectionContext: '重新查找航班', flightCorrectionTitle: '请选择正确的航班', flightCorrectionLead: '没有可靠的其他候选航班。请重新上传文件，或手动输入航班号和日期。', flightCorrectionCandidatesLead: '请选择下面经过实时查询确认的候选航班，或重新上传文件、手动输入。',
     liveStatusUnavailable: '暂时没有更新到实时航班状态。请确认下面是不是你的航班。',
     checkInContext: '确认值机状态', checkInQuestion: '你已经完成值机了吗？', checkInQuestionLead: '已经拿到登机牌也算已完成值机。',
@@ -114,7 +119,12 @@
     departurePassedTitle: '这趟航班已经离港', departurePassedLead: '点击下方“请工作人员帮忙”，并前往航空公司服务柜台出示给工作人员。',
     enterNewFlight: '输入新的航班信息', backHome: '返回首页', uploadContext: '选择旅行文件', uploadTitle: '选择或上传文件', chooseFile: '选择文件',
     manualItineraryTitle: '文件中已读到的航段', manualItineraryLead: '所有航段按文件顺序保留；信息不完整的航段也不会被删除。',
-    partialDateLead: '已读到航班号。系统未能唯一确定日期，请只选择出发日期。', partialFlightLead: '已读到出发日期。请只输入航班号。'
+    readySegmentLead: '这一段已具备高置信度或已确认的航班号、完整日期，且没有关键冲突。请点击“查询真实航班”。',
+    partialDateLead: '没有读到完整出发日期，请补全完整日期并保存。', partialFlightLead: '航班号缺失或不可信，请补全并保存。',
+    pendingFlightLead: '航班号可信度为中等。请核对预填值并明确确认；确认和保存都不会查询真实航班。',
+    confirmSegmentLead: '这一段存在需要处理的关键字段冲突。请核对相关字段并保存；保存不会查询真实航班。',
+    saveCompletion: '保存补全', confirmFlightNumberLabel: '我已核对并确认这个航班号', confirmDepartureDateLabel: '我已核对并确认这个出发日期',
+    readyDocumentNotice: '此航段可以查询。', pendingDocumentNotice: '航班号需要你确认。', missingDocumentNotice: '此航段有缺失或不可信字段。', conflictDocumentNotice: '此航段存在字段冲突。'
   });
   Object.assign(translations.en, {
     upload: 'Upload travel document',
@@ -128,9 +138,13 @@
     backStep: 'Go back', departureLocalTime: 'Departure (origin local time)', arrivalLocalTime: 'Arrival (destination local time)',
     scheduledDepartureLocal: 'Scheduled departure · Origin local time', estimatedDepartureLocal: 'Estimated departure · Origin local time', actualDepartureLocal: 'Actual departure · Origin local time',
     scheduledArrivalLocal: 'Scheduled arrival · Destination local time', estimatedArrivalLocal: 'Estimated arrival · Destination local time', actualArrivalLocal: 'Actual arrival · Destination local time',
-    selectedSegment: 'Current segment', chooseSegment: 'Select this segment',
-    itineraryContext: 'Full itinerary', itineraryTitle: 'Every segment in this document', itineraryLead: 'Segments are shown in document order. Your current segment is marked.', incompleteSegment: 'Incomplete details; unavailable for lookup',
-    segmentSelectionContext: 'Full itinerary', segmentSelectionTitle: 'Choose a segment to look up', segmentSelectionLead: 'Every segment remains in document order. Live status is requested only after you choose one.',
+    selectedSegment: 'Current segment', chooseSegment: 'Select this segment', readySegment: 'Ready to search', incompleteSegment: 'Complete this segment', pendingSegment: 'Confirm flight number', confirmSegment: 'Resolve field conflict',
+    itineraryContext: 'Journey segments', itineraryTitle: 'Every segment in this document', itineraryLead: 'Segments are shown in document order. Your current segment is marked.',
+    segmentSelectionContext: 'Journey segments', segmentSelectionTitle: 'Choose a segment', segmentSelectionLead: 'Every segment can be opened. Selection only reviews or completes it; a live request occurs only after Search live flight.',
+    itineraryReadyContext: 'All segments are searchable', itineraryReadyTitle: 'All segments are ready to search', itineraryReadyLead: 'Each flight number is trusted, each departure date is complete, and no critical conflict remains. Choose a segment, then select Search live flight.',
+    itineraryPendingContext: 'Some fields need confirmation', itineraryPendingTitle: 'Confirm some flight numbers first', itineraryPendingLead: 'Medium-confidence flight numbers are prefilled. Confirmation and saving do not search live flights.',
+    itineraryMissingContext: 'Some fields are missing', itineraryMissingTitle: 'Complete some segments first', itineraryMissingLead: 'Every segment is preserved. Completing and saving do not search live flights.',
+    itineraryConflictContext: 'Some fields conflict', itineraryConflictTitle: 'Resolve recognition conflicts', itineraryConflictLead: 'Some recognized details need review. Live lookup stays blocked until critical conflicts are resolved.',
     flightCorrectionContext: 'Find another flight', flightCorrectionTitle: 'Choose the correct flight', flightCorrectionLead: 'No reliable alternative flight was found. Upload another file or enter the flight number and date manually.', flightCorrectionCandidatesLead: 'Choose a candidate confirmed by live lookup below, upload another file, or enter the details manually.',
     liveStatusUnavailable: 'Live flight status has not updated yet. Please confirm whether the itinerary below is yours.',
     checkInContext: 'Confirm check-in status', checkInQuestion: 'Have you checked in?', checkInQuestionLead: 'Already having a boarding pass also counts as checked in.',
@@ -146,7 +160,12 @@
     departurePassedTitle: 'This flight has departed', departurePassedLead: 'Select “Ask a member of staff” below, then go to the airline service desk and show it to a staff member.',
     enterNewFlight: 'Enter new flight information', backHome: 'Return home', uploadContext: 'Choose a travel document', uploadTitle: 'Choose or upload a file', chooseFile: 'Choose file',
     manualItineraryTitle: 'Segments found in the file', manualItineraryLead: 'Every segment stays in document order, including segments with incomplete details.',
-    partialDateLead: 'The flight number was found, but the date was not unique. Choose only the departure date.', partialFlightLead: 'The departure date was found. Enter only the flight number.'
+    readySegmentLead: 'This segment has a high-confidence or user-confirmed flight number, a complete date, and no critical conflict. Select Search live flight.',
+    partialDateLead: 'No complete departure date was found. Enter the full date and save it.', partialFlightLead: 'The flight number is missing or untrusted. Complete and save it.',
+    pendingFlightLead: 'The flight number has medium confidence. Check the prefilled value and explicitly confirm it; confirmation and saving do not search live flights.',
+    confirmSegmentLead: 'This segment has a critical field conflict. Check the relevant fields and save them; saving does not search live flights.',
+    saveCompletion: 'Save completion', confirmFlightNumberLabel: 'I checked and confirm this flight number', confirmDepartureDateLabel: 'I checked and confirm this departure date',
+    readyDocumentNotice: 'This segment is ready to search.', pendingDocumentNotice: 'Confirm this flight number.', missingDocumentNotice: 'This segment has missing or untrusted fields.', conflictDocumentNotice: 'This segment contains a field conflict.'
   });
   Object.assign(translations.es, {
     upload: 'Subir documento de viaje',
@@ -160,9 +179,13 @@
     backStep: 'Volver', departureLocalTime: 'Salida (hora local de origen)', arrivalLocalTime: 'Llegada (hora local de destino)',
     scheduledDepartureLocal: 'Salida programada · Hora local de origen', estimatedDepartureLocal: 'Salida estimada · Hora local de origen', actualDepartureLocal: 'Salida real · Hora local de origen',
     scheduledArrivalLocal: 'Llegada programada · Hora local de destino', estimatedArrivalLocal: 'Llegada estimada · Hora local de destino', actualArrivalLocal: 'Llegada real · Hora local de destino',
-    selectedSegment: 'Tramo actual', chooseSegment: 'Elegir este tramo',
-    itineraryContext: 'Itinerario completo', itineraryTitle: 'Todos los tramos de este documento', itineraryLead: 'Los tramos aparecen en el orden del documento. El tramo actual está marcado.', incompleteSegment: 'Datos incompletos; no se puede consultar',
-    segmentSelectionContext: 'Itinerario completo', segmentSelectionTitle: 'Elige el tramo que quieres consultar', segmentSelectionLead: 'Todos los tramos permanecen en el orden del documento. El estado en directo solo se consulta después de elegir uno.',
+    selectedSegment: 'Tramo actual', chooseSegment: 'Elegir este tramo', readySegment: 'Listo para buscar', incompleteSegment: 'Completar este tramo', pendingSegment: 'Confirmar número de vuelo', confirmSegment: 'Resolver conflicto',
+    itineraryContext: 'Tramos del viaje', itineraryTitle: 'Todos los tramos de este documento', itineraryLead: 'Los tramos aparecen en el orden del documento. El tramo actual está marcado.',
+    segmentSelectionContext: 'Tramos del viaje', segmentSelectionTitle: 'Elige un tramo', segmentSelectionLead: 'Todos los tramos se pueden abrir. Elegir solo permite revisar o completar; la consulta en directo ocurre únicamente al pulsar Buscar vuelo real.',
+    itineraryReadyContext: 'Todos los tramos se pueden buscar', itineraryReadyTitle: 'Todos los tramos están listos', itineraryReadyLead: 'Cada número de vuelo es fiable, cada fecha está completa y no quedan conflictos críticos. Elige un tramo y pulsa Buscar vuelo real.',
+    itineraryPendingContext: 'Hay campos por confirmar', itineraryPendingTitle: 'Confirma algunos números de vuelo', itineraryPendingLead: 'Los números de confianza media ya están rellenados. Confirmar y guardar no consulta vuelos reales.',
+    itineraryMissingContext: 'Hay campos incompletos', itineraryMissingTitle: 'Completa algunos tramos', itineraryMissingLead: 'Se conservan todos los tramos. Completar y guardar no consulta vuelos reales.',
+    itineraryConflictContext: 'Hay campos en conflicto', itineraryConflictTitle: 'Resuelve los conflictos de reconocimiento', itineraryConflictLead: 'Hay datos reconocidos que debes revisar. La consulta queda bloqueada hasta resolver los conflictos críticos.',
     flightCorrectionContext: 'Buscar otro vuelo', flightCorrectionTitle: 'Elige el vuelo correcto', flightCorrectionLead: 'No se encontró otro vuelo fiable. Sube otro archivo o introduce manualmente el vuelo y la fecha.', flightCorrectionCandidatesLead: 'Elige abajo un candidato confirmado mediante consulta en directo, sube otro archivo o introduce los datos manualmente.',
     liveStatusUnavailable: 'El estado del vuelo en directo aún no se ha actualizado. Confirma si el itinerario de abajo es el tuyo.',
     checkInContext: 'Confirmar la facturación', checkInQuestion: '¿Ya has facturado?', checkInQuestionLead: 'Tener ya la tarjeta de embarque también cuenta como haber facturado.',
@@ -178,7 +201,12 @@
     departurePassedTitle: 'Este vuelo ya ha salido', departurePassedLead: 'Pulsa «Pedir ayuda al personal» y ve al mostrador de atención de la aerolínea para mostrárselo al personal.',
     enterNewFlight: 'Introducir un vuelo nuevo', backHome: 'Volver al inicio', uploadContext: 'Elegir un documento de viaje', uploadTitle: 'Elegir o subir un archivo', chooseFile: 'Elegir archivo',
     manualItineraryTitle: 'Tramos encontrados en el archivo', manualItineraryLead: 'Se conservan todos los tramos en el orden del documento, incluso los incompletos.',
-    partialDateLead: 'Se encontró el número de vuelo, pero no una fecha única. Elige solo la fecha de salida.', partialFlightLead: 'Se encontró la fecha de salida. Introduce solo el número de vuelo.'
+    readySegmentLead: 'Este tramo tiene un número de vuelo fiable o confirmado, una fecha completa y ningún conflicto crítico. Pulsa Buscar vuelo real.',
+    partialDateLead: 'No se encontró una fecha de salida completa. Introduce la fecha completa y guárdala.', partialFlightLead: 'Falta el número de vuelo o no es fiable. Complétalo y guárdalo.',
+    pendingFlightLead: 'El número de vuelo tiene confianza media. Revisa el valor rellenado y confírmalo expresamente; confirmar y guardar no consulta vuelos reales.',
+    confirmSegmentLead: 'Este tramo tiene un conflicto crítico. Revisa los campos correspondientes y guárdalos; guardar no consulta vuelos reales.',
+    saveCompletion: 'Guardar datos', confirmFlightNumberLabel: 'He comprobado y confirmo este número de vuelo', confirmDepartureDateLabel: 'He comprobado y confirmo esta fecha de salida',
+    readyDocumentNotice: 'Este tramo está listo para buscar.', pendingDocumentNotice: 'Confirma este número de vuelo.', missingDocumentNotice: 'Este tramo tiene campos incompletos o no fiables.', conflictDocumentNotice: 'Este tramo contiene un conflicto.'
   });
 
   translations.zh.copyCard = '复制';
@@ -389,9 +417,7 @@
       var continueBlocked = action === 'continue' && (awaitingDocumentSelection || !currentFlight
         || departureStopReason(currentFlight)
         || currentFlight && currentFlight.requiresUserConfirmation && !conflictsConfirmed);
-      var segmentBlocked = action === 'select-segment'
-        && usableDocumentSegmentIndexes.indexOf(Number(button.dataset.segmentIndex)) < 0;
-      button.disabled = lookupInFlight || Boolean(continueBlocked || segmentBlocked);
+      button.disabled = lookupInFlight || Boolean(continueBlocked);
     });
     document.getElementById('main-content').setAttribute('aria-busy', String(lookupInFlight));
   }
@@ -853,6 +879,7 @@
     return {
       flightNumber: result.flightNumber,
       departureDate: result.departureDate,
+      departureMonthDay: result.departureMonthDay || null,
       departureAirport: result.departureAirport || null,
       departureAirportName: result.departureAirport || null,
       arrivalAirport: result.arrivalAirport || null,
@@ -882,16 +909,27 @@
 
   function selectedDocumentResult(source, index) {
     var segment = documentSegments[index];
-    if (!source || !segment || usableDocumentSegmentIndexes.indexOf(index) < 0) return null;
+    if (!source || !segment) return null;
     var selectedFields = Object.assign({}, segment.fields || {});
     if (documentRootFields.document_type) selectedFields.document_type = documentRootFields.document_type;
     var reviewPrefix = 'segments[' + index + '].';
     var selectedReviewFields = documentRootReviewFields
-      .filter(function (field) { return String(field).indexOf(reviewPrefix) === 0; })
-      .map(function (field) { return String(field).substring(reviewPrefix.length); });
+      .filter(function (field) {
+        field = String(field);
+        return field.indexOf('segments[') !== 0 || field.indexOf(reviewPrefix) === 0;
+      })
+      .map(function (field) {
+        field = String(field);
+        return field.indexOf(reviewPrefix) === 0 ? field.substring(reviewPrefix.length) : field;
+      });
     return Object.assign({}, source, {
       flightNumber: segment.flightNumber || null,
+      flightNumberConfidence: segment.flightNumberConfidence || null,
+      flightNumberConfirmedByUser: Boolean(segment.flightNumberConfirmedByUser),
+      requiresFlightNumberConfirmation: Boolean(segment.requiresFlightNumberConfirmation),
       departureDate: segment.departureDate || null,
+      departureMonthDay: segment.departureMonthDay || null,
+      dateSource: segment.dateSource || null,
       departureAirport: segment.departureAirport || null,
       arrivalAirport: segment.arrivalAirport || null,
       scheduledDeparture: segment.scheduledDeparture || null,
@@ -908,25 +946,33 @@
 
   function createSegmentDisplay(segment, index) {
     segment = segment || {};
-    var usable = usableDocumentSegmentIndexes.indexOf(index) >= 0;
+    var state = documentSegmentState(segment, index);
+    var conflict = state === 'CONFLICT';
+    var incomplete = !validDocumentDepartureDate(segment.departureDate)
+      || !validDocumentFlightNumber(segment.flightNumber)
+      || normalizeFlightNumberConfidence(segment) === 'LOW';
     var item = document.createElement('button');
     item.type = 'button';
     item.dataset.action = 'select-segment';
     item.dataset.segmentIndex = String(index);
-    item.className = 'segment-option' + (!usable ? ' is-incomplete' : '')
+    item.className = 'segment-option' + (incomplete ? ' is-incomplete' : '')
+      + (state === 'NEEDS_CONFIRMATION' ? ' is-pending' : '')
+      + (conflict ? ' is-conflict' : '')
       + (index === selectedDocumentSegmentIndex ? ' is-selected' : '');
     if (index === selectedDocumentSegmentIndex) item.setAttribute('aria-current', 'true');
-    item.disabled = !usable || lookupInFlight;
+    item.disabled = lookupInFlight;
     var route = (segment.departureAirport || '—') + ' → ' + (segment.arrivalAirport || '—');
     var heading = document.createElement('strong');
     heading.textContent = formatFlightNumber(segment.flightNumber || '—') + ' · ' + route;
     var details = document.createElement('span');
-    details.textContent = formatDate(segment.departureDate) + (segment.scheduledDeparture
+    details.textContent = formatDocumentSegmentDate(segment) + (segment.scheduledDeparture
       ? ' · ' + String(segment.scheduledDeparture).replace('T', ' ') : '');
     var choice = document.createElement('span');
     choice.className = 'segment-choice-label';
-    choice.textContent = !usable ? t('incompleteSegment')
-      : index === selectedDocumentSegmentIndex ? t('selectedSegment') : t('chooseSegment');
+    choice.textContent = state === 'CONFLICT' ? t('confirmSegment')
+      : state === 'MISSING' ? t('incompleteSegment')
+        : state === 'NEEDS_CONFIRMATION' ? t('pendingSegment')
+          : index === selectedDocumentSegmentIndex ? t('selectedSegment') : t('readySegment');
     item.append(heading, details, choice);
     return item;
   }
@@ -943,9 +989,12 @@
       var context = document.querySelector('[data-segment-context]');
       var title = document.querySelector('[data-segment-title]');
       var lead = document.querySelector('[data-segment-lead]');
-      context.textContent = t(awaitingDocumentSelection ? 'segmentSelectionContext' : 'itineraryContext');
-      title.textContent = t(awaitingDocumentSelection ? 'segmentSelectionTitle' : 'itineraryTitle');
-      lead.textContent = t(awaitingDocumentSelection ? 'segmentSelectionLead' : 'itineraryLead');
+      var state = documentItineraryState();
+      var stateKey = state === 'CONFLICT' ? 'Conflict' : state === 'MISSING' ? 'Missing'
+        : state === 'NEEDS_CONFIRMATION' ? 'Pending' : 'Ready';
+      context.textContent = t('itinerary' + stateKey + 'Context');
+      title.textContent = t('itinerary' + stateKey + 'Title');
+      lead.textContent = t('itinerary' + stateKey + 'Lead');
       documentSegments.forEach(function (segment, index) {
         options.append(createSegmentDisplay(segment, index));
       });
@@ -1038,6 +1087,12 @@
 
   function startFlightLookup(flightNumber, departureDate, demo, documentResult, demoScenario) {
     if (lookupInFlight) return;
+    var normalized = normalizeFlightNumber(flightNumber);
+    var guardReason = lookupGuardReason(normalized, departureDate, demo, documentResult);
+    if (guardReason) {
+      announce(guardReason);
+      return;
+    }
     if (!documentResult) {
       documentSegments = [];
       usableDocumentSegmentIndexes = [];
@@ -1045,16 +1100,18 @@
       awaitingDocumentSelection = false;
       documentRootFields = {};
       documentRootReviewFields = [];
+      confirmedDocumentFlightNumberIndexes = [];
     }
     flightCorrectionOpen = false;
-    var normalized = normalizeFlightNumber(flightNumber);
     var activeRequest = ++requestSequence;
     var origin = currentScreen === 'loading' ? 'welcome' : currentScreen;
     lastLookupContext = {
       flightNumber: normalized,
       departureDate: departureDate || null,
       departureAirport: documentResult && documentResult.departureAirport || null,
-      arrivalAirport: documentResult && documentResult.arrivalAirport || null
+      arrivalAirport: documentResult && documentResult.arrivalAirport || null,
+      documentSegmentIndex: documentResult && Number.isInteger(selectedDocumentSegmentIndex)
+        ? selectedDocumentSegmentIndex : null
     };
     currentError = null;
     retryRequest = function () { startFlightLookup(normalized, departureDate, demo, documentResult, demoScenario); };
@@ -1084,6 +1141,19 @@
     return /^[A-Z0-9]{2,3}\d{1,4}[A-Z]?$/.test(normalizeFlightNumber(value));
   }
 
+  function normalizeFlightNumberConfidence(segment) {
+    segment = segment || {};
+    var explicit = String(segment.flightNumberConfidence || '').trim().toUpperCase();
+    if (explicit === 'HIGH' || explicit === 'MEDIUM' || explicit === 'LOW') return explicit;
+    if (!validDocumentFlightNumber(segment.flightNumber)) return 'LOW';
+    if (segment.requiresFlightNumberConfirmation === true) return 'MEDIUM';
+    var evidence = segment.fields && segment.fields.flight_number;
+    var confidence = evidence && Number(evidence.confidence);
+    if (Number.isFinite(confidence) && confidence > 0 && confidence < 0.60) return 'LOW';
+    if (Number.isFinite(confidence) && confidence >= 0.60 && confidence < 0.85) return 'MEDIUM';
+    return 'HIGH';
+  }
+
   function validDocumentDepartureDate(value) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return false;
     var parts = String(value).split('-').map(Number);
@@ -1092,13 +1162,152 @@
       && date.getUTCDate() === parts[2];
   }
 
+  function validDocumentMonthDay(value) {
+    value = String(value || '').trim();
+    return /^\d{2}-\d{2}$/.test(value) && validDocumentDepartureDate('2000-' + value);
+  }
+
+  function documentMonthDayFromDate(value) {
+    return validDocumentDepartureDate(value) ? String(value).substring(5) : null;
+  }
+
+  function formatDocumentMonthDay(value) {
+    if (!validDocumentMonthDay(value)) return '—';
+    var parts = String(value).split('-').map(Number);
+    if (currentLocale === 'zh') return parts[0] + '月' + parts[1] + '日';
+    var date = new Date(Date.UTC(2000, parts[0] - 1, parts[1]));
+    return new Intl.DateTimeFormat(currentLocale === 'es' ? 'es-ES' : 'en-GB', {
+      day: 'numeric', month: 'long', timeZone: 'UTC'
+    }).format(date);
+  }
+
+  function formatDocumentSegmentDate(segment) {
+    segment = segment || {};
+    return validDocumentDepartureDate(segment.departureDate) ? formatDate(segment.departureDate)
+      : formatDocumentMonthDay(segment.departureMonthDay);
+  }
+
+  function documentSegmentFlightNumberConfirmed(segment, index) {
+    return Boolean(segment && segment.flightNumberConfirmedByUser)
+      || Number.isInteger(index) && confirmedDocumentFlightNumberIndexes.indexOf(index) >= 0;
+  }
+
+  function documentSegmentFlightNumberTrusted(segment, index) {
+    if (!validDocumentFlightNumber(segment && segment.flightNumber)) return false;
+    return normalizeFlightNumberConfidence(segment) === 'HIGH'
+      || documentSegmentFlightNumberConfirmed(segment, index);
+  }
+
+  function reviewFieldIsCriticalConflict(field) {
+    field = String(field || '').replace(/^segments\[\d+\]\./, '').toLowerCase();
+    return field === 'conflict.flight_number' || field === 'conflict.flightnumber'
+      || field === 'conflict.departure_date' || field === 'conflict.departuredate';
+  }
+
+  function reviewFieldIsFlightNumber(field) {
+    field = String(field || '').replace(/^segments\[\d+\]\./, '').toLowerCase();
+    return field === 'flight_number' || field === 'flightnumber'
+      || field === 'conflict.flight_number' || field === 'conflict.flightnumber';
+  }
+
+  function reviewFieldIsDepartureDate(field) {
+    field = String(field || '').replace(/^segments\[\d+\]\./, '').toLowerCase();
+    return field === 'departure_date' || field === 'departuredate'
+      || field === 'conflict.departure_date' || field === 'conflict.departuredate';
+  }
+
+  function documentSegmentHasCriticalConflict(index, segment, reviewFields) {
+    return String(segment && segment.dateSource || '').toUpperCase() === 'CONFLICT'
+      || documentSegmentReviewFields(index, reviewFields).some(reviewFieldIsCriticalConflict);
+  }
+
+  function documentSegmentLookupReady(segment, index, reviewFields) {
+    segment = segment || {};
+    return documentSegmentFlightNumberTrusted(segment, index)
+      && validDocumentDepartureDate(segment.departureDate)
+      && !documentSegmentHasCriticalConflict(index, segment, reviewFields);
+  }
+
+  function documentSegmentReviewFields(index, reviewFields) {
+    var prefix = 'segments[' + index + '].';
+    var source = Array.isArray(reviewFields) ? reviewFields : documentRootReviewFields;
+    return source.filter(function (field) {
+      field = String(field || '');
+      return field.indexOf('segments[') !== 0 || field.indexOf(prefix) === 0;
+    }).map(function (field) {
+      field = String(field || '');
+      return field.indexOf(prefix) === 0 ? field.substring(prefix.length) : field;
+    });
+  }
+
+  function documentSegmentHasConflict(index) {
+    return documentSegmentReviewFields(index).some(function (field) {
+      return String(field).indexOf('conflict.') === 0;
+    });
+  }
+
+  function documentSegmentState(segment, index) {
+    segment = segment || {};
+    if (documentSegmentHasConflict(index)
+        || String(segment.dateSource || '').toUpperCase() === 'CONFLICT') return 'CONFLICT';
+    if (!validDocumentDepartureDate(segment.departureDate)
+        || !validDocumentFlightNumber(segment.flightNumber)
+        || normalizeFlightNumberConfidence(segment) === 'LOW') return 'MISSING';
+    if (!documentSegmentFlightNumberTrusted(segment, index)) return 'NEEDS_CONFIRMATION';
+    return 'QUERYABLE';
+  }
+
+  function documentItineraryState() {
+    var states = documentSegments.map(documentSegmentState);
+    if (states.indexOf('CONFLICT') >= 0) return 'CONFLICT';
+    if (states.indexOf('MISSING') >= 0) return 'MISSING';
+    if (states.indexOf('NEEDS_CONFIRMATION') >= 0) return 'NEEDS_CONFIRMATION';
+    return states.length ? 'QUERYABLE' : 'MISSING';
+  }
+
+  function lookupGuardReason(flightNumber, departureDate, demo, documentResult) {
+    if (!validDocumentFlightNumber(flightNumber)) return localeText(
+      '请输入有效航班号。', 'Enter a valid flight number.', 'Introduce un número de vuelo válido.');
+    if (!validDocumentDepartureDate(departureDate)) return localeText(
+      '请输入真实存在的完整出发日期。', 'Enter a complete, valid departure date.', 'Introduce una fecha de salida completa y válida.');
+    if (demo || !documentResult) return null;
+    var index = selectedDocumentSegmentIndex;
+    var segment = Number.isInteger(index) ? documentSegments[index] : null;
+    if (!segment || normalizeFlightNumber(segment.flightNumber) !== flightNumber
+        || segment.departureDate !== departureDate) return localeText(
+      '当前航段已变化，请重新选择并核对。', 'This segment changed. Select and review it again.', 'Este tramo cambió. Selecciónalo y revísalo de nuevo.');
+    if (!documentSegmentFlightNumberTrusted(segment, index)) return localeText(
+      '请先确认航班号并保存。', 'Confirm and save the flight number first.', 'Confirma y guarda primero el número de vuelo.');
+    if (documentSegmentHasCriticalConflict(index, segment)) return localeText(
+      '请先解决航班号或出发日期冲突。', 'Resolve the flight-number or departure-date conflict first.', 'Resuelve primero el conflicto del número de vuelo o la fecha de salida.');
+    return null;
+  }
+
   function normalizeDocumentSegment(segment) {
     if (!segment || typeof segment !== 'object') return {};
-    if (segment.departureDate != null && String(segment.departureDate).trim() !== '') return segment;
+    var normalized = Object.assign({}, segment);
+    normalized.flightNumber = validDocumentFlightNumber(segment.flightNumber)
+      ? normalizeFlightNumber(segment.flightNumber) : null;
+    normalized.flightNumberConfidence = normalizeFlightNumberConfidence(segment);
+    normalized.flightNumberConfirmedByUser = Boolean(segment.flightNumberConfirmedByUser);
+    normalized.requiresFlightNumberConfirmation = normalized.flightNumberConfidence === 'MEDIUM'
+      && !normalized.flightNumberConfirmedByUser;
+    normalized.dateSource = String(segment.dateSource || '').trim().toUpperCase() || null;
+    var departureDate = String(segment.departureDate || '').trim();
+    if (validDocumentDepartureDate(departureDate)) {
+      normalized.departureDate = departureDate;
+      normalized.departureMonthDay = documentMonthDayFromDate(departureDate);
+      return normalized;
+    }
+    normalized.departureDate = null;
+    normalized.departureMonthDay = validDocumentMonthDay(segment.departureMonthDay)
+      ? String(segment.departureMonthDay).trim() : null;
     var match = /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,9})?)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)?$/.exec(
       String(segment.scheduledDeparture || '').trim());
-    if (!match || !validDocumentDepartureDate(match[1])) return segment;
-    return Object.assign({}, segment, { departureDate: match[1] });
+    if (!match || !validDocumentDepartureDate(match[1])) return normalized;
+    normalized.departureDate = match[1];
+    normalized.departureMonthDay = documentMonthDayFromDate(match[1]);
+    return normalized;
   }
 
   function normalizeDocumentResult(result) {
@@ -1114,46 +1323,20 @@
     var usableIndexes = [];
     segments.forEach(function (segment, index) {
       segment = segment || {};
-      if (validDocumentFlightNumber(segment.flightNumber) && validDocumentDepartureDate(segment.departureDate)) {
+      if (documentSegmentLookupReady(segment, index, result && result.needsReviewFields)) {
         usableIndexes.push(index);
       }
     });
-    if (usableIndexes.length) return { outcome: 'USABLE', segments: segments, usableIndexes: usableIndexes, partialSegment: null, partialIndex: null };
+    if (usableIndexes.length === segments.length) return { outcome: 'USABLE', segments: segments, usableIndexes: usableIndexes, partialSegment: null, partialIndex: null };
     var partialIndex = segments.findIndex(function (segment) {
       segment = segment || {};
-      return validDocumentFlightNumber(segment.flightNumber) || validDocumentDepartureDate(segment.departureDate);
+      return validDocumentFlightNumber(segment.flightNumber)
+        || validDocumentDepartureDate(segment.departureDate)
+        || validDocumentMonthDay(segment.departureMonthDay);
     });
     return partialIndex >= 0
-      ? { outcome: 'PARTIAL', segments: segments, usableIndexes: [], partialSegment: segments[partialIndex], partialIndex: partialIndex }
+      ? { outcome: 'PARTIAL', segments: segments, usableIndexes: usableIndexes, partialSegment: segments[partialIndex], partialIndex: partialIndex }
       : { outcome: 'UNUSABLE', segments: segments, usableIndexes: [], partialSegment: null, partialIndex: null };
-  }
-
-  function discoverMissingDocumentDates(result, assessment) {
-    var segments = assessment.segments.slice();
-    var indexes = [];
-    segments.forEach(function (segment, index) {
-      if (validDocumentFlightNumber(segment && segment.flightNumber)
-          && !validDocumentDepartureDate(segment && segment.departureDate)) indexes.push(index);
-    });
-    if (!indexes.length) return Promise.resolve(Object.assign({}, result, { segments: segments }));
-    var chain = Promise.resolve();
-    indexes.forEach(function (index) {
-      chain = chain.then(function () {
-        var documentForDiscovery = Object.assign({}, result, { segments: segments.slice() });
-        return postFlightJson('/api/journeys/discover-flight-date', {
-          flightNumber: normalizeFlightNumber(segments[index].flightNumber),
-          document: documentForDiscovery,
-          segmentIndex: index
-        }).then(function (response) {
-          if (response && !response.dateRequired && validDocumentDepartureDate(response.departureDate)) {
-            segments[index] = Object.assign({}, segments[index], { departureDate: response.departureDate });
-          }
-        }).catch(function () {
-          // Date discovery is optional. The user is only asked for the missing date if it is not unique.
-        });
-      });
-    });
-    return chain.then(function () { return Object.assign({}, result, { segments: segments }); });
   }
 
   function resetDocumentResultState() {
@@ -1176,17 +1359,66 @@
 
   function resetManualDocumentEntry() {
     partialDocumentEntry = false;
+    var partialNotice = document.querySelector('[data-manual-partial-notice]');
+    if (partialNotice) partialNotice.hidden = true;
     var panel = document.querySelector('[data-manual-document-segments]');
     if (panel) panel.hidden = true;
     var flightField = document.querySelector('[data-manual-flight-field]');
     var dateField = document.querySelector('[data-manual-date-field]');
-    if (flightField) flightField.hidden = false;
-    if (dateField) dateField.hidden = false;
+    setManualFieldState(flightField, document.getElementById('flight-input'), true);
+    setManualFieldState(dateField, document.getElementById('date-input'), true);
+    setManualConfirmationState(document.querySelector('[data-manual-flight-confirmation]'),
+      document.getElementById('flight-confirm-input'), false);
+    setManualConfirmationState(document.querySelector('[data-manual-date-confirmation]'),
+      document.getElementById('date-confirm-input'), false);
+    var primary = document.querySelector('[data-manual-primary]');
+    if (primary) {
+      primary.dataset.mode = 'query';
+      primary.dataset.i18n = 'searchLiveFlight';
+      primary.textContent = t('searchLiveFlight');
+    }
     var lead = document.querySelector('[data-manual-lead]');
     if (lead) {
       lead.dataset.i18n = 'manualLead';
       lead.textContent = t('manualLead');
     }
+  }
+
+  function setManualFieldState(field, input, visible) {
+    if (field) field.hidden = !visible;
+    if (input) {
+      input.disabled = !visible;
+      input.required = visible;
+    }
+  }
+
+  function setManualConfirmationState(field, input, visible) {
+    if (field) field.hidden = !visible;
+    if (input) {
+      input.disabled = !visible;
+      if (!visible) input.checked = false;
+      input.setCustomValidity('');
+    }
+  }
+
+  function populateManualDocumentEntry() {
+    var selected = Number.isInteger(selectedDocumentSegmentIndex)
+      ? documentSegments[selectedDocumentSegmentIndex] || {} : {};
+    var flightInput = document.getElementById('flight-input');
+    var dateInput = document.getElementById('date-input');
+    if (flightInput) {
+      flightInput.value = validDocumentFlightNumber(selected.flightNumber)
+          && normalizeFlightNumberConfidence(selected) !== 'LOW'
+        ? formatFlightNumber(selected.flightNumber) : '';
+      flightInput.setCustomValidity('');
+    }
+    setDateInputValue(dateInput, validDocumentDepartureDate(selected.departureDate)
+      ? selected.departureDate : '');
+    if (dateInput) dateInput.setCustomValidity('');
+    setManualConfirmationState(document.querySelector('[data-manual-flight-confirmation]'),
+      document.getElementById('flight-confirm-input'), false);
+    setManualConfirmationState(document.querySelector('[data-manual-date-confirmation]'),
+      document.getElementById('date-confirm-input'), false);
   }
 
   function renderManualDocumentEntry() {
@@ -1202,40 +1434,114 @@
       ? documentSegments[selectedDocumentSegmentIndex] || {} : {};
     var hasFlightNumber = validDocumentFlightNumber(selected.flightNumber);
     var hasDepartureDate = validDocumentDepartureDate(selected.departureDate);
+    var reviewFields = documentSegmentReviewFields(selectedDocumentSegmentIndex);
+    var flightConflict = reviewFields.some(function (field) {
+      return reviewFieldIsFlightNumber(field) && String(field).toLowerCase().indexOf('conflict.') >= 0;
+    });
+    var dateConflict = String(selected.dateSource || '').toUpperCase() === 'CONFLICT'
+      || reviewFields.some(function (field) {
+        return reviewFieldIsDepartureDate(field) && String(field).toLowerCase().indexOf('conflict.') >= 0;
+      });
+    var flightTrusted = documentSegmentFlightNumberTrusted(selected, selectedDocumentSegmentIndex);
+    var flightNeedsConfirmation = hasFlightNumber && (!flightTrusted || flightConflict);
+    var dateNeedsConfirmation = hasDepartureDate && dateConflict;
     var flightField = document.querySelector('[data-manual-flight-field]');
     var dateField = document.querySelector('[data-manual-date-field]');
-    if (flightField) flightField.hidden = hasFlightNumber && !hasDepartureDate;
-    if (dateField) dateField.hidden = hasDepartureDate && !hasFlightNumber;
-    var leadKey = hasFlightNumber && !hasDepartureDate ? 'partialDateLead'
-      : hasDepartureDate && !hasFlightNumber ? 'partialFlightLead' : 'manualLead';
+    setManualFieldState(flightField, document.getElementById('flight-input'), !flightTrusted || flightConflict);
+    setManualFieldState(dateField, document.getElementById('date-input'), !hasDepartureDate || dateConflict);
+    setManualConfirmationState(document.querySelector('[data-manual-flight-confirmation]'),
+      document.getElementById('flight-confirm-input'), flightNeedsConfirmation);
+    setManualConfirmationState(document.querySelector('[data-manual-date-confirmation]'),
+      document.getElementById('date-confirm-input'), dateNeedsConfirmation);
+    var ready = documentSegmentLookupReady(selected, selectedDocumentSegmentIndex);
+    var state = documentSegmentState(selected, selectedDocumentSegmentIndex);
+    var leadKey = documentSegmentHasCriticalConflict(selectedDocumentSegmentIndex, selected)
+      ? 'confirmSegmentLead' : state === 'NEEDS_CONFIRMATION' ? 'pendingFlightLead'
+        : ready ? 'readySegmentLead' : hasFlightNumber && !hasDepartureDate ? 'partialDateLead'
+          : hasDepartureDate && !flightTrusted ? 'partialFlightLead' : 'manualLead';
     var lead = document.querySelector('[data-manual-lead]');
     if (lead) {
       lead.dataset.i18n = leadKey;
       lead.textContent = t(leadKey);
     }
+    var notice = document.querySelector('[data-manual-partial-notice]');
+    if (notice) {
+      var noticeKey = state === 'CONFLICT' ? 'conflictDocumentNotice'
+        : state === 'MISSING' ? 'missingDocumentNotice'
+          : state === 'NEEDS_CONFIRMATION' ? 'pendingDocumentNotice' : 'readyDocumentNotice';
+      notice.dataset.i18n = noticeKey;
+      notice.textContent = t(noticeKey);
+    }
+    var primary = document.querySelector('[data-manual-primary]');
+    if (primary) {
+      var mode = ready ? 'query' : 'save';
+      var primaryKey = ready ? 'searchLiveFlight' : 'saveCompletion';
+      primary.dataset.mode = mode;
+      primary.dataset.i18n = primaryKey;
+      primary.textContent = t(primaryKey);
+    }
+    var demo = document.querySelector('.manual-actions [data-action="demo-flight"]');
+    if (demo) demo.hidden = partialDocumentEntry;
   }
 
-  function showPartialDocument(result, assessment) {
-    resetDocumentResultState();
-    partialDocumentEntry = true;
-    documentSegments = assessment.segments.slice();
-    usableDocumentSegmentIndexes = [];
-    selectedDocumentSegmentIndex = assessment.partialIndex;
-    documentRootFields = Object.assign({}, result.fields || {});
-    documentRootReviewFields = Array.isArray(result.needsReviewFields) ? result.needsReviewFields.slice() : [];
-    pendingDocument = Object.assign({}, result, { segments: documentSegments.slice() });
-    var segment = assessment.partialSegment;
-    var flightInput = document.getElementById('flight-input');
-    var dateInput = document.getElementById('date-input');
-    flightInput.value = validDocumentFlightNumber(segment && segment.flightNumber)
-      ? formatFlightNumber(segment.flightNumber) : '';
-    setDateInputValue(dateInput, validDocumentDepartureDate(segment && segment.departureDate)
-      ? segment.departureDate : '');
-    document.querySelector('[data-manual-partial-notice]').hidden = false;
-    renderManualDocumentEntry();
-    navigationHistory.push('welcome');
-    showScreen('manual');
-    announce(t('partialDocumentNotice'));
+  function syncUsableDocumentSegmentIndexes() {
+    usableDocumentSegmentIndexes = documentSegments.reduce(function (indexes, segment, index) {
+      if (documentSegmentLookupReady(segment, index)) indexes.push(index);
+      return indexes;
+    }, []);
+  }
+
+  function clearDocumentSegmentReviewFields(index, predicate) {
+    var prefix = documentSegments.length === 1 ? '' : 'segments[' + index + '].';
+    documentRootReviewFields = documentRootReviewFields.filter(function (field) {
+      field = String(field || '');
+      if (prefix && field.indexOf(prefix) !== 0) return true;
+      var local = prefix ? field.substring(prefix.length) : field;
+      return !predicate(local);
+    });
+  }
+
+  function applyDocumentSegmentCompletion(index, flightNumber, departureDate, confirmations) {
+    index = Number(index);
+    if (!Number.isInteger(index) || index < 0 || index >= documentSegments.length) return null;
+    var current = documentSegments[index] || {};
+    confirmations = confirmations || {};
+    var flightNeedsUpdate = !documentSegmentFlightNumberTrusted(current, index)
+      || documentSegmentReviewFields(index).some(reviewFieldIsFlightNumber);
+    var dateNeedsUpdate = !validDocumentDepartureDate(current.departureDate)
+      || documentSegmentReviewFields(index).some(reviewFieldIsDepartureDate)
+      || String(current.dateSource || '').toUpperCase() === 'CONFLICT';
+    var completedFlightNumber = flightNeedsUpdate ? normalizeFlightNumber(flightNumber)
+      : normalizeFlightNumber(current.flightNumber);
+    var completedDepartureDate = dateNeedsUpdate ? departureDate : current.departureDate;
+    if (!validDocumentFlightNumber(completedFlightNumber)
+        || !validDocumentDepartureDate(completedDepartureDate)) return null;
+    if (validDocumentMonthDay(current.departureMonthDay)
+        && documentMonthDayFromDate(completedDepartureDate) !== current.departureMonthDay) return null;
+    var updated = Object.assign({}, current);
+    if (flightNeedsUpdate) {
+      if (validDocumentFlightNumber(current.flightNumber) && !confirmations.flightNumber) return null;
+      updated.flightNumber = completedFlightNumber;
+      updated.flightNumberConfirmedByUser = true;
+      updated.requiresFlightNumberConfirmation = false;
+      confirmedDocumentFlightNumberIndexes = confirmedDocumentFlightNumberIndexes
+        .filter(function (value) { return value !== index; }).concat(index);
+      clearDocumentSegmentReviewFields(index, reviewFieldIsFlightNumber);
+    }
+    if (dateNeedsUpdate) {
+      if (validDocumentDepartureDate(current.departureDate) && !confirmations.departureDate) return null;
+      updated.departureDate = completedDepartureDate;
+      updated.departureMonthDay = documentMonthDayFromDate(completedDepartureDate);
+      updated.dateSource = 'EXPLICIT_FULL_DATE';
+      clearDocumentSegmentReviewFields(index, reviewFieldIsDepartureDate);
+    }
+    documentSegments[index] = updated;
+    syncUsableDocumentSegmentIndexes();
+    if (pendingDocument) pendingDocument = Object.assign({}, pendingDocument, {
+      segments: documentSegments.slice(),
+      needsReviewFields: documentRootReviewFields.slice()
+    });
+    return updated;
   }
 
   function setDocumentExtractionState(result, assessment) {
@@ -1243,7 +1549,12 @@
     usableDocumentSegmentIndexes = assessment.usableIndexes.slice();
     documentRootFields = Object.assign({}, result.fields || {});
     documentRootReviewFields = Array.isArray(result.needsReviewFields) ? result.needsReviewFields.slice() : [];
+    confirmedDocumentFlightNumberIndexes = documentSegments.reduce(function (indexes, segment, index) {
+      if (segment && segment.flightNumberConfirmedByUser) indexes.push(index);
+      return indexes;
+    }, []);
     pendingDocument = Object.assign({}, result, { segments: documentSegments.slice() });
+    syncUsableDocumentSegmentIndexes();
   }
 
   function showDocumentSegmentSelection(result, assessment) {
@@ -1265,28 +1576,28 @@
     announce(t('segmentSelectionTitle'));
   }
 
-  function selectDocumentSegment(index, options) {
-    var settings = options || {};
+  function selectDocumentSegment(index) {
     index = Number(index);
-    if ((lookupInFlight && !settings.fromUpload) || !Number.isInteger(index)
-        || usableDocumentSegmentIndexes.indexOf(index) < 0 || !pendingDocument) return null;
+    if (lookupInFlight || !Number.isInteger(index) || index < 0
+        || index >= documentSegments.length || !pendingDocument) return null;
     var selectedResult = selectedDocumentResult(pendingDocument, index);
     if (!selectedResult) return null;
     selectedDocumentSegmentIndex = index;
     awaitingDocumentSelection = false;
-    lastLookupContext = {
-      flightNumber: normalizeFlightNumber(selectedResult.flightNumber),
-      departureDate: selectedResult.departureDate || null,
-      departureAirport: selectedResult.departureAirport || null,
-      arrivalAirport: selectedResult.arrivalAirport || null,
-      documentSegmentIndex: index
-    };
-    var extractedFlight = extractionToFlight(selectedResult);
-    beginFlight(extractedFlight, selectedResult);
-    recordJourneyEvent('DOCUMENT_SEGMENT_SELECTED',
-      '已选择航段 ' + formatFlightNumber(selectedResult.flightNumber),
-      'Selected segment ' + formatFlightNumber(selectedResult.flightNumber), true);
-    return resolveUploadedFlight({ activeRequest: settings.activeRequest, fromUpload: Boolean(settings.fromUpload) });
+    partialDocumentEntry = true;
+    currentFlight = null;
+    currentAction = null;
+    journeyContext = null;
+    lastLookupContext = null;
+    populateManualDocumentEntry();
+    document.querySelector('[data-manual-partial-notice]').hidden = false;
+    renderManualDocumentEntry();
+    showScreen('manual');
+    persistJourney();
+    announce(documentSegmentHasConflict(index) ? t('confirmSegment')
+      : documentSegmentLookupReady(documentSegments[index], index) ? t('selectedSegment')
+        : t('incompleteSegment'));
+    return selectedResult;
   }
 
   function uploadDocument(file) {
@@ -1308,26 +1619,11 @@
       updateLoadingProgress(100, uploadLoadingMessages, 2);
       result = normalizeDocumentResult(result);
       var assessment = classifyDocumentResult(result);
-      if (assessment.segments.length > 1) {
+      if (assessment.segments.length) {
         showDocumentSegmentSelection(result, assessment);
         return;
       }
-      if (assessment.outcome === 'UNUSABLE') {
-        showUnusableDocument();
-        return;
-      }
-      if (assessment.outcome === 'PARTIAL') {
-        showPartialDocument(result, assessment);
-        return;
-      }
-      setDocumentExtractionState(result, assessment);
-      selectedDocumentSegmentIndex = null;
-      awaitingDocumentSelection = false;
-      navigationHistory.push('welcome');
-      return selectDocumentSegment(usableDocumentSegmentIndexes[0], {
-        activeRequest: activeRequest,
-        fromUpload: true
-      });
+      showUnusableDocument();
     }).catch(function (error) {
       if (activeRequest !== requestSequence) return;
       clearInterval(loadingTimer);
@@ -2799,7 +3095,7 @@
     clearInterval(loadingTimer);
     clearTimeout(loadingTimeout);
     if ((currentScreen === 'confirm' || currentScreen === 'error')
-        && documentSegments.length > 1 && selectedDocumentSegmentIndex != null) {
+        && documentSegments.length && selectedDocumentSegmentIndex != null) {
       returnToDocumentSegmentSelection();
       return;
     }
@@ -2832,7 +3128,7 @@
   }
 
   function returnToDocumentSegmentSelection() {
-    if (documentSegments.length < 2 || !pendingDocument) return false;
+    if (!documentSegments.length || !pendingDocument) return false;
     requestSequence += 1;
     if (flightRequestController) flightRequestController.abort();
     flightRequestController = null;
@@ -2845,6 +3141,7 @@
     currentError = null;
     lastLookupContext = null;
     conflictsConfirmed = false;
+    resetManualDocumentEntry();
     selectedDocumentSegmentIndex = null;
     awaitingDocumentSelection = true;
     flightCorrectionOpen = false;
@@ -2863,7 +3160,7 @@
   function isLiveFlightRequest(error) {
     var url = String(error && error.requestUrl || '');
     return /^\/api\/flights(?:\/|\?|$)/.test(url)
-      || /^\/api\/journeys\/(?:discover-flight-date|resolve-flight|refresh-flight|next-action)(?:\?|$)/.test(url);
+      || /^\/api\/journeys\/(?:resolve-flight|refresh-flight|next-action)(?:\?|$)/.test(url);
   }
 
   function providerErrorSignal(details) {
@@ -3868,6 +4165,7 @@
     awaitingDocumentSelection = false;
     documentRootFields = {};
     documentRootReviewFields = [];
+    confirmedDocumentFlightNumberIndexes = [];
     flightCorrectionOpen = false;
     partialDocumentEntry = false;
     renderDeparturePassedConfirmation(null);
@@ -3887,7 +4185,7 @@
   }
 
   function persistJourney() {
-    if (!currentFlight && !awaitingDocumentSelection) return;
+    if (!currentFlight && !awaitingDocumentSelection && !partialDocumentEntry) return;
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
         savedAt: Date.now(),
@@ -3903,6 +4201,7 @@
         usableDocumentSegmentIndexes: usableDocumentSegmentIndexes,
         selectedDocumentSegmentIndex: selectedDocumentSegmentIndex,
         awaitingDocumentSelection: awaitingDocumentSelection,
+        partialDocumentEntry: partialDocumentEntry,
         documentRootFields: documentRootFields,
         documentRootReviewFields: documentRootReviewFields,
         conflictsConfirmed: conflictsConfirmed,
@@ -4038,10 +4337,11 @@
   }
 
   function applySavedJourney(saved, fromOfflineStorage) {
-    var restoringDocumentSelection = Boolean(saved && !fromOfflineStorage
-      && saved.awaitingDocumentSelection && saved.document
-      && Array.isArray(saved.documentSegments) && saved.documentSegments.length > 1);
-    if (!saved || !saved.flight && !restoringDocumentSelection) return false;
+    var restoringDocumentWorkflow = Boolean(saved && !fromOfflineStorage && saved.document
+      && Array.isArray(saved.documentSegments) && saved.documentSegments.length
+      && (saved.awaitingDocumentSelection || saved.partialDocumentEntry));
+    var restoringDocumentSelection = restoringDocumentWorkflow && Boolean(saved.awaitingDocumentSelection);
+    if (!saved || !saved.flight && !restoringDocumentWorkflow) return false;
     if (saved.savedAt && Date.now() - Number(saved.savedAt) > OFFLINE_MAX_AGE_MS) return false;
     currentFlight = normalizeSavedFlight(saved.flight);
     journeyContext = normalizeJourneyContext(saved.context, currentFlight);
@@ -4056,8 +4356,9 @@
     });
     journeyEvents = Array.isArray(saved.events) ? saved.events : [];
     pendingDocument = fromOfflineStorage ? null : saved.document || null;
-    documentSegments = Array.isArray(saved.documentSegments) ? saved.documentSegments.slice()
-      : pendingDocument && Array.isArray(pendingDocument.segments) ? pendingDocument.segments.slice() : [];
+    documentSegments = (Array.isArray(saved.documentSegments) ? saved.documentSegments
+      : pendingDocument && Array.isArray(pendingDocument.segments) ? pendingDocument.segments : [])
+      .map(normalizeDocumentSegment);
     usableDocumentSegmentIndexes = Array.isArray(saved.usableDocumentSegmentIndexes)
       ? saved.usableDocumentSegmentIndexes.filter(function (index) {
         return Number.isInteger(index) && index >= 0 && index < documentSegments.length;
@@ -4068,6 +4369,7 @@
         return indexes;
       }, []);
     awaitingDocumentSelection = restoringDocumentSelection;
+    partialDocumentEntry = restoringDocumentWorkflow && Boolean(saved.partialDocumentEntry);
     selectedDocumentSegmentIndex = awaitingDocumentSelection ? null
       : Number.isInteger(saved.selectedDocumentSegmentIndex)
         ? saved.selectedDocumentSegmentIndex
@@ -4076,6 +4378,13 @@
     documentRootReviewFields = Array.isArray(saved.documentRootReviewFields)
       ? saved.documentRootReviewFields.slice()
       : pendingDocument && Array.isArray(pendingDocument.needsReviewFields) ? pendingDocument.needsReviewFields.slice() : [];
+    confirmedDocumentFlightNumberIndexes = documentSegments.reduce(function (indexes, segment, index) {
+      if (segment && segment.flightNumberConfirmedByUser) indexes.push(index);
+      return indexes;
+    }, []);
+    syncUsableDocumentSegmentIndexes();
+    if (!awaitingDocumentSelection && !Number.isInteger(selectedDocumentSegmentIndex)
+        && usableDocumentSegmentIndexes.length) selectedDocumentSegmentIndex = usableDocumentSegmentIndexes[0];
     conflictsConfirmed = Boolean(saved.conflictsConfirmed);
     clockAnchor = saved.clockAnchor || null;
     refreshStatusState = fromOfflineStorage && !navigator.onLine ? { code: 'OFFLINE_SNAPSHOT', details: {} }
@@ -4096,6 +4405,15 @@
       renderDeparturePassedConfirmation(null);
       renderSegmentSelector();
       showScreen('confirm');
+      renderConnectivityStatus();
+      return true;
+    }
+    if (partialDocumentEntry && Number.isInteger(selectedDocumentSegmentIndex)) {
+      populateManualDocumentEntry();
+      var partialNotice = document.querySelector('[data-manual-partial-notice]');
+      if (partialNotice) partialNotice.hidden = false;
+      renderManualDocumentEntry();
+      showScreen('manual');
       renderConnectivityStatus();
       return true;
     }
@@ -4142,7 +4460,9 @@
       fileInput.click();
     }
     if (action === 'home') {
-      if (currentScreen === 'confirm' && documentSegments.length > 1
+      if (currentScreen === 'manual' && partialDocumentEntry && documentSegments.length) {
+        returnToDocumentSegmentSelection();
+      } else if (currentScreen === 'confirm' && documentSegments.length
           && selectedDocumentSegmentIndex != null) returnToDocumentSegmentSelection();
       else if ((journeyContext || currentAction) && currentScreen !== 'welcome') showEndConfirmation();
       else returnHome();
@@ -4254,21 +4574,77 @@
 
   document.querySelector('[data-action="manual-submit"]').addEventListener('submit', function (event) {
     event.preventDefault();
-    var flightNumber = document.getElementById('flight-input').value;
-    var departureDate = document.getElementById('date-input').value;
+    var flightInput = document.getElementById('flight-input');
+    var dateInput = document.getElementById('date-input');
+    var flightConfirmation = document.getElementById('flight-confirm-input');
+    var dateConfirmation = document.getElementById('date-confirm-input');
+    flightInput.setCustomValidity('');
+    dateInput.setCustomValidity('');
+    if (flightConfirmation) flightConfirmation.setCustomValidity('');
+    if (dateConfirmation) dateConfirmation.setCustomValidity('');
+    var flightNumber = flightInput.value;
+    var departureDate = dateInput.value;
     if (partialDocumentEntry && pendingDocument && Number.isInteger(selectedDocumentSegmentIndex)) {
       var index = selectedDocumentSegmentIndex;
-      documentSegments[index] = Object.assign({}, documentSegments[index] || {}, {
-        flightNumber: normalizeFlightNumber(flightNumber),
-        departureDate: departureDate
+      var segment = documentSegments[index] || {};
+      if (documentSegmentLookupReady(segment, index)) {
+        var readyResult = selectedDocumentResult(pendingDocument, index);
+        startFlightLookup(segment.flightNumber, segment.departureDate, false, readyResult);
+        return;
+      }
+      var reviewFields = documentSegmentReviewFields(index);
+      var flightNeedsUpdate = !documentSegmentFlightNumberTrusted(segment, index)
+        || reviewFields.some(reviewFieldIsFlightNumber);
+      var dateNeedsUpdate = !validDocumentDepartureDate(segment.departureDate)
+        || reviewFields.some(reviewFieldIsDepartureDate)
+        || String(segment.dateSource || '').toUpperCase() === 'CONFLICT';
+      flightNumber = flightNeedsUpdate ? flightNumber : segment.flightNumber;
+      departureDate = dateNeedsUpdate ? departureDate : segment.departureDate;
+      if (!validDocumentFlightNumber(flightNumber)) {
+        flightInput.setCustomValidity(localeText(
+          '请输入有效航班号。', 'Enter a valid flight number.', 'Introduce un número de vuelo válido.'));
+        flightInput.reportValidity();
+        return;
+      }
+      if (!validDocumentDepartureDate(departureDate)) {
+        dateInput.setCustomValidity(localeText(
+          '请输入真实存在的出发日期。', 'Enter a real departure date.', 'Introduce una fecha de salida válida.'));
+        dateInput.reportValidity();
+        return;
+      }
+      if (flightConfirmation && !flightConfirmation.disabled && !flightConfirmation.checked) {
+        flightConfirmation.setCustomValidity(localeText(
+          '请明确确认这个航班号。', 'Explicitly confirm this flight number.', 'Confirma expresamente este número de vuelo.'));
+        flightConfirmation.reportValidity();
+        return;
+      }
+      if (dateConfirmation && !dateConfirmation.disabled && !dateConfirmation.checked) {
+        dateConfirmation.setCustomValidity(localeText(
+          '请明确确认这个出发日期。', 'Explicitly confirm this departure date.', 'Confirma expresamente esta fecha de salida.'));
+        dateConfirmation.reportValidity();
+        return;
+      }
+      var completed = applyDocumentSegmentCompletion(index, flightNumber, departureDate, {
+        flightNumber: Boolean(flightConfirmation && flightConfirmation.checked),
+        departureDate: Boolean(dateConfirmation && dateConfirmation.checked)
       });
-      usableDocumentSegmentIndexes = [index];
-      var selectedResult = selectedDocumentResult(pendingDocument, index);
-      resetManualDocumentEntry();
-      startFlightLookup(flightNumber, departureDate, false, selectedResult);
+      if (!completed) {
+        dateInput.setCustomValidity(localeText(
+          '请输入与文件月日一致的真实出发日期。',
+          'Enter a valid departure date matching the recognized month and day.',
+          'Introduce una fecha válida que coincida con el mes y el día reconocidos.'));
+        dateInput.reportValidity();
+        return;
+      }
+      returnToDocumentSegmentSelection();
       return;
     }
     startFlightLookup(flightNumber, departureDate, false, null);
+  });
+
+  ['flight-input', 'date-input', 'flight-confirm-input', 'date-confirm-input'].forEach(function (id) {
+    var input = document.getElementById(id);
+    if (input) input.addEventListener('input', function () { input.setCustomValidity(''); });
   });
 
   document.addEventListener('keydown', function (event) {

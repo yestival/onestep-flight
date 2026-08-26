@@ -7,7 +7,12 @@
     "segments": [
       {
         "flightNumber": "KL1036",
-        "departureDate": null,
+        "flightNumberConfidence": "HIGH",
+        "requiresFlightNumberConfirmation": false,
+        "flightNumberConfirmedByUser": false,
+        "departureDate": "2026-08-04",
+        "departureMonthDay": "08-04",
+        "dateSource": "CURRENT_YEAR_FROM_MONTH_DAY",
         "departureAirport": "MAN",
         "arrivalAirport": "AMS",
         "scheduledDeparture": "2026-08-04T17:30"
@@ -22,31 +27,83 @@
     "segments": [
       {
         "flightNumber": "KL1036",
-        "departureDate": null,
+        "flightNumberConfidence": "HIGH",
+        "requiresFlightNumberConfirmation": false,
+        "flightNumberConfirmedByUser": false,
+        "departureDate": "2026-08-04",
+        "departureMonthDay": "08-04",
+        "dateSource": "CURRENT_YEAR_FROM_MONTH_DAY",
         "departureAirport": "MAN",
         "arrivalAirport": "AMS",
-        "scheduledDeparture": "2026-08-04T17:30"
+        "scheduledDeparture": "17:30"
       },
       {
         "flightNumber": "MF812",
-        "departureDate": null,
+        "flightNumberConfidence": "MEDIUM",
+        "requiresFlightNumberConfirmation": true,
+        "flightNumberConfirmedByUser": false,
+        "departureDate": "2026-08-04",
+        "departureMonthDay": "08-04",
+        "dateSource": "CURRENT_YEAR_FROM_MONTH_DAY",
         "departureAirport": "AMS",
         "arrivalAirport": "XMN",
-        "scheduledDeparture": "2026-08-04T21:40"
+        "scheduledDeparture": "21:40"
       },
       {
         "flightNumber": "MF825",
-        "departureDate": null,
+        "flightNumberConfidence": "HIGH",
+        "requiresFlightNumberConfirmation": false,
+        "flightNumberConfirmedByUser": false,
+        "departureDate": "2026-09-05",
+        "departureMonthDay": "09-05",
+        "dateSource": "CURRENT_YEAR_FROM_MONTH_DAY",
         "departureAirport": "XMN",
         "arrivalAirport": "CDG",
-        "scheduledDeparture": "2026-09-05T00:10"
+        "scheduledDeparture": "00:10"
       },
       {
         "flightNumber": "AF1668",
-        "departureDate": null,
+        "flightNumberConfidence": "MEDIUM",
+        "requiresFlightNumberConfirmation": true,
+        "flightNumberConfirmedByUser": false,
+        "departureDate": "2026-09-05",
+        "departureMonthDay": "09-05",
+        "dateSource": "CURRENT_YEAR_FROM_MONTH_DAY",
         "departureAirport": "CDG",
         "arrivalAirport": "MAN",
-        "scheduledDeparture": "2026-09-05T09:25"
+        "scheduledDeparture": "09:25"
+      }
+    ]
+  },
+  "mixedSegments": {
+    "documentType": "ITINERARY",
+    "dataSource": "TEST_FIXTURE",
+    "fields": {},
+    "needsReviewFields": ["segments[0].departure_date"],
+    "segments": [
+      {
+        "flightNumber": "KL1036",
+        "flightNumberConfidence": "HIGH",
+        "requiresFlightNumberConfirmation": false,
+        "flightNumberConfirmedByUser": false,
+        "departureDate": null,
+        "departureMonthDay": "08-04",
+        "dateSource": "MISSING",
+        "departureAirport": "MAN",
+        "arrivalAirport": "AMS",
+        "scheduledDeparture": "17:30"
+      },
+      {
+        "flightNumber": "MF812",
+        "flightNumberConfidence": "HIGH",
+        "requiresFlightNumberConfirmation": false,
+        "flightNumberConfirmedByUser": false,
+        "departureDate": "2026-08-04",
+        "departureMonthDay": "08-04",
+        "dateSource": "EXPLICIT_FULL_DATE",
+        "departureAirport": "AMS",
+        "arrivalAirport": "XMN",
+        "scheduledDeparture": "2026-08-04T21:40"
       }
     ]
   }

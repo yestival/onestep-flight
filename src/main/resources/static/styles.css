@@ -24,6 +24,9 @@ body{font-size:20px;overflow-x:hidden}
 .manual-fields input{display:block;width:100%;inline-size:100%;max-width:100%;min-width:0;min-height:60px;box-sizing:border-box;margin:0;border:2px solid var(--border);border-radius:4px;background:var(--white);padding:12px 16px;color:var(--navy);font:var(--manual-control-font)}
 .manual-fields input[name="flight"]{text-transform:uppercase}
 .manual-partial-notice{margin:0 0 18px;border-left:5px solid var(--accent);background:var(--color-surface-emphasis);padding:14px 16px;color:var(--navy);font-size:17px;font-weight:800;line-height:1.45}
+.manual-confirmation{display:flex;align-items:flex-start;gap:10px;margin:12px 0 0;color:var(--navy);font-size:17px;font-weight:800;line-height:1.35;cursor:pointer}
+.manual-confirmation input{width:24px;min-width:24px;height:24px;min-height:24px;margin:0;accent-color:var(--accent)}
+.manual-confirmation:has(input:focus-visible){outline:4px solid var(--color-focus);outline-offset:3px;border-radius:var(--radius-small)}
 .manual-document-segments{margin-bottom:24px}
 .document-unusable-hint{margin:18px 0 0;color:var(--blue-mid);font-size:16px;font-weight:650;line-height:1.55}
 .document-unusable-actions{max-width:520px}
@@ -466,7 +469,7 @@ body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-ri
 .button-secondary,.input-row input,.language-select,.segment-option{border-color:var(--color-border-strong)}
 
 /* Explicit action grids keep short controls compact without relying on DOM order. */
-:root{--icon-yes:#188A50;--icon-no:#C83F4D;--icon-unsure:#B98200;--icon-yes-on-dark:#72E3A5;--icon-no-on-dark:#FF8F99;--icon-unsure-on-dark:#FFD166;--staff-person-on-dark:#A7C7E3;--action-control-font-size:clamp(20px,3vw,24px);--action-control-icon-size:clamp(44px,18vw,52px);--action-control-text-icon-size:clamp(30px,12vw,40px)}
+:root{--icon-yes:#188A50;--icon-no:#C83F4D;--icon-unsure:#9A6B00;--icon-yes-on-dark:#72E3A5;--icon-no-on-dark:#FF8F99;--icon-unsure-on-dark:#D0A13A;--staff-person-on-dark:#A7C7E3;--action-control-font-size:clamp(20px,3vw,24px);--action-control-icon-size:clamp(44px,18vw,52px);--action-control-text-icon-size:clamp(30px,12vw,40px)}
 .answer-choice-grid,.two-choice-grid,.confirm-assistance-actions,.short-action-grid{display:grid;align-items:stretch;gap:12px;width:100%;max-width:100%}
 .answer-choice-grid{grid-template-columns:repeat(3,minmax(44px,1fr))}
 .two-choice-grid,.confirm-assistance-actions,.short-action-grid,.screen-confirm .confirm-choice-actions{display:grid;grid-template-columns:repeat(2,minmax(44px,1fr))}
@@ -503,7 +506,7 @@ body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-ri
 .staff-icon-person{color:var(--color-mid);stroke:var(--color-mid)}
 .staff-icon-question{color:var(--icon-unsure);stroke:var(--icon-unsure)}
 .staff-help-button .staff-icon-person{color:var(--staff-person-on-dark);stroke:var(--staff-person-on-dark)}
-.staff-help-button .staff-icon-question{color:var(--icon-unsure-on-dark);stroke:var(--icon-unsure-on-dark)}
+.button-primary.staff-help-button .staff-icon-question,.step-assistance-actions .staff-help-button .staff-icon-question{color:var(--icon-unsure-on-dark);stroke:var(--icon-unsure-on-dark)}
 .staff-icon-person,.staff-icon-question{stroke-width:2.9;stroke-linecap:round;stroke-linejoin:round}
 .step-assistance-actions .assistance-button svg,.confirm-assistance-actions .assistance-button svg{width:var(--action-control-icon-size);height:var(--action-control-icon-size);max-width:100%;stroke-width:2.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .step-assistance-actions .assistance-button,.confirm-assistance-actions .assistance-button{min-width:44px;min-height:64px;gap:5px;padding:4px 8px;font-size:var(--action-control-font-size);font-weight:800;line-height:1.05;text-align:center;white-space:normal}
@@ -579,10 +582,14 @@ body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-ri
 .welcome-speech-note svg{width:34px;height:34px;flex:none;fill:none;stroke:var(--accent);stroke-width:2.9;stroke-linecap:round;stroke-linejoin:round}
 .welcome-speech-note p{min-width:0;margin:0;font-size:16px;font-weight:750;line-height:1.45;overflow-wrap:anywhere}
 
-/* Document segments stay in their source order; only complete identities are selectable. */
+/* Document segments stay in source order and remain selectable while local details are completed. */
 .segment-option.is-selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(44,100,142,.12)}
 .segment-option.is-incomplete{border-style:dashed;background:var(--color-surface-muted)}
 .segment-option.is-incomplete .segment-choice-label{color:var(--color-text-muted)}
+.segment-option.is-pending{border-color:var(--icon-unsure);background:var(--color-surface-muted)}
+.segment-option.is-pending .segment-choice-label{color:var(--icon-unsure)}
+.segment-option.is-conflict{border-color:var(--icon-unsure)}
+.segment-option.is-conflict .segment-choice-label{color:var(--icon-unsure)}
 .live-status-unavailable{margin:16px 0 20px;border-left:5px solid var(--accent);background:var(--color-surface-emphasis);padding:14px 16px;color:var(--navy);font-size:18px;font-weight:850;line-height:1.4}
 .flight-correction{width:100%;min-width:0;max-width:100%;border:2px solid var(--color-border-strong);border-top:5px solid var(--accent);background:var(--color-surface);box-shadow:0 12px 30px var(--color-shadow);padding:24px;margin:0 0 28px}
 .flight-correction h2{margin:0 0 14px;font:700 clamp(1.8rem,5vw,2.5rem)/1.16 var(--title)}
