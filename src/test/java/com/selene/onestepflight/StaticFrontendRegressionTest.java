@@ -25,6 +25,8 @@ class StaticFrontendRegressionTest {
         assertTrue(html.contains("class=\"manual-control date-control\""));
         assertTrue(html.contains("data-date-display"));
         assertTrue(css.contains(".date-control input[type=\"date\"]{position:absolute;inset:0"));
+        assertTrue(css.contains("-webkit-text-fill-color:transparent;background:transparent;opacity:0"));
+        assertFalse(css.contains("opacity:.01"));
         assertTrue(css.contains("overflow:hidden"));
         assertTrue(css.contains(".date-control:focus-within"));
         assertTrue(js.contains("input.addEventListener('input', syncVisibleDates)"));
@@ -46,7 +48,7 @@ class StaticFrontendRegressionTest {
         assertTrue(css.contains("height:var(--manual-control-height);min-height:var(--manual-control-height)"));
         assertTrue(css.contains("border:var(--manual-control-border)"));
         assertTrue(css.contains("padding:var(--manual-control-padding)"));
-        assertTrue(css.contains("--manual-control-font:800 var(--action-control-font-size)/1.05 var(--data)"));
+        assertTrue(css.contains("--manual-control-font:800 clamp(18px,4vw,22px)/1.2 var(--data)"));
         assertTrue(css.contains(".manual-fields input{display:block;width:100%;inline-size:100%;max-width:100%;min-width:0;min-height:60px"));
         assertTrue(css.contains("color:var(--navy);font:var(--manual-control-font)"));
         assertTrue(css.contains("font:var(--manual-control-font)"));
@@ -56,6 +58,7 @@ class StaticFrontendRegressionTest {
         assertTrue(css.contains("input.manual-control:user-invalid,.date-control:has(input:user-invalid)"));
         assertTrue(css.contains("input.manual-control:disabled,.date-control:has(input:disabled)"));
         assertTrue(css.contains(".date-control input[type=\"date\"]{position:absolute;inset:0"));
+        assertTrue(css.contains("input.manual-control[name=\"flight\"]::placeholder{text-transform:none}"));
     }
 
     @Test
@@ -171,14 +174,16 @@ class StaticFrontendRegressionTest {
         assertTrue(html.contains("id=\"date-input\" name=\"departureDate\" type=\"date\""));
         assertTrue(html.contains("data-screen=\"document-unusable\""));
         assertTrue(html.contains("data-action=\"choose-other-file\""));
-        assertTrue(html.contains("data-manual-partial-notice"));
+        assertEquals(1, html.split("data-manual-status", -1).length - 1);
+        assertFalse(html.contains("data-manual-partial-notice"));
         assertTrue(html.contains("data-manual-document-segments"));
         assertTrue(html.contains("data-manual-segment-options"));
         assertTrue(html.contains("data-manual-flight-field"));
         assertTrue(html.contains("data-manual-date-field"));
         assertTrue(html.contains("data-review-candidates"));
         assertTrue(html.contains("data-review-candidate-fields"));
-        assertTrue(html.contains("data-document-advisory"));
+        assertFalse(html.contains("data-document-advisory"));
+        assertFalse(html.contains("review-candidates-title"));
         assertTrue(js.contains("function reviewIssueIsBlockingCritical(issue)"));
         assertTrue(js.contains("issue.blocking !== true || issue.resolved"));
         assertFalse(js.contains("issue.candidates.length >= 2"));
@@ -278,7 +283,8 @@ class StaticFrontendRegressionTest {
         assertTrue(explicitSubmit.contains("applyDocumentSegmentCompletion(index, flightNumber, departureDate, {"));
         assertTrue(explicitSubmit.contains("returnToDocumentSegmentSelection()"));
         assertFalse(explicitSubmit.contains("startFlightLookup(completed.flightNumber"));
-        assertTrue(explicitSubmit.contains("if (documentSegmentLookupReady(segment, index))"));
+        assertTrue(explicitSubmit.contains("if (documentSegmentLookupReady(segment, index)"));
+        assertTrue(explicitSubmit.contains("manualPrimary.dataset.mode === 'query'"));
         assertTrue(explicitSubmit.contains("startFlightLookup(segment.flightNumber, segment.departureDate, false, readyResult)"));
         String returnFlow = js.substring(js.indexOf("function returnToDocumentSegmentSelection()"),
                 js.indexOf("function renderErrorMessage()"));
@@ -334,9 +340,9 @@ class StaticFrontendRegressionTest {
         assertTrue(submit.contains("returnToDocumentSegmentSelection()"));
         assertTrue(submit.contains("flightConfirmation.checked"));
         assertTrue(submit.contains("dateConfirmation.checked"));
-        assertTrue(js.contains("documentQueryTargetLabel(selected)"));
-        assertTrue(js.contains("queryTarget: '查询 {flight} · {date}'"));
-        assertTrue(js.contains("flight: normalizeFlightNumber(segment && segment.flightNumber || '')"));
+        assertFalse(js.contains("primary.textContent = documentQueryTargetLabel(selected)"));
+        assertTrue(js.contains("primary.dataset.i18n = 'searchFlightPartial'"));
+        assertTrue(js.contains("searchFlightPartial: '查询航班'"));
     }
 
     @Test
@@ -523,38 +529,157 @@ class StaticFrontendRegressionTest {
     }
 
     @Test
-    void refreshHasNoTimeGateButKeepsOfflineAndInFlightProtection() throws IOException {
+    void automaticRefreshUsesOneDeadlineSchedulerAndSilentRequestBranches() throws IOException {
         String js = resource("app.js");
-        String refreshFlight = js.substring(js.indexOf("function refreshFlight()"),
+        String refreshFlight = js.substring(js.indexOf("function refreshFlight(options)"),
                 js.indexOf("function beginNewFlightInformation()"));
-        String refreshArrival = js.substring(js.indexOf("function refreshArrivalInfo()"),
+        String refreshArrival = js.substring(js.indexOf("function refreshArrivalInfo(options)"),
                 js.indexOf("function maybeRefreshArrivalOnEntry()"));
         String refreshControls = js.substring(js.indexOf("function updateRefreshControls()"),
                 js.indexOf("function setDeparturePassedStaffContent()"));
-        String returnRefresh = js.substring(js.indexOf("function refreshAfterReturnToPage()"),
-                js.indexOf("window.addEventListener('focus'"));
-        String persistence = js.substring(js.indexOf("function persistJourney()"),
-                js.indexOf("function pick(source, fields)"));
-        String removedStatus = "REFRESH_" + "COOL" + "DOWN";
-        String removedTimestamp = "lastRefresh" + "AttemptAt";
+        String scheduler = js.substring(js.indexOf("function autoRefreshDelayMs("),
+                js.indexOf("function refreshFlight(options)"));
 
-        assertFalse(js.contains(removedStatus + "_MS"));
-        assertFalse(js.contains(removedTimestamp));
-        assertFalse(js.contains(removedStatus));
-        assertFalse(js.contains("function beginRefresh" + "Attempt()"));
-        assertFalse(js.contains("function updateRefreshButton" + "Cool" + "down()"));
-        assertTrue(refreshFlight.contains("if (!currentFlight || flightRequestController) return"));
+        assertTrue(js.contains("var AUTO_REFRESH_FAR_MS = 300000"));
+        assertTrue(js.contains("var AUTO_REFRESH_NEAR_MS = 120000"));
+        assertTrue(js.contains("var AUTO_REFRESH_BOUNDARY_MS = 90 * 60 * 1000"));
+        assertTrue(scheduler.contains("untilDeparture <= AUTO_REFRESH_BOUNDARY_MS"));
+        assertTrue(scheduler.contains("Math.min(AUTO_REFRESH_FAR_MS, untilDeparture - AUTO_REFRESH_BOUNDARY_MS)"));
+        assertTrue(scheduler.contains("journeyContext.boarded === true"));
+        assertTrue(scheduler.contains("window.setTimeout(runDueAutoRefresh"));
+        assertFalse(scheduler.contains("setInterval"));
+        assertTrue(refreshFlight.contains("var silent = settings.silent === true"));
         assertTrue(refreshFlight.contains("if (!navigator.onLine)"));
-        assertTrue(refreshFlight.contains("finally(updateRefreshControls)"));
+        assertTrue(refreshFlight.contains("if (!silent) updateRefreshControls()"));
+        assertTrue(refreshFlight.contains("scheduleAutoRefresh(true)"));
         assertFalse(refreshFlight.contains("Date.now()"));
         assertTrue(refreshArrival.contains("flightRequestController"));
         assertTrue(refreshArrival.contains("if (!navigator.onLine)"));
-        assertTrue(refreshArrival.contains("finally(updateRefreshControls)"));
+        assertTrue(refreshArrival.contains("var silent = settings.silent === true"));
+        assertTrue(refreshArrival.contains("if (!silent) updateRefreshControls()"));
+        assertTrue(js.contains("refreshArrivalInfo({ silent: true, source: 'arrival-entry' })"));
         assertTrue(refreshControls.contains("!navigator.onLine || Boolean(flightRequestController)"));
-        assertTrue(returnRefresh.contains("|| flightRequestController) return"));
-        assertFalse(returnRefresh.contains("Date.now()"));
-        assertFalse(persistence.toLowerCase().contains("cool" + "down"));
+        assertTrue(js.contains("function refreshAfterReturnToPage()"));
+        assertTrue(js.contains("resumeAutoRefresh();"));
+        assertTrue(js.contains("requestNextAction({ refresh: true, silent: true, source: 'auto' })"));
+        assertTrue(js.contains("refreshFlight({ silent: true, source: 'auto' })"));
         assertTrue(js.contains("restorableRefreshStatus(saved.refreshStatusState)"));
+    }
+
+    @Test
+    void operationalChangeAlertIsTopLevelAssertiveAndUsesDedicatedPrioritySpeech() throws IOException {
+        String html = resource("index.html");
+        String css = resource("styles.css");
+        String js = resource("app.js");
+
+        String confirm = html.substring(html.indexOf("data-screen=\"confirm\""),
+                html.indexOf("data-screen=\"manual\""));
+        String step = html.substring(html.indexOf("data-screen=\"step\""),
+                html.indexOf("data-screen=\"complete\""));
+        String alertMarkup = "data-flight-change-alert role=\"alert\" aria-live=\"assertive\" aria-atomic=\"true\" hidden";
+        assertEquals(2, html.split(alertMarkup, -1).length - 1);
+        assertTrue(confirm.indexOf("data-action=\"journey-back\"") < confirm.indexOf("data-flight-change-alert"));
+        assertTrue(confirm.indexOf("data-flight-change-alert") < confirm.indexOf("id=\"confirm-title\""));
+        assertTrue(step.indexOf("data-flight-change-alert") < step.indexOf("class=\"step-progress\""));
+
+        assertTrue(css.contains("--flight-change-bg:#163D75"));
+        assertTrue(css.contains("--flight-change-text:#F0D68A"));
+        assertTrue(css.contains("--flight-change-border:#D2B45F"));
+        assertTrue(css.contains("border-radius:var(--radius-medium)"));
+        assertTrue(css.contains(".flight-change-alert.is-critical"));
+
+        assertTrue(js.contains("function presentNewFlightChangeBatch()"));
+        assertTrue(js.contains("startSpeechText(flightChangeSpeechText(groups, currentLocale), true)"));
+        assertTrue(js.contains("if (hasNewChangeBatch) presentNewFlightChangeBatch()"));
+    }
+
+    @Test
+    void flightChangeNoticesAreTransientAndLocalizedControlsUseScopedReadableTypography()
+            throws IOException {
+        String css = resource("styles.css");
+        String js = resource("app.js");
+        String beginFlight = js.substring(js.indexOf("function beginFlight("),
+                js.indexOf("function renderScenarioTestCards()"));
+        String requestNextAction = js.substring(js.indexOf("function requestNextAction("),
+                js.indexOf("var spanishActionCopy"));
+        String restore = js.substring(js.indexOf("function applySavedJourney("),
+                js.indexOf("function restoreJourney()"));
+        String renderNotice = js.substring(js.indexOf("function renderFlightChanges()"),
+                js.indexOf("function flightChangeCopyContext()"));
+
+        assertFalse(css.contains("button:not(.brand)"));
+        assertFalse(css.matches("(?s).*\\.(?:button|answer-choice|assistance-button)[^{]*\\{[^}]*overflow-wrap:anywhere.*"));
+        assertTrue(css.contains("word-break:normal;overflow-wrap:normal;hyphens:none"));
+        assertTrue(css.contains("--full-row-control-font-size:clamp(28px,7vw,32px)"));
+        assertTrue(css.contains("--manual-control-font:800 clamp(18px,4vw,22px)"));
+        assertTrue(css.contains("--multi-control-font-size:26px"));
+        assertTrue(css.contains("html[lang=\"en\"]{--multi-control-font-size:24px}"));
+        assertTrue(css.contains("html[lang=\"es\"]{--multi-control-font-size:23px}"));
+        assertFalse(css.contains("--action-control-font-size"));
+        assertFalse(css.contains("--three-choice-font-size"));
+        assertTrue(css.contains("@media(max-width:280px)"));
+        assertTrue(css.contains(".answer-choice-grid,.step-assistance-actions,.step-assistance-actions.share-unavailable{grid-template-columns:minmax(0,1fr)}"));
+        assertTrue(css.contains(".scenario-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))"));
+        assertTrue(css.contains(".scenario-actions button{width:100%;min-height:40px"));
+        assertTrue(css.contains("font:800 14px/1.25 var(--body)"));
+        assertTrue(css.contains("--flight-change-bg:#163D75"));
+        assertTrue(css.contains("--flight-change-text:#F0D68A"));
+        assertTrue(css.contains("--flight-change-border:#D2B45F"));
+        assertTrue(css.contains("font-size:clamp(21px,3vw,25px)"));
+        assertTrue(css.contains("font-size:clamp(18px,2.7vw,22px)"));
+        assertTrue(css.contains("-webkit-text-fill-color:transparent;background:transparent;opacity:0"));
+
+        assertTrue(js.contains("var FLIGHT_CHANGE_NOTICE_MS = 12000"));
+        assertTrue(js.contains("flightChangeDismissTimer = window.setTimeout(dismissFlightChangeNotice, FLIGHT_CHANGE_NOTICE_MS)"));
+        assertTrue(js.contains("function dismissFlightChangeNotice()"));
+        assertFalse(js.contains("showCurrentFlightChangesWithoutRepeatSuppression"));
+        assertFalse(beginFlight.contains("latestChanges"));
+        assertTrue(requestNextAction.contains("if (!refreshRequested) dismissFlightChangeNotice()"));
+        assertFalse(restore.contains("latestChanges"));
+        assertTrue(renderNotice.contains("alert.closest('.screen')"));
+        assertTrue(renderNotice.contains("ownerScreen.dataset.screen === currentScreen"));
+        assertTrue(renderNotice.contains("delete alert.dataset.renderSignature"));
+    }
+
+    @Test
+    void namedDemoScenariosExposeAllRealTwoStageRefreshEntrypointsOnlyBehindTheExactQueryFlag()
+            throws IOException {
+        String html = resource("index.html");
+        String css = resource("styles.css");
+        String js = resource("app.js");
+        String trigger = js.substring(js.indexOf("function triggerDemoScenarioRefresh()"),
+                js.indexOf("function restartDemoScenario()"));
+        String reset = js.substring(js.indexOf("function resetFlightChangePresentation()"),
+                js.indexOf("function updateRefreshChangeState("));
+        String dismiss = js.substring(js.indexOf("function dismissFlightChangeNotice()"),
+                js.indexOf("function resetFlightChangePresentation()"));
+
+        assertEquals(17, html.split("data-action=\"scenario\"", -1).length - 1);
+        for (String id : new String[] { "NORMAL", "TERMINAL_CHANGE", "GATE_CHANGE",
+                "CHECK_IN_COUNTER_CHANGE", "BAG_DROP_DESK_CHANGE", "BOARDING_TIME_CHANGE",
+                "DEPARTURE_TIME_CHANGE", "DELAY", "BOARDING", "CANCEL", "DEPARTED", "DIVERTED",
+                "RETURNED", "ARRIVAL_TIME_CHANGE", "ARRIVED", "BAGGAGE_BELT_CHANGE", "STALE" }) {
+            assertTrue(html.contains("data-scenario=\"" + id + "\""), id);
+        }
+        assertEquals(3, html.split("class=\"scenario-group\"", -1).length - 1);
+        assertEquals(2, html.split("data-scenario-test-card", -1).length - 1);
+        assertTrue(js.contains(".get('demoScenarios') === 'true'"));
+        assertTrue(js.contains("document.querySelector('[data-scenario-panel]').hidden = !demoScenariosEnabled"));
+        assertTrue(trigger.contains("refreshFlight({ silent: true, source: 'scenario-test' })"));
+        assertTrue(trigger.contains("requestNextAction({ refresh: true, silent: true, source: 'scenario-test' })"));
+        assertTrue(trigger.contains("refreshArrivalInfo({ silent: true, source: 'scenario-test' })"));
+        assertFalse(trigger.contains("flightChangeAlertCopy"));
+        assertFalse(trigger.contains("querySelector"));
+        assertTrue(reset.contains("dismissFlightChangeNotice()"));
+        assertTrue(reset.contains("presentedFlightChangeSignatures = Object.create(null)"));
+        assertTrue(dismiss.contains("displayedFlightChanges = []"));
+        assertTrue(dismiss.contains("displayedFlightChangeFlight = null"));
+        assertTrue(dismiss.contains("stepChangeAlert = null"));
+        assertTrue(css.contains("grid-template-columns:repeat(4,minmax(0,1fr))"));
+        assertTrue(css.contains("min-height:40px"));
+        assertTrue(css.contains("font:800 14px/1.25 var(--body)"));
+        assertTrue(css.contains("@media(max-width:280px){.scenario-actions{grid-template-columns:1fr}}"));
+        assertTrue(css.contains(":not([data-flight-change-alert]):not([data-scenario-test-card])"));
     }
 
     @Test
@@ -651,7 +776,7 @@ class StaticFrontendRegressionTest {
     }
 
     @Test
-    void compactActionGridsRetainMobileColumnsAndLargeSemanticIcons() throws IOException {
+    void compactActionGridsRetainEqualLocalizedTypographyAndSemanticIcons() throws IOException {
         String css = resource("styles.css");
 
         assertTrue(css.contains("--icon-yes:#188A50"));
@@ -664,10 +789,26 @@ class StaticFrontendRegressionTest {
         assertTrue(css.contains(".two-choice-grid,.confirm-assistance-actions,.short-action-grid,.screen-confirm .confirm-choice-actions{display:grid;grid-template-columns:repeat(2,minmax(44px,1fr))}"));
         assertTrue(css.contains(".step-assistance-actions{grid-template-columns:repeat(3,minmax(44px,1fr))}"));
         assertTrue(css.contains(".action-full-row,.primary-action-row,.danger-action-row{grid-column:1/-1}"));
-        assertTrue(css.contains("--action-control-font-size:clamp(20px,3vw,24px)"));
-        assertTrue(css.contains("--action-control-icon-size:clamp(44px,18vw,52px)"));
-        assertTrue(css.contains(".button,.home-back-button,.back-button,.card-close,.text-button,.support-button,.scenario-actions button,.journey-end-action .end-journey-link,.family-actions .button,.family-actions .text-button,.journey-secondary-actions .button,.journey-primary-action .journey-primary{min-width:44px;min-height:64px;padding-block:6px;font-size:var(--action-control-font-size);font-weight:800;line-height:1.05}"));
-        assertTrue(css.contains(".button-icon,.button-icon.outline,.icon-button svg,.support-button svg,.journey-end-action .end-journey-link svg{width:var(--action-control-icon-size);height:var(--action-control-icon-size)"));
+        assertTrue(css.contains("--full-row-control-font-size:clamp(28px,7vw,32px)"));
+        assertTrue(css.contains("--multi-control-font-size:26px"));
+        assertTrue(css.contains("html[lang=\"en\"]{--multi-control-font-size:24px}"));
+        assertTrue(css.contains("html[lang=\"es\"]{--multi-control-font-size:23px}"));
+        assertTrue(css.contains(".site-header{height:68px}"));
+        assertTrue(css.contains(".screen:not(.screen-welcome),.screen-step,.screen-confirm{padding-top:20px}"));
+        assertTrue(css.contains(".section-heading{margin-bottom:22px}"));
+        assertTrue(css.contains(".section-heading .eyebrow,.eyebrow{margin-bottom:9px}"));
+        assertTrue(css.contains(".site-header{height:56px}"));
+        assertTrue(css.contains(".screen:not(.screen-welcome),.screen-step,.screen-confirm{padding-top:10px}"));
+        assertTrue(css.contains("--action-control-icon-size:clamp(40px,10vw,48px)"));
+        assertTrue(css.contains(".button,.journey-primary-action .journey-primary,.journey-secondary-actions-single .button{min-height:72px;padding-block:14px;padding-inline:18px;font-size:var(--full-row-control-font-size);line-height:1.12}"));
+        assertTrue(css.contains(".home-back-button,.back-button{min-height:48px;padding-block:8px;font-size:clamp(24px,4vw,26px)"));
+        assertTrue(css.contains(".card-close,.text-button,.support-button,.journey-end-action .end-journey-link{min-height:48px;padding-block:8px;font-size:clamp(22px,3vw,24px)"));
+        assertTrue(css.contains(".language-select{min-height:48px;font-size:clamp(22px,3vw,24px)"));
+        assertTrue(css.contains(".answer-choice-grid,.two-choice-grid,.confirm-assistance-actions,.short-action-grid,.step-assistance-actions,.family-actions,.manual-actions.is-partial-document,.journey-secondary-actions:not(.journey-secondary-actions-single){font-size:var(--multi-control-font-size)}"));
+        assertTrue(css.contains(".answer-choice-grid .button,.step-assistance-actions .assistance-button{min-width:44px;min-height:104px"));
+        assertTrue(css.contains(".manual-actions.is-partial-document .button{width:100%;max-width:none;min-height:76px;padding:12px;font-size:inherit"));
+        assertTrue(css.contains(".short-action-grid .action-full-row{min-height:72px;padding:14px 18px;font-size:var(--full-row-control-font-size)"));
+        assertTrue(css.contains(".button-icon,.button-icon.outline,.icon-button svg,.support-button svg,.staff-help-button .staff-help-icon,.journey-end-action .end-journey-link svg{width:var(--action-control-icon-size);height:var(--action-control-icon-size)"));
         assertTrue(css.contains(".button-primary .icon-yes{color:var(--icon-yes-on-dark)}"));
         assertTrue(css.contains(".button-primary .icon-no{color:var(--icon-no-on-dark)}"));
         assertTrue(css.contains(".button-primary .icon-unsure{color:var(--icon-unsure-on-dark)}"));
@@ -676,10 +817,14 @@ class StaticFrontendRegressionTest {
         assertTrue(css.contains(".button-primary.staff-help-button .staff-icon-question,.step-assistance-actions .staff-help-button .staff-icon-question{color:var(--icon-unsure-on-dark);stroke:var(--icon-unsure-on-dark)}"));
         assertFalse(css.contains("}.staff-help-button .staff-icon-question{color:var(--icon-unsure-on-dark)"));
         assertTrue(css.contains("stroke-width:2.9"));
-        assertTrue(css.contains(":root{--action-control-font-size:clamp(21px,6vw,27px)}"));
-        assertTrue(css.contains(":root{--action-control-font-size:18px;--action-control-icon-size:36px;--action-control-text-icon-size:28px}"));
-        assertTrue(css.contains(".dialog-speech-button{width:100%;min-height:64px"));
-        assertFalse(css.contains(".step-assistance-actions,.journey-secondary-actions,.in-flight-details{grid-template-columns:1fr}"));
+        assertTrue(css.contains(".review-candidate-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}"));
+        assertTrue(css.contains(".review-candidate{display:flex;align-items:center;justify-content:center"));
+        assertTrue(css.contains(".manual-actions.is-partial-document{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))"));
+        assertTrue(css.contains(":root{--action-control-icon-size:40px;--action-control-text-icon-size:32px}"));
+        assertTrue(css.contains(".dialog-speech-button{width:100%;min-height:72px"));
+        assertTrue(css.contains(".answer-choice-grid .answer-choice>span,.step-assistance-actions .assistance-button>span{font-size:inherit;white-space:normal}"));
+        assertTrue(css.contains("@media(max-width:280px)"));
+        assertTrue(css.contains(".answer-choice-grid,.step-assistance-actions,.step-assistance-actions.share-unavailable{grid-template-columns:minmax(0,1fr)}"));
         assertFalse(css.matches("(?s).*\\.step-assistance-actions[^{}]*:nth-child.*"));
     }
 
@@ -717,11 +862,13 @@ class StaticFrontendRegressionTest {
 
         int staffActionCount = html.split("data-action=\"staff\"", -1).length - 1;
         assertEquals(5, staffActionCount);
-        assertEquals(staffActionCount, html.split("staff-help-button", -1).length - 1);
-        assertEquals(staffActionCount,
+        int documentHelpCount = html.split("data-action=\"manual-document-help\"", -1).length - 1;
+        assertEquals(1, documentHelpCount);
+        assertEquals(staffActionCount + documentHelpCount, html.split("staff-help-button", -1).length - 1);
+        assertEquals(staffActionCount + documentHelpCount,
                 html.split("class=\"staff-help-icon\" viewBox=\"0 0 26 24\" aria-hidden=\"true\" focusable=\"false\"", -1).length - 1);
-        assertEquals(staffActionCount, html.split("class=\"staff-icon-person\"", -1).length - 1);
-        assertEquals(staffActionCount,
+        assertEquals(staffActionCount + documentHelpCount, html.split("class=\"staff-icon-person\"", -1).length - 1);
+        assertEquals(staffActionCount + documentHelpCount,
                 html.split("class=\"staff-icon-question\" d=\"M17 8a3 3 0 1 1 2.2 2.9c-.8.3-1.2.8-1.2 1.6M18 16h.01\"", -1).length - 1);
         assertTrue(html.contains("class=\"button button-secondary button-large staff-help-button\" type=\"button\" data-action=\"staff\""));
         assertTrue(html.contains("class=\"button button-primary button-large staff-help-button\" type=\"button\" data-action=\"staff\""));
@@ -768,16 +915,16 @@ class StaticFrontendRegressionTest {
         assertTrue(css.contains(".brand{flex:0 0 44px;min-width:44px;justify-content:center}"));
         assertTrue(css.contains(".language-select{width:96px;min-width:96px"));
         assertTrue(css.contains(".answer-choice-grid,.step-assistance-actions{gap:4px}"));
-        assertTrue(css.contains(".two-choice-grid .answer-choice,.screen-confirm .confirm-choice-actions .answer-choice{flex-direction:column"));
+        assertTrue(css.contains(".two-choice-grid .icon-button,.screen-confirm .confirm-choice-actions .icon-button,.confirm-assistance-actions .assistance-button"));
         assertTrue(css.contains(".date-control-value{padding-inline:18px}"));
-        assertTrue(css.contains("white-space:nowrap;overflow:hidden;text-overflow:ellipsis"));
+        assertTrue(css.contains("white-space:nowrap;overflow:visible;text-overflow:clip"));
         assertTrue(css.contains(".screen-confirm .route-summary{grid-template-columns:minmax(0,1fr) 14px minmax(0,1fr);gap:4px}"));
         assertTrue(css.contains(".screen-confirm .airport-code{font-size:20px;letter-spacing:0}"));
         assertTrue(css.contains(".screen-confirm .flight-details-core{grid-template-columns:minmax(0,1fr)}"));
-        assertTrue(css.contains(".screen h1,.screen h2,.section-heading>*,.confirm-card h1,.confirm-card p{min-width:0;max-width:100%;overflow-wrap:anywhere}"));
-        assertTrue(css.contains("height:auto;min-height:64px;overflow:visible;flex-direction:column"));
+        assertTrue(css.contains(".screen h1,.screen h2,.section-heading>*,.confirm-card h1,.confirm-card p{min-width:0;max-width:100%;word-break:normal;overflow-wrap:normal;hyphens:none}"));
+        assertTrue(css.contains("height:auto;min-height:76px;overflow:visible;flex-direction:column"));
         assertTrue(css.contains("width:var(--action-control-icon-size);height:var(--action-control-icon-size);min-height:var(--action-control-icon-size)"));
-        assertTrue(css.contains("position:static;background:transparent;padding:0;font-size:var(--action-control-font-size)"));
+        assertTrue(css.contains("position:static;background:transparent;padding:0;font-weight:800"));
         assertTrue(css.contains("button,.button,.support-button,.text-button,input,select{box-sizing:border-box;min-width:0;max-width:100%"));
     }
 
@@ -855,23 +1002,24 @@ class StaticFrontendRegressionTest {
     }
 
     @Test
-    void documentFieldHelpUsesTheExistingStaffCardWithoutUserFacingAuditLabels() throws IOException {
+    void documentReviewUsesOneStatusOneHelpEntryAndValueOnlyCandidates() throws IOException {
         String js = resource("app.js");
         String html = resource("index.html");
-        String fieldHelp = js.substring(js.indexOf("function renderFieldStaffHelp("),
-                js.indexOf("function documentSegmentAdvisoryCopy("));
         String manualRender = js.substring(js.indexOf("function renderManualDocumentEntry()"),
                 js.indexOf("function syncUsableDocumentSegmentIndexes()"));
         String candidateRender = js.substring(js.indexOf("function renderManualReviewCandidates("),
-                js.indexOf("function documentSegmentAdvisoryCopy("));
+                js.indexOf("function selectDocumentReviewCandidate("));
 
-        assertTrue(fieldHelp.contains("template.cloneNode(true)"));
-        assertTrue(fieldHelp.contains("button.dataset.action = 'field-staff'"));
-        assertTrue(fieldHelp.contains("fieldElement.append(button)"));
-        assertTrue(manualRender.contains("'flight_number', !hasFlightNumber ? 'MISSING'"));
-        assertTrue(manualRender.contains("flightConflict ? 'CONFLICT' : flightReview ? 'REVIEW'"));
-        assertTrue(manualRender.contains("'departure_date', !hasDepartureDate ? 'MISSING'"));
-        assertTrue(manualRender.contains("dateConflict ? 'CONFLICT' : dateReview ? 'REVIEW'"));
+        assertEquals(1, html.split("data-manual-status", -1).length - 1);
+        assertFalse(html.contains("data-manual-partial-notice"));
+        assertFalse(html.contains("data-document-advisory"));
+        assertFalse(js.contains("function renderFieldStaffHelp("));
+        assertFalse(js.contains("button.dataset.action = 'field-staff'"));
+        assertTrue(html.indexOf("data-action=\"manual-document-help\"")
+                < html.indexOf("data-manual-primary"));
+        assertTrue(manualRender.contains("state = flightConflict || dateConflict ? 'CONFLICT'"));
+        assertTrue(manualRender.contains(": !hasFlightNumber || !hasDepartureDate ? 'MISSING'"));
+        assertTrue(manualRender.contains(": flightReview || dateReview ? 'REVIEW' : 'READY'"));
         assertTrue(js.contains("fieldStaffHelp: '请工作人员帮忙'"));
         assertTrue(js.contains("fieldStaffHelp: 'Ask staff for help'"));
         assertTrue(js.contains("fieldStaffHelp: 'Pedir ayuda al personal'"));
@@ -882,6 +1030,9 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("titleZh: '请帮我确认出发日期'"));
         assertTrue(js.contains("titleEn: 'Please help me confirm my departure date'"));
         assertTrue(js.contains("titleEs: 'Ayúdeme a confirmar mi fecha de salida'"));
+        assertTrue(js.contains("titleZh: '请帮我核对航班信息'"));
+        assertTrue(js.contains("titleEn: 'Please help me check my flight information'"));
+        assertTrue(js.contains("titleEs: 'Ayúdeme a comprobar la información de mi vuelo'"));
         assertTrue(js.contains("titleEn.hidden = currentLocale === 'en'"));
         assertTrue(js.contains("bodyEn.hidden = currentLocale === 'en'"));
         assertTrue(js.contains("startSpeechText(t('staffCardInstruction'), true)"));
@@ -891,15 +1042,18 @@ class StaticFrontendRegressionTest {
         assertFalse(candidateRender.contains("candidate.source"));
         assertFalse(candidateRender.contains("candidate.confidence"));
         assertFalse(candidateRender.contains("Math.round"));
+        assertTrue(candidateRender.contains("button.dataset.candidateValue = candidate.value"));
+        assertTrue(candidateRender.contains("formatFlightNumber(candidate.value)"));
+        assertTrue(candidateRender.contains("manualButton.dataset.action = 'manual-review-entry'"));
         assertTrue(js.contains("部分航班信息缺失，请补全后继续。"));
-        assertTrue(js.contains("Some flight information is missing. Please complete it to continue."));
-        assertTrue(js.contains("Falta parte de la información del vuelo. Complétela para continuar."));
+        assertTrue(js.contains("manualStatusMissing: 'Some flight information is missing. Complete it to continue.'"));
+        assertTrue(js.contains("manualStatusMissing: 'Falta parte de la información del vuelo. Complétala para continuar.'"));
         assertTrue(js.contains("请核对识别到的信息。"));
-        assertTrue(js.contains("Please check the information we found."));
-        assertTrue(js.contains("Compruebe la información encontrada."));
+        assertTrue(js.contains("manualStatusReview: 'Check the information we found.'"));
+        assertTrue(js.contains("manualStatusReview: 'Comprueba la información encontrada.'"));
         assertTrue(js.contains("识别到了不同的结果，请选择正确的信息。"));
-        assertTrue(js.contains("We found different results. Please choose the correct information."));
-        assertTrue(js.contains("Encontramos resultados diferentes. Elija la información correcta."));
+        assertTrue(js.contains("manualStatusConflict: 'We found different results. Choose the correct information.'"));
+        assertTrue(js.contains("manualStatusConflict: 'Encontramos resultados diferentes. Elige la información correcta.'"));
         assertFalse(js.contains("保存不会查询真实航班"));
         assertFalse(js.contains("Completing and saving do not search live flights"));
         assertFalse(js.contains("no consulta vuelos reales"));
@@ -971,7 +1125,7 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("sharePng: 'Compartir imagen'"));
 
         assertTrue(css.contains(".family-actions{grid-template-columns:repeat(2,minmax(44px,1fr))}"));
-        assertTrue(css.contains(".family-actions .button{width:100%;min-height:64px"));
+        assertTrue(css.contains(".family-actions .button{width:100%;min-height:76px"));
         String linkShare = js.substring(js.indexOf("function shareFamily()"),
                 js.indexOf("function syncFamilyShare()"));
         assertTrue(linkShare.contains("navigator.share("));

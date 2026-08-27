@@ -225,32 +225,32 @@ test('validates month-day but contains no client-side year completion', () => {
 test('a missing full date exposes the full date control and never a separate year control', () => {
   const renderFlow = sourceBetween('  function renderManualDocumentEntry()', '  function syncUsableDocumentSegmentIndexes()');
 
-  assert.match(renderFlow,
-    /setManualFieldState\(dateField, document\.getElementById\('date-input'\),\s*!hasDepartureDate \|\| dateConflict \|\| dateReview\)/);
+  assert.match(renderFlow, /var dateNeedsInput = !hasDepartureDate \|\| dateConflict \|\| dateReview/);
+  assert.match(renderFlow, /setManualFieldState\(dateField, document\.getElementById\('date-input'\),\s*dateNeedsInput && !dateCandidateMode, dateNeedsInput\)/);
   assert.doesNotMatch(renderFlow, /yearField|year-input|Departure year|出发年份/);
   assert.match(indexHtml, /id="date-input" name="departureDate" type="date"/);
   assert.doesNotMatch(indexHtml, /year-input|departureYear|data-manual-year/);
 });
 
-test('flight and date help entries cover missing review and conflict states', () => {
+test('one document help entry covers flight date and combined problems', () => {
   const renderFlow = sourceBetween('  function renderManualDocumentEntry()', '  function syncUsableDocumentSegmentIndexes()');
-  const helpFlow = sourceBetween('  function renderFieldStaffHelp(', '  function documentSegmentAdvisoryCopy(');
+  const helpFlow = sourceBetween('  function manualDocumentProblemFields(', '  function documentQueryTargetLabel(');
 
-  assert.match(renderFlow, /'flight_number', !hasFlightNumber \? 'MISSING'/);
-  assert.match(renderFlow, /flightConflict \? 'CONFLICT' : flightReview \? 'REVIEW'/);
-  assert.match(renderFlow, /'departure_date', !hasDepartureDate \? 'MISSING'/);
-  assert.match(renderFlow, /dateConflict \? 'CONFLICT' : dateReview \? 'REVIEW'/);
-  assert.match(helpFlow, /template\.cloneNode\(true\)/);
-  assert.match(helpFlow, /button\.dataset\.action = 'field-staff'/);
-  assert.match(helpFlow, /fieldElement\.append\(button\)/);
+  assert.match(renderFlow, /var help = document\.querySelector\('\[data-manual-document-help\]'\)/);
+  assert.match(helpFlow, /flight_information/);
+  assert.match(helpFlow, /flight_number/);
+  assert.match(helpFlow, /departure_date/);
+  assert.doesNotMatch(app, /function renderFieldStaffHelp\(/);
+  assert.doesNotMatch(app, /dataset\.action = 'field-staff'/);
 });
 
 test('ordinary candidate cards render each normalized value once without audit details', () => {
   const candidateFlow = sourceBetween('  function renderManualReviewCandidates(',
-    '  function documentSegmentAdvisoryCopy(');
+    '  function selectDocumentReviewCandidate(');
 
   assert.match(app, /if \(!candidate \|\| seen\[candidate\.value\]\) return false/);
-  assert.match(candidateFlow, /value\.textContent = candidate\.value/);
+  assert.match(candidateFlow, /button\.dataset\.candidateValue = candidate\.value/);
+  assert.match(candidateFlow, /formatFlightNumber\(candidate\.value\)/);
   assert.doesNotMatch(candidateFlow, /reviewCandidateDetails|candidate\.source|candidate\.confidence|Math\.round/);
   assert.doesNotMatch(candidateFlow, /STRUCTURE|UNDERSTAND|TEXT ·|%/);
 });

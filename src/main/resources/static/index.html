@@ -47,12 +47,29 @@
           <aside class="scenario-panel" data-scenario-panel hidden aria-labelledby="scenario-title">
             <strong id="scenario-title" data-i18n="scenarioTitle">模拟场景（不是真实航班）</strong>
             <p data-i18n="scenarioLead">此面板只用于本地演示。每个结果都会明确标记为模拟。</p>
-            <div class="scenario-actions">
-              <button type="button" data-action="scenario" data-scenario="NORMAL" data-i18n="scenarioNormal">正常</button>
+            <div class="scenario-group"><span data-i18n="scenarioGroupLocation">位置变化</span><div class="scenario-actions">
+              <button type="button" data-action="scenario" data-scenario="TERMINAL_CHANGE" data-i18n="scenarioTerminalChange">航站楼变更</button>
               <button type="button" data-action="scenario" data-scenario="GATE_CHANGE" data-i18n="scenarioGateChange">登机口变更</button>
-              <button type="button" data-action="scenario" data-scenario="DELAY" data-i18n="scenarioDelay">延误</button>
-              <button type="button" data-action="scenario" data-scenario="CANCEL" data-i18n="scenarioCancel">取消</button>
-              <button type="button" data-action="scenario" data-scenario="STALE" data-i18n="scenarioStale">过期数据</button>
+              <button type="button" data-action="scenario" data-scenario="CHECK_IN_COUNTER_CHANGE" data-i18n="scenarioCheckInCounterChange">值机柜台变更</button>
+              <button type="button" data-action="scenario" data-scenario="BAG_DROP_DESK_CHANGE" data-i18n="scenarioBagDropDeskChange">托运柜台变更</button>
+              <button type="button" data-action="scenario" data-scenario="BOARDING_TIME_CHANGE" data-i18n="scenarioBoardingTimeChange">登机时间变更</button>
+            </div></div>
+            <div class="scenario-group"><span data-i18n="scenarioGroupTimeStatus">时间与状态</span><div class="scenario-actions">
+              <button type="button" data-action="scenario" data-scenario="NORMAL" data-i18n="scenarioNormal">无变化</button>
+              <button type="button" data-action="scenario" data-scenario="DEPARTURE_TIME_CHANGE" data-i18n="scenarioDepartureTimeChange">起飞时间变更</button>
+              <button type="button" data-action="scenario" data-scenario="DELAY" data-i18n="scenarioDelay">航班延误</button>
+              <button type="button" data-action="scenario" data-scenario="BOARDING" data-i18n="scenarioBoarding">开始登机</button>
+              <button type="button" data-action="scenario" data-scenario="CANCEL" data-i18n="scenarioCancel">航班取消</button>
+              <button type="button" data-action="scenario" data-scenario="DEPARTED" data-i18n="scenarioDeparted">航班起飞</button>
+              <button type="button" data-action="scenario" data-scenario="DIVERTED" data-i18n="scenarioDiverted">航班备降</button>
+              <button type="button" data-action="scenario" data-scenario="RETURNED" data-i18n="scenarioReturned">航班返航</button>
+              <button type="button" data-action="scenario" data-scenario="STALE" data-i18n="scenarioStale">数据过期</button>
+            </div></div>
+            <div class="scenario-group"><span data-i18n="scenarioGroupArrival">到达阶段</span><div class="scenario-actions">
+              <button type="button" data-action="scenario" data-scenario="ARRIVAL_TIME_CHANGE" data-i18n="scenarioArrivalTimeChange">到达时间变更</button>
+              <button type="button" data-action="scenario" data-scenario="ARRIVED" data-i18n="scenarioArrived">航班到达</button>
+              <button type="button" data-action="scenario" data-scenario="BAGGAGE_BELT_CHANGE" data-i18n="scenarioBaggageBeltChange">行李转盘变更</button>
+            </div>
             </div>
           </aside>
           <div class="privacy-note"><svg class="lock-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><span data-i18n="privacy">Your travel document is only used to create flight guidance</span></div>
@@ -100,6 +117,8 @@
 
       <section class="screen screen-confirm" data-screen="confirm" aria-labelledby="confirm-title" hidden>
         <button class="home-back-button" type="button" data-action="journey-back"><span aria-hidden="true">←</span> <span data-i18n="backStep">返回</span></button>
+		<div class="flight-change-alert" data-flight-change-alert role="alert" aria-live="assertive" aria-atomic="true" hidden></div>
+		<aside class="scenario-test-card" data-scenario-test-card hidden><p class="eyebrow" data-i18n="scenarioTestEyebrow">演示场景测试</p><h2><span data-i18n="scenarioTestTitle">当前场景：</span><strong data-scenario-test-name>—</strong></h2><dl><div><dt data-i18n="scenarioBeforeLabel">刷新前</dt><dd data-scenario-test-before>—</dd></div><div><dt data-i18n="scenarioExpectedLabel">预期变化</dt><dd data-scenario-test-expected>—</dd></div></dl><div class="scenario-test-actions"><button class="button button-primary" type="button" data-action="scenario-refresh" data-i18n="scenarioTriggerRefresh">触发模拟刷新</button><button class="button button-secondary" type="button" data-action="scenario-restart" data-i18n="scenarioRestart">重新开始这个场景</button></div></aside>
         <div class="section-heading" data-confirm-heading><p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="checkDetails">请确认</span></p><h1 id="confirm-title" data-i18n="confirmTitle">这是你的航班吗？</h1></div>
         <section class="departure-passed-confirmation" data-departure-passed-confirmation hidden aria-labelledby="departure-passed-title">
           <button class="home-back-button" type="button" data-action="journey-back"><span aria-hidden="true">←</span> <span data-i18n="backStep">返回</span></button>
@@ -141,7 +160,6 @@
           <div class="flight-details flight-details-core"><div><span data-i18n="terminal">航站楼</span><strong data-terminal>—</strong></div><div><span data-i18n="gate">登机口</span><strong data-gate>—</strong></div><div><span data-i18n="boardingTime">登机时间</span><strong data-boarding-time>—</strong></div><div><span data-i18n="checkInArea">值机 / 托运区域</span><strong data-check-in-area>—</strong></div></div>
         </article>
         <p class="live-status-unavailable" data-live-status-unavailable data-i18n="liveStatusUnavailable" role="status" hidden>Live flight status has not updated yet. Please confirm whether the itinerary below is yours.</p>
-        <div class="flight-change-alert" data-flight-change-alert role="alert" hidden></div>
         <div class="conflict-card" data-conflict-card role="alert" hidden>
           <h2 data-i18n="conflictTitle">信息有关键冲突，请先停下来</h2>
           <div data-conflict-list></div>
@@ -170,10 +188,8 @@
       </section>
 
       <section class="screen screen-manual" data-screen="manual" aria-labelledby="manual-title" hidden>
-        <button class="home-back-button" type="button" data-action="home"><span aria-hidden="true">←</span> <span data-i18n="backHome">返回首页</span></button>
-        <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="manualContext">填写航班信息</span></p><h1 id="manual-title" data-i18n="manualTitle">输入你的航班信息</h1><p class="lead" data-manual-lead data-i18n="manualLead">请输入航班号和出发日期。</p></div>
-        <p class="manual-partial-notice" data-manual-partial-notice data-i18n="partialDocumentNotice" hidden>只读到部分信息，请补全后查询</p>
-        <p class="document-advisory" data-document-advisory role="status" hidden></p>
+        <button class="home-back-button" type="button" data-action="home"><span aria-hidden="true">←</span> <span data-manual-back data-i18n="backHome">返回首页</span></button>
+        <div class="section-heading"><h1 id="manual-title" data-manual-title data-i18n="manualTitle">输入航班信息</h1><p class="lead manual-status" data-manual-status data-i18n="manualLead" role="status" aria-live="polite" aria-atomic="true">请输入航班号和出发日期。</p></div>
         <section class="segment-selector manual-document-segments" data-manual-document-segments aria-labelledby="manual-itinerary-title" hidden>
           <p class="eyebrow" data-i18n="itineraryContext">完整行程</p>
           <h2 id="manual-itinerary-title" data-i18n="manualItineraryTitle">文件中已读到的航段</h2>
@@ -182,8 +198,7 @@
         </section>
         <form class="manual-form" data-action="manual-submit">
           <div class="manual-fields">
-            <section class="review-candidates" data-review-candidates aria-labelledby="review-candidates-title" hidden>
-              <h2 id="review-candidates-title" data-i18n="reviewCandidatesTitle">请选择或修改冲突字段</h2>
+            <section class="review-candidates" data-review-candidates hidden>
               <div data-review-candidate-fields></div>
             </section>
             <div data-manual-flight-field>
@@ -197,7 +212,7 @@
               <label class="manual-confirmation" data-manual-date-confirmation hidden><input id="date-confirm-input" type="checkbox" disabled><span data-i18n="confirmDepartureDateLabel">我已核对并确认这个出发日期</span></label>
             </div>
           </div>
-          <div class="choice-actions manual-actions"><button class="button button-primary button-large" type="submit" data-manual-primary data-i18n="searchLiveFlight">查询真实航班</button><button class="button button-secondary button-large" type="button" data-action="demo-flight" data-i18n="useDemoFlight">使用 BA 117 演示航班</button></div>
+          <div class="choice-actions manual-actions"><button class="button button-secondary button-large staff-help-button" type="button" data-action="manual-document-help" data-manual-document-help data-i18n-aria="helpAria" hidden><svg class="staff-help-icon" viewBox="0 0 26 24" aria-hidden="true" focusable="false"><path class="staff-icon-person" d="M10 3a4 4 0 110 8 4 4 0 010-8zM3 21a7 7 0 0114 0"/><path class="staff-icon-question" d="M17 8a3 3 0 1 1 2.2 2.9c-.8.3-1.2.8-1.2 1.6M18 16h.01"/></svg><span data-i18n="helpShort">求助</span></button><button class="button button-primary button-large" type="submit" data-manual-primary data-i18n="searchLiveFlight">查询航班</button><button class="button button-secondary button-large" type="button" data-action="demo-flight" data-i18n="useDemoFlight">使用 BA 117 演示航班</button></div>
         </form>
       </section>
 
@@ -208,8 +223,9 @@
       </section>
 
       <section class="screen screen-step" data-screen="step" aria-labelledby="step-title" hidden>
+		<div class="flight-change-alert" data-flight-change-alert role="alert" aria-live="assertive" aria-atomic="true" hidden></div>
+		<aside class="scenario-test-card" data-scenario-test-card hidden><p class="eyebrow" data-i18n="scenarioTestEyebrow">演示场景测试</p><h2><span data-i18n="scenarioTestTitle">当前场景：</span><strong data-scenario-test-name>—</strong></h2><dl><div><dt data-i18n="scenarioBeforeLabel">刷新前</dt><dd data-scenario-test-before>—</dd></div><div><dt data-i18n="scenarioExpectedLabel">预期变化</dt><dd data-scenario-test-expected>—</dd></div></dl><div class="scenario-test-actions"><button class="button button-primary" type="button" data-action="scenario-refresh" data-i18n="scenarioTriggerRefresh">触发模拟刷新</button><button class="button button-secondary" type="button" data-action="scenario-restart" data-i18n="scenarioRestart">重新开始这个场景</button></div></aside>
         <div class="step-progress"><span data-step-label>当前步骤</span><span data-step-count>已完成 0 个阶段</span></div>
-        <div class="flight-change-alert" data-flight-change-alert role="alert" hidden></div>
         <div data-checkin-question hidden>
           <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="checkInContext">确认值机状态</span></p><h1 id="checkin-title" data-i18n="checkInQuestion">你已经完成值机了吗？</h1><p class="lead" data-i18n="checkInQuestionLead">已经拿到登机牌也算已完成值机。</p></div>
           <div class="step-actions answer-choice-grid" data-checkin-choices><button class="button button-secondary button-large icon-button answer-choice answer-yes" type="button" data-action="checkin-status" data-answer="yes" data-i18n-aria="checkInYesAria"><svg class="choice-icon icon-yes" viewBox="2.5 3 19 16.5" aria-hidden="true" focusable="false"><path d="M4.5 11.5 10 18 19.5 4.5"/></svg><span data-i18n="checkInYes">是</span></button><button class="button button-secondary button-large icon-button answer-choice answer-no" type="button" data-action="checkin-status" data-answer="no" data-i18n-aria="checkInNoAria"><svg class="choice-icon icon-no" viewBox="3.5 3.5 17 17" aria-hidden="true" focusable="false"><path d="M5.5 5.5 18.5 18.5M18.5 5.5 5.5 18.5"/></svg><span data-i18n="checkInNo">否</span></button><button class="button button-secondary button-large icon-button answer-choice answer-unsure" type="button" data-action="checkin-status" data-answer="unsure" data-i18n-aria="checkInUnsureAria"><svg class="choice-icon icon-unsure" viewBox="6.5 3.5 11 16.5" aria-hidden="true" focusable="false"><path d="M8.5 9a3.5 3.5 0 1 1 4.3 3.4c-1.1.3-1.8 1-1.8 2.1M11 18h.01"/></svg><span data-i18n="checkInUnsure">不确定</span></button></div>

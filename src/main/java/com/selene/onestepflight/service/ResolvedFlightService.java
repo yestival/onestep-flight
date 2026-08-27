@@ -67,7 +67,7 @@ public class ResolvedFlightService {
 		rejectUnresolvedCriticalDocumentReview(request.document(), selectedDocument,
 				normalizedFlightNumber, request.departureDate());
 		MultiSourceFlightSnapshot snapshot = request.demo() && !isBlank(request.demoScenario()) && !request.refresh()
-				? demoSnapshot(demoScenarioProvider.findInitial(normalizedFlightNumber, request.demoScenario()))
+				? demoScenarioProvider.findInitialSnapshot(normalizedFlightNumber, request.demoScenario())
 				: loadFlight(normalizedFlightNumber, request.departureDate(), request.demo(), request.demoScenario(),
 						documentRouteHint(selectedDocument, "departure_airport"),
 						documentRouteHint(selectedDocument, "arrival_airport"),
@@ -346,7 +346,7 @@ public class ResolvedFlightService {
 			String demoScenario, String departureHint, String arrivalHint,
 			String scheduledDepartureHint, boolean refresh) {
 		if (demo && !isBlank(demoScenario)) {
-			return demoSnapshot(demoScenarioProvider.find(flightNumber, demoScenario, refresh));
+			return demoScenarioProvider.findSnapshot(flightNumber, demoScenario, refresh);
 		}
 		if (demo) return demoSnapshot(flightService.getFlight(flightNumber, departureDate, true, refresh));
 		return multiSourceFlightService.findFlight(flightNumber, departureDate, departureHint, arrivalHint,
@@ -442,7 +442,7 @@ public class ResolvedFlightService {
 				: document != null
 				? parseDocumentDateTime(document.boardingTime(), document.departureDate(), departureOffset)
 				: !retainPreviousDocument ? null : previous.documentBoardingTime();
-		OffsetDateTime boardingTime = documentBoarding != null ? documentBoarding : liveFlight.boardingTime();
+		OffsetDateTime boardingTime = liveFlight.boardingTime() != null ? liveFlight.boardingTime() : documentBoarding;
 		OffsetDateTime effectiveDeparture = firstNonNull(liveFlight.actualDeparture(),
 				liveFlight.estimatedDeparture(), liveFlight.scheduledDeparture());
 		List<FlightFieldConflict> conflicts = new ArrayList<>(snapshot.providerConflicts());
@@ -458,10 +458,11 @@ public class ResolvedFlightService {
 			addConflict(conflicts, "arrivalAirport", previous.arrivalAirport(),
 					liveFlight.arrivalAirport(), true, detectedAt);
 		}
-		List<FlightChange> changes = documentFallback ? List.of() : previous == null
-				? findDocumentChanges(documentTerminal, documentGate, liveFlight, detectedAt)
-				: findLiveChanges(previous, liveFlight, effectiveDeparture, detectedAt);
 		FlightTimeContext timeContext = flightTimeService.build(liveFlight, boardingTime);
+		List<FlightChange> changes = documentFallback ? List.of()
+				: previous == null && !isBlank(demoScenario) ? List.of()
+				: previous == null ? findDocumentChanges(documentTerminal, documentGate, liveFlight, detectedAt)
+				: findLiveChanges(previous, snapshot, boardingTime, effectiveDeparture, timeContext, detectedAt);
 		Map<String, FieldProvenance> fieldProvenance = new LinkedHashMap<>(snapshot.fieldProvenance());
 		addDocumentProvenance(fieldProvenance, "terminal", documentTerminal, document);
 		addDocumentProvenance(fieldProvenance, "gate", documentGate, document);
@@ -558,51 +559,95 @@ public class ResolvedFlightService {
 	List<FlightChange> findDocumentChanges(String documentTerminal, String documentGate,
 			FlightResponse liveFlight, Instant detectedAt) {
 		List<FlightChange> changes = new ArrayList<>();
-		addSemanticChange(changes, "terminal", "TERMINAL_CHANGED", documentTerminal, liveFlight.terminal(), true,
+		addLocationChange(changes, "terminal", "TERMINAL_CHANGED", documentTerminal, liveFlight.terminal(), true,
 				"实时航站楼与文件不同", "Live terminal differs from the document", detectedAt);
-		addSemanticChange(changes, "gate", "GATE_CHANGED", documentGate, liveFlight.gate(), true,
+		addLocationChange(changes, "gate", "GATE_CHANGED", documentGate, liveFlight.gate(), true,
 				"实时登机口与文件不同", "Live gate differs from the document", detectedAt);
 		return changes;
 	}
 
-	private List<FlightChange> findLiveChanges(ResolvedFlightContext previous, FlightResponse flight,
-			OffsetDateTime effectiveDeparture, Instant detectedAt) {
+	List<FlightChange> findLiveChanges(ResolvedFlightContext previous, MultiSourceFlightSnapshot snapshot,
+			OffsetDateTime boardingTime, OffsetDateTime effectiveDeparture,
+			FlightTimeContext currentTimeContext, Instant detectedAt) {
+		FlightResponse flight = snapshot.flight();
 		List<FlightChange> changes = new ArrayList<>();
-		addSemanticChange(changes, "terminal", "TERMINAL_CHANGED", previous.terminal(), flight.terminal(), true,
+		addLocationChange(changes, "terminal", "TERMINAL_CHANGED", previous.terminal(), flight.terminal(), true,
 				"航站楼发生变化", "Terminal changed", detectedAt);
-		addSemanticChange(changes, "gate", "GATE_CHANGED", previous.gate(), flight.gate(), true,
+		addLocationChange(changes, "gate", "GATE_CHANGED", previous.gate(), flight.gate(), true,
 				"登机口发生变化", "Gate changed", detectedAt);
-		addSemanticChange(changes, "status", "STATUS_CHANGED", previous.status(), flight.status(),
-				"CANCELLED".equals(normalizeStatusGroup(previous.status()))
-						!= "CANCELLED".equals(normalizeStatusGroup(flight.status())),
-				"航班状态发生变化", "Flight status changed", detectedAt);
-		addDepartureTimeChange(changes, previous.effectiveDeparture(), effectiveDeparture, detectedAt);
-		addChange(changes, "DELAY_CHANGED", String.valueOf(previous.delayMinutes()),
-				String.valueOf(flight.delayMinutes()), flight.delayMinutes() >= 45,
-				"延误时间发生变化", "Delay changed", detectedAt);
+		String previousCheckIn = firstNonBlank(previous.checkInDeskOrZone(), previous.checkInCounter());
+		addLocationChange(changes, "checkInDeskOrZone", "CHECK_IN_COUNTER_CHANGED", previousCheckIn,
+				flight.checkInCounter(), true, "值机柜台发生变化", "Check-in counter changed", detectedAt);
+		addLocationChange(changes, "dedicatedBagDropDesk", "BAG_DROP_DESK_CHANGED",
+				previous.dedicatedBagDropDesk(), snapshot.dedicatedBagDropDesk(), true,
+				"托运行李柜台发生变化", "Bag-drop counter changed", detectedAt);
+		OffsetDateTime previousBoarding = previous.timeContext() == null ? null : previous.timeContext().boardingTime();
+		addTimeChange(changes, "BOARDING_TIME_CHANGED", previousBoarding, boardingTime,
+				"登机时间发生变化", "Boarding time changed", detectedAt);
+		addTimeChange(changes, "DEPARTURE_TIME_CHANGED", previous.effectiveDeparture(), effectiveDeparture,
+				"预计起飞时间发生变化", "Expected departure time changed", detectedAt);
+		addDelayChange(changes, "DEPARTURE_DELAY_CHANGED", previous.delayMinutes(), flight.delayMinutes(),
+				"出发延误发生变化", "Departure delay changed", detectedAt);
+		addStatusChange(changes, previous.status(), flight.status(), detectedAt);
+		OffsetDateTime previousArrival = firstNonNull(previous.actualArrival(), previous.estimatedArrival(),
+				previous.scheduledArrival());
+		OffsetDateTime arrival = firstNonNull(flight.actualArrival(), flight.estimatedArrival(),
+				flight.scheduledArrival());
+		addTimeChange(changes, "ARRIVAL_TIME_CHANGED", previousArrival, arrival,
+				"预计到达时间发生变化", "Expected arrival time changed", detectedAt);
+		addDelayChange(changes, "ARRIVAL_DELAY_CHANGED", previous.arrivalDelayMinutes(),
+				flight.arrivalDelayMinutes(), "到达延误发生变化", "Arrival delay changed", detectedAt);
+		addLocationChange(changes, "arrivalBaggageBelt", "BAGGAGE_BELT_CHANGED",
+				previous.arrivalBaggageBelt(), snapshot.arrivalBaggageBelt(), true,
+				"行李转盘发生变化", "Baggage belt changed", detectedAt);
+		addFreshnessChange(changes, previous.timeContext(), currentTimeContext, detectedAt);
 		return changes;
 	}
 
-	private void addChange(List<FlightChange> changes, String type, String oldValue, String newValue,
-			boolean critical, String titleZh, String titleEn, Instant detectedAt) {
-		if (isBlank(oldValue) || isBlank(newValue) || Objects.equals(oldValue, newValue)) return;
-		changes.add(new FlightChange(type, oldValue, newValue, critical, titleZh, titleEn, detectedAt));
+	private void addFreshnessChange(List<FlightChange> changes, FlightTimeContext previous,
+			FlightTimeContext current, Instant detectedAt) {
+		if (previous == null || current == null || previous.stale() == current.stale()) return;
+		changes.add(new FlightChange("DATA_FRESHNESS_CHANGED",
+				previous.stale() ? "STALE" : "FRESH", current.stale() ? "STALE" : "FRESH",
+				current.stale(), "实时航班信息新鲜度发生变化",
+				"Live flight information freshness changed", detectedAt));
 	}
 
-	private void addSemanticChange(List<FlightChange> changes, String field, String type,
+	private void addLocationChange(List<FlightChange> changes, String field, String type,
 			String oldValue, String newValue, boolean critical,
 			String titleZh, String titleEn, Instant detectedAt) {
-		if (FlightFieldSemantics.equivalent(field, oldValue, newValue)) return;
+		if (isBlank(newValue)) return;
+		if (!isBlank(oldValue) && FlightFieldSemantics.equivalent(field, oldValue, newValue)) return;
 		changes.add(new FlightChange(type, oldValue, newValue, critical, titleZh, titleEn, detectedAt));
 	}
 
-	private void addDepartureTimeChange(List<FlightChange> changes, OffsetDateTime oldValue,
-			OffsetDateTime newValue, Instant detectedAt) {
-		if (oldValue == null || newValue == null) return;
+	private void addTimeChange(List<FlightChange> changes, String type, OffsetDateTime oldValue,
+			OffsetDateTime newValue, String titleZh, String titleEn, Instant detectedAt) {
+		if (newValue == null) return;
+		if (oldValue == null) {
+			changes.add(new FlightChange(type, null, newValue.toString(), false, titleZh, titleEn, detectedAt));
+			return;
+		}
 		long differenceMinutes = Math.abs(Duration.between(oldValue.toInstant(), newValue.toInstant()).toMinutes());
 		if (differenceMinutes < 5) return;
-		changes.add(new FlightChange("DEPARTURE_TIME_CHANGED", oldValue.toString(), newValue.toString(),
-				differenceMinutes >= 15, "预计起飞时间发生变化", "Expected departure time changed", detectedAt));
+		changes.add(new FlightChange(type, oldValue.toString(), newValue.toString(),
+				differenceMinutes >= 15, titleZh, titleEn, detectedAt));
+	}
+
+	private void addDelayChange(List<FlightChange> changes, String type, int oldValue, int newValue,
+			String titleZh, String titleEn, Instant detectedAt) {
+		if (oldValue == newValue) return;
+		changes.add(new FlightChange(type, String.valueOf(oldValue), String.valueOf(newValue),
+				newValue >= 45, titleZh, titleEn, detectedAt));
+	}
+
+	private void addStatusChange(List<FlightChange> changes, String oldValue, String newValue, Instant detectedAt) {
+		String oldGroup = normalizeStatusGroup(oldValue);
+		String newGroup = normalizeStatusGroup(newValue);
+		if (isBlank(newGroup) || "UNKNOWN".equals(newGroup) || Objects.equals(oldGroup, newGroup)) return;
+		boolean critical = Set.of("CANCELLED", "DIVERTED", "RETURNED").contains(newGroup);
+		changes.add(new FlightChange("STATUS_CHANGED", oldValue, newValue, critical,
+				"航班状态发生变化", "Flight status changed", detectedAt));
 	}
 
 	private String normalizeStatusGroup(String value) {

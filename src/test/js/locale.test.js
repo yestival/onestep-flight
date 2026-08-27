@@ -75,14 +75,16 @@ test('document review and field staff copy is complete in all supported locales'
 
 test('passenger copy replaces internal lookup-boundary explanations', () => {
   assert.match(app, /部分航班信息缺失，请补全后继续。/);
-  assert.match(app, /Some flight information is missing\. Please complete it to continue\./);
-  assert.match(app, /Falta parte de la información del vuelo\. Complétela para continuar\./);
+  assert.match(app, /manualStatusMissing: 'Some flight information is missing\. Complete it to continue\.'/);
+  assert.match(app, /manualStatusMissing: 'Falta parte de la información del vuelo\. Complétala para continuar\.'/);
   assert.match(app, /请核对识别到的信息。/);
-  assert.match(app, /Please check the information we found\./);
-  assert.match(app, /Compruebe la información encontrada\./);
+  assert.match(app, /manualStatusReview: 'Check the information we found\.'/);
+  assert.match(app, /manualStatusReview: 'Comprueba la información encontrada\.'/);
   assert.match(app, /识别到了不同的结果，请选择正确的信息。/);
-  assert.match(app, /We found different results\. Please choose the correct information\./);
-  assert.match(app, /Encontramos resultados diferentes\. Elija la información correcta\./);
+  assert.match(app, /manualStatusConflict: 'We found different results\. Choose the correct information\.'/);
+  assert.match(app, /manualStatusConflict: 'Encontramos resultados diferentes\. Elige la información correcta\.'/);
+  assert.match(app, /manualStatusReady: 'The information is complete\. You can search the live flight\.'/);
+  assert.match(app, /manualStatusReady: 'La información está completa\. Ya puedes buscar el vuelo en directo\.'/);
   assert.doesNotMatch(app, /保存不会查询真实航班|补全并保存不会查询真实航班/);
   assert.doesNotMatch(app, /Completing and saving do not search live flights|saving do not search live flights/);
   assert.doesNotMatch(app, /no consulta vuelos reales|guardar no consulta vuelos reales/);
