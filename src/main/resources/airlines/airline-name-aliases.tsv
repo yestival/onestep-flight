@@ -1,0 +1,128 @@
+# Curated display-name aliases maintained by OneStep Flight.
+# Format: display name<TAB>IATA[<TAB>ICAO[<TAB>canonical carrier name]]. Runtime remains offline.
+荷兰皇家航空	KL
+荷航	KL
+KLM Royal Dutch Airlines	KL
+厦门航空	MF
+厦航	MF
+XiamenAir	MF
+法国航空	AF
+法航	AF
+Air France	AF
+英国航空	BA
+英航	BA
+British Airways	BA
+汉莎航空	LH	DLH
+德国汉莎航空	LH	DLH
+Lufthansa	LH	DLH
+瑞士国际航空	LX
+Swiss International Air Lines	LX
+奥地利航空	OS
+Austrian Airlines	OS
+芬兰航空	AY
+Finnair	AY
+伊比利亚航空	IB
+Iberia	IB
+土耳其航空	TK
+Turkish Airlines	TK
+爱琴海航空	A3
+Aegean Airlines	A3
+瑞安航空	FR
+Ryanair	FR
+易捷航空	U2	EZY
+easyJet	U2	EZY
+维兹航空	W6
+Wizz Air	W6
+中国国际航空	CA
+国航	CA
+Air China	CA
+中国东方航空	MU
+东航	MU
+China Eastern Airlines	MU
+中国南方航空	CZ
+南航	CZ
+China Southern Airlines	CZ
+海南航空	HU
+海航	HU
+Hainan Airlines	HU
+深圳航空	ZH
+Shenzhen Airlines	ZH
+四川航空	3U
+川航	3U
+Sichuan Airlines	3U
+吉祥航空	HO	DKH
+Juneyao Air	HO	DKH
+春秋航空	9C
+Spring Airlines	9C
+国泰航空	CX
+Cathay Pacific	CX
+香港航空	HX
+Hong Kong Airlines	HX
+长荣航空	BR
+EVA Air	BR
+中华航空	CI
+China Airlines	CI
+全日空	NH
+全日本空输	NH
+All Nippon Airways	NH
+日本航空	JL	JAL	Japan Airlines
+Japan Airlines	JL	JAL	Japan Airlines
+大韩航空	KE
+Korean Air	KE
+韩亚航空	OZ	AAR
+Asiana Airlines	OZ	AAR
+新加坡航空	SQ	SIA
+Singapore Airlines	SQ	SIA
+马来西亚航空	MH
+Malaysia Airlines	MH
+泰国国际航空	TG
+Thai Airways	TG
+越南航空	VN
+Vietnam Airlines	VN
+印度航空	AI
+Air India	AI
+靛蓝航空	6E
+IndiGo	6E
+阿联酋航空	EK
+Emirates	EK
+卡塔尔航空	QR
+Qatar Airways	QR
+阿提哈德航空	EY
+Etihad Airways	EY
+以色列航空	LY
+El Al	LY
+美国航空	AA
+American Airlines	AA
+达美航空	DL
+Delta Air Lines	DL
+美国联合航空	UA
+美联航	UA
+United Airlines	UA
+西南航空	WN
+Southwest Airlines	WN
+加拿大航空	AC
+Air Canada	AC
+墨西哥航空	AM
+Aeromexico	AM
+巴拿马航空	CM
+Copa Airlines	CM
+南美航空	LA
+LATAM Airlines	LA
+阿根廷航空	AR
+Aerolineas Argentinas	AR
+澳洲航空	QF
+Qantas	QF
+新西兰航空	NZ
+Air New Zealand	NZ
+捷星航空	JQ
+Jetstar Airways	JQ
+埃塞俄比亚航空	ET
+Ethiopian Airlines	ET
+肯尼亚航空	KQ
+Kenya Airways	KQ
+南非航空	SA
+South African Airways	SA
+埃及航空	MS
+EgyptAir	MS
+摩洛哥皇家航空	AT
+Royal Air Maroc	AT

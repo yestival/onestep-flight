@@ -3,6 +3,7 @@ package com.selene.onestepflight.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
@@ -14,6 +15,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.client.RestClientException;
@@ -49,30 +55,29 @@ class DocumentExtractionPipelineTest {
 				.containsExactly("KL1036", "MF812");
 		assertThat(result.segments()).extracting(segment ->
 				segment.departureAirport() + "-" + segment.arrivalAirport())
-				.containsExactly("MAN-AMS", "AMS-XMN")
-				.doesNotContain("MAN-XMN");
+				.containsExactly("MAN-XMN", "null-null")
+				.doesNotContain("AMS-AMS");
 		assertThat(result.segments()).extracting(segment -> segment.departureDate())
-				.containsExactly(LocalDate.of(2026, 8, 4), LocalDate.of(2026, 8, 4));
+				.containsExactly(LocalDate.of(2026, 8, 4), null);
 		assertThat(result.segments()).extracting(segment -> segment.departureMonthDay())
-				.containsExactly("08-04", "08-04");
+				.containsExactly("08-04", null);
 		assertThat(result.segments()).extracting(segment -> segment.scheduledDeparture())
-				.containsExactly("17:30", "21:40");
+				.containsOnlyNulls();
 		assertThat(result.segments()).extracting(segment -> segment.scheduledArrival())
-				.containsExactly("19:50", "14:20");
+				.containsOnlyNulls();
 		assertThat(result.segments()).extracting(segment -> segment.terminal())
 				.containsExactly("T2", null);
-		assertThat(result.segments()).allSatisfy(segment -> {
-			assertThat(segment.dateSource()).isEqualTo(
-					com.selene.onestepflight.dto.DocumentFlightSegment.DateSource.CURRENT_YEAR_FROM_MONTH_DAY);
-			assertThat(segment.requiresFlightNumberConfirmation()).isFalse();
-		});
-		assertThat(result.needsReviewFields()).doesNotContain(
-				"segments[0].departure_date", "segments[1].departure_date");
+		assertThat(result.segments()).extracting(segment -> segment.dateSource())
+				.containsExactly(
+						com.selene.onestepflight.dto.DocumentFlightSegment.DateSource.CURRENT_YEAR_FROM_MONTH_DAY,
+						com.selene.onestepflight.dto.DocumentFlightSegment.DateSource.MISSING);
+		assertThat(result.segments()).allSatisfy(segment ->
+				assertThat(segment.requiresFlightNumberConfirmation()).isFalse());
 
 		String publicJson = mapper.writeValueAsString(result);
 		assertThat(publicJson).doesNotContain(
 				"PRIVATE-PASSENGER", "SECRET-TICKET", "passenger_name", "ticket_number",
-				"rawValue", "elements", "8月4日");
+				"rawValue", "elements", "8月4日", "到达 8月5日");
 		assertExactlyTwoCalls(requester, "outbound.png", "image/png", new byte[] { 1, 2, 3 });
 	}
 
@@ -93,19 +98,20 @@ class DocumentExtractionPipelineTest {
 				.containsExactly("MF825", "AF1668");
 		assertThat(result.segments()).extracting(segment ->
 				segment.departureAirport() + "-" + segment.arrivalAirport())
-				.containsExactly("XMN-CDG", "CDG-MAN");
+				.containsExactly("null-null", "XMN-CDG")
+				.doesNotContain("CDG-CDG");
 		assertThat(result.segments().get(1)).satisfies(segment -> {
 			assertThat(segment.departureAirport() + "-" + segment.arrivalAirport())
-					.isNotEqualTo("XMN-CDG");
+					.isEqualTo("XMN-CDG");
 			assertThat(segment.departureMonthDay()).isEqualTo("09-05");
 			assertThat(segment.departureDate()).isEqualTo(LocalDate.of(2026, 9, 5));
 		});
 		assertThat(result.segments()).extracting(segment -> segment.departureMonthDay())
-				.containsExactly("09-05", "09-05");
+				.containsExactly(null, "09-05");
 		assertThat(result.segments()).extracting(segment -> segment.scheduledDeparture())
-				.containsExactly("00:10", "09:25");
+				.containsOnlyNulls();
 		assertThat(result.segments()).extracting(segment -> segment.scheduledArrival())
-				.containsExactly("06:55", "10:00");
+				.containsOnlyNulls();
 		assertThat(result.segments()).extracting(segment -> segment.terminal())
 				.containsExactly("T3", "T2E");
 		assertExactlyTwoCalls(requester, "return.jpg", "image/jpeg", new byte[] { 4, 5, 6 });
@@ -137,25 +143,25 @@ class DocumentExtractionPipelineTest {
 				.containsExactly("BA200", "BA300", "BA100");
 		assertThat(result.segments()).extracting(segment -> segment.flightNumber()).doesNotHaveDuplicates();
 		assertThat(result.segments().get(0)).satisfies(segment -> {
-			assertThat(segment.departureAirport()).isEqualTo("LHR");
-			assertThat(segment.arrivalAirport()).isEqualTo("CDG");
+			assertThat(segment.departureAirport()).isNull();
+			assertThat(segment.arrivalAirport()).isNull();
 			assertThat(segment.departureDate()).isEqualTo(LocalDate.of(2026, 10, 1));
 			assertThat(segment.departureMonthDay()).isEqualTo("10-01");
 			assertThat(segment.seat()).isEqualTo("12A");
 		});
 		assertThat(result.segments().get(1)).satisfies(segment -> {
-			assertThat(segment.departureAirport()).isEqualTo("CDG");
-			assertThat(segment.arrivalAirport()).isEqualTo("FCO");
-			assertThat(segment.departureMonthDay()).isEqualTo("10-01");
+			assertThat(segment.departureAirport()).isNull();
+			assertThat(segment.arrivalAirport()).isNull();
+			assertThat(segment.departureMonthDay()).isNull();
 		});
 		assertExactlyTwoCalls(requester, "union.pdf", "application/pdf", new byte[] { 7 });
 	}
 
 	@Test
-	void understandFullDateConflictingWithSpatialMonthDayClearsDateAndMarksConflict() throws Exception {
+	void sameFlightWithDifferentCompleteDepartureDatesStaysAsSeparateSegments() throws Exception {
 		JsonNode understand = understandResponse("""
 				[{"flight_number":"BA117","departure_date":"2026-08-04",
-				  "departure_airport":"LHR","arrival_airport":"JFK"}]
+				  "departure_airport":"LHR","arrival_airport":"JFK","scheduled_departure":"09:25"}]
 				""");
 		RecordingRequester requester = new RecordingRequester(understand,
 				singleFlightSpatial("9月5日", "T4"));
@@ -163,21 +169,18 @@ class DocumentExtractionPipelineTest {
 		BoardingPassExtractionResponse result = processor(requester).extract(
 				new byte[] { 14 }, "date-conflict-a.png", "image/png");
 
-		assertThat(result.segments()).singleElement().satisfies(segment -> {
-			assertThat(segment.flightNumber()).isEqualTo("BA117");
-			assertThat(segment.departureDate()).isNull();
-			assertThat(segment.departureMonthDay()).isNull();
-			assertThat(segment.fields().get("departure_date").value()).isNull();
-		});
-		assertThat(result.needsReviewFields()).contains("departure_date", "conflict.departure_date");
+		assertThat(result.segments()).hasSize(2).allSatisfy(segment ->
+				assertThat(segment.flightNumber()).isEqualTo("BA117"));
+		assertThat(result.segments()).extracting(segment -> segment.departureDate())
+				.containsExactlyInAnyOrder(LocalDate.of(2026, 8, 4), LocalDate.of(2026, 9, 5));
 		assertExactlyTwoCalls(requester, "date-conflict-a.png", "image/png", new byte[] { 14 });
 	}
 
 	@Test
-	void understandMonthDayConflictingWithSpatialFullDateClearsDateAndMarksConflict() throws Exception {
+	void sameFlightMonthDayAndDifferentFullDateStayAsSeparateSegments() throws Exception {
 		JsonNode understand = understandResponse("""
 				[{"flight_number":"BA117","departure_date":"8月4日",
-				  "departure_airport":"LHR","arrival_airport":"JFK"}]
+				  "departure_airport":"LHR","arrival_airport":"JFK","scheduled_departure":"09:25"}]
 				""");
 		RecordingRequester requester = new RecordingRequester(understand,
 				singleFlightSpatial("2026-09-05", "T4"));
@@ -185,13 +188,10 @@ class DocumentExtractionPipelineTest {
 		BoardingPassExtractionResponse result = processor(requester).extract(
 				new byte[] { 15 }, "date-conflict-b.png", "image/png");
 
-		assertThat(result.segments()).singleElement().satisfies(segment -> {
-			assertThat(segment.flightNumber()).isEqualTo("BA117");
-			assertThat(segment.departureDate()).isNull();
-			assertThat(segment.departureMonthDay()).isNull();
-			assertThat(segment.fields().get("departure_date").value()).isNull();
-		});
-		assertThat(result.needsReviewFields()).contains("departure_date", "conflict.departure_date");
+		assertThat(result.segments()).hasSize(2).allSatisfy(segment ->
+				assertThat(segment.flightNumber()).isEqualTo("BA117"));
+		assertThat(result.segments()).extracting(segment -> segment.departureDate())
+				.containsExactlyInAnyOrder(LocalDate.of(2026, 8, 4), LocalDate.of(2026, 9, 5));
 		assertExactlyTwoCalls(requester, "date-conflict-b.png", "image/png", new byte[] { 15 });
 	}
 
@@ -258,7 +258,11 @@ class DocumentExtractionPipelineTest {
 			assertThat(segment.terminal()).isEqualTo("T2");
 			assertThat(segment.fields().get("arrival_terminal").value()).isNull();
 		});
-		assertThat(result.needsReviewFields()).contains("conflict.arrival_terminal");
+		assertThat(result.needsReviewFields()).doesNotContain("conflict.arrival_terminal");
+		assertThat(result.reviewIssues()).anySatisfy(issue -> {
+			assertThat(issue.field()).isEqualTo("arrival_terminal");
+			assertThat(issue.blocking()).isFalse();
+		});
 		assertExactlyTwoCalls(requester, "terminal-conflict.png", "image/png", new byte[] { 17 });
 	}
 
@@ -278,8 +282,8 @@ class DocumentExtractionPipelineTest {
 
 		assertThat(result.segments()).singleElement().satisfies(segment ->
 				assertThat(segment.flightNumber()).isEqualTo("BA117"));
-		assertThat(result.needsReviewFields()).contains("spatial_duplicate_flight_number")
-				.doesNotContain("duplicate_flight_number");
+		assertThat(result.needsReviewFields()).doesNotContain(
+				"spatial_duplicate_flight_number", "duplicate_flight_number");
 		assertExactlyTwoCalls(requester, "duplicate-display.png", "image/png", new byte[] { 18 });
 	}
 
@@ -302,7 +306,7 @@ class DocumentExtractionPipelineTest {
 				.containsExactly("BA100", "BA200", "BA300");
 		assertThat(result.segments()).extracting(segment ->
 				segment.departureAirport() + "-" + segment.arrivalAirport())
-				.containsExactly("null-LHR", "LHR-JFK", "JFK-null");
+				.containsExactly("null-null", "null-null", "null-null");
 		assertThat(result.needsReviewFields()).doesNotContain(
 				"cross_segment_airport_conflict", "duplicate_flight_number",
 				"spatial_duplicate_flight_number");
@@ -347,7 +351,7 @@ class DocumentExtractionPipelineTest {
 				.containsExactly("KL1036", "MF812");
 		assertThat(result.segments()).extracting(segment ->
 				segment.departureAirport() + "-" + segment.arrivalAirport())
-				.containsExactly("MAN-AMS", "AMS-XMN");
+				.containsExactly("null-null", "null-null");
 		assertThat(result.documentType().name()).isEqualTo("UNKNOWN");
 		assertThat(mapper.writeValueAsString(result)).doesNotContain("PRIVATE-PASSENGER", "elements");
 		assertExactlyTwoCalls(requester, "structure-only.png", "image/png", new byte[] { 9 });
@@ -382,7 +386,7 @@ class DocumentExtractionPipelineTest {
 			assertThat(segment.departureAirport()).isEqualTo("LHR");
 			assertThat(segment.arrivalAirport()).isEqualTo("JFK");
 		});
-		assertThat(result.needsReviewFields()).contains("spatial_review_unavailable");
+		assertThat(result.needsReviewFields()).doesNotContain("spatial_review_unavailable");
 		assertThat(mapper.writeValueAsString(result)).doesNotContain("PRIVATE", "SECRET", "OCR", "PII");
 		assertThat(logs.list).extracting(ILoggingEvent::getFormattedMessage)
 				.allSatisfy(message -> assertThat(message)
@@ -405,7 +409,7 @@ class DocumentExtractionPipelineTest {
 
 	@Test
 	void spatialNoiseDoesNotCreateFlightsFromTimesTerminalsTicketsOrBaggage() throws Exception {
-		JsonNode structure = spatialResponse("""
+		JsonNode structure = spatialCardResponse("""
 				[{"type":"paragraph","text":"8月4日","bounds":{"x":20,"y":10,"width":80,"height":20},"pageIndex":0,"confidence":0.99},
 				 {"type":"paragraph","text":"LHR T2","bounds":{"x":100,"y":100,"width":80,"height":20},"pageIndex":0,"confidence":0.99},
 				 {"type":"paragraph","text":"17:30 1x23KG 9999999999999","bounds":{"x":20,"y":120,"width":180,"height":20},"pageIndex":0,"confidence":0.99},
@@ -429,7 +433,7 @@ class DocumentExtractionPipelineTest {
 
 	@Test
 	void airlineCodeInsideSensitiveUae123TokenIsNotParsedAsAnAirport() throws Exception {
-		JsonNode structure = spatialResponse("""
+		JsonNode structure = spatialCardResponse("""
 				[{"type":"paragraph","text":"8月4日","bounds":{"x":20,"y":10,"width":80,"height":20},"pageIndex":0,"confidence":0.99},
 				 {"type":"paragraph","text":"LHR","bounds":{"x":100,"y":100,"width":50,"height":20},"pageIndex":0,"confidence":0.99},
 				 {"type":"paragraph","text":"TICKET UAE123","bounds":{"x":100,"y":125,"width":130,"height":20},"pageIndex":0,"confidence":0.99},
@@ -471,19 +475,14 @@ class DocumentExtractionPipelineTest {
 				.containsExactly("KL1036", "MF812");
 		assertThat(result.segments()).extracting(segment ->
 				segment.departureAirport() + "-" + segment.arrivalAirport())
-				.containsExactly("MAN-AMS", "AMS-XMN");
-		String firstArrivalSource = result.segments().get(0).fields()
-				.get("arrival_airport").sourceLabel();
-		String secondDepartureSource = result.segments().get(1).fields()
-				.get("departure_airport").sourceLabel();
-		assertThat(firstArrivalSource).isNotEqualTo(secondDepartureSource);
+				.containsExactly("null-null", "null-null");
 		assertThat(result.needsReviewFields()).doesNotContain("spatial_evidence_discarded");
 		assertExactlyTwoCalls(requester, "unpositioned-transfer.png", "image/png", new byte[] { 25 });
 	}
 
 	@Test
 	void spatialElementsMayOmitOptionalConfidence() throws Exception {
-		JsonNode structure = spatialResponse("""
+		JsonNode structure = spatialCardResponse("""
 				[{"type":"paragraph","text":"8月4日","bounds":{"x":20,"y":10,"width":80,"height":20},"pageIndex":0},
 				 {"type":"paragraph","text":"LHR","bounds":{"x":100,"y":100,"width":50,"height":20},"pageIndex":0},
 				 {"type":"paragraph","text":"BA117","bounds":{"x":240,"y":150,"width":70,"height":20},"pageIndex":0},
@@ -505,7 +504,7 @@ class DocumentExtractionPipelineTest {
 
 	@Test
 	void officialNestedKeyValueAndTableShapesPreserveSpatialEvidenceAndFormSegment() throws Exception {
-		JsonNode structure = spatialResponse("""
+		JsonNode structure = spatialCardResponse("""
 				[{"type":"keyValueRegion","pageIndex":0,"confidence":0.40,
 				  "pairs":[
 				    {"key":{"text":"Date"},
@@ -531,8 +530,8 @@ class DocumentExtractionPipelineTest {
 		assertThat(result.segments()).singleElement().satisfies(segment -> {
 			assertThat(segment.flightNumber()).isEqualTo("BA117");
 			assertThat(segment.departureMonthDay()).isEqualTo("08-04");
-			assertThat(segment.departureAirport()).isEqualTo("LHR");
-			assertThat(segment.arrivalAirport()).isEqualTo("JFK");
+			assertThat(segment.departureAirport()).isNull();
+			assertThat(segment.arrivalAirport()).isNull();
 			assertThat(segment.page()).isEqualTo(2);
 			assertThat(segment.boundingBox()).satisfies(box -> {
 				assertThat(box.x()).isEqualTo(240.0d);
@@ -545,19 +544,16 @@ class DocumentExtractionPipelineTest {
 				assertThat(field.page()).isEqualTo(2);
 				assertThat(field.confidence()).isEqualTo(0.97d);
 				assertThat(field.boundingBox()).isEqualTo(segment.boundingBox());
-				assertThat(field.sourceLabel()).startsWith("Nutrient Structure Spatial element ");
+				assertThat(field.sourceLabel()).startsWith("Local deterministic card resolution: ");
 			});
-			assertThat(segment.fields().get("arrival_airport")).satisfies(field -> {
-				assertThat(field.page()).isEqualTo(2);
-				assertThat(field.confidence()).isEqualTo(0.93d);
-			});
+			assertThat(segment.fields().get("arrival_airport").value()).isNull();
 		});
 		assertExactlyTwoCalls(requester, "official-spatial-shapes.png", "image/png", new byte[] { 20 });
 	}
 
 	@Test
 	void duplicateHeaderAnchorYieldsToDetailCardWithDenserLocalEvidence() throws Exception {
-		JsonNode structure = spatialResponse("""
+		JsonNode structure = spatialCardResponse("""
 				[{"type":"paragraph","text":"8月4日","bounds":{"x":20,"y":10,"width":80,"height":20},"pageIndex":0,"confidence":0.99},
 				 {"type":"paragraph","text":"BA117","bounds":{"x":240,"y":30,"width":70,"height":20},"pageIndex":0,"confidence":0.99},
 				 {"type":"paragraph","text":"details one","bounds":{"x":20,"y":50,"width":80,"height":10},"pageIndex":0},
@@ -585,14 +581,13 @@ class DocumentExtractionPipelineTest {
 			assertThat(segment.flightNumber()).isEqualTo("BA117");
 			assertThat(segment.departureAirport()).isEqualTo("LHR");
 			assertThat(segment.arrivalAirport()).isEqualTo("JFK");
-			assertThat(segment.scheduledDeparture()).isEqualTo("17:30");
-			assertThat(segment.scheduledArrival()).isEqualTo("19:50");
+			assertThat(segment.scheduledDeparture()).isNull();
+			assertThat(segment.scheduledArrival()).isNull();
 			assertThat(segment.terminal()).isEqualTo("T2");
 			assertThat(segment.fields().get("arrival_terminal").value()).isEqualTo("T4");
-			assertThat(segment.boundingBox().y()).isEqualTo(350.0d);
-			assertThat(segment.fields().get("flight_number").confidence()).isEqualTo(0.70d);
+			assertThat(segment.boundingBox()).isNotNull();
 		});
-		assertThat(result.needsReviewFields()).contains("spatial_duplicate_flight_number");
+		assertThat(result.needsReviewFields()).doesNotContain("spatial_duplicate_flight_number");
 		assertExactlyTwoCalls(requester, "duplicate-header.png", "image/png", new byte[] { 22 });
 	}
 
@@ -602,7 +597,8 @@ class DocumentExtractionPipelineTest {
 				[{"type":"paragraph","text":"8月4日","bounds":{"x":20,"y":10,"width":80,"height":20},"pageIndex":0,"confidence":0.99},
 				 {"type":"paragraph","text":"MAN","bounds":{"x":20,"y":50,"width":50,"height":20},"pageIndex":0,"confidence":0.99},
 				 {"type":"paragraph","text":"XMN","bounds":{"x":500,"y":50,"width":50,"height":20},"pageIndex":0,"confidence":0.99},
-				 {"type":"paragraph","text":"LHR BA117 JFK","bounds":{"x":100,"y":200,"width":300,"height":100},"pageIndex":0,"confidence":0.98}]
+				 {"type":"card","pageIndex":0,"bounds":[80,170,380,150],"children":[
+				  {"type":"paragraph","text":"LHR BA117 JFK","bounds":{"x":100,"y":200,"width":300,"height":100},"pageIndex":0,"confidence":0.98}]}]
 				""");
 		RecordingRequester requester = new RecordingRequester(understandResponse("[]"), structure);
 
@@ -626,7 +622,7 @@ class DocumentExtractionPipelineTest {
 	@Test
 	void topLevelElementsAndUnknownNestedWrappersAreTraversedRecursively() throws Exception {
 		JsonNode structure = mapper.readTree("""
-				{"elements":[{"type":"unknown-container","children":[
+				{"elements":[{"type":"card","children":[
 				  {"kind":"heading","plainText":"Aug 4","pageNumber":1,
 				   "rect":{"left":20,"top":20,"right":100,"bottom":40},"score":0.96},
 				  {"type":"token","rawText":"LHR","pageNumber":1,
@@ -662,6 +658,80 @@ class DocumentExtractionPipelineTest {
 		assertThat(nested.blocks()).allSatisfy(block ->
 				assertThat(block.sourcePath()).startsWith("$.result.data.unknownNodes"));
 		assertExactlyTwoCalls(requester, "top-level-elements.png", "image/png", new byte[] { 24 });
+	}
+
+	@Test
+	void heterogeneousTransferFixtureKeepsAnchorTopologyTimesAndArrivalDatesLocal() throws Exception {
+		JsonNode structure = fixture("spatial-heterogeneous-transfer-topology.json");
+		RecordingRequester requester = new RecordingRequester(understandResponse("""
+				[{"flight_number":"BA269","departure_date":"Aug 4",
+				  "departure_airport":"LHR","arrival_airport":"LAX","scheduled_arrival":"17:20"},
+				 {"flight_number":"QF12","departure_date":"Aug 4",
+				  "departure_airport":"LAX","arrival_airport":"SYD","scheduled_arrival":"06:10"}]
+				"""), structure);
+		NutrientBoardingPassDocumentProcessor testProcessor = processor(requester);
+		NutrientBoardingPassDocumentProcessor.SpatialPass spatial = testProcessor.parseSpatial(structure);
+
+		assertThat(spatial.blocks()).hasSize(14);
+		assertThat(spatial.discardedEvidenceCount()).isOne();
+		assertThat(spatial.distinctFlightCount()).isEqualTo(2);
+		assertThat(spatial.duplicateFlightEvidenceCount()).isZero();
+		Logger logger = (Logger) LoggerFactory.getLogger(NutrientBoardingPassDocumentProcessor.class);
+		ListAppender<ILoggingEvent> logs = new ListAppender<>();
+		logs.start();
+		logger.addAppender(logs);
+
+		BoardingPassExtractionResponse result;
+		try {
+			result = testProcessor.extract(
+					new byte[] { 37 }, "heterogeneous-transfer.png", "image/png");
+		} finally {
+			logger.detachAppender(logs);
+			logs.stop();
+		}
+
+		assertThat(result.segments()).hasSize(2);
+		assertThat(result.segments()).extracting(segment -> segment.flightNumber())
+				.containsExactly("BA269", "QF12");
+		assertThat(result.segments()).extracting(segment -> segment.boundingBox().y())
+				.containsExactly(150.0d, 370.0d);
+		assertThat(result.segments()).extracting(segment ->
+				segment.departureAirport() + "-" + segment.arrivalAirport())
+				.containsExactly("LHR-LAX", "LAX-SYD")
+				.doesNotContain("LAX-LAX", "LHR-SYD");
+		assertThat(result.segments()).extracting(segment -> segment.scheduledDeparture())
+				.containsOnlyNulls();
+		assertThat(result.segments()).extracting(segment -> segment.scheduledArrival())
+				.containsExactly("17:20", "06:10");
+		assertThat(result.segments().get(0).fields().get("scheduled_arrival").sourceLabel())
+				.isNotEqualTo(result.segments().get(1).fields().get("scheduled_departure").sourceLabel());
+		assertThat(result.segments()).extracting(segment -> segment.departureDate())
+				.containsExactly(LocalDate.of(2026, 8, 4), LocalDate.of(2026, 8, 4))
+				.doesNotContain(LocalDate.of(2026, 8, 5), LocalDate.of(2026, 8, 6));
+		assertThat(result.segments()).allSatisfy(segment -> {
+			assertThat(segment.flightNumberConfidence()).isEqualTo(
+					com.selene.onestepflight.dto.DocumentFlightSegment.FlightNumberConfidence.HIGH);
+			assertThat(segment.requiresFlightNumberConfirmation()).isFalse();
+		});
+		assertThat(result.segments().get(0).fields().get("arrival_airport").sourceLabel())
+				.isNotEqualTo(result.segments().get(1).fields().get("departure_airport").sourceLabel());
+		assertThat(result.segments().get(0).fields().get("scheduled_departure").value())
+				.isNull();
+		assertThat(result.segments().get(1).fields().get("arrival_airport").confidence())
+				.isZero();
+		assertThat(result.needsReviewFields()).doesNotContain("spatial_evidence_discarded",
+					"spatial_duplicate_flight_number", "duplicate_flight_number",
+						"cross_segment_airport_conflict");
+
+		String publicJson = mapper.writeValueAsString(result);
+		assertThat(publicJson).doesNotContain(
+				"PRIVATE-TRAVELER", "REDACTED-MARKER", "QF I2", "Arrival Aug 5",
+				"ARRIVAL Aug 6", "contentBlocks", "rawValue");
+		assertThat(logs.list).extracting(ILoggingEvent::getFormattedMessage)
+				.allSatisfy(message -> assertThat(message).doesNotContain(
+						"PRIVATE-TRAVELER", "REDACTED-MARKER", "QF I2", "Aug 5", "Aug 6"));
+		assertExactlyTwoCalls(requester, "heterogeneous-transfer.png", "image/png",
+				new byte[] { 37 });
 	}
 
 	@Test
@@ -720,35 +790,29 @@ class DocumentExtractionPipelineTest {
 	}
 
 	@Test
-	void strongerSpatialPrefixWithSameNumericSuffixResolvesUnderstandOcrCandidateGenerically() throws Exception {
+	void differentPrefixesWithTheSameNumericSuffixRemainSeparateCandidates() throws Exception {
 		JsonNode understand = understandResponse("""
-				[{"flight_number":"F1 668","departure_date":"9月5日",
-				  "departure_airport":"CDG","arrival_airport":"MAN"}]
+				[{"flight_number":"BA117","departure_date":"9月5日",
+				  "departure_airport":"LHR","arrival_airport":"JFK"}]
 				""");
 		JsonNode structure = spatialResponse("""
 				[{"type":"heading","text":"9月5日","bounds":{"x":20,"y":20,"width":80,"height":20},"pageIndex":0,"confidence":0.99},
-				 {"type":"token","text":"CDG","bounds":{"x":100,"y":150,"width":45,"height":20},"pageIndex":0,"confidence":0.97},
-				 {"type":"token","text":"AF","bounds":{"x":230,"y":150,"width":26,"height":20},"pageIndex":0,"confidence":0.98},
-				 {"type":"token","text":"1668","bounds":{"x":264,"y":150,"width":45,"height":20},"pageIndex":0,"confidence":0.98},
-				 {"type":"token","text":"MAN","bounds":{"x":400,"y":150,"width":45,"height":20},"pageIndex":0,"confidence":0.97}]
+				 {"type":"token","text":"LHR","bounds":{"x":100,"y":150,"width":45,"height":20},"pageIndex":0,"confidence":0.97},
+				 {"type":"token","text":"AA","bounds":{"x":230,"y":150,"width":26,"height":20},"pageIndex":0,"confidence":0.98},
+				 {"type":"token","text":"117","bounds":{"x":264,"y":150,"width":45,"height":20},"pageIndex":0,"confidence":0.98},
+				 {"type":"token","text":"JFK","bounds":{"x":400,"y":150,"width":45,"height":20},"pageIndex":0,"confidence":0.97}]
 				""");
 		RecordingRequester requester = new RecordingRequester(understand, structure);
 
 		BoardingPassExtractionResponse result = processor(requester).extract(
 				new byte[] { 28 }, "generic-ocr-correction.png", "image/png");
 
-		assertThat(result.segments()).singleElement().satisfies(segment -> {
-			assertThat(segment.flightNumber()).isEqualTo("AF1668");
-			assertThat(segment.flightNumberConfidence()).isEqualTo(
-					com.selene.onestepflight.dto.DocumentFlightSegment.FlightNumberConfidence.HIGH);
-			assertThat(segment.requiresFlightNumberConfirmation()).isFalse();
-		});
-		assertThat(result.needsReviewFields()).contains("conflict.flight_number_resolved")
-				.doesNotContain("flight_number", "conflict.flight_number");
+		assertThat(result.segments()).extracting(segment -> segment.flightNumber())
+				.containsExactlyInAnyOrder("BA117", "AA117");
 	}
 
 	@Test
-	void singleUnderstandChannelIsMediumConfidenceAndUnsupportedPrefixIsMissing() throws Exception {
+	void singleUnderstandChannelKeepsMediumAndLowValidCandidatesLookupReady() throws Exception {
 		RecordingRequester mediumRequester = new RecordingRequester(understandResponse("""
 				[{"flight_number":"BA117","departure_date":"2026-08-04"}]
 				"""), spatialResponse("[]"));
@@ -759,9 +823,10 @@ class DocumentExtractionPipelineTest {
 			assertThat(segment.flightNumber()).isEqualTo("BA117");
 			assertThat(segment.flightNumberConfidence()).isEqualTo(
 					com.selene.onestepflight.dto.DocumentFlightSegment.FlightNumberConfidence.MEDIUM);
-			assertThat(segment.requiresFlightNumberConfirmation()).isTrue();
+			assertThat(segment.requiresFlightNumberConfirmation()).isFalse();
 		});
-		assertThat(DocumentResultClassifier.classify(medium)).isEqualTo(DocumentResultClassification.PARTIAL);
+		assertThat(DocumentResultClassifier.classify(medium)).isEqualTo(DocumentResultClassification.USABLE);
+		assertThat(medium.reviewIssues()).noneMatch(issue -> "flight_number".equals(issue.field()));
 
 		RecordingRequester lowRequester = new RecordingRequester(understandResponse("""
 				[{"flight_number":"Q0999","departure_date":"2026-08-04"}]
@@ -769,24 +834,28 @@ class DocumentExtractionPipelineTest {
 		BoardingPassExtractionResponse low = processor(lowRequester).extract(
 				new byte[] { 30 }, "low.png", "image/png");
 		assertThat(low.segments()).singleElement().satisfies(segment -> {
-			assertThat(segment.flightNumber()).isNull();
+			assertThat(segment.flightNumber()).isEqualTo("Q0999");
 			assertThat(segment.flightNumberConfidence()).isEqualTo(
 					com.selene.onestepflight.dto.DocumentFlightSegment.FlightNumberConfidence.LOW);
+			assertThat(segment.requiresFlightNumberConfirmation()).isFalse();
 		});
+		assertThat(DocumentResultClassifier.classify(low)).isEqualTo(DocumentResultClassification.USABLE);
 	}
 
 	@Test
 	void localDateHeadingsStopAtNewHeadingAndArrivalDateNeverPropagatesForward() throws Exception {
 		JsonNode structure = spatialResponse("""
-				[{"type":"heading","text":"8月4日","bounds":{"x":20,"y":20,"width":80,"height":20},"pageIndex":0,"confidence":0.99},
+				[{"type":"card","pageIndex":0,"bounds":[0,0,600,280],"children":[
+				 {"type":"heading","text":"8月4日","bounds":{"x":20,"y":20,"width":80,"height":20},"pageIndex":0,"confidence":0.99},
 				 {"type":"token","text":"LHR","bounds":{"x":100,"y":100,"width":45,"height":20},"pageIndex":0,"confidence":0.97},
 				 {"type":"token","text":"BA117","bounds":{"x":240,"y":150,"width":70,"height":20},"pageIndex":0,"confidence":0.98},
 				 {"type":"token","text":"JFK","bounds":{"x":100,"y":200,"width":45,"height":20},"pageIndex":0,"confidence":0.97},
-				 {"type":"paragraph","text":"到达 8月5日","bounds":{"x":20,"y":240,"width":100,"height":20},"pageIndex":0,"confidence":0.99},
+				 {"type":"paragraph","text":"到达 8月5日","bounds":{"x":20,"y":240,"width":100,"height":20},"pageIndex":0,"confidence":0.99}]},
+				 {"type":"card","pageIndex":0,"bounds":[0,290,600,210],"children":[
 				 {"type":"heading","text":"9月5日","bounds":{"x":20,"y":300,"width":80,"height":20},"pageIndex":0,"confidence":0.99},
 				 {"type":"token","text":"JFK","bounds":{"x":100,"y":350,"width":45,"height":20},"pageIndex":0,"confidence":0.97},
 				 {"type":"token","text":"BA178","bounds":{"x":240,"y":400,"width":70,"height":20},"pageIndex":0,"confidence":0.98},
-				 {"type":"token","text":"LHR","bounds":{"x":100,"y":450,"width":45,"height":20},"pageIndex":0,"confidence":0.97}]
+				 {"type":"token","text":"LHR","bounds":{"x":100,"y":450,"width":45,"height":20},"pageIndex":0,"confidence":0.97}]}]
 				""");
 		RecordingRequester requester = new RecordingRequester(understandResponse("[]"), structure);
 
@@ -820,10 +889,10 @@ class DocumentExtractionPipelineTest {
 	}
 
 	@Test
-	void explicitYearWinsOverCurrentYearCompletionWhenMonthAndDayAgree() throws Exception {
+	void explicitDifferentYearDoesNotMergeWithCompletedCurrentYearDate() throws Exception {
 		JsonNode understand = understandResponse("""
 				[{"flight_number":"BA117","departure_date":"2025-08-04",
-				  "departure_airport":"LHR","arrival_airport":"JFK"}]
+				  "departure_airport":"LHR","arrival_airport":"JFK","scheduled_departure":"09:25"}]
 				""");
 		RecordingRequester requester = new RecordingRequester(understand,
 				singleFlightSpatial("8月4日", "T4"));
@@ -831,17 +900,14 @@ class DocumentExtractionPipelineTest {
 		BoardingPassExtractionResponse result = processor(requester).extract(
 				new byte[] { 33 }, "explicit-year.png", "image/png");
 
-		assertThat(result.segments()).singleElement().satisfies(segment -> {
-			assertThat(segment.departureDate()).isEqualTo(LocalDate.of(2025, 8, 4));
-			assertThat(segment.dateSource()).isEqualTo(
-					com.selene.onestepflight.dto.DocumentFlightSegment.DateSource.EXPLICIT_FULL_DATE);
-		});
-		assertThat(result.needsReviewFields()).doesNotContain("conflict.departure_date");
+		assertThat(result.segments()).hasSize(2);
+		assertThat(result.segments()).extracting(segment -> segment.departureDate())
+				.containsExactlyInAnyOrder(LocalDate.of(2025, 8, 4), LocalDate.of(2026, 8, 4));
 	}
 
 	@Test
 	void repeatedFlightNumberOnDifferentCardsDatesAndPagesRemainsDistinct() throws Exception {
-		JsonNode structure = spatialResponse("""
+		JsonNode structure = spatialCardResponse("""
 				[{"type":"card","children":[
 				  {"type":"heading","text":"8月4日","bounds":{"x":20,"y":20,"width":80,"height":20},"pageIndex":0,"confidence":0.99},
 				  {"type":"token","text":"LHR","bounds":{"x":100,"y":100,"width":45,"height":20},"pageIndex":0,"confidence":0.97},
@@ -881,7 +947,7 @@ class DocumentExtractionPipelineTest {
 				[{"flight_number":"1I123","departure_date":"8月4日",
 				  "departure_airport":"LHR","arrival_airport":"JFK"}]
 				""");
-		JsonNode structure = spatialResponse("""
+		JsonNode structure = spatialCardResponse("""
 				[{"type":"heading","text":"8月4日","bounds":{"x":20,"y":20,"width":80,"height":20},"pageIndex":0,"confidence":0.99},
 				 {"type":"token","text":"LHR","bounds":{"x":100,"y":100,"width":45,"height":20},"pageIndex":0,"confidence":0.97},
 				 {"type":"token","text":"1I123","bounds":{"x":240,"y":150,"width":70,"height":20},"pageIndex":0,"confidence":0.99},
@@ -896,9 +962,10 @@ class DocumentExtractionPipelineTest {
 			assertThat(segment.flightNumber()).isEqualTo("1I123");
 			assertThat(segment.flightNumberConfidence()).isEqualTo(
 					com.selene.onestepflight.dto.DocumentFlightSegment.FlightNumberConfidence.MEDIUM);
-			assertThat(segment.requiresFlightNumberConfirmation()).isTrue();
+			assertThat(segment.requiresFlightNumberConfirmation()).isFalse();
 		});
-		assertThat(DocumentResultClassifier.classify(result)).isEqualTo(DocumentResultClassification.PARTIAL);
+		assertThat(DocumentResultClassifier.classify(result)).isEqualTo(DocumentResultClassification.USABLE);
+		assertThat(result.reviewIssues()).noneMatch(issue -> "flight_number".equals(issue.field()));
 	}
 
 	@Test
@@ -919,6 +986,633 @@ class DocumentExtractionPipelineTest {
 
 		assertThat(result.segments()).isEmpty();
 		assertExactlyTwoCalls(requester, "sensitive-fragments.png", "image/png", new byte[] { 36 });
+	}
+
+	@Test
+	void structuredMonthDatesShareOneNormalizedPipelineResult() throws Exception {
+		for (String visibleDate : List.of("4AUG", "04AUG26", "4 de agosto de 2026")) {
+			JsonNode understand = understandResponse("""
+					[{"flight_number":"BA117","departure_date":"%s",
+					  "departure_airport":"LHR","arrival_airport":"JFK"}]
+					""".formatted(visibleDate));
+			RecordingRequester requester = new RecordingRequester(understand,
+					singleFlightSpatial("2026-08-04", "T4"));
+
+			BoardingPassExtractionResponse result = processor(requester).extract(
+					new byte[] { 40 }, "normalized-date.png", "image/png");
+
+			assertThat(result.segments()).singleElement().satisfies(segment -> {
+				assertThat(segment.departureDate()).isEqualTo(LocalDate.of(2026, 8, 4));
+				assertThat(segment.departureMonthDay()).isEqualTo("08-04");
+			});
+			assertThat(result.reviewIssues()).noneSatisfy(issue ->
+					assertThat(issue.field()).isEqualTo("departure_date"));
+			assertExactlyTwoCalls(requester, "normalized-date.png", "image/png", new byte[] { 40 });
+		}
+	}
+
+	@Test
+	void differentValidStructuredDatesRemainActionableCandidates() throws Exception {
+		JsonNode understand = understandResponse("""
+				[{"flight_number":"BA117","departure_date":"04/08/2026",
+				  "departure_airport":"LHR","arrival_airport":"JFK"}]
+				""");
+		RecordingRequester requester = new RecordingRequester(understand, spatialResponse("[]"));
+
+		BoardingPassExtractionResponse result = processor(requester).extract(
+				new byte[] { 41 }, "ambiguous-date.png", "image/png");
+
+		assertThat(result.segments()).singleElement().satisfies(segment -> {
+			assertThat(segment.departureDate()).isNull();
+			assertThat(segment.dateSource()).isEqualTo(
+					com.selene.onestepflight.dto.DocumentFlightSegment.DateSource.CONFLICT);
+		});
+		assertThat(result.reviewIssues()).anySatisfy(issue -> {
+			assertThat(issue.field()).isEqualTo("departure_date");
+			assertThat(issue.blocking()).isTrue();
+			assertThat(issue.candidates()).extracting(candidate -> candidate.normalizedValue())
+					.containsExactly("2026-04-08", "2026-08-04");
+		});
+		assertExactlyTwoCalls(requester, "ambiguous-date.png", "image/png", new byte[] { 41 });
+	}
+
+	@Test
+	void compactNumericFreeTextDoesNotCreateSpatialDates() throws Exception {
+		JsonNode structure = spatialResponse("""
+				[{"type":"paragraph","text":"040826 20260804","bounds":{"x":20,"y":20,"width":180,"height":20},"pageIndex":0,"confidence":0.99},
+				 {"type":"paragraph","text":"LHR","bounds":{"x":100,"y":100,"width":50,"height":20},"pageIndex":0,"confidence":0.99},
+				 {"type":"paragraph","text":"BA117","bounds":{"x":240,"y":150,"width":70,"height":20},"pageIndex":0,"confidence":0.99},
+				 {"type":"paragraph","text":"JFK","bounds":{"x":100,"y":230,"width":50,"height":20},"pageIndex":0,"confidence":0.99}]
+				""");
+		RecordingRequester requester = new RecordingRequester(understandResponse("[]"), structure);
+
+		BoardingPassExtractionResponse result = processor(requester).extract(
+				new byte[] { 42 }, "numeric-identifiers.png", "image/png");
+
+		assertThat(result.segments()).singleElement().satisfies(segment -> {
+			assertThat(segment.departureDate()).isNull();
+			assertThat(segment.departureMonthDay()).isNull();
+		});
+		assertExactlyTwoCalls(requester, "numeric-identifiers.png", "image/png", new byte[] { 42 });
+	}
+
+	@Test
+	void bookingMetadataIsRejectedPerOccurrenceWhileAFlightCardOccurrenceRemainsValid() throws Exception {
+		JsonNode bookingStructure = spatialResponse("""
+				[{"type":"label","text":"AIRLINE PNR","pageIndex":0,"bounds":[20,100,100,20]},
+				 {"type":"value","text":"XY1234","pageIndex":0,"bounds":[140,100,80,20]}]
+				""");
+		BoardingPassExtractionResponse booking = processor(new RecordingRequester(
+				understandResponse("[{\"flight_number\":\"XY1234\"}]"), bookingStructure))
+				.extract(new byte[] { 43 }, "booking.png", "image/png");
+		assertThat(booking.segments()).isEmpty();
+
+		JsonNode flightCard = spatialResponse("""
+				[{"type":"heading","text":"4AUG","pageIndex":0,"bounds":[20,20,80,20]},
+				 {"type":"token","text":"AAA","pageIndex":0,"bounds":[80,100,45,20]},
+				 {"type":"time","text":"09:00","pageIndex":0,"bounds":[20,130,55,20]},
+				 {"type":"token","text":"XY1234","pageIndex":0,"bounds":[220,150,80,20]},
+				 {"type":"token","text":"BBB","pageIndex":0,"bounds":[80,210,45,20]}]
+				""");
+		BoardingPassExtractionResponse visible = processor(new RecordingRequester(
+				understandResponse("[]"), flightCard)).extract(
+						new byte[] { 44 }, "flight-card.png", "image/png");
+		assertThat(visible.segments()).singleElement().satisfies(segment ->
+				assertThat(segment.flightNumber()).isEqualTo("XY1234"));
+	}
+
+	@Test
+	void financialOccurrencesNeverBecomeFlightOrAirportButCurrencyRouteCodeRemainsAvailable() throws Exception {
+		JsonNode structure = spatialCardResponse("""
+				[{"type":"paragraph","text":"FARE: CNY 500.00","pageIndex":0,"bounds":[20,20,180,20]},
+				 {"type":"paragraph","text":"TAX: CNY 80.00","pageIndex":0,"bounds":[20,50,180,20]},
+				 {"type":"heading","text":"4AUG","pageIndex":0,"bounds":[20,80,80,20]},
+				 {"type":"token","text":"CNY","pageIndex":0,"bounds":[80,120,45,20]},
+				 {"type":"time","text":"09:25","pageIndex":0,"bounds":[20,145,55,20]},
+				 {"type":"token","text":"XY123","pageIndex":0,"bounds":[220,170,80,20]},
+				 {"type":"token","text":"BBB","pageIndex":0,"bounds":[80,220,45,20]},
+				 {"type":"time","text":"10:00","pageIndex":0,"bounds":[20,245,55,20]}]
+				""");
+		BoardingPassExtractionResponse result = processor(new RecordingRequester(
+				understandResponse("[]"), structure)).extract(
+						new byte[] { 45 }, "financial.png", "image/png");
+
+		assertThat(result.segments()).singleElement().satisfies(segment -> {
+			assertThat(segment.flightNumber()).isEqualTo("XY123");
+			assertThat(segment.departureAirport()).isEqualTo("CNY");
+			assertThat(segment.arrivalAirport()).isEqualTo("BBB");
+		});
+		assertThat(result.segments()).extracting(segment -> segment.flightNumber())
+				.doesNotContain("CNY500", "CNY80");
+	}
+
+	@Test
+	void partialsWithoutOneExplicitSharedCardRemainVisible() throws Exception {
+		JsonNode understand = understandResponse("""
+				[{"flight_number":"XY123","departure_date":"2026-08-04",
+				  "departure_airport":"AAA","arrival_airport":"BBB",
+				  "scheduled_departure":"09:25","scheduled_arrival":"10:00"},
+				 {"arrival_airport":"AAA","scheduled_departure":"09:25"},
+				 {"arrival_airport":"BBB","scheduled_arrival":"10:00"}]
+				""");
+		BoardingPassExtractionResponse result = processor(new RecordingRequester(
+				understand, spatialResponse("[]"))).extract(
+						new byte[] { 46 }, "partials.png", "image/png");
+
+		assertThat(result.segments()).hasSize(3);
+		assertThat(result.segments()).filteredOn(segment -> "XY123".equals(segment.flightNumber()))
+				.singleElement().satisfies(segment -> {
+			assertThat(segment.departureAirport()).isEqualTo("AAA");
+			assertThat(segment.arrivalAirport()).isEqualTo("BBB");
+		});
+	}
+
+	@Test
+	void genuinelyIncompleteSegmentRemainsVisibleWithoutAUniqueCompleteTarget() throws Exception {
+		JsonNode understand = understandResponse("""
+				[{"arrival_airport":"CCC","scheduled_departure":"12:30"}]
+				""");
+		BoardingPassExtractionResponse result = processor(new RecordingRequester(
+				understand, spatialResponse("[]"))).extract(
+						new byte[] { 47 }, "genuine-partial.png", "image/png");
+
+		assertThat(result.segments()).singleElement().satisfies(segment -> {
+			assertThat(segment.flightNumber()).isNull();
+			assertThat(segment.arrivalAirport()).isEqualTo("CCC");
+			assertThat(segment.scheduledDeparture()).isEqualTo("12:30");
+		});
+	}
+
+	@Test
+	void sameFlightCardWithDifferentNumbersBecomesOneUnresolvedConflictForImages() throws Exception {
+		RecordingRequester requester = conflictingFlightCardRequester("XW123");
+		BoardingPassExtractionResponse result = processor(requester).extract(
+				new byte[] { 48 }, "flight-conflict.png", "image/png");
+
+		assertThat(result.segments()).singleElement().satisfies(segment ->
+				assertThat(segment.flightNumber()).isNull());
+		assertThat(result.reviewIssues()).filteredOn(issue -> "flight_number".equals(issue.field()))
+				.singleElement().satisfies(issue -> {
+			assertThat(issue.blocking()).isTrue();
+			assertThat(issue.candidates()).extracting(candidate -> candidate.normalizedValue())
+					.contains("XY123", "XW123");
+		});
+	}
+
+	@Test
+	void nativeTextExactTokenResolvesSameCardConflictWithoutSubstringMatching() throws Exception {
+		RecordingRequester requester = conflictingFlightCardRequester("XW123");
+		byte[] pdf = nativeFlightPdf();
+		BoardingPassExtractionResponse result = processor(requester).extract(
+				pdf, "native-flight.pdf", "application/pdf");
+
+		assertThat(result.segments()).singleElement().satisfies(segment ->
+				assertThat(segment.flightNumber()).isEqualTo("XY123"));
+		assertThat(requester.instructions).extracting(instructions -> instructions.get("mode"))
+				.containsExactlyInAnyOrder("text", "structure");
+		assertThat(processor(requester).nativeFlightTokenPresent("AF1668", "F1668")).isFalse();
+		assertThat(processor(requester).nativeFlightTokenPresent("XY-123", "XY123")).isTrue();
+	}
+
+	private RecordingRequester conflictingFlightCardRequester(String understandFlight) throws Exception {
+		JsonNode understand = understandResponse("""
+				[{"flight_number":"%s","departure_date":"2026-08-04",
+				  "departure_airport":"AAA","arrival_airport":"BBB",
+				  "scheduled_departure":"09:25","scheduled_arrival":"10:00"}]
+				""".formatted(understandFlight));
+		JsonNode structure = spatialCardResponse("""
+				[{"type":"heading","text":"2026-08-04","pageIndex":0,"bounds":[20,20,100,20]},
+				 {"type":"token","text":"AAA","pageIndex":0,"bounds":[80,90,45,20]},
+				 {"type":"time","text":"出发 09:25","pageIndex":0,"bounds":[20,120,90,20]},
+				 {"type":"token","text":"XY123","pageIndex":0,"bounds":[220,150,80,20]},
+				 {"type":"token","text":"BBB","pageIndex":0,"bounds":[80,210,45,20]},
+				 {"type":"time","text":"到达 10:00","pageIndex":0,"bounds":[20,240,90,20]}]
+				""");
+		return new RecordingRequester(understand, structure);
+	}
+
+	private byte[] nativeFlightPdf() throws Exception {
+		try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+			PDPage page = new PDPage();
+			document.addPage(page);
+			try (PDPageContentStream content = new PDPageContentStream(document, page)) {
+				content.beginText();
+				content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+				content.newLineAtOffset(50, 700);
+				content.showText("Flight XY123 from AAA to BBB on 4AUG departs 09:25 arrives 10:00");
+				content.endText();
+			}
+			document.save(output);
+			return output.toByteArray();
+		}
+	}
+
+	@Test
+	void nativeRowsRecoverTheSameScheduleBeforeOrAfterTheFlightNumber() throws Exception {
+		for (String row : List.of(
+				"XY123 AAA BBB 2026-08-04 09:25 11:40 TERMINAL T2",
+				"2026-08-04 AAA BBB 09:25 11:40 TERMINAL T2 XY123")) {
+			RecordingRequester requester = new RecordingRequester(understandResponse("[]"), spatialResponse("[]"))
+					.outcome("text", understandResponse("[]"));
+			BoardingPassExtractionResponse result = processor(requester).extract(
+					nativePdf(row), "native-row.pdf", "application/pdf");
+
+			assertThat(result.segments()).singleElement().satisfies(segment -> {
+				assertThat(segment.flightNumber()).isEqualTo("XY123");
+				assertThat(segment.departureDate()).isEqualTo(LocalDate.of(2026, 8, 4));
+				assertThat(segment.scheduledDeparture()).isEqualTo("09:25");
+				assertThat(segment.scheduledArrival()).isEqualTo("11:40");
+			});
+			assertThat(requester.stages).containsExactlyInAnyOrder("text", "structure");
+		}
+	}
+
+	@Test
+	void imageCardUsesSemanticDateRoleRegardlessOfRelativeCoordinates() throws Exception {
+		for (String bounds : List.of("[220,40,130,20]", "[220,250,130,20]",
+				"[20,140,130,20]", "[380,140,130,20]")) {
+			JsonNode structure = spatialResponse("""
+					[{"type":"card","pageIndex":0,"bounds":[0,0,600,320],"children":[
+					 {"type":"token","text":"XY123","bounds":[220,140,80,20]},
+					 {"type":"token","text":"AAA","bounds":[40,180,45,20]},
+					 {"type":"token","text":"BBB","bounds":[420,180,45,20]},
+					 {"type":"date","text":"计划出发 2025-07-22","bounds":%s},
+					 {"type":"time","text":"计划出发 09:25","bounds":[40,220,100,20]}
+					]}]
+					""".formatted(bounds));
+			RecordingRequester requester = new RecordingRequester(understandResponse("[]"), structure)
+					.outcome("text", understandResponse("[]"));
+			BoardingPassExtractionResponse result = processor(requester).extract(
+					new byte[] { 81 }, "semantic-card.png", "image/png");
+			assertThat(result.segments()).singleElement().satisfies(segment -> {
+				assertThat(segment.departureDate()).isEqualTo(LocalDate.of(2025, 7, 22));
+				assertThat(segment.scheduledDeparture()).isEqualTo("09:25");
+			});
+		}
+	}
+
+	@Test
+	void departureRoleExcludesArrivalStatusDateInsideOneCard() throws Exception {
+		JsonNode structure = spatialResponse("""
+				[{"type":"card","pageIndex":0,"bounds":[0,0,600,320],"children":[
+				 {"type":"token","text":"XY123","bounds":[220,140,80,20]},
+				 {"type":"token","text":"AAA","bounds":[40,180,45,20]},
+				 {"type":"token","text":"BBB","bounds":[420,180,45,20]},
+				 {"type":"date","text":"计划出发 2025-07-22","bounds":[40,40,150,20]},
+				 {"type":"date","text":"已到达 2025-07-23","bounds":[40,260,150,20]},
+				 {"type":"time","text":"出发 09:25","bounds":[40,220,100,20]}
+				]}]
+				""");
+		BoardingPassExtractionResponse result = processor(new RecordingRequester(
+				understandResponse("[]"), structure).outcome("text", understandResponse("[]")))
+				.extract(new byte[] { 82 }, "date-roles.png", "image/png");
+		assertThat(result.segments()).singleElement().satisfies(segment ->
+				assertThat(segment.departureDate()).isEqualTo(LocalDate.of(2025, 7, 22)));
+	}
+
+	@Test
+	void carrierRegistryResolvesOneSameCardCandidateAndSelectsItsBundleTime() throws Exception {
+		JsonNode bundles = understandResponse("""
+				[{"flight_number":"QF117","airline_name":"British Airways","departure_date":"2026-08-04",
+				  "departure_airport":"LHR","arrival_airport":"JFK","scheduled_departure":"09:20","scheduled_arrival":"11:40"},
+				 {"flight_number":"BA117","airline_name":"British Airways","departure_date":"2026-08-04",
+				  "departure_airport":"LHR","arrival_airport":"JFK",
+				  "scheduled_departure":{"rawValue":"09:25","value":"09:20"},"scheduled_arrival":"11:40"}]
+				""");
+		RecordingRequester requester = new RecordingRequester(bundles, spatialResponse("[]"))
+				.outcome("focused-understand", understandResponse("[]"));
+		BoardingPassExtractionResponse result = processor(requester).extract(
+				new byte[] { 83 }, "carrier-resolution.png", "image/png");
+		assertThat(result.segments()).singleElement().satisfies(segment -> {
+			assertThat(segment.flightNumber()).isEqualTo("BA117");
+			assertThat(segment.scheduledDeparture()).isEqualTo("09:25");
+		});
+		assertThat(requester.stages).containsExactlyInAnyOrder("understand", "structure");
+	}
+
+	@Test
+	void ambiguousCarrierEvidenceKeepsOneSegmentWithFlightAndTimeConflicts() throws Exception {
+		JsonNode bundles = understandResponse("""
+				[{"flight_number":"QF117","airline_name":"Qantas","departure_date":"2026-08-04",
+				  "departure_airport":"LHR","arrival_airport":"JFK","scheduled_departure":"09:20","scheduled_arrival":"11:40"},
+				 {"flight_number":"BA117","airline_name":"British Airways","departure_date":"2026-08-04",
+				  "departure_airport":"LHR","arrival_airport":"JFK","scheduled_departure":"09:25","scheduled_arrival":"11:40"}]
+				""");
+		BoardingPassExtractionResponse result = processor(new RecordingRequester(
+				bundles, spatialResponse("[]")).outcome("focused-understand", understandResponse("[]")))
+				.extract(new byte[] { 84 }, "ambiguous-carrier.png", "image/png");
+		assertThat(result.segments()).singleElement().satisfies(segment -> {
+			assertThat(segment.flightNumber()).isNull();
+			assertThat(segment.scheduledDeparture()).isNull();
+			assertThat(segment.departureDate()).isEqualTo(LocalDate.of(2026, 8, 4));
+		});
+	}
+
+	@Test
+	void aircraftModelBesideAirlineNameNeverManufacturesAFlight() throws Exception {
+		JsonNode structure = spatialResponse("""
+				[{"type":"card","pageIndex":0,"bounds":[0,0,600,320],"children":[
+				 {"type":"token","text":"British Airways","bounds":[30,30,140,20]},
+				 {"type":"token","text":"BOEING 787","bounds":[30,70,100,20]},
+				 {"type":"token","text":"AAA","bounds":[30,130,45,20]},
+				 {"type":"token","text":"BBB","bounds":[130,130,45,20]},
+				 {"type":"date","text":"2026-08-04","bounds":[30,170,100,20]},
+				 {"type":"time","text":"09:25","bounds":[30,210,60,20]}
+				]}]
+				""");
+		BoardingPassExtractionResponse result = processor(new RecordingRequester(
+				understandResponse("[]"), structure).outcome("text", understandResponse("[]"))
+				.outcome("focused-understand", understandResponse("[]")))
+				.extract(new byte[] { 85 }, "aircraft.png", "image/png");
+		assertThat(result.segments()).isEmpty();
+	}
+
+	@Test
+	void connectionPartialAndArrivalFragmentsFollowStrictVisibilityRules() throws Exception {
+		JsonNode response = understandResponse("""
+				[{"flight_number":"BA117","departure_date":"2026-08-04","departure_airport":"AAA","arrival_airport":"BBB"},
+				 {"flight_number":"QF12","departure_date":"2026-08-04","departure_airport":"BBB","arrival_airport":"CCC"},
+				 {"departure_date":"2026-08-04","departure_airport":"BBB"},
+				 {"departure_date":"已到达 2026-08-05","scheduled_arrival":"已到达 10:00"}]
+				""");
+		BoardingPassExtractionResponse result = processor(new RecordingRequester(response, spatialResponse("[]"))
+				.outcome("text", understandResponse("[]"))
+				.outcome("focused-understand", understandResponse("[]")))
+				.extract(new byte[] { 86 }, "connection.png", "image/png");
+		assertThat(result.segments()).hasSize(3);
+		assertThat(result.segments()).extracting(segment -> segment.flightNumber())
+				.containsExactly("BA117", "QF12", null);
+	}
+
+	@Test
+	void airportAndTimePartialUniquelyMappedToOneCardIsAbsorbed() throws Exception {
+		JsonNode partial = mapper.readTree("""
+				{"output":{"data":{"document_type":"ITINERARY","segments":[{
+				  "departure_airport":"AAA","scheduled_departure":"09:25"}]},
+				  "metadata":{"segments":[{
+				    "departure_airport":{"pageIndex":0,"bounds":[30,120,45,20]},
+				    "scheduled_departure":{"pageIndex":0,"bounds":[30,200,60,20]}}]}}}
+				""");
+		JsonNode structure = spatialResponse("""
+				[{"type":"card","pageIndex":0,"bounds":[0,0,500,300],"children":[
+				 {"type":"token","text":"XY123","bounds":[210,90,80,20]},
+				 {"type":"token","text":"AAA","bounds":[30,120,45,20]},
+				 {"type":"token","text":"BBB","bounds":[350,120,45,20]},
+				 {"type":"date","text":"出发 2026-08-04","bounds":[30,160,130,20]},
+				 {"type":"time","text":"出发 09:25","bounds":[30,200,90,20]}
+				]}]
+				""");
+		BoardingPassExtractionResponse result = processor(new RecordingRequester(partial, structure)
+				.outcome("text", understandResponse("[]")))
+				.extract(new byte[] { 91 }, "partial-card.png", "image/png");
+		assertThat(result.segments()).singleElement().satisfies(segment -> {
+			assertThat(segment.flightNumber()).isEqualTo("XY123");
+			assertThat(segment.departureAirport()).isEqualTo("AAA");
+			assertThat(segment.scheduledDeparture()).isEqualTo("09:25");
+		});
+	}
+
+	@Test
+	void unknownDateOnlyPartialRemainsVisibleAndOcrNormalizationIsRestricted() throws Exception {
+		JsonNode response = understandResponse("[{\"date\":\"2026-08-06\"}]");
+		BoardingPassExtractionResponse result = processor(new RecordingRequester(response, spatialResponse("[]"))
+				.outcome("text", understandResponse("[]"))
+				.outcome("focused-understand", understandResponse("[]")))
+				.extract(new byte[] { 87 }, "unknown-partial.png", "image/png");
+		assertThat(result.segments()).singleElement().satisfies(segment -> {
+			assertThat(segment.flightNumber()).isNull();
+			assertThat(segment.departureDate()).isEqualTo(LocalDate.of(2026, 8, 6));
+		});
+		assertThat(processor(new RecordingRequester(mapper.nullNode(), mapper.nullNode()))
+				.normalizeFlightNumber("ＢＡ ١١٧")).isEqualTo("BA117");
+		assertThat(processor(new RecordingRequester(mapper.nullNode(), mapper.nullNode()))
+				.repairFlightLikeOccurrence("AO346", false, 2, false)).isEqualTo("A0346");
+		assertThat(processor(new RecordingRequester(mapper.nullNode(), mapper.nullNode()))
+				.repairFlightLikeOccurrence("A1123", false, 2, false)).isNull();
+	}
+
+	@Test
+	void ordinaryMissingFieldsStayOnTwoCallsAndNoPathUsesAFourthCall() throws Exception {
+		JsonNode complete = understandResponse("[{\"flight_number\":\"BA117\",\"departure_date\":\"2026-08-04\"}]");
+		RecordingRequester normal = new RecordingRequester(complete, spatialResponse("[]"))
+				.outcome("text", understandResponse("[]"));
+		processor(normal).extract(new byte[] { 88 }, "complete.png", "image/png");
+		assertThat(normal.stages).containsExactlyInAnyOrder("structure", "understand");
+
+		JsonNode incomplete = understandResponse("[{\"flight_number\":\"BA117\"}]");
+		RecordingRequester recovery = new RecordingRequester(incomplete, spatialResponse("[]"))
+				.outcome("text", understandResponse("[]"))
+				.outcome("focused-understand", understandResponse("[]"));
+		processor(recovery).extract(new byte[] { 89 }, "incomplete.png", "image/png");
+		assertThat(recovery.stages).containsExactlyInAnyOrder("structure", "understand");
+		assertThat(recovery.stages).hasSizeLessThan(4);
+	}
+
+	@Test
+	void departureTimeConflictIsAdvisoryWhenFlightAndDateAreComplete() throws Exception {
+		JsonNode conflict = understandResponse("""
+				[{"flight_number":"BA117","departure_date":"2026-08-04","departure_airport":"AAA",
+				  "arrival_airport":"BBB","scheduled_departure":"09:20"},
+				 {"flight_number":"BA117","departure_date":"2026-08-04","departure_airport":"AAA",
+				  "arrival_airport":"BBB","scheduled_departure":"09:25"}]
+				""");
+		BoardingPassExtractionResponse result = processor(new RecordingRequester(conflict, spatialResponse("[]"))
+				.outcome("text", understandResponse("[]"))
+				.outcome("focused-understand", understandResponse("[]")))
+				.extract(new byte[] { 90 }, "time-conflict.png", "image/png");
+		assertThat(result.segments()).singleElement().satisfies(segment -> {
+			assertThat(segment.flightNumber()).isEqualTo("BA117");
+			assertThat(segment.departureDate()).isEqualTo(LocalDate.of(2026, 8, 4));
+			assertThat(segment.scheduledDeparture()).isNull();
+		});
+		assertThat(result.reviewIssues()).anySatisfy(issue -> {
+			assertThat(issue.field()).isEqualTo("departure_time");
+			assertThat(issue.blocking()).isFalse();
+		});
+		assertThat(DocumentResultClassifier.classify(result)).isEqualTo(DocumentResultClassification.USABLE);
+	}
+
+	@Test
+	void strictStructureCoverageGapAddsOnlyOneSupplementalTextCall() throws Exception {
+		JsonNode understand = understandResponse("""
+				[{"flight_number":"XW123","departure_date":"2026-08-04",
+				  "departure_airport":"AAA","arrival_airport":"BBB","scheduled_departure":"09:00"}]
+				""");
+		JsonNode structure = spatialResponse("""
+				[{"type":"card","pageIndex":0,"bounds":[0,0,500,260],"children":[
+				 {"type":"token","text":"XY123","pageIndex":0,"bounds":[210,90,80,20]},
+				 {"type":"token","text":"AAA","pageIndex":0,"bounds":[30,130,45,20]},
+				 {"type":"token","text":"BBB","pageIndex":0,"bounds":[350,130,45,20]},
+				 {"type":"date","text":"出发 2026-08-04","pageIndex":0,"bounds":[30,170,130,20]},
+				 {"type":"time","text":"出发 09:00","pageIndex":0,"bounds":[30,210,90,20]}]}]
+				""");
+		JsonNode supplemental = mapper.readTree("""
+				{"output":{"data":{"document_type":"ITINERARY","segments":[{"flight_number":"XY123"}]},
+				"metadata":{"segments":[{"flight_number":{"pageIndex":0,"bounds":[210,90,80,20]}}]}}}
+				""");
+		RecordingRequester requester = new RecordingRequester(understand, structure)
+				.outcome("text", supplemental);
+
+		processor(requester).extract(new byte[] { 101 }, "coverage-gap.png", "image/png");
+
+		assertThat(requester.stages).containsExactlyInAnyOrder("understand", "structure", "text");
+		assertThat(requester.stages).hasSize(3);
+	}
+
+	@Test
+	void exactFlightDuplicatesIgnoreCardIdButDifferentCompleteRoutesStaySeparate() throws Exception {
+		JsonNode duplicateCards = spatialResponse("""
+				[{"type":"card","pageIndex":0,"bounds":[0,0,500,240],"children":[
+				 {"type":"token","text":"XY123","bounds":[210,60,80,20]},
+				 {"type":"token","text":"AAA","bounds":[30,100,45,20]},
+				 {"type":"token","text":"BBB","bounds":[350,100,45,20]},
+				 {"type":"date","text":"2026-08-04","bounds":[30,140,100,20]},
+				 {"type":"time","text":"09:00","bounds":[30,180,60,20]}]},
+				 {"type":"card","pageIndex":0,"bounds":[0,260,500,180],"children":[
+				 {"type":"token","text":"XY123","bounds":[210,290,80,20]},
+				 {"type":"date","text":"2026-08-04","bounds":[30,330,100,20]},
+				 {"type":"time","text":"09:00","bounds":[30,370,60,20]}]}]
+				""");
+		BoardingPassExtractionResponse merged = processor(new RecordingRequester(
+				understandResponse("[]"), duplicateCards)).extract(
+				new byte[] { 102 }, "same-flight-cards.png", "image/png");
+		assertThat(merged.segments()).singleElement().satisfies(segment -> {
+			assertThat(segment.flightNumber()).isEqualTo("XY123");
+			assertThat(segment.departureAirport()).isEqualTo("AAA");
+			assertThat(segment.arrivalAirport()).isEqualTo("BBB");
+		});
+
+		JsonNode differentRoutes = spatialResponse("""
+				[{"type":"card","pageIndex":0,"bounds":[0,0,500,220],"children":[
+				 {"type":"token","text":"XY123","bounds":[210,40,80,20]},
+				 {"type":"token","text":"AAA","bounds":[30,90,45,20]},
+				 {"type":"token","text":"BBB","bounds":[350,90,45,20]},
+				 {"type":"date","text":"2026-08-04","bounds":[30,140,100,20]}]},
+				 {"type":"card","pageIndex":0,"bounds":[0,240,500,220],"children":[
+				 {"type":"token","text":"XY123","bounds":[210,280,80,20]},
+				 {"type":"token","text":"CCC","bounds":[30,330,45,20]},
+				 {"type":"token","text":"DDD","bounds":[350,330,45,20]},
+				 {"type":"date","text":"2026-08-04","bounds":[30,380,100,20]}]}]
+				""");
+		BoardingPassExtractionResponse separate = processor(new RecordingRequester(
+				understandResponse("[]"), differentRoutes)).extract(
+				new byte[] { 103 }, "different-routes.png", "image/png");
+		assertThat(separate.segments()).hasSize(2);
+	}
+
+	@Test
+	void contactHeadersAreRejectedWhileTelRouteAirportRemainsValid() throws Exception {
+		JsonNode hallucinatedContactRoute = mapper.readTree("""
+				{"output":{"data":{"document_type":"ITINERARY","segments":[{
+				 "departure_airport":"NBR","arrival_airport":"TEL"}]},"metadata":{"segments":[{
+				 "departure_airport":{"pageIndex":0,"bounds":[20,20,40,20]},
+				 "arrival_airport":{"pageIndex":0,"bounds":[65,20,40,20]}}]}}}
+				""");
+		JsonNode structure = spatialResponse("""
+				[{"type":"card","pageIndex":0,"bounds":[0,0,500,100],"children":[
+				 {"type":"token","text":"NBR TEL FAX","bounds":[20,20,130,20]},
+				 {"type":"token","text":"TEL: +44 1234 567890","bounds":[20,45,180,20]},
+				 {"type":"token","text":"FAX: +44 1234 567891","bounds":[220,45,180,20]},
+				 {"type":"token","text":"EMAIL: test@example.com","bounds":[20,70,220,20]}]},
+				 {"type":"card","pageIndex":0,"bounds":[0,120,500,240],"children":[
+				 {"type":"token","text":"XY123","bounds":[210,150,80,20]},
+				 {"type":"token","text":"TEL -> ABC","bounds":[30,200,180,20]},
+				 {"type":"date","text":"2026-08-04","bounds":[30,250,100,20]},
+				 {"type":"time","text":"09:00","bounds":[30,300,60,20]}]}]
+				""");
+		BoardingPassExtractionResponse result = processor(new RecordingRequester(
+				hallucinatedContactRoute, structure)).extract(
+				new byte[] { 104 }, "contact-route.png", "image/png");
+
+		assertThat(result.segments()).singleElement().satisfies(segment -> {
+			assertThat(segment.flightNumber()).isEqualTo("XY123");
+			assertThat(segment.departureAirport()).isEqualTo("TEL");
+			assertThat(segment.arrivalAirport()).isEqualTo("ABC");
+		});
+	}
+
+	@Test
+	void structureDateRolesOverrideWrongUnderstandArrivalDateAndNeverPromoteArrivalOnly() throws Exception {
+		JsonNode wrongUnderstand = understandResponse("""
+				[{"flight_number":"XY123","departure_date":"2025-07-23",
+				  "departure_airport":"AAA","arrival_airport":"BBB","scheduled_departure":"21:55"}]
+				""");
+		String cardFields = """
+				 {"type":"token","text":"XY123","bounds":[210,60,80,20]},
+				 {"type":"token","text":"AAA","bounds":[30,100,45,20]},
+				 {"type":"token","text":"BBB","bounds":[350,100,45,20]},
+				 %s
+				 {"type":"date","text":"航班已到达 2025-07-23","bounds":[30,180,190,20]},
+				 {"type":"time","text":"计划出发 21:55","bounds":[30,220,120,20]},
+				 {"type":"time","text":"航班已到达 00:08","bounds":[250,220,140,20]}
+				""";
+		JsonNode withDeparture = spatialResponse("""
+				[{"type":"card","pageIndex":0,"bounds":[0,0,500,280],"children":[%s]}]
+				""".formatted(cardFields.formatted(
+				"{\"type\":\"date\",\"text\":\"计划出发 2025-07-22\",\"bounds\":[30,140,180,20]},")));
+		NutrientBoardingPassDocumentProcessor roleProcessor = processor(
+				new RecordingRequester(wrongUnderstand, withDeparture));
+		NutrientBoardingPassDocumentProcessor.SpatialPass roleSpatial = roleProcessor.parseSpatial(withDeparture);
+		for (int index = 0; index < roleSpatial.blocks().size(); index++) {
+			String text = roleSpatial.blocks().get(index).text();
+			if (text.contains("2025-07-22")) assertThat(roleProcessor.scheduleRole(roleSpatial.blocks(), index,
+					new NutrientBoardingPassDocumentProcessor.TextSpan(text.indexOf("2025"), text.length())))
+					.isEqualTo(NutrientBoardingPassDocumentProcessor.ScheduleRole.DEPARTURE);
+			if (text.contains("2025-07-23")) assertThat(roleProcessor.scheduleRole(roleSpatial.blocks(), index,
+					new NutrientBoardingPassDocumentProcessor.TextSpan(text.indexOf("2025"), text.length())))
+					.isEqualTo(NutrientBoardingPassDocumentProcessor.ScheduleRole.ARRIVAL);
+		}
+		BoardingPassExtractionResponse corrected = processor(new RecordingRequester(
+				wrongUnderstand, withDeparture)).extract(new byte[] { 105 }, "date-roles-a.png", "image/png");
+		assertThat(corrected.segments()).singleElement().satisfies(segment ->
+				assertThat(segment.departureDate()).isEqualTo(LocalDate.of(2025, 7, 22)));
+
+		JsonNode arrivalOnly = spatialResponse("""
+				[{"type":"card","pageIndex":0,"bounds":[0,0,500,280],"children":[%s]}]
+				""".formatted(cardFields.formatted("")));
+		BoardingPassExtractionResponse cleared = processor(new RecordingRequester(
+				wrongUnderstand, arrivalOnly)).extract(new byte[] { 106 }, "date-roles-b.png", "image/png");
+		assertThat(cleared.segments()).singleElement().satisfies(segment ->
+				assertThat(segment.departureDate()).isNull());
+	}
+
+	@Test
+	void nativeRowIgnoresContactHeaderAndKeepsOneFlightSchedule() throws Exception {
+		byte[] pdf = nativePdf(List.of("NBR TEL FAX", "XY123 AAA BBB 4AUG 09:25 10:00"));
+		RecordingRequester requester = new RecordingRequester(understandResponse("[]"), spatialResponse("[]"))
+				.outcome("text", understandResponse("[]"));
+		BoardingPassExtractionResponse result = processor(requester).extract(
+				pdf, "native-contact.pdf", "application/pdf");
+
+		assertThat(result.segments()).singleElement().satisfies(segment -> {
+			assertThat(segment.flightNumber()).isEqualTo("XY123");
+			assertThat(segment.departureDate()).isEqualTo(LocalDate.of(2026, 8, 4));
+			assertThat(segment.scheduledDeparture()).isEqualTo("09:25");
+		});
+		assertThat(requester.stages).containsExactlyInAnyOrder("text", "structure");
+	}
+
+	private byte[] nativePdf(String row) throws Exception {
+		return nativePdf(List.of(row));
+	}
+
+	private byte[] nativePdf(List<String> rows) throws Exception {
+		try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+			PDPage page = new PDPage();
+			document.addPage(page);
+			try (PDPageContentStream content = new PDPageContentStream(document, page)) {
+				content.beginText();
+				content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+				content.newLineAtOffset(50, 700);
+				for (int index = 0; index < rows.size(); index++) {
+					if (index > 0) content.newLineAtOffset(0, -20);
+					content.showText(rows.get(index));
+				}
+				content.endText();
+			}
+			document.save(output);
+			return output.toByteArray();
+		}
 	}
 
 	private NutrientBoardingPassDocumentProcessor processor(RecordingRequester requester) {
@@ -944,10 +1638,18 @@ class DocumentExtractionPipelineTest {
 				""".formatted(elements));
 	}
 
+	private JsonNode spatialCardResponse(String elements) throws Exception {
+		return mapper.readTree("""
+				{"output":{"elements":[{"type":"card","pageIndex":0,
+				 "bounds":[0,0,700,700],"children":%s}]}}
+				""".formatted(elements));
+	}
+
 	private JsonNode singleFlightSpatial(String date, String arrivalTerminal) throws Exception {
-		return spatialResponse("""
+		return spatialCardResponse("""
 				[{"type":"paragraph","text":"%s","bounds":{"x":20,"y":20,"width":100,"height":20},"pageIndex":0,"confidence":0.99},
 				 {"type":"paragraph","text":"LHR T2","bounds":{"x":100,"y":100,"width":80,"height":20},"pageIndex":0,"confidence":0.99},
+				 {"type":"time","text":"出发 09:25","bounds":{"x":20,"y":125,"width":90,"height":20},"pageIndex":0,"confidence":0.99},
 				 {"type":"paragraph","text":"BA117","bounds":{"x":240,"y":150,"width":70,"height":20},"pageIndex":0,"confidence":0.99},
 				 {"type":"paragraph","text":"JFK %s","bounds":{"x":100,"y":230,"width":80,"height":20},"pageIndex":0,"confidence":0.99}]
 				""".formatted(date, arrivalTerminal));
@@ -955,10 +1657,11 @@ class DocumentExtractionPipelineTest {
 
 	private void assertExactlyTwoCalls(RecordingRequester requester, String filename,
 			String contentType, byte[] expectedDocument) {
-		assertThat(requester.stages).containsExactly("understand", "structure");
-		assertThat(requester.instructions).hasSize(2);
+		assertThat(requester.stages).containsExactlyInAnyOrder("understand", "structure");
+		assertThat(requester.stages).hasSize(2);
+		assertThat(requester.instructions).hasSameSizeAs(requester.stages);
 		assertThat(requester.instructions).extracting(instructions -> instructions.get("mode"))
-				.containsExactly("understand", "structure");
+				.containsExactlyInAnyOrder("understand", "structure");
 		assertThat(requester.filenames).containsOnly(filename);
 		assertThat(requester.contentTypes).containsOnly(contentType);
 		assertThat(requester.documents).allSatisfy(document ->
@@ -968,15 +1671,21 @@ class DocumentExtractionPipelineTest {
 	private static final class RecordingRequester
 			implements NutrientBoardingPassDocumentProcessor.ExtractionRequester {
 		private final Map<String, Object> outcomes = new LinkedHashMap<>();
-		private final List<String> stages = new ArrayList<>();
-		private final List<Map<String, Object>> instructions = new ArrayList<>();
-		private final List<byte[]> documents = new ArrayList<>();
-		private final List<String> filenames = new ArrayList<>();
-		private final List<String> contentTypes = new ArrayList<>();
+		private final List<String> stages = java.util.Collections.synchronizedList(new ArrayList<>());
+		private final List<Map<String, Object>> instructions = java.util.Collections.synchronizedList(new ArrayList<>());
+		private final List<byte[]> documents = java.util.Collections.synchronizedList(new ArrayList<>());
+		private final List<String> filenames = java.util.Collections.synchronizedList(new ArrayList<>());
+		private final List<String> contentTypes = java.util.Collections.synchronizedList(new ArrayList<>());
 
 		private RecordingRequester(Object understand, Object structure) {
 			outcomes.put("understand", understand);
+			outcomes.put("text", structure);
 			outcomes.put("structure", structure);
+		}
+
+		private RecordingRequester outcome(String stage, Object outcome) {
+			outcomes.put(stage, outcome);
+			return this;
 		}
 
 		@Override

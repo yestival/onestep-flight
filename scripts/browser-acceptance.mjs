@@ -20,6 +20,13 @@ const FIXED_DOCUMENT_SAMPLES = {
     extractedAt: '2026-09-05T00:00:00Z',
     fields: {},
     needsReviewFields: ['segments[1].flight_number'],
+    reviewIssues: [{
+      segmentIndex: 1, field: 'arrival_airport', kind: 'ADVISORY', blocking: false,
+      candidates: [
+        { normalizedValue: 'MAN', source: 'UNDERSTAND', confidence: 0.72 },
+        { normalizedValue: 'LPL', source: 'STRUCTURE', confidence: 0.61 }
+      ], selectedValue: null, reason: 'SUPPORTING_FIELD_DIFFERENCE'
+    }],
     segments: [
       {
         flightNumber: 'MF825', flightNumberConfidence: 'HIGH',
@@ -86,6 +93,13 @@ const FIXED_DOCUMENT_SAMPLES = {
   conflict: {
     documentType: 'ITINERARY', dataSource: 'FIXED_ACCEPTANCE', extractedAt: '2026-09-05T00:00:00Z',
     fields: {}, needsReviewFields: ['segments[1].conflict.departure_date'],
+    reviewIssues: [{
+      segmentIndex: 1, field: 'departure_date', kind: 'ACTIONABLE', blocking: true,
+      candidates: [
+        { normalizedValue: '2026-09-05', source: 'UNDERSTAND', confidence: 0.78 },
+        { normalizedValue: '2026-09-06', source: 'STRUCTURE', confidence: 0.74 }
+      ], selectedValue: null, reason: 'MULTIPLE_CANDIDATES'
+    }],
     segments: [
       {
         flightNumber: 'MF825', flightNumberConfidence: 'HIGH', requiresFlightNumberConfirmation: false,
@@ -162,12 +176,12 @@ const summary = {
     explicitQueryOnly: false,
     noSeparateYearInput: false,
     localSaveOnly: false,
-    mediumConfirmationOnly: false,
-    pageStates: { queryable: false, confirmation: false, missing: false, conflict: false },
+    advisoryQueryable: false,
+    pageStates: { queryable: false, advisory: false, missing: false, conflict: false },
     doubleClickDeduplicated: false,
     requestCounts: {
       upload: null, selectSegment: null, openCompletion: null, currentYearDate: null,
-      saveCompletion: null, mediumUnconfirmed: null, mediumConfirmedWithoutQuery: null,
+      saveCompletion: null, advisorySelection: null, conflictCandidateSelection: null,
       explicitQuery: null, rapidDoubleClick: null
     },
     departedFirst: false,
@@ -699,7 +713,7 @@ async function verifyFourItineraryStates(page) {
   await setValue(page, '#locale-select', 'zh');
   const cases = [
     ['return', '所有航段均可查询', 'queryable'],
-    ['outbound', '存在待确认字段', 'confirmation'],
+    ['outbound', '所有航段均可查询', 'advisory'],
     ['missing', '存在缺失字段', 'missing'],
     ['conflict', '存在字段冲突', 'conflict']
   ];
@@ -713,10 +727,94 @@ async function verifyFourItineraryStates(page) {
     }))()`);
     requireAcceptance(state.context === expectedContext && state.title && state.resolverCount === before,
       `itinerary state ${summaryKey} was inconsistent`, state);
+    if (summaryKey === 'advisory') {
+      const advisory = await evaluate(page, `(() => {
+        const second = document.querySelector('[data-segment-options] [data-segment-index="1"]');
+        return second && second.classList.contains('is-advisory')
+          && !second.classList.contains('is-conflict');
+      })()`);
+      requireAcceptance(advisory, 'single medium/supporting candidates were not advisory-queryable');
+    }
+    if (summaryKey === 'conflict') {
+      await click(page, '[data-segment-options] [data-segment-index="1"]');
+      await waitFor(page, `(() => {
+        const manual = document.querySelector('[data-screen="manual"]');
+        const candidates = document.querySelectorAll('[data-review-candidates] [data-action="select-review-candidate"]');
+        const date = document.querySelector('#date-input');
+        const confirmation = document.querySelector('#date-confirm-input');
+        const primary = document.querySelector('[data-manual-primary]');
+        return manual && !manual.hidden && candidates.length === 2 && date && !date.disabled
+          && confirmation && !confirmation.disabled && primary && primary.dataset.mode === 'save';
+      })()`, 'blocking conflict exposes actionable date candidates and confirmation');
+      await click(page, '[data-review-candidates] [data-action="select-review-candidate"]:last-child');
+      const selected = await evaluate(page, `(() => ({
+        value: document.querySelector('#date-input').value,
+        confirmed: document.querySelector('#date-confirm-input').checked,
+        resolverCount: window.__fixedAcceptance.resolveRequests.length
+      }))()`);
+      requireAcceptance(selected.value === '2026-09-06' && selected.confirmed
+          && selected.resolverCount === before,
+        'selecting a blocking candidate was not a local-only action', selected);
+      summary.deterministic.requestCounts.conflictCandidateSelection = 0;
+      await click(page, '[data-screen="manual"] [data-action="home"]');
+      await activeScreen(page, 'confirm');
+    }
     summary.deterministic.pageStates[summaryKey] = true;
     await returnFromSegmentSelector(page);
   }
   await setValue(page, '#locale-select', 'en');
+}
+
+async function verifyLocalCompletionOnly(page) {
+  const before = await evaluate(page, `window.__fixedAcceptance.resolveRequests.length`);
+  await uploadFixedDocument(page, 'missing', 'local-save');
+  await click(page, '[data-segment-options] [data-segment-index="1"]');
+  await waitFor(page, `(() => {
+    const manual = document.querySelector('[data-screen="manual"]');
+    const flight = document.querySelector('#flight-input');
+    const date = document.querySelector('#date-input');
+    const primary = document.querySelector('[data-manual-primary]');
+    return manual && !manual.hidden && flight && !flight.disabled && date && !date.disabled
+      && primary && primary.dataset.mode === 'save';
+  })()`, 'missing segment completion controls');
+  await setValue(page, '#flight-input', 'QF 12');
+  await setValue(page, '#date-input', '2026-08-04');
+  await click(page, '[data-action="manual-submit"] button[type="submit"]');
+  const completedLocally = `(() => {
+    const selector = document.querySelector('[data-segment-selector]');
+    const second = document.querySelector('[data-segment-options] [data-segment-index="1"]');
+    return selector && !selector.hidden && second
+      && second.querySelector('strong').textContent.replace(/\\s+/g, '').startsWith('QF12')
+      && window.__fixedAcceptance.resolveRequests.length === ${before};
+  })()`;
+  try {
+    await waitFor(page, completedLocally, 'local completion returns to the itinerary', 5000);
+  } catch (error) {
+    let conditionValue = null;
+    let conditionError = null;
+    try {
+      conditionValue = await evaluate(page, completedLocally);
+    } catch (evaluationError) {
+      conditionError = evaluationError.message;
+    }
+    const state = await evaluate(page, `(() => ({
+      conditionValue: ${JSON.stringify(conditionValue)},
+      conditionError: ${JSON.stringify(conditionError)},
+      resolverCount: window.__fixedAcceptance.resolveRequests.length,
+      expectedResolverCount: ${before},
+      selectorHidden: document.querySelector('[data-segment-selector]').hidden,
+      secondFound: Boolean(document.querySelector('[data-segment-options] [data-segment-index="1"]')),
+      secondHeading: document.querySelector('[data-segment-options] [data-segment-index="1"] strong')
+        ?.textContent.replace(/\\s+/g, ''),
+      flightValidation: document.querySelector('#flight-input').validationMessage,
+      dateValidation: document.querySelector('#date-input').validationMessage,
+      visibleScreen: document.querySelector('[data-screen]:not([hidden])')?.dataset.screen
+    }))()`);
+    throw new Error(`${error.message}: ${JSON.stringify(state)}`);
+  }
+  summary.deterministic.localSaveOnly = true;
+  summary.deterministic.requestCounts.saveCompletion = 0;
+  await returnFromSegmentSelector(page);
 }
 
 async function verifyStaffIconContract(page) {
@@ -819,7 +917,7 @@ async function selectOutboundSegments(page) {
   })()`);
   requireAcceptance(selectorState.length === 2 && selectorState.every((segment) => !segment.disabled)
       && !selectorState[0].classes.includes('is-incomplete')
-      && selectorState[1].classes.includes('is-pending')
+      && selectorState[1].classes.includes('is-advisory')
       && !selectorState[1].classes.includes('is-conflict'),
     'queryable and medium-confidence segments must both remain selectable', selectorState);
 
@@ -828,6 +926,7 @@ async function selectOutboundSegments(page) {
     const manual = document.querySelector('[data-screen="manual"]');
     const submit = document.querySelector('[data-action="manual-submit"] button[type="submit"]');
     return manual && !manual.hidden && submit && !submit.disabled
+      && submit.dataset.mode === 'query' && submit.textContent.includes('MF825')
       && window.__fixedAcceptance.resolveRequests.length === 0;
   })()`, 'complete first segment waits for explicit query');
   await delay(100);
@@ -880,55 +979,20 @@ async function selectOutboundSegments(page) {
     const flight = document.querySelector('#flight-input');
     const date = document.querySelector('#date-input');
     const confirmation = document.querySelector('#flight-confirm-input');
+    const advisory = document.querySelector('[data-document-advisory]');
     const primary = document.querySelector('[data-manual-primary]');
     return manual && !manual.hidden && !document.querySelector('.manual-fields input[maxlength="4"]')
-      && flight && !flight.disabled && flight.value.replace(/\\s+/g, '') === 'AF1668'
+      && flight && flight.disabled && flight.value.replace(/\\s+/g, '') === 'AF1668'
       && date && date.disabled && date.value === '2026-09-05'
-      && confirmation && !confirmation.disabled && !confirmation.checked
-      && primary && primary.dataset.mode === 'save'
+      && confirmation && confirmation.disabled
+      && advisory && !advisory.hidden && advisory.textContent.includes('识别结果可能有误')
+      && primary && primary.dataset.mode === 'query' && primary.textContent.includes('AF1668')
+      && primary.textContent.includes('2026年9月5日')
       && window.__fixedAcceptance.resolveRequests.length === 1;
-  })()`, 'medium-confidence segment asks for explicit flight-number confirmation only');
+  })()`, 'medium-confidence segment is advisory-queryable with a targeted button');
   summary.deterministic.noSeparateYearInput = true;
-
-  await click(page, '[data-action="manual-submit"] button[type="submit"]');
-  await delay(150);
-  requireAcceptance(await evaluate(page, `window.__fixedAcceptance.resolveRequests.length`) === 1,
-    'unconfirmed medium-confidence flight number reached the live resolver');
-  summary.deterministic.requestCounts.mediumUnconfirmed = 0;
-
-  await evaluate(page, `(() => {
-    const input = document.querySelector('#flight-confirm-input');
-    input.checked = true;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-    return input.checked;
-  })()`);
-  await delay(100);
-  requireAcceptance(await evaluate(page, `window.__fixedAcceptance.resolveRequests.length`) === 1,
-    'confirming the flight number unexpectedly called the live resolver');
-  summary.deterministic.mediumConfirmationOnly = true;
-  summary.deterministic.requestCounts.mediumConfirmedWithoutQuery = 0;
-
-  await click(page, '[data-action="manual-submit"] button[type="submit"]');
-  await waitFor(page, `(() => {
-    const selector = document.querySelector('[data-segment-selector]');
-    const second = document.querySelector('[data-segment-options] [data-segment-index="1"]');
-    return selector && !selector.hidden && second && !second.classList.contains('is-pending')
-      && window.__fixedAcceptance.resolveRequests.length === 1;
-  })()`, 'saving confirmation returns to the itinerary without lookup');
-  summary.deterministic.localSaveOnly = true;
-  summary.deterministic.requestCounts.saveCompletion = 0;
-
-  await click(page, '[data-segment-options] [data-segment-index="1"]');
-  await waitFor(page, `(() => {
-    const manual = document.querySelector('[data-screen="manual"]');
-    const flight = document.querySelector('#flight-input');
-    const date = document.querySelector('#date-input');
-    const primary = document.querySelector('[data-manual-primary]');
-    return manual && !manual.hidden && flight.disabled && date.disabled
-      && primary && primary.dataset.mode === 'query'
-      && window.__fixedAcceptance.resolveRequests.length === 1;
-  })()`, 'confirmed segment waits for explicit query');
+  summary.deterministic.advisoryQueryable = true;
+  summary.deterministic.requestCounts.advisorySelection = 0;
   await click(page, '[data-action="manual-submit"] button[type="submit"]');
   await waitFor(page, `(() => {
     const panel = document.querySelector('[data-departure-passed-confirmation]');
@@ -958,8 +1022,11 @@ async function selectOutboundSegments(page) {
     && requests[1].document.segments[1].flightNumber === 'AF1668'
     && requests[1].document.segments[1].departureDate === '2026-09-05'
     && requests[1].document.segments[1].departureMonthDay === '09-05'
-    && requests[1].document.segments[1].requiresFlightNumberConfirmation === false
-    && requests[1].document.segments[1].flightNumberConfirmedByUser === true,
+    && requests[1].document.segments[1].requiresFlightNumberConfirmation === true
+    && requests[1].document.segments[1].flightNumberConfirmedByUser === false
+    && Array.isArray(requests[0].document.reviewIssues) && requests[0].document.reviewIssues.length === 0
+    && Array.isArray(requests[1].document.reviewIssues) && requests[1].document.reviewIssues.length === 1
+    && requests[1].document.reviewIssues[0].field === 'arrival_airport',
   'resolver payload did not preserve the complete ordered itinerary', requests);
   summary.deterministic.resolverPayloadsPreserveAllSegments = true;
 }
@@ -1100,6 +1167,7 @@ async function runDeterministicContract(page) {
   await testLocalesAndResponsive(page);
   await verifyRepeatedSamples(page);
   await verifyFourItineraryStates(page);
+  await verifyLocalCompletionOnly(page);
   await selectOutboundSegments(page);
   await verifyConfirmationSpeech(page);
   await verifyFamilySharing(page);

@@ -323,12 +323,12 @@ public class VariFlightMcpFlightDataProvider implements OperationalFlightDataPro
 		for (String text : texts) {
 			String normalized = text.toLowerCase(Locale.ROOT);
 			if (normalized.contains("[http 401]") || normalized.contains("invalid api key")) {
-				return ProviderFlightResult.failure(providerName(), "AUTHENTICATION_FAILED",
+				return ProviderFlightResult.failure(providerName(), ProviderFlightResult.AUTH_ERROR,
 						"VARIFLIGHT_TOOL_AUTHENTICATION_FAILED", retrievedAt);
 			}
 			if (normalized.contains("[http 403]") || normalized.contains("insufficient balance")
 					|| normalized.contains("account has been disabled")) {
-				return ProviderFlightResult.failure(providerName(), "FORBIDDEN_OR_QUOTA",
+				return ProviderFlightResult.failure(providerName(), ProviderFlightResult.RATE_LIMITED,
 						"VARIFLIGHT_TOOL_FORBIDDEN_OR_QUOTA", retrievedAt);
 			}
 			if (normalized.contains("[http 429]")) {
@@ -547,8 +547,8 @@ public class VariFlightMcpFlightDataProvider implements OperationalFlightDataPro
 
 	private ProviderFlightResult httpFailure(int status, Instant attemptedAt) {
 		String outcome = switch (status) {
-			case 401 -> "AUTHENTICATION_FAILED";
-			case 403 -> "FORBIDDEN_OR_QUOTA";
+			case 401 -> ProviderFlightResult.AUTH_ERROR;
+			case 403 -> ProviderFlightResult.RATE_LIMITED;
 			case 404 -> "NOT_FOUND";
 			case 429 -> "RATE_LIMITED";
 			default -> "UPSTREAM_ERROR";

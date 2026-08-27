@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.text.Normalizer;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
@@ -15,11 +16,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
 
 import com.selene.onestepflight.dto.BoardingPassExtractionResponse;
 import com.selene.onestepflight.dto.DocumentFlightSegment;
+import com.selene.onestepflight.dto.DocumentReviewIssue;
 import com.selene.onestepflight.dto.DocumentType;
 import com.selene.onestepflight.dto.ExtractedField;
 import com.selene.onestepflight.dto.FieldCandidate;
@@ -38,6 +42,8 @@ public class ResolvedFlightService {
 			"document_type", "flight_number", "departure_date", "scheduled_departure",
 			"scheduled_arrival", "boarding_time", "departure_airport", "arrival_airport",
 			"terminal", "gate", "seat");
+	private static final Pattern INDEXED_LEGACY_CRITICAL_CONFLICT = Pattern.compile(
+			"^segments\\[(\\d+)]\\.conflict\\.(flight_number|departure_date)$");
 
 	private final FlightService flightService;
 	private final MultiSourceFlightService multiSourceFlightService;
@@ -58,20 +64,103 @@ public class ResolvedFlightService {
 		BoardingPassExtractionResponse selectedDocument = selectDocumentSegment(
 				request.document(), normalizedFlightNumber, request.departureDate(),
 				request.documentSegmentIndex());
-		MultiSourceFlightSnapshot snapshot;
-		try {
-			snapshot = request.demo() && !isBlank(request.demoScenario()) && !request.refresh()
-					? demoSnapshot(demoScenarioProvider.findInitial(normalizedFlightNumber, request.demoScenario()))
-					: loadFlight(normalizedFlightNumber, request.departureDate(), request.demo(), request.demoScenario(),
-							documentRouteHint(selectedDocument, "departure_airport"),
-							documentRouteHint(selectedDocument, "arrival_airport"),
-							selectedDocument == null ? null : selectedDocument.scheduledDeparture(), request.refresh());
-		} catch (AllFlightProvidersUnavailableException exception) {
-			if (!documentMatchesRequest(selectedDocument, normalizedFlightNumber, request.departureDate())) throw exception;
-			snapshot = documentFallbackSnapshot(normalizedFlightNumber, request.departureDate(),
-					selectedDocument, exception.providerResults());
-		}
+		rejectUnresolvedCriticalDocumentReview(request.document(), selectedDocument,
+				normalizedFlightNumber, request.departureDate());
+		MultiSourceFlightSnapshot snapshot = request.demo() && !isBlank(request.demoScenario()) && !request.refresh()
+				? demoSnapshot(demoScenarioProvider.findInitial(normalizedFlightNumber, request.demoScenario()))
+				: loadFlight(normalizedFlightNumber, request.departureDate(), request.demo(), request.demoScenario(),
+						documentRouteHint(selectedDocument, "departure_airport"),
+						documentRouteHint(selectedDocument, "arrival_airport"),
+						selectedDocument == null ? null : selectedDocument.scheduledDeparture(), request.refresh());
 		return merge(snapshot, selectedDocument, null, request.demoScenario());
+	}
+
+	private void rejectUnresolvedCriticalDocumentReview(
+			BoardingPassExtractionResponse originalDocument,
+			BoardingPassExtractionResponse selectedDocument,
+			String normalizedFlightNumber, LocalDate requestedDate) {
+		if (selectedDocument != null && hasBlockingCriticalReview(selectedDocument)) {
+			throw new InvalidDocumentException("DOCUMENT_REVIEW_REQUIRED");
+		}
+		if (selectedDocument != null || originalDocument == null) return;
+		boolean relevantUnselectedConflict = originalDocument.reviewIssues().stream()
+				.filter(DocumentReviewIssue::blocking)
+				.filter(issue -> "flight_number".equals(issue.field())
+						|| "departure_date".equals(issue.field()))
+				.anyMatch(issue -> issue.candidates().stream().anyMatch(candidate -> {
+					String value = candidate.normalizedValue();
+					if ("flight_number".equals(issue.field())) {
+						return Objects.equals(normalizeDocumentFlight(value), normalizedFlightNumber);
+					}
+					return requestedDate != null && Objects.equals(value, requestedDate.toString());
+				}));
+		if (relevantUnselectedConflict) {
+			throw new InvalidDocumentException("DOCUMENT_REVIEW_REQUIRED");
+		}
+		boolean relevantLegacyConflict = originalDocument.needsReviewFields().stream()
+				.filter(Objects::nonNull)
+				.anyMatch(field -> relevantLegacyCriticalConflict(originalDocument, field,
+						normalizedFlightNumber, requestedDate));
+		if (relevantLegacyConflict) {
+			throw new InvalidDocumentException("DOCUMENT_REVIEW_REQUIRED");
+		}
+	}
+
+	private boolean relevantLegacyCriticalConflict(BoardingPassExtractionResponse document,
+			String rawField, String normalizedFlightNumber, LocalDate requestedDate) {
+		String field = rawField.trim();
+		Matcher indexed = INDEXED_LEGACY_CRITICAL_CONFLICT.matcher(field);
+		if (indexed.matches()) {
+			int index;
+			try {
+				index = Integer.parseInt(indexed.group(1));
+			} catch (NumberFormatException exception) {
+				return false;
+			}
+			if (index < 0 || index >= document.segments().size()) return false;
+			return legacyConflictMatches(document.segments().get(index), indexed.group(2),
+					normalizedFlightNumber, requestedDate);
+		}
+		String criticalField = switch (field) {
+			case "conflict.flight_number" -> "flight_number";
+			case "conflict.departure_date" -> "departure_date";
+			default -> null;
+		};
+		if (criticalField == null) return false;
+		if (!document.segments().isEmpty()) {
+			return document.segments().stream().anyMatch(segment -> legacyConflictMatches(segment,
+					criticalField, normalizedFlightNumber, requestedDate));
+		}
+		boolean flightMatches = Objects.equals(normalizeDocumentFlight(document.flightNumber()),
+				normalizedFlightNumber);
+		boolean dateMatches = Objects.equals(document.departureDate(), requestedDate);
+		return "flight_number".equals(criticalField) ? dateMatches && (document.flightNumber() == null
+				|| flightMatches) : flightMatches && (document.departureDate() == null || dateMatches);
+	}
+
+	private boolean legacyConflictMatches(DocumentFlightSegment segment, String field,
+			String normalizedFlightNumber, LocalDate requestedDate) {
+		if (segment == null) return false;
+		boolean flightMatches = Objects.equals(normalizeDocumentFlight(segment.flightNumber()),
+				normalizedFlightNumber);
+		boolean dateMatches = Objects.equals(segment.departureDate(), requestedDate);
+		return "flight_number".equals(field) ? dateMatches && (segment.flightNumber() == null
+				|| flightMatches) : flightMatches && (segment.departureDate() == null || dateMatches);
+	}
+
+	private boolean hasBlockingCriticalReview(BoardingPassExtractionResponse document) {
+		boolean structuredBlocking = document.reviewIssues().stream()
+				.anyMatch(issue -> issue.blocking() && ("flight_number".equals(issue.field())
+						|| "departure_date".equals(issue.field())));
+		if (structuredBlocking) return true;
+		for (String field : List.of("flight_number", "departure_date")) {
+			boolean legacy = document.needsReviewFields().stream()
+					.anyMatch(value -> ("conflict." + field).equals(value));
+			boolean structuredReplacement = document.reviewIssues().stream()
+					.anyMatch(issue -> field.equals(issue.field()));
+			if (legacy && !structuredReplacement) return true;
+		}
+		return false;
 	}
 
 	private BoardingPassExtractionResponse selectDocumentSegment(BoardingPassExtractionResponse document,
@@ -120,11 +209,26 @@ public class ResolvedFlightService {
 				.filter(field -> !field.startsWith("segments[") || field.startsWith(prefix))
 				.map(field -> field.startsWith(prefix) ? field.substring(prefix.length()) : field)
 				.toList();
+		List<DocumentReviewIssue> reviewIssues = document.reviewIssues().stream()
+				.filter(issue -> issue.segmentIndex() == null || issue.segmentIndex() == selectedIndex)
+				.map(issue -> new DocumentReviewIssue(0, issue.field(), issue.kind(), issue.blocking(),
+						issue.candidates().stream()
+								.map(candidate -> new com.selene.onestepflight.dto.DocumentFieldCandidate(
+										candidate.field(), candidate.rawValue(), candidate.normalizedValue(),
+										candidate.source(), candidate.confidence(), candidate.page(),
+										candidate.boundingBox(), candidate.nearbyAnchor(), 0,
+										candidate.disposition(), candidate.reason()))
+								.toList(),
+						issue.selectedValue(), issue.reason()))
+				.toList();
 		return new BoardingPassExtractionResponse(document.documentType(), selected.flightNumber(),
-				selected.departureDate(), selected.scheduledDeparture(), selected.scheduledArrival(),
+				selected.departureDate(), selected.departureMonthDay(), selected.flightNumberConfidence(),
+				selected.requiresFlightNumberConfirmation(), selected.flightNumberConfirmedByUser(),
+				selected.dateSource(), selected.scheduledDeparture(), selected.scheduledArrival(),
 				selected.boardingTime(), selected.departureAirport(), selected.arrivalAirport(),
 				selected.terminal(), selected.gate(), selected.seat(), false, false,
-				evidence, List.of(selected), reviewFields, document.dataSource(), document.extractedAt());
+				evidence, List.of(selected), reviewFields, reviewIssues, document.dataSource(),
+				document.extractedAt());
 	}
 
 	private boolean documentSegmentMatchesRequest(DocumentFlightSegment segment,
@@ -169,7 +273,8 @@ public class ResolvedFlightService {
 	}
 
 	private String normalizeDocumentFlight(String value) {
-		return value == null ? null : value.replaceAll("[\\s-]", "").toUpperCase(Locale.ROOT);
+		return value == null ? null : Normalizer.normalize(value, Normalizer.Form.NFKC)
+				.replaceAll("[\\p{Z}\\s\\-‐‑‒–—]", "").toUpperCase(Locale.ROOT);
 	}
 
 	/**
@@ -210,7 +315,11 @@ public class ResolvedFlightService {
 	}
 
 	private boolean documentFieldNeedsReview(BoardingPassExtractionResponse document, String fieldName) {
-		return document.needsReviewFields().stream()
+		boolean structured = document.reviewIssues().stream()
+				.anyMatch(issue -> fieldName.equalsIgnoreCase(issue.field())
+						|| ("scheduled_departure".equals(fieldName)
+								&& "departure_time".equals(issue.field())));
+		return structured || document.needsReviewFields().stream()
 				.filter(Objects::nonNull)
 				.map(name -> name.substring(name.lastIndexOf('.') + 1))
 				.anyMatch(fieldName::equalsIgnoreCase);
@@ -226,16 +335,11 @@ public class ResolvedFlightService {
 		if (!refreshRequested && "DOCUMENT_FALLBACK".equals(previous.liveDataSource())) {
 			return sanitizeDocumentFallback(previous);
 		}
-		try {
-			MultiSourceFlightSnapshot snapshot = loadFlight(previous.flightNumber(), previous.departureDate(), previous.demo(),
-					previous.demoScenario(), previous.departureAirport(), previous.arrivalAirport(),
-					previous.documentScheduledDeparture() == null
-							? null : previous.documentScheduledDeparture().toString(), refreshRequested);
-			return merge(snapshot, null, previous, previous.demoScenario());
-		} catch (AllFlightProvidersUnavailableException exception) {
-			if ("DOCUMENT_FALLBACK".equals(previous.liveDataSource())) return sanitizeDocumentFallback(previous);
-			throw exception;
-		}
+		MultiSourceFlightSnapshot snapshot = loadFlight(previous.flightNumber(), previous.departureDate(), previous.demo(),
+				previous.demoScenario(), previous.departureAirport(), previous.arrivalAirport(),
+				previous.documentScheduledDeparture() == null
+						? null : previous.documentScheduledDeparture().toString(), refreshRequested);
+		return merge(snapshot, null, previous, previous.demoScenario());
 	}
 
 	private MultiSourceFlightSnapshot loadFlight(String flightNumber, LocalDate departureDate, boolean demo,
@@ -252,19 +356,6 @@ public class ResolvedFlightService {
 	private MultiSourceFlightSnapshot demoSnapshot(FlightResponse flight) {
 		return new MultiSourceFlightSnapshot(flight, null, null, Map.of(), Map.of(), List.of(),
 				flight.dataRetrievedAt(), flight.lastUpdated());
-	}
-
-	private MultiSourceFlightSnapshot documentFallbackSnapshot(String flightNumber, LocalDate departureDate,
-			BoardingPassExtractionResponse document,
-			Map<String, com.selene.onestepflight.dto.ProviderFlightResult> providerResults) {
-		Instant retrievedAt = Instant.now();
-		FlightResponse flight = documentFallbackFlight(
-				flightNumber,
-				departureDate,
-				normalizeAirport(document.departureAirport()),
-				normalizeAirport(document.arrivalAirport()));
-		return new MultiSourceFlightSnapshot(flight, null, null, Map.copyOf(providerResults),
-				Map.of(), List.of(), retrievedAt, null);
 	}
 
 	private ResolvedFlightContext sanitizeDocumentFallback(ResolvedFlightContext previous) {

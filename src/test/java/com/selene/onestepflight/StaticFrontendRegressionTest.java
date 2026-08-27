@@ -139,7 +139,7 @@ class StaticFrontendRegressionTest {
     }
 
     @Test
-    void documentCompletionShowsOnlyMissingUntrustedOrConflictingFieldsWithoutYearInput() throws IOException {
+    void documentCompletionShowsOnlyMissingOrBlockingFieldsWithoutYearInput() throws IOException {
         String html = resource("index.html");
         String js = resource("app.js");
 
@@ -147,7 +147,8 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("if (!segments.length) return { outcome: 'UNUSABLE'"));
         String classifier = js.substring(js.indexOf("function classifyDocumentResult(result)"),
                 js.indexOf("function resetDocumentResultState()"));
-        assertTrue(classifier.contains("documentSegmentLookupReady(segment, index, result && result.needsReviewFields)"));
+        assertTrue(classifier.contains("documentSegmentLookupReady(segment, index, result && result.needsReviewFields,"));
+        assertTrue(classifier.contains("result && result.reviewIssues"));
         assertFalse(classifier.contains("documentSegmentFlightNumberTrusted(segment, index)"));
         String uploadFlow = js.substring(js.indexOf("function uploadDocument(file)"),
                 js.indexOf("function beginFlight(flight, documentResult)"));
@@ -159,8 +160,8 @@ class StaticFrontendRegressionTest {
         assertTrue(uploadFlow.contains("showDocumentSegmentSelection(result, assessment)"));
         assertTrue(js.contains("documentSegments = assessment.segments.slice()"));
         assertTrue(js.contains("panel.hidden = !partialDocumentEntry || !documentSegments.length"));
-        assertTrue(js.contains("setManualFieldState(flightField, document.getElementById('flight-input'), !flightTrusted || flightConflict)"));
-        assertTrue(js.contains("setManualFieldState(dateField, document.getElementById('date-input'), !hasDepartureDate || dateConflict)"));
+        assertTrue(js.contains("!hasFlightNumber || flightConflict || flightReview"));
+        assertTrue(js.contains("!hasDepartureDate || dateConflict || dateReview"));
         assertTrue(js.contains("document.getElementById('flight-confirm-input')"));
         assertTrue(js.contains("document.getElementById('date-confirm-input')"));
         assertFalse(js.contains("combineDocumentDepartureYear"));
@@ -175,6 +176,15 @@ class StaticFrontendRegressionTest {
         assertTrue(html.contains("data-manual-segment-options"));
         assertTrue(html.contains("data-manual-flight-field"));
         assertTrue(html.contains("data-manual-date-field"));
+        assertTrue(html.contains("data-review-candidates"));
+        assertTrue(html.contains("data-review-candidate-fields"));
+        assertTrue(html.contains("data-document-advisory"));
+        assertTrue(js.contains("function reviewIssueIsBlockingCritical(issue)"));
+        assertTrue(js.contains("issue.blocking !== true || issue.resolved"));
+        assertFalse(js.contains("issue.candidates.length >= 2"));
+        assertTrue(js.contains("function renderManualReviewCandidates(index, segment)"));
+        assertTrue(js.contains("function selectDocumentReviewCandidate(button)"));
+        assertTrue(js.contains("button.dataset.action = 'select-review-candidate'"));
         assertFalse(html.substring(html.indexOf("data-screen=\"document-unusable\""),
                 html.indexOf("data-screen=\"confirm\"")).contains("Nutrient"));
     }
@@ -300,7 +310,7 @@ class StaticFrontendRegressionTest {
     }
 
     @Test
-    void liveLookupHasFinalTrustDateConflictAndConcurrencyGuards() throws IOException {
+    void liveLookupHasFinalFormatDateConflictAndConcurrencyGuards() throws IOException {
         String js = resource("app.js");
         String start = js.substring(js.indexOf("function startFlightLookup("),
                 js.indexOf("function validDocumentFlightNumber("));
@@ -317,13 +327,16 @@ class StaticFrontendRegressionTest {
         assertEquals(1, start.split("postFlightJson\\('/api/journeys/resolve-flight'", -1).length - 1);
         assertTrue(guard.contains("validDocumentFlightNumber(flightNumber)"));
         assertTrue(guard.contains("validDocumentDepartureDate(departureDate)"));
-        assertTrue(guard.contains("documentSegmentFlightNumberTrusted(segment, index)"));
-        assertTrue(guard.contains("documentSegmentHasCriticalConflict(index, segment)"));
+        assertFalse(guard.contains("documentSegmentFlightNumberTrusted(segment, index)"));
+        assertTrue(guard.contains("documentSegmentHasCriticalConflict(index, segment,"));
         assertFalse(guard.contains("departureAirport"));
         assertFalse(guard.contains("arrivalAirport"));
         assertTrue(submit.contains("returnToDocumentSegmentSelection()"));
         assertTrue(submit.contains("flightConfirmation.checked"));
         assertTrue(submit.contains("dateConfirmation.checked"));
+        assertTrue(js.contains("documentQueryTargetLabel(selected)"));
+        assertTrue(js.contains("queryTarget: '查询 {flight} · {date}'"));
+        assertTrue(js.contains("flight: normalizeFlightNumber(segment && segment.flightNumber || '')"));
     }
 
     @Test
@@ -360,6 +373,30 @@ class StaticFrontendRegressionTest {
     }
 
     @Test
+    void recognitionAndLiveLookupUseDistinctFixedLocalizedWaitCopyAboveOneLiveStage() throws IOException {
+        String html = resource("index.html");
+        String js = resource("app.js");
+        String loading = html.substring(html.indexOf("data-screen=\"loading\""),
+                html.indexOf("data-screen=\"document-unusable\""));
+
+        assertTrue(loading.contains("data-loading-fixed data-i18n=\"documentRecognitionWaiting\""));
+        assertTrue(loading.contains("正在识别，请耐心等待"));
+        assertTrue(loading.contains("class=\"loading-status\" aria-live=\"polite\" aria-atomic=\"true\" data-loading-status"));
+        assertTrue(loading.indexOf("data-loading-fixed") < loading.indexOf("data-loading-status"));
+        assertFalse(loading.substring(loading.indexOf("data-loading-fixed"),
+                loading.indexOf("</h1>", loading.indexOf("data-loading-fixed"))).contains("aria-live"));
+
+        assertTrue(js.contains("documentRecognitionWaiting: '正在识别，请耐心等待'"));
+        assertTrue(js.contains("documentRecognitionWaiting: 'Recognizing your document. Please wait.'"));
+        assertTrue(js.contains("documentRecognitionWaiting: 'Reconociendo el documento. Espera un momento.'"));
+        assertTrue(js.contains("liveFlightLookupWaiting: '正在查询实时航班，请耐心等待'"));
+        assertTrue(js.contains("liveFlightLookupWaiting: 'Looking up live flight information. Please wait.'"));
+        assertTrue(js.contains("liveFlightLookupWaiting: 'Consultando el vuelo en tiempo real. Espera un momento.'"));
+        assertTrue(js.contains("runLoading(uploadLoadingMessages, 'documentRecognitionWaiting')"));
+        assertTrue(js.contains("runLoading(loadingMessages, 'liveFlightLookupWaiting')"));
+    }
+
+    @Test
     void welcomeSpeechNoticeFallbackCopyAndRestoreContractAreLocalizedAndSafe() throws IOException {
         String html = resource("index.html");
         String css = resource("styles.css");
@@ -386,6 +423,9 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("Live flight status has not updated yet. Please confirm whether the itinerary below is yours."));
         assertTrue(css.contains(".welcome-speech-note"));
         assertTrue(js.contains("flight.liveDataSource === 'DOCUMENT_FALLBACK'"));
+		assertTrue(js.contains("continueButton.disabled = Boolean(documentFallback"));
+		assertTrue(js.contains("if (isDocumentFallbackFlight(currentFlight))"));
+		assertTrue(js.contains("上传文件中的信息尚未经过实时航班验证，不能进入值机流程。"));
         assertTrue(js.contains("function normalizeSavedFlight(flight)"));
         assertTrue(js.contains("currentFlight = normalizeSavedFlight(saved.flight)"));
         for (String field : new String[] { "documentScheduledDeparture", "documentBoardingTime",
@@ -452,7 +492,7 @@ class StaticFrontendRegressionTest {
         assertTrue(errorHandling.contains("details && details.messageZh"));
         assertTrue(errorHandling.contains("details && details.messageEn"));
         assertTrue(errorHandling.contains("FLIGHT_NOT_FOUND"));
-        assertTrue(errorHandling.contains("未找到该日期的航班"));
+		assertTrue(errorHandling.contains("没有找到这个航班"));
         assertTrue(errorHandling.contains("normalizedCode.indexOf('INVALID_') === 0 || status === 400"));
         assertTrue(errorHandling.contains("航班号或日期有误"));
         assertTrue(errorHandling.contains("status === 429"));
@@ -461,8 +501,8 @@ class StaticFrontendRegressionTest {
         assertTrue(errorHandling.contains("status === 502"));
         assertTrue(errorHandling.contains("实时航班数据源暂时不可用"));
         assertTrue(errorHandling.contains("CLIENT_FLIGHT_TIMEOUT"));
-        assertTrue(errorHandling.contains("/TIMEOUT/"));
-        assertTrue(errorHandling.contains("实时数据源响应超时"));
+		assertTrue(errorHandling.contains("normalizedCode === 'LIVE_FLIGHT_TIMEOUT'"));
+		assertTrue(errorHandling.contains("实时航班查询服务超时"));
         assertTrue(errorHandling.contains("实时航班状态暂未更新"));
         assertTrue(errorHandling.contains("localhost|127\\.0\\.0\\.1|\\[::1\\]"));
         assertTrue(errorHandling.contains("AeroDataBox provider result"));
@@ -528,14 +568,14 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("No se encontró información del vuelo"));
         assertTrue(js.contains("Only some information was found"));
         assertTrue(js.contains("Solo se encontró parte de la información"));
-        assertTrue(html.contains("styles.css?v=28"));
-        assertTrue(html.contains("locale.js?v=28"));
-        assertTrue(html.contains("app.js?v=28"));
-        assertFalse(html.contains("?v=27"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v28'"));
-        assertFalse(worker.contains("CACHE_PREFIX + 'v27'"));
-        for (String asset : new String[] { "/styles.css?v=28", "/locale.js?v=28", "/app.js?v=28",
-                "/share.css?v=28", "/share.js?v=28" }) {
+        assertTrue(html.contains("styles.css?v=29"));
+        assertTrue(html.contains("locale.js?v=29"));
+        assertTrue(html.contains("app.js?v=29"));
+        assertFalse(html.contains("?v=28"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v29'"));
+        assertFalse(worker.contains("CACHE_PREFIX + 'v28'"));
+        for (String asset : new String[] { "/styles.css?v=29", "/locale.js?v=29", "/app.js?v=29",
+                "/share.css?v=29", "/share.js?v=29" }) {
             assertTrue(worker.contains("'" + asset + "'"), asset);
         }
     }
@@ -558,12 +598,12 @@ class StaticFrontendRegressionTest {
         assertTrue(shareHtml.contains("aria-label=\"Choose language\""));
         assertTrue(index.contains("Now, take the next step"));
         assertTrue(shareHtml.contains("Loading the shared journey"));
-        assertTrue(index.contains("locale.js?v=28"));
-        assertTrue(shareHtml.contains("/share.css?v=28"));
-        assertTrue(shareHtml.contains("/locale.js?v=28"));
-        assertTrue(shareHtml.contains("/share.js?v=28"));
-        assertFalse(index.contains("?v=27"));
-        assertFalse(shareHtml.contains("?v=27"));
+        assertTrue(index.contains("locale.js?v=29"));
+        assertTrue(shareHtml.contains("/share.css?v=29"));
+        assertTrue(shareHtml.contains("/locale.js?v=29"));
+        assertTrue(shareHtml.contains("/share.js?v=29"));
+        assertFalse(index.contains("?v=28"));
+        assertFalse(shareHtml.contains("?v=28"));
         assertTrue(app.contains("window.OneStepLocale.resolveLocalePreference(stored, navigator.languages, navigator.language)"));
         assertTrue(shareJs.contains("window.OneStepLocale.resolveLocalePreference(stored, navigator.languages, navigator.language)"));
         assertTrue(app.contains("window.OneStepLocale.orderLocaleOptions(localeSelect, currentLocale)"));
@@ -774,9 +814,9 @@ class StaticFrontendRegressionTest {
     void staffSpeechIsExactSingleAndCancelableWhileConfirmationReadsDisplayedOperationalFacts() throws IOException {
         String js = resource("app.js");
 
-        assertTrue(js.contains("staffCardInstruction: '请把这个页面拿给工作人员看'"));
+        assertTrue(js.contains("staffCardInstruction: '请把这个页面拿给工作人员看。'"));
         assertTrue(js.contains("staffCardInstruction: 'Please show this page to a member of staff.'"));
-        assertTrue(js.contains("staffCardInstruction: 'Por favor, muestra esta página a un miembro del personal.'"));
+        assertTrue(js.contains("staffCardInstruction: 'Por favor, muestre esta página a un miembro del personal.'"));
         assertTrue(js.contains("function startSpeechText(text, automatic)"));
         String speechStarter = js.substring(js.indexOf("function startSpeechText(text, automatic)"),
                 js.indexOf("function startSpeech(automatic)"));
@@ -784,7 +824,7 @@ class StaticFrontendRegressionTest {
         assertTrue(speechStarter.contains("new SpeechSynthesisUtterance(text)"));
         assertTrue(speechStarter.contains("window.speechSynthesis.speak(utterance)"));
 
-        String showStaff = js.substring(js.indexOf("function showStaff()"),
+        String showStaff = js.substring(js.indexOf("function showStaff(context)"),
                 js.indexOf("function closeStaff()"));
         assertTrue(showStaff.indexOf("stopSpeech(false)") < showStaff.indexOf("openDialog("));
         assertTrue(showStaff.indexOf("openDialog(") < showStaff.indexOf("startSpeechText(t('staffCardInstruction'), true)"));
@@ -812,6 +852,57 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("formatAtDeparture("));
         assertFalse(confirmSpeech.contains("localeText('航站楼 ', 'Terminal ', 'Terminal ') + terminal"));
         assertFalse(confirmSpeech.contains("localeText('登机口 ', 'Gate ', 'Puerta ') + gate"));
+    }
+
+    @Test
+    void documentFieldHelpUsesTheExistingStaffCardWithoutUserFacingAuditLabels() throws IOException {
+        String js = resource("app.js");
+        String html = resource("index.html");
+        String fieldHelp = js.substring(js.indexOf("function renderFieldStaffHelp("),
+                js.indexOf("function documentSegmentAdvisoryCopy("));
+        String manualRender = js.substring(js.indexOf("function renderManualDocumentEntry()"),
+                js.indexOf("function syncUsableDocumentSegmentIndexes()"));
+        String candidateRender = js.substring(js.indexOf("function renderManualReviewCandidates("),
+                js.indexOf("function documentSegmentAdvisoryCopy("));
+
+        assertTrue(fieldHelp.contains("template.cloneNode(true)"));
+        assertTrue(fieldHelp.contains("button.dataset.action = 'field-staff'"));
+        assertTrue(fieldHelp.contains("fieldElement.append(button)"));
+        assertTrue(manualRender.contains("'flight_number', !hasFlightNumber ? 'MISSING'"));
+        assertTrue(manualRender.contains("flightConflict ? 'CONFLICT' : flightReview ? 'REVIEW'"));
+        assertTrue(manualRender.contains("'departure_date', !hasDepartureDate ? 'MISSING'"));
+        assertTrue(manualRender.contains("dateConflict ? 'CONFLICT' : dateReview ? 'REVIEW'"));
+        assertTrue(js.contains("fieldStaffHelp: '请工作人员帮忙'"));
+        assertTrue(js.contains("fieldStaffHelp: 'Ask staff for help'"));
+        assertTrue(js.contains("fieldStaffHelp: 'Pedir ayuda al personal'"));
+
+        assertTrue(js.contains("titleZh: '请帮我确认航班号'"));
+        assertTrue(js.contains("titleEn: 'Please help me confirm my flight number'"));
+        assertTrue(js.contains("titleEs: 'Ayúdeme a confirmar mi número de vuelo'"));
+        assertTrue(js.contains("titleZh: '请帮我确认出发日期'"));
+        assertTrue(js.contains("titleEn: 'Please help me confirm my departure date'"));
+        assertTrue(js.contains("titleEs: 'Ayúdeme a confirmar mi fecha de salida'"));
+        assertTrue(js.contains("titleEn.hidden = currentLocale === 'en'"));
+        assertTrue(js.contains("bodyEn.hidden = currentLocale === 'en'"));
+        assertTrue(js.contains("startSpeechText(t('staffCardInstruction'), true)"));
+        assertTrue(html.contains("data-action=\"speak\""));
+
+        assertFalse(candidateRender.contains("reviewCandidateDetails"));
+        assertFalse(candidateRender.contains("candidate.source"));
+        assertFalse(candidateRender.contains("candidate.confidence"));
+        assertFalse(candidateRender.contains("Math.round"));
+        assertTrue(js.contains("部分航班信息缺失，请补全后继续。"));
+        assertTrue(js.contains("Some flight information is missing. Please complete it to continue."));
+        assertTrue(js.contains("Falta parte de la información del vuelo. Complétela para continuar."));
+        assertTrue(js.contains("请核对识别到的信息。"));
+        assertTrue(js.contains("Please check the information we found."));
+        assertTrue(js.contains("Compruebe la información encontrada."));
+        assertTrue(js.contains("识别到了不同的结果，请选择正确的信息。"));
+        assertTrue(js.contains("We found different results. Please choose the correct information."));
+        assertTrue(js.contains("Encontramos resultados diferentes. Elija la información correcta."));
+        assertFalse(js.contains("保存不会查询真实航班"));
+        assertFalse(js.contains("Completing and saving do not search live flights"));
+        assertFalse(js.contains("no consulta vuelos reales"));
     }
 
     @Test

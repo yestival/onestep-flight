@@ -30,10 +30,11 @@ public record BoardingPassExtractionResponse(
 		Map<String, ExtractedField> fields,
 		List<DocumentFlightSegment> segments,
 		List<String> needsReviewFields,
+		List<DocumentReviewIssue> reviewIssues,
 		String dataSource,
 		Instant extractedAt) {
 	private static final Set<String> ALLOWED_EVIDENCE_FIELDS = Set.of(
-			"document_type", "flight_number", "departure_date", "scheduled_departure",
+			"document_type", "flight_number", "airline_name", "departure_date", "scheduled_departure",
 			"scheduled_arrival", "boarding_time", "departure_airport", "arrival_airport",
 			"terminal", "departure_terminal", "arrival_terminal", "gate", "seat");
 
@@ -51,7 +52,7 @@ public record BoardingPassExtractionResponse(
 				defaultFlightConfidence(flightNumber), false, false, defaultDateSource(departureDate),
 				scheduledDeparture, scheduledArrival, boardingTime, departureAirport,
 				arrivalAirport, terminal, gate, seat, boardingPassDetected,
-				requiresDocumentConfirmation, fields, segments, needsReviewFields,
+				requiresDocumentConfirmation, fields, segments, needsReviewFields, List.of(),
 				dataSource, extractedAt);
 	}
 
@@ -69,8 +70,27 @@ public record BoardingPassExtractionResponse(
 				defaultFlightConfidence(flightNumber), false, false, defaultDateSource(departureDate),
 				scheduledDeparture, scheduledArrival, boardingTime, departureAirport,
 				arrivalAirport, terminal, gate, seat, boardingPassDetected,
-				requiresDocumentConfirmation, fields, segments, needsReviewFields,
+				requiresDocumentConfirmation, fields, segments, needsReviewFields, List.of(),
 				dataSource, extractedAt);
+	}
+
+	/** Source-compatible constructor for the confidence-aware pre-review-issue contract. */
+	public BoardingPassExtractionResponse(DocumentType documentType, String flightNumber,
+			LocalDate departureDate, String departureMonthDay,
+			DocumentFlightSegment.FlightNumberConfidence flightNumberConfidence,
+			Boolean requiresFlightNumberConfirmation, Boolean flightNumberConfirmedByUser,
+			DocumentFlightSegment.DateSource dateSource, String scheduledDeparture,
+			String scheduledArrival, String boardingTime, String departureAirport,
+			String arrivalAirport, String terminal, String gate, String seat,
+			boolean boardingPassDetected, boolean requiresDocumentConfirmation,
+			Map<String, ExtractedField> fields, List<DocumentFlightSegment> segments,
+			List<String> needsReviewFields, String dataSource, Instant extractedAt) {
+		this(documentType, flightNumber, departureDate, departureMonthDay,
+				flightNumberConfidence, requiresFlightNumberConfirmation,
+				flightNumberConfirmedByUser, dateSource, scheduledDeparture,
+				scheduledArrival, boardingTime, departureAirport, arrivalAirport,
+				terminal, gate, seat, boardingPassDetected, requiresDocumentConfirmation,
+				fields, segments, needsReviewFields, List.of(), dataSource, extractedAt);
 	}
 
 	public BoardingPassExtractionResponse {
@@ -130,6 +150,12 @@ public record BoardingPassExtractionResponse(
 			seat = null;
 		}
 		needsReviewFields = needsReviewFields == null ? List.of() : List.copyOf(needsReviewFields);
+		final int segmentCount = segments.size();
+		reviewIssues = reviewIssues == null ? List.of() : reviewIssues.stream()
+				.filter(Objects::nonNull)
+				.filter(issue -> issue.segmentIndex() == null
+						|| issue.segmentIndex() < segmentCount)
+				.toList();
 		// Document classification and provider confidence remain internal evidence,
 		// not journey-state authority. In particular, they must never
 		// silently mark check-in complete or inject an extra business branch.

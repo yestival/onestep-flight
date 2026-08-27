@@ -20,6 +20,8 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -39,6 +41,8 @@ public class MultiSourceFlightService {
 	private static final Duration SERPAPI_TIMEOUT = Duration.ofSeconds(10);
 	private static final Duration ROUTE_HINT_STAGGER = Duration.ofMillis(200);
 	private static final Duration SUFFICIENT_RESULT_GRACE = Duration.ofMillis(300);
+	private static final Pattern EXPLICIT_FLIGHT_NUMBER = Pattern.compile(
+			"(?i)(?<![A-Z0-9])([A-Z0-9]{2,3})[\\s\\-‐‑‒–—−]*([0-9]{1,4}[A-Z]?)(?![A-Z0-9])");
 
 	private final List<OperationalFlightDataProvider> providers;
 	private final Duration cacheTtl;
@@ -131,21 +135,6 @@ public class MultiSourceFlightService {
 		Map<String, ProviderFlightResult> providerResults = new LinkedHashMap<>();
 		if (aeroDataBoxResult != null) providerResults.put(aeroDataBox.providerName(), aeroDataBoxResult);
 		collectProviderResults(calls, providerResults, deadline);
-		ProviderFlightResult completedAeroDataBox = aeroDataBox == null
-				? null : providerResults.get(aeroDataBox.providerName());
-		OperationalFlightDataProvider serpApi = providers.stream()
-				.filter(provider -> "SERPAPI".equals(provider.providerName())).findFirst().orElse(null);
-		ProviderFlightResult firstSerpApiResult = serpApi == null ? null : providerResults.get(serpApi.providerName());
-		if (needsRouteHintRetry(firstSerpApiResult) && completedAeroDataBox != null
-				&& completedAeroDataBox.successful()
-				&& completedAeroDataBox.departureAirport() != null
-				&& completedAeroDataBox.arrivalAirport() != null) {
-			RouteHints retryRoute = effectiveRouteHints(departureAirportHint, arrivalAirportHint,
-					completedAeroDataBox);
-			providerResults.put(serpApi.providerName(), retryProvider(serpApi, flightNumber, departureDate,
-					retryRoute.departureAirport(), retryRoute.arrivalAirport(), scheduledDepartureHint,
-					refresh, deadline));
-		}
 		Map<String, ProviderFlightResult> orderedResults = new LinkedHashMap<>();
 		for (OperationalFlightDataProvider provider : providers) {
 			ProviderFlightResult result = providerResults.get(provider.providerName());
@@ -229,8 +218,11 @@ public class MultiSourceFlightService {
 				.collect(Collectors.joining(",", "MERGED[", "]"));
 
 		boolean hasLiveOperationalSource = successful.stream().anyMatch(ProviderFlightResult::live);
-		FlightResponse merged = new FlightResponse(firstNonNull(selectedFlightNumber.value(), flightNumber),
-				firstNonNull(selectedDepartureDate.value(), departureDate),
+		if (selectedFlightNumber.value() == null || selectedDepartureDate.value() == null) {
+			throw new AllFlightProvidersUnavailableException(providerResults);
+		}
+		FlightResponse merged = new FlightResponse(selectedFlightNumber.value(),
+				selectedDepartureDate.value(),
 				departureAirport.value(), departureAirportName.value(), arrivalAirport.value(), arrivalAirportName.value(),
 				scheduledDeparture.value(), estimatedDeparture.value(), actualDeparture.value(),
 				scheduledArrival.value(), estimatedArrival.value(), actualArrival.value(), boardingTime.value(),
@@ -251,8 +243,9 @@ public class MultiSourceFlightService {
 		if (bounded.isZero() || bounded.isNegative()) {
 			return CompletableFuture.completedFuture(providerTimeout(provider));
 		}
-		return CompletableFuture.supplyAsync(() -> safeCall(provider, flightNumber, departureDate,
-				departureHint, arrivalHint, scheduledDepartureHint, refresh), executor)
+		return CompletableFuture.supplyAsync(() -> validateIdentity(
+				safeCall(provider, flightNumber, departureDate, departureHint, arrivalHint,
+						scheduledDepartureHint, refresh), flightNumber, departureDate), executor)
 				.completeOnTimeout(providerTimeout(provider), Math.max(1, bounded.toMillis()), TimeUnit.MILLISECONDS);
 	}
 
@@ -338,34 +331,6 @@ public class MultiSourceFlightService {
 		}
 	}
 
-	private ProviderFlightResult retryProvider(OperationalFlightDataProvider provider, String flightNumber,
-			LocalDate departureDate, String departureHint, String arrivalHint,
-			String scheduledDepartureHint, boolean refresh, Instant deadline) {
-		Duration wait = boundedTimeout(providerBudget(provider), deadline);
-		if (wait.isZero() || wait.isNegative()) return providerTimeout(provider);
-		CompletableFuture<ProviderFlightResult> call = startProviderCall(provider, flightNumber, departureDate,
-				departureHint, arrivalHint, scheduledDepartureHint, refresh, wait, deadline);
-		try {
-			return call.get(Math.max(1, wait.toMillis()), TimeUnit.MILLISECONDS);
-		} catch (TimeoutException exception) {
-			call.cancel(true);
-			return providerTimeout(provider);
-		} catch (InterruptedException exception) {
-			Thread.currentThread().interrupt();
-			return ProviderFlightResult.failure(provider.providerName(), "UPSTREAM_ERROR",
-					provider.providerName() + "_INTERRUPTED", Instant.now());
-		} catch (ExecutionException exception) {
-			return ProviderFlightResult.failure(provider.providerName(), "UPSTREAM_ERROR",
-					provider.providerName() + "_UNEXPECTED_ERROR", Instant.now());
-		}
-	}
-
-	private boolean needsRouteHintRetry(ProviderFlightResult result) {
-		if (result == null) return false;
-		return "MISSING_ROUTE_HINT".equals(result.outcome())
-				|| result.errorCode() != null && result.errorCode().contains("MISSING_ROUTE_HINT");
-	}
-
 	private OperationalFlightDataProvider providerNamed(String providerName) {
 		return providers.stream().filter(provider -> providerName.equals(provider.providerName()))
 				.findFirst().orElseThrow();
@@ -389,8 +354,8 @@ public class MultiSourceFlightService {
 	}
 
 	private ProviderFlightResult providerPending(OperationalFlightDataProvider provider) {
-		return ProviderFlightResult.failure(provider.providerName(), "PENDING",
-				provider.providerName() + "_PENDING", Instant.now());
+		return ProviderFlightResult.failure(provider.providerName(), ProviderFlightResult.UPSTREAM_ERROR,
+				provider.providerName() + "_NOT_COMPLETED", Instant.now());
 	}
 
 	private boolean hasSufficientSuccess(Iterable<ProviderFlightResult> results) {
@@ -444,6 +409,35 @@ public class MultiSourceFlightService {
 			return ProviderFlightResult.failure(provider.providerName(), "UPSTREAM_ERROR",
 					provider.providerName() + "_UNEXPECTED_ERROR", Instant.now());
 		}
+	}
+
+	private ProviderFlightResult validateIdentity(ProviderFlightResult result, String requestedFlightNumber,
+			LocalDate requestedDepartureDate) {
+		if (result == null || !result.successful()) return result;
+		String actualFlightNumber = normalizeUpper(result.flightNumber());
+		if (actualFlightNumber == null || actualFlightNumber.isBlank() || result.departureDate() == null) {
+			return ProviderFlightResult.identityFailure(result.provider(), ProviderFlightResult.IDENTITY_UNVERIFIED,
+					result.provider() + "_AGGREGATE_IDENTITY_UNVERIFIED", result.flightNumber(),
+					result.departureDate(), result.retrievedAt());
+		}
+		String requested = normalizeUpper(requestedFlightNumber);
+		boolean flightMatches = requested != null && (requested.equals(actualFlightNumber)
+				|| containsExplicitCodeshare(result.codeshare(), requested));
+		if (!flightMatches || !Objects.equals(requestedDepartureDate, result.departureDate())) {
+			return ProviderFlightResult.identityFailure(result.provider(), ProviderFlightResult.IDENTITY_MISMATCH,
+					result.provider() + "_AGGREGATE_IDENTITY_MISMATCH", result.flightNumber(),
+					result.departureDate(), result.retrievedAt());
+		}
+		return result;
+	}
+
+	private boolean containsExplicitCodeshare(String value, String requestedFlightNumber) {
+		if (value == null || requestedFlightNumber == null) return false;
+		Matcher matcher = EXPLICIT_FLIGHT_NUMBER.matcher(value);
+		while (matcher.find()) {
+			if (requestedFlightNumber.equals(normalizeUpper(matcher.group(1) + matcher.group(2)))) return true;
+		}
+		return false;
 	}
 
 	private RouteHints effectiveRouteHints(String documentDeparture, String documentArrival,
@@ -634,7 +628,7 @@ public class MultiSourceFlightService {
 	}
 
 	private String normalizeUpper(Object value) {
-		return value == null ? null : value.toString().replaceAll("[\\s-]", "").toUpperCase(Locale.ROOT);
+		return value == null ? null : value.toString().replaceAll("[\\s\\-‐‑‒–—−]", "").toUpperCase(Locale.ROOT);
 	}
 
 	private String normalizeAirportHint(String value) {

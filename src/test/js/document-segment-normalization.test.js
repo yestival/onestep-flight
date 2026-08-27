@@ -30,21 +30,45 @@ vm.runInContext([
   sourceBetween('  function selectedDocumentResult(source, index)', '  function renderSegmentSelector()'),
   sourceBetween('  function validDocumentFlightNumber(value)', '  function resetDocumentResultState()'),
   sourceBetween('  function syncUsableDocumentSegmentIndexes()', '  function setDocumentExtractionState(result, assessment)'),
+	 sourceBetween('  function isLocalDebugEnvironment()', '  function safeProviderDebugResult(result)'),
   `this.documentSegmentApi = {
-    normalizeDocumentResult, classifyDocumentResult, selectedDocumentResult, createSegmentDisplay,
+    normalizeFlightNumber, normalizeDocumentResult, classifyDocumentResult, selectedDocumentResult, createSegmentDisplay,
     validDocumentDepartureDate, validDocumentMonthDay, normalizeFlightNumberConfidence,
     documentSegmentLookupReady, documentSegmentHasConflict, documentSegmentHasCriticalConflict,
+    documentSegmentHasAdvisory, documentSegmentReviewIssues, normalizeReviewIssue,
     documentSegmentState, documentItineraryState, lookupGuardReason, applyDocumentSegmentCompletion,
-    setLookupBusy, resolvePayload
+	setLookupBusy, resolvePayload, liveFlightErrorCopy
   };`
 ].join('\n'), sandbox);
 
 const api = sandbox.documentSegmentApi;
 sandbox.confirmedDocumentFlightNumberIndexes = [];
 sandbox.documentRootReviewFields = [];
+sandbox.documentRootReviewIssues = [];
 sandbox.documentSegments = [];
 sandbox.currentLocale = 'en';
 sandbox.localeText = (zh, en) => en;
+
+test('top-level live-flight error code takes precedence over provider details', () => {
+	const request = { requestUrl: '/api/flights/BA117?departureDate=2026-08-25', status: 502 };
+	const details = { providerResults: {
+		SERPAPI: { outcome: 'TIMEOUT' },
+		AERODATABOX: { outcome: 'PARSE_ERROR' }
+	} };
+	const mixed = api.liveFlightErrorCopy(request, details, 'ALL_LIVE_FLIGHT_PROVIDERS_FAILED');
+	assert.equal(mixed.titleZh, '暂时无法确认这个航班');
+	assert.match(mixed.en, /cannot be verified/i);
+	assert.doesNotMatch(mixed.en, /timed out/i);
+
+	const timeout = api.liveFlightErrorCopy(request, details, 'LIVE_FLIGHT_TIMEOUT');
+	assert.match(timeout.en, /timed out/i);
+	assert.match(timeout.en, /does not show that the flight does not exist/i);
+
+	const missing = api.liveFlightErrorCopy(
+		{ requestUrl: '/api/flights/BA117', status: 404 }, details, 'FLIGHT_NOT_FOUND');
+	assert.equal(missing.titleZh, '没有找到这个航班');
+	assert.match(missing.es, /código de la aerolínea/i);
+});
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -65,6 +89,7 @@ function segmentIdentity(segment) {
 
 function installSegmentDisplayFixture(reviewFields = []) {
   sandbox.documentRootReviewFields = reviewFields;
+  sandbox.documentRootReviewIssues = [];
   sandbox.selectedDocumentSegmentIndex = null;
   sandbox.lookupInFlight = false;
   sandbox.confirmedDocumentFlightNumberIndexes = [];
@@ -75,10 +100,11 @@ function installSegmentDisplayFixture(reviewFields = []) {
     return {
       incompleteSegment: '补全这一段',
       pendingSegment: '请确认航班号',
-      confirmSegment: '确认这一段',
+      confirmSegment: '处理字段冲突',
       selectedSegment: '当前航段',
       chooseSegment: '选择这一段',
-      readySegment: '可以查询'
+      readySegment: '可以查询',
+      advisorySegment: '请确认'
     }[key] || key;
   };
   sandbox.document = {
@@ -133,7 +159,7 @@ test('a critical flight or date conflict is never classified as USABLE', () => {
   assert.deepEqual(assessment.usableIndexes, [1]);
 });
 
-test('preserves every server-completed segment in document order and keeps all cards selectable', () => {
+test('preserves every server-completed segment and lets medium single candidates be searched without confirmation', () => {
   const fixture = clone(fixtures.multiSegment);
   const normalized = api.normalizeDocumentResult(fixture);
   const assessment = plain(api.classifyDocumentResult(normalized));
@@ -147,33 +173,35 @@ test('preserves every server-completed segment in document order and keeps all c
   assert.deepEqual(normalizedSegments.map(segment => segment.departureMonthDay),
     ['08-04', '08-04', '09-05', '09-05']);
   assert.deepEqual(normalizedSegments.map(segmentIdentity), fixture.segments.map(segmentIdentity));
-  assert.equal(assessment.outcome, 'PARTIAL');
-  assert.deepEqual(assessment.usableIndexes, [0, 2]);
+  assert.equal(assessment.outcome, 'USABLE');
+  assert.deepEqual(assessment.usableIndexes, [0, 1, 2, 3]);
 
   installSegmentDisplayFixture();
   const options = normalized.segments.map((segment, index) => api.createSegmentDisplay(segment, index));
   options.forEach(option => assert.equal(option.disabled, false));
   assert.equal(options[0].className.includes('is-incomplete'), false);
   assert.equal(options[0].children[2].textContent, '可以查询');
-  assert.equal(options[1].className.includes('is-pending'), true);
-  assert.equal(options[1].children[2].textContent, '请确认航班号');
+  assert.equal(options[1].className.includes('is-advisory'), false);
+  assert.equal(options[1].children[2].textContent, '可以查询');
   assert.match(options[0].children[1].textContent, /2026-08-04/);
   assert.match(options[2].children[1].textContent, /2026-09-05/);
 });
 
-test('uses exact conflict review markers without disabling the segment', () => {
+test('legacy auxiliary conflicts never change the segment card status', () => {
   const normalized = api.normalizeDocumentResult(clone(fixtures.mixedSegments));
   installSegmentDisplayFixture(['segments[1].conflict.arrival_airport']);
 
   const option = api.createSegmentDisplay(normalized.segments[1], 1);
 
-  assert.equal(api.documentSegmentHasConflict(1), true);
+  assert.equal(api.documentSegmentHasConflict(1), false);
+  assert.equal(api.documentSegmentHasAdvisory(1, normalized.segments[1]), false);
   assert.equal(option.disabled, false);
-  assert.equal(option.className.includes('is-conflict'), true);
-  assert.equal(option.children[2].textContent, '确认这一段');
+  assert.equal(option.className.includes('is-conflict'), false);
+  assert.equal(option.className.includes('is-advisory'), false);
+  assert.equal(option.children[2].textContent, '可以查询');
 });
 
-test('conflict labeling takes precedence when a segment is also incomplete', () => {
+test('an auxiliary conflict does not replace the missing-key-field action', () => {
   const normalized = api.normalizeDocumentResult(clone(fixtures.mixedSegments));
   installSegmentDisplayFixture(['segments[0].conflict.departure_airport']);
 
@@ -181,8 +209,8 @@ test('conflict labeling takes precedence when a segment is also incomplete', () 
 
   assert.equal(option.disabled, false);
   assert.equal(option.className.includes('is-incomplete'), true);
-  assert.equal(option.className.includes('is-conflict'), true);
-  assert.equal(option.children[2].textContent, '确认这一段');
+  assert.equal(option.className.includes('is-conflict'), false);
+  assert.equal(option.children[2].textContent, '补全这一段');
 });
 
 test('validates month-day but contains no client-side year completion', () => {
@@ -198,10 +226,33 @@ test('a missing full date exposes the full date control and never a separate yea
   const renderFlow = sourceBetween('  function renderManualDocumentEntry()', '  function syncUsableDocumentSegmentIndexes()');
 
   assert.match(renderFlow,
-    /setManualFieldState\(dateField, document\.getElementById\('date-input'\), !hasDepartureDate \|\| dateConflict\)/);
+    /setManualFieldState\(dateField, document\.getElementById\('date-input'\),\s*!hasDepartureDate \|\| dateConflict \|\| dateReview\)/);
   assert.doesNotMatch(renderFlow, /yearField|year-input|Departure year|出发年份/);
   assert.match(indexHtml, /id="date-input" name="departureDate" type="date"/);
   assert.doesNotMatch(indexHtml, /year-input|departureYear|data-manual-year/);
+});
+
+test('flight and date help entries cover missing review and conflict states', () => {
+  const renderFlow = sourceBetween('  function renderManualDocumentEntry()', '  function syncUsableDocumentSegmentIndexes()');
+  const helpFlow = sourceBetween('  function renderFieldStaffHelp(', '  function documentSegmentAdvisoryCopy(');
+
+  assert.match(renderFlow, /'flight_number', !hasFlightNumber \? 'MISSING'/);
+  assert.match(renderFlow, /flightConflict \? 'CONFLICT' : flightReview \? 'REVIEW'/);
+  assert.match(renderFlow, /'departure_date', !hasDepartureDate \? 'MISSING'/);
+  assert.match(renderFlow, /dateConflict \? 'CONFLICT' : dateReview \? 'REVIEW'/);
+  assert.match(helpFlow, /template\.cloneNode\(true\)/);
+  assert.match(helpFlow, /button\.dataset\.action = 'field-staff'/);
+  assert.match(helpFlow, /fieldElement\.append\(button\)/);
+});
+
+test('ordinary candidate cards render each normalized value once without audit details', () => {
+  const candidateFlow = sourceBetween('  function renderManualReviewCandidates(',
+    '  function documentSegmentAdvisoryCopy(');
+
+  assert.match(app, /if \(!candidate \|\| seen\[candidate\.value\]\) return false/);
+  assert.match(candidateFlow, /value\.textContent = candidate\.value/);
+  assert.doesNotMatch(candidateFlow, /reviewCandidateDetails|candidate\.source|candidate\.confidence|Math\.round/);
+  assert.doesNotMatch(candidateFlow, /STRUCTURE|UNDERSTAND|TEXT ·|%/);
 });
 
 test('completes only the selected segment and preserves readiness of every other segment', () => {
@@ -210,6 +261,7 @@ test('completes only the selected segment and preserves readiness of every other
   sandbox.documentSegments = normalized.segments;
   sandbox.usableDocumentSegmentIndexes = [1];
   sandbox.confirmedDocumentFlightNumberIndexes = [];
+  sandbox.documentRootReviewIssues = [];
   sandbox.documentRootReviewFields = ['segments[0].departure_date'];
   sandbox.pendingDocument = Object.assign({}, normalized, { segments: normalized.segments.slice() });
 
@@ -229,6 +281,7 @@ test('refuses a completed date that disagrees with the recognized month-day', ()
   sandbox.documentSegments = normalized.segments;
   sandbox.usableDocumentSegmentIndexes = [1];
   sandbox.confirmedDocumentFlightNumberIndexes = [];
+  sandbox.documentRootReviewIssues = [];
   sandbox.documentRootReviewFields = ['segments[0].departure_date'];
   sandbox.pendingDocument = Object.assign({}, normalized, { segments: normalized.segments.slice() });
 
@@ -241,10 +294,21 @@ test('selected result carries month-day, all segments, and only the selected con
   const normalized = api.normalizeDocumentResult(clone(fixtures.multiSegment));
   sandbox.documentSegments = normalized.segments;
   sandbox.documentRootFields = {};
+  sandbox.documentRootReviewIssues = [];
   sandbox.documentRootReviewFields = [
     'spatial_review_unavailable',
     'segments[0].departure_date',
     'segments[2].conflict.departure_airport'
+  ];
+  sandbox.documentRootReviewIssues = [
+    api.normalizeReviewIssue({
+      segmentIndex: 0, field: 'arrival_airport', kind: 'ADVISORY', blocking: false,
+      candidates: [{ normalizedValue: 'AMS', source: 'UNDERSTAND', confidence: 0.8 }]
+    }),
+    api.normalizeReviewIssue({
+      segmentIndex: 2, field: 'arrival_airport', kind: 'ADVISORY', blocking: false,
+      candidates: [{ normalizedValue: 'CDG', source: 'STRUCTURE', confidence: 0.7 }]
+    })
   ];
 
   const selected = plain(api.selectedDocumentResult(normalized, 2));
@@ -256,47 +320,303 @@ test('selected result carries month-day, all segments, and only the selected con
     ['KL1036', 'MF812', 'MF825', 'AF1668']);
   assert.deepEqual(selected.needsReviewFields,
     ['spatial_review_unavailable', 'conflict.departure_airport']);
+  assert.equal(selected.reviewIssues.length, 1);
+  assert.equal(selected.reviewIssues[0].segmentIndex, 2);
+  assert.equal(selected.reviewIssues[0].field, 'arrival_airport');
 });
 
-test('medium confidence is prefilled but cannot become query-ready until the user confirms and saves', () => {
+test('a single medium-confidence flight number is immediately query-ready without confirmation', () => {
   const normalized = api.normalizeDocumentResult(clone(fixtures.multiSegment));
   sandbox.documentSegments = normalized.segments;
   sandbox.documentRootReviewFields = ['segments[1].flight_number'];
+  sandbox.documentRootReviewIssues = [];
   sandbox.confirmedDocumentFlightNumberIndexes = [];
   sandbox.usableDocumentSegmentIndexes = [0, 2];
   sandbox.pendingDocument = Object.assign({}, normalized, { segments: normalized.segments.slice() });
 
-  assert.equal(api.documentSegmentState(sandbox.documentSegments[1], 1), 'NEEDS_CONFIRMATION');
-  assert.equal(api.documentSegmentLookupReady(sandbox.documentSegments[1], 1), false);
-  assert.equal(api.applyDocumentSegmentCompletion(1, 'MF812', '2026-08-04'), null);
-
-  const completed = plain(api.applyDocumentSegmentCompletion(1, 'MF812', '2026-08-04', {
-    flightNumber: true
-  }));
-  assert.equal(completed.flightNumberConfirmedByUser, true);
-  assert.equal(completed.requiresFlightNumberConfirmation, false);
+  assert.equal(api.documentSegmentState(sandbox.documentSegments[1], 1), 'QUERYABLE');
   assert.equal(api.documentSegmentLookupReady(sandbox.documentSegments[1], 1), true);
+  assert.equal(api.documentSegmentHasAdvisory(1, sandbox.documentSegments[1]), false);
 });
 
-test('query guard requires trusted or user-confirmed number, valid full date, and no critical conflict but not a route', () => {
+test('medium confidence and auxiliary review still render as queryable', () => {
+  const normalized = api.normalizeDocumentResult({
+    reviewIssues: [{
+      segmentIndex: 0,
+      field: 'departure_airport',
+      kind: 'ADVISORY',
+      blocking: false,
+      candidates: [{ normalizedValue: 'AAA', source: 'STRUCTURE', confidence: 0.62 }],
+      reason: 'AUXILIARY_EVIDENCE_DISAGREEMENT'
+    }],
+    segments: [{
+      flightNumber: 'XY123', flightNumberConfidence: 'MEDIUM', departureDate: '2026-08-04',
+      departureAirport: 'AAA', scheduledDeparture: '09:25'
+    }]
+  });
+  sandbox.documentSegments = normalized.segments;
+  installSegmentDisplayFixture();
+  sandbox.documentRootReviewIssues = normalized.reviewIssues;
+
+  const option = api.createSegmentDisplay(normalized.segments[0], 0);
+
+  assert.equal(normalized.segments[0].requiresFlightNumberConfirmation, false);
+  assert.equal(api.documentSegmentHasAdvisory(0, normalized.segments[0]), false);
+  assert.equal(option.className.includes('is-advisory'), false);
+  assert.equal(option.children[2].textContent, '可以查询');
+});
+
+test('low flight confidence and a single departure-date review still require confirmation', () => {
+  const low = api.normalizeDocumentResult({
+    segments: [{
+      flightNumber: 'XY123', flightNumberConfidence: 'LOW', departureDate: '2026-08-04'
+    }]
+  });
+  sandbox.documentSegments = low.segments;
+  installSegmentDisplayFixture();
+  let option = api.createSegmentDisplay(low.segments[0], 0);
+  assert.equal(api.documentSegmentHasAdvisory(0, low.segments[0]), true);
+  assert.equal(option.children[2].textContent, '请确认');
+
+  const dateReview = api.normalizeDocumentResult({
+    reviewIssues: [{
+      segmentIndex: 0,
+      field: 'departure_date',
+      kind: 'ADVISORY',
+      blocking: false,
+      candidates: [{ normalizedValue: '2026-08-04', source: 'UNDERSTAND', confidence: 0.55 }],
+      selectedValue: null,
+      reason: 'SINGLE_CANDIDATE_REVIEW'
+    }],
+    segments: [{
+      flightNumber: 'XY123', flightNumberConfidence: 'HIGH', departureDate: '2026-08-04'
+    }]
+  });
+  sandbox.documentSegments = dateReview.segments;
+  installSegmentDisplayFixture();
+  sandbox.documentRootReviewIssues = dateReview.reviewIssues;
+  option = api.createSegmentDisplay(dateReview.segments[0], 0);
+  assert.equal(api.documentSegmentHasAdvisory(0, dateReview.segments[0]), true);
+  assert.equal(option.children[2].textContent, '请确认');
+});
+
+test('blocking flight-number or departure-date alternatives render as field conflicts', () => {
+  for (const field of ['flight_number', 'departure_date']) {
+    const normalized = api.normalizeDocumentResult({
+      reviewIssues: [{
+        segmentIndex: 0,
+        field,
+        kind: 'ACTIONABLE',
+        blocking: true,
+        candidates: [
+          { normalizedValue: field === 'flight_number' ? 'XY123' : '2026-08-04' },
+          { normalizedValue: field === 'flight_number' ? 'XW123' : '2026-08-05' }
+        ],
+        selectedValue: null,
+        reason: 'MULTIPLE_UNRESOLVED_CANDIDATES'
+      }],
+      segments: [{
+        flightNumber: 'XY123', flightNumberConfidence: 'HIGH', departureDate: '2026-08-04'
+      }]
+    });
+    sandbox.documentSegments = normalized.segments;
+    installSegmentDisplayFixture();
+    sandbox.documentRootReviewIssues = normalized.reviewIssues;
+    const option = api.createSegmentDisplay(normalized.segments[0], 0);
+    assert.equal(api.documentSegmentState(normalized.segments[0], 0), 'CONFLICT');
+    assert.equal(option.children[2].textContent, '处理字段冲突');
+  }
+});
+
+test('query guard requires format, full valid date, and no unresolved critical conflict but not trust or route', () => {
   const normalized = api.normalizeDocumentResult(clone(fixtures.multiSegment));
   sandbox.documentSegments = normalized.segments;
   sandbox.documentRootReviewFields = [];
+  sandbox.documentRootReviewIssues = [];
   sandbox.confirmedDocumentFlightNumberIndexes = [];
   sandbox.selectedDocumentSegmentIndex = 1;
   sandbox.currentLocale = 'en';
   sandbox.localeText = (zh, en) => en;
   const documentResult = clone(fixtures.multiSegment);
 
-  assert.match(api.lookupGuardReason('MF812', '2026-08-04', false, documentResult), /Confirm/);
-  sandbox.documentSegments[1].flightNumberConfirmedByUser = true;
-  sandbox.documentSegments[1].requiresFlightNumberConfirmation = false;
+  assert.equal(api.lookupGuardReason('MF812', '2026-08-04', false, documentResult), null);
   delete sandbox.documentSegments[1].departureAirport;
   delete sandbox.documentSegments[1].arrivalAirport;
   assert.equal(api.lookupGuardReason('MF812', '2026-08-04', false, documentResult), null);
   sandbox.documentRootReviewFields = ['segments[1].conflict.departure_date'];
+  documentResult.needsReviewFields = ['segments[1].conflict.departure_date'];
   assert.match(api.lookupGuardReason('MF812', '2026-08-04', false, documentResult), /Resolve/);
   assert.match(api.lookupGuardReason('MF812', '2026-02-30', false, documentResult), /complete/);
+});
+
+test('a single low-confidence candidate remains queryable and is marked advisory', () => {
+  const normalized = api.normalizeDocumentResult({
+    needsReviewFields: ['segments[0].flight_number'],
+    reviewIssues: [{
+      segmentIndex: 0,
+      field: 'flight_number',
+      kind: 'ADVISORY',
+      blocking: false,
+      candidates: [{ normalizedValue: 'QF12', source: 'STRUCTURE', confidence: 0.41 }],
+      reason: 'LOW_CONFIDENCE'
+    }],
+    segments: [{
+      flightNumber: 'QF12', flightNumberConfidence: 'LOW', departureDate: '2027-03-14',
+      departureMonthDay: '03-14', dateSource: 'EXPLICIT_FULL_DATE'
+    }]
+  });
+  sandbox.documentSegments = normalized.segments;
+  sandbox.documentRootReviewFields = normalized.needsReviewFields;
+  sandbox.documentRootReviewIssues = normalized.reviewIssues;
+
+  assert.equal(api.documentSegmentLookupReady(normalized.segments[0], 0), true);
+  assert.equal(api.documentSegmentState(normalized.segments[0], 0), 'QUERYABLE');
+  assert.equal(api.documentSegmentHasAdvisory(0, normalized.segments[0]), true);
+  assert.equal(plain(api.classifyDocumentResult(normalized)).outcome, 'USABLE');
+});
+
+test('two unresolved critical candidates block only their segment until one is selected', () => {
+  const result = {
+    needsReviewFields: [],
+    reviewIssues: [{
+      segmentIndex: 0,
+      field: 'flight_number',
+      kind: 'ACTIONABLE',
+      blocking: true,
+      candidates: [
+        { normalizedValue: 'BA117', source: 'UNDERSTAND', confidence: 0.77 },
+        { normalizedValue: 'BA171', source: 'STRUCTURE', confidence: 0.73 }
+      ],
+      reason: 'MULTIPLE_CANDIDATES'
+    }],
+    segments: [
+      { flightNumber: 'BA117', flightNumberConfidence: 'MEDIUM', departureDate: '2027-03-14' },
+      { flightNumber: 'LH400', flightNumberConfidence: 'LOW', departureDate: '2027-03-15' }
+    ]
+  };
+  const normalized = api.normalizeDocumentResult(result);
+  sandbox.documentSegments = normalized.segments;
+  sandbox.documentRootReviewFields = [];
+  sandbox.documentRootReviewIssues = normalized.reviewIssues;
+
+  assert.equal(api.documentSegmentHasCriticalConflict(0, normalized.segments[0]), true);
+  assert.equal(api.documentSegmentLookupReady(normalized.segments[0], 0), false);
+  assert.equal(api.documentSegmentLookupReady(normalized.segments[1], 1), true);
+  assert.deepEqual(plain(api.classifyDocumentResult(normalized)).usableIndexes, [1]);
+
+  normalized.reviewIssues[0].selectedValue = 'BA171';
+  normalized.reviewIssues[0].resolved = true;
+  sandbox.documentRootReviewIssues = normalized.reviewIssues;
+  assert.equal(api.documentSegmentLookupReady(normalized.segments[0], 0), true);
+});
+
+test('an unresolved server-declared critical issue blocks even when manual entry is the only fallback', () => {
+  const normalized = api.normalizeDocumentResult({
+    reviewIssues: [{
+      segmentIndex: 0,
+      field: 'departure_date',
+      kind: 'ACTIONABLE',
+      blocking: true,
+      candidates: [],
+      reason: 'MULTIPLE_CANDIDATES'
+    }],
+    segments: [{ flightNumber: 'BA117', flightNumberConfidence: 'HIGH', departureDate: '2027-03-14' }]
+  });
+  sandbox.documentSegments = normalized.segments;
+  sandbox.documentRootReviewFields = [];
+  sandbox.documentRootReviewIssues = normalized.reviewIssues;
+
+  assert.equal(api.documentSegmentHasCriticalConflict(0, normalized.segments[0]), true);
+  assert.equal(api.documentSegmentLookupReady(normalized.segments[0], 0), false);
+});
+
+test('auxiliary conflicts remain in review data without changing card readiness', () => {
+  const normalized = api.normalizeDocumentResult({
+    reviewIssues: [{
+      segmentIndex: 0,
+      field: 'departure_airport',
+      kind: 'ADVISORY',
+      blocking: false,
+      candidates: [
+        { normalizedValue: 'LHR', source: 'UNDERSTAND', confidence: 0.82 },
+        { normalizedValue: 'LGW', source: 'STRUCTURE', confidence: 0.76 }
+      ],
+      reason: 'SOURCE_DIFFERENCE'
+    }],
+    segments: [{ flightNumber: 'BA117', flightNumberConfidence: 'HIGH', departureDate: '2027-03-14' }]
+  });
+  sandbox.documentSegments = normalized.segments;
+  sandbox.documentRootReviewFields = [];
+  sandbox.documentRootReviewIssues = normalized.reviewIssues;
+
+  assert.equal(api.documentSegmentLookupReady(normalized.segments[0], 0), true);
+  assert.equal(api.documentSegmentHasCriticalConflict(0, normalized.segments[0]), false);
+  assert.equal(api.documentSegmentHasAdvisory(0, normalized.segments[0]), false);
+});
+
+test('structured selected issue suppresses a stale legacy marker for the same field', () => {
+  const normalized = api.normalizeDocumentResult({
+    needsReviewFields: ['segments[0].conflict.flight_number'],
+    reviewIssues: [{
+      segmentIndex: 0,
+      field: 'flight_number',
+      kind: 'ADVISORY',
+      blocking: false,
+      candidates: [{ normalizedValue: 'BA117', source: 'STRUCTURE', confidence: 0.8 }],
+      selectedValue: 'BA117',
+      reason: 'USER_SELECTED'
+    }],
+    segments: [{ flightNumber: 'BA117', departureDate: '2027-03-14' }]
+  });
+  sandbox.documentSegments = normalized.segments;
+  sandbox.documentRootReviewFields = normalized.needsReviewFields;
+  sandbox.documentRootReviewIssues = normalized.reviewIssues;
+
+  assert.equal(api.documentSegmentReviewIssues(0).length, 1);
+  assert.equal(api.documentSegmentHasCriticalConflict(0, normalized.segments[0]), false);
+  assert.equal(api.documentSegmentLookupReady(normalized.segments[0], 0), true);
+});
+
+test('a zero-candidate actionable critical issue uses manual confirmation and saves without lookup', () => {
+  const normalized = api.normalizeDocumentResult({
+    needsReviewFields: [],
+    reviewIssues: [{
+      segmentIndex: 0,
+      field: 'flight_number',
+      kind: 'ACTIONABLE',
+      blocking: true,
+      candidates: [],
+      selectedValue: null,
+      reason: 'CANDIDATE_DETAILS_UNAVAILABLE'
+    }],
+    segments: [{
+      flightNumber: 'BA117', flightNumberConfidence: 'MEDIUM', departureDate: '2027-03-14',
+      departureMonthDay: '03-14', dateSource: 'EXPLICIT_FULL_DATE'
+    }]
+  });
+  sandbox.documentSegments = normalized.segments;
+  sandbox.documentRootReviewFields = [];
+  sandbox.documentRootReviewIssues = normalized.reviewIssues;
+  sandbox.usableDocumentSegmentIndexes = [];
+  sandbox.pendingDocument = Object.assign({}, normalized, { segments: normalized.segments.slice() });
+
+  assert.equal(api.documentSegmentHasCriticalConflict(0, normalized.segments[0]), true);
+  assert.equal(api.documentSegmentLookupReady(normalized.segments[0], 0), false);
+  assert.equal(api.applyDocumentSegmentCompletion(0, 'BA117', '2027-03-14', {}), null);
+
+  const completed = plain(api.applyDocumentSegmentCompletion(0, 'BA117', '2027-03-14', {
+    flightNumber: true
+  }));
+  assert.equal(completed.flightNumber, 'BA117');
+  assert.equal(completed.flightNumberConfirmedByUser, true);
+  assert.equal(api.documentSegmentLookupReady(sandbox.documentSegments[0], 0), true);
+  assert.equal(sandbox.pendingDocument.reviewIssues.length, 0);
+
+  const completionFlow = sourceBetween(
+    '  function applyDocumentSegmentCompletion(index, flightNumber, departureDate, confirmations)',
+    '  function setDocumentExtractionState(result, assessment)');
+  assert.equal(completionFlow.includes('startFlightLookup('), false);
+  assert.equal(completionFlow.includes("postFlightJson('/api/journeys/resolve-flight'"), false);
 });
 
 test('busy state is temporary and never permanently disables an incomplete segment', () => {
@@ -354,6 +674,13 @@ test('an explicit query payload targets only the currently selected segment', ()
   assert.equal(payload.departureDate, '2026-09-05');
   assert.equal(payload.documentSegmentIndex, 2);
   assert.equal(payload.document.segments.length, 4);
+});
+
+test('normalizes ordinary and OCR Unicode flight-number separators generically', () => {
+  assert.equal(api.normalizeFlightNumber(' BA - 117 '), 'BA117');
+  assert.equal(api.normalizeFlightNumber('QF‑12'), 'QF12');
+  assert.equal(api.normalizeFlightNumber('G9–123'), 'G9123');
+  assert.equal(api.normalizeFlightNumber('AF−1668'), 'AF1668');
 });
 
 test('preserves an explicit valid date and rejects an impossible ISO date-time', () => {

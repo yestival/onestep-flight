@@ -1,10 +1,12 @@
 package com.selene.onestepflight.dto;
 
 import java.time.LocalDate;
+import java.text.Normalizer;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * One flight leg extracted from a travel document. The contract intentionally
@@ -45,9 +47,11 @@ public record DocumentFlightSegment(
 	}
 
 	private static final Set<String> ALLOWED_FIELDS = Set.of(
-			"flight_number", "departure_date", "departure_airport", "arrival_airport",
+			"flight_number", "airline_name", "departure_date", "departure_airport", "arrival_airport",
 			"scheduled_departure", "scheduled_arrival", "boarding_time", "terminal",
 			"departure_terminal", "arrival_terminal", "gate", "seat");
+	private static final Pattern FLIGHT_NUMBER_PATTERN = Pattern.compile(
+			"(?:[A-Z][A-Z0-9]|[0-9][A-Z]|[A-Z][A-Z0-9]{2}|[0-9][A-Z][A-Z0-9]|[0-9]{2}[A-Z])\\d{1,4}[A-Z]?");
 
 	/**
 	 * Source-compatible constructor for callers that predate month/day-only dates.
@@ -84,7 +88,8 @@ public record DocumentFlightSegment(
 				flightNumber == null ? FlightNumberConfidence.LOW : FlightNumberConfidence.MEDIUM);
 		requiresFlightNumberConfirmation = Boolean.TRUE.equals(requiresFlightNumberConfirmation);
 		flightNumberConfirmedByUser = Boolean.TRUE.equals(flightNumberConfirmedByUser);
-		if (flightNumber == null || flightNumberConfidence == FlightNumberConfidence.LOW) {
+		flightNumber = normalizeFlightNumber(flightNumber);
+		if (flightNumber == null) {
 			flightNumber = null;
 			flightNumberConfidence = FlightNumberConfidence.LOW;
 			requiresFlightNumberConfirmation = false;
@@ -93,7 +98,9 @@ public record DocumentFlightSegment(
 			requiresFlightNumberConfirmation = false;
 			flightNumberConfirmedByUser = false;
 		} else {
-			requiresFlightNumberConfirmation = !Boolean.TRUE.equals(flightNumberConfirmedByUser);
+			// Confidence is advisory. A single syntactically valid candidate is lookup
+			// eligible; only a structured unresolved multi-candidate issue can block.
+			requiresFlightNumberConfirmation = false;
 		}
 		dateSource = Objects.requireNonNullElse(dateSource, defaultDateSource(departureDate));
 		if (dateSource == DateSource.CONFLICT) {
@@ -135,5 +142,13 @@ public record DocumentFlightSegment(
 		} catch (RuntimeException exception) {
 			return null;
 		}
+	}
+
+	private static String normalizeFlightNumber(String value) {
+		if (value == null) return null;
+		String normalized = Normalizer.normalize(value, Normalizer.Form.NFKC)
+				.replaceAll("[\\p{Z}\\s\\-‐‑‒–—]", "")
+				.toUpperCase(java.util.Locale.ROOT);
+		return FLIGHT_NUMBER_PATTERN.matcher(normalized).matches() ? normalized : null;
 	}
 }

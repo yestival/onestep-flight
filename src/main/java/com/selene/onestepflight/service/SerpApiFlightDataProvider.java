@@ -9,12 +9,15 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +41,8 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 		FlightDateDiscoveryProvider {
 
 	private static final Duration CACHE_TTL = Duration.ofMinutes(5);
+	private static final Pattern EXPLICIT_FLIGHT_NUMBER = Pattern.compile(
+			"(?i)(?<![A-Z0-9])([A-Z0-9]{2,3})[\\s\\-‐‑‒–—−]*([0-9]{1,4}[A-Z]?)(?![A-Z0-9])");
 	private static final Logger LOGGER = LoggerFactory.getLogger(SerpApiFlightDataProvider.class);
 	private final Supplier<String> apiKeySupplier;
 	private final Map<String, CachedFlight> cache = new ConcurrentHashMap<>();
@@ -125,9 +130,10 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 		if (matchedDate != null) {
 			resolved = parseFlightResult(matchedDate, normalizedFlightNumber, departureDate, retrievedAt);
 		} else {
-			RouteHint routeHint = resolveFallbackRoute(flightResult, normalizedDepartureHint, normalizedArrivalHint);
+			RouteHint routeHint = resolveFallbackRoute(flightResult, normalizedFlightNumber,
+					normalizedDepartureHint, normalizedArrivalHint);
 			if (routeHint == null) {
-				throw new ExternalServiceUnavailableException("SERPAPI_MISSING_ROUTE_HINT");
+				throw new ExternalServiceUnavailableException("SERPAPI_ROUTE_INCOMPLETE");
 			}
 			JsonNode fallback = requestGoogleFlightsSchedule(apiKey, normalizedFlightNumber, departureDate,
 					routeHint.departureAirport(), routeHint.arrivalAirport());
@@ -278,7 +284,8 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 		}
 	}
 
-	private RouteHint resolveFallbackRoute(JsonNode flightResult, String departureHint, String arrivalHint) {
+	private RouteHint resolveFallbackRoute(JsonNode flightResult, String requestedFlightNumber,
+			String departureHint, String arrivalHint) {
 		String departure = normalizeAirport(departureHint);
 		String arrival = normalizeAirport(arrivalHint);
 
@@ -286,6 +293,7 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 		JsonNode dates = flightResult == null ? null : flightResult.path("dates");
 		if (dates != null && dates.isArray()) {
 			for (JsonNode date : dates) {
+				if (!identityOf(date, "flight_designator", requestedFlightNumber).verified()) continue;
 				JsonNode metadata = date.path("metadata");
 				String candidateDeparture = normalizeAirport(textOrNull(metadata, "origin"));
 				String candidateArrival = normalizeAirport(textOrNull(metadata, "destination"));
@@ -302,7 +310,7 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 					.filter(route -> routeHintScore(route, departure, arrival) == bestScore).toList();
 			return bestRoutes.size() == 1 ? bestRoutes.get(0) : null;
 		}
-		return departure != null && arrival != null ? new RouteHint(departure, arrival) : null;
+		return null;
 	}
 
 	private int routeHintScore(RouteHint route, String departureHint, String arrivalHint) {
@@ -352,6 +360,9 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 					!scheduleOnly, resolved.fromCache());
 		} catch (ExternalServiceNotConfiguredException exception) {
 			return ProviderFlightResult.failure(providerName(), "NOT_CONFIGURED", "SERPAPI_NOT_CONFIGURED", attemptedAt);
+		} catch (IdentityFailureException exception) {
+			return ProviderFlightResult.identityFailure(providerName(), exception.outcome(), exception.code(),
+					exception.actualFlightNumber(), exception.actualDepartureDate(), attemptedAt);
 		} catch (ExternalServiceUnavailableException exception) {
 			return ProviderFlightResult.failure(providerName(), outcomeFor(exception.code()), exception.code(), attemptedAt);
 		} catch (RuntimeException exception) {
@@ -361,6 +372,8 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 
 	private ResolvedSerpFlight parseFlightResult(JsonNode matchedDate, String requestedFlightNumber,
 			LocalDate requestedDate, Instant retrievedAt) {
+		FlightIdentity identity = identityOf(matchedDate, "flight_designator", requestedFlightNumber);
+		if (!identity.verified()) throw identityFailure(identity, parseDatePart(textOrNull(matchedDate, "date")));
 		JsonNode departure = matchedDate.path("departure_airport");
 		JsonNode arrival = matchedDate.path("arrival_airport");
 		OffsetDateTime scheduledDeparture = parseOffsetDateTime(textOrNull(departure, "scheduled_time"));
@@ -381,9 +394,13 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 		}
 
 		LocalDate matchedDepartureDate = parseDatePart(textOrNull(matchedDate, "date"));
+		if (!requestedDate.equals(matchedDepartureDate)) {
+			throw new IdentityFailureException(ProviderFlightResult.IDENTITY_MISMATCH,
+					"SERPAPI_DEPARTURE_DATE_MISMATCH", identity.actualFlightNumber(), matchedDepartureDate);
+		}
 		FlightResponse flight = new FlightResponse(
-				requestedFlightNumber,
-				matchedDepartureDate == null ? requestedDate : matchedDepartureDate,
+				identity.actualFlightNumber(),
+				matchedDepartureDate,
 				departureAirport,
 				firstNonBlank(textOrNull(departure, "city"), departureAirport),
 				arrivalAirport,
@@ -405,7 +422,7 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 				retrievedAt,
 				"SERPAPI_GOOGLE_FLIGHT_RESULT",
 				textOrNull(matchedDate, "source_url"),
-				textOrNull(matchedDate, "codeshare"),
+				identity.codeshares(),
 				true,
 				true,
 				false);
@@ -421,14 +438,24 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 		collectGoogleFlightSegments(root == null ? null : root.path("best_flights"), segments);
 		collectGoogleFlightSegments(root == null ? null : root.path("other_flights"), segments);
 		List<ScoredJsonCandidate> matches = new ArrayList<>();
+		FlightIdentity firstMissing = null;
+		FlightIdentity firstMismatch = null;
+		LocalDate firstMismatchDate = null;
 		for (JsonNode segment : segments) {
-			if (!normalizeFlight(requestedFlightNumber)
-					.equals(normalizeFlight(textOrNull(segment, "flight_number")))) continue;
+			FlightIdentity identity = identityOf(segment, "flight_number", requestedFlightNumber);
 			LocalDate candidateDate = parseDatePart(textOrNull(segment.path("departure_airport"), "time"));
-			if (candidateDate == null) continue;
-			long dateDistance = Math.abs(java.time.temporal.ChronoUnit.DAYS.between(requestedDate, candidateDate));
-			if (dateDistance > 1) continue;
-			int score = dateDistance == 0 ? 100 : 10;
+			if (identity.missing()) {
+				if (firstMissing == null) firstMissing = identity;
+				continue;
+			}
+			if (!identity.verified() || candidateDate == null || !requestedDate.equals(candidateDate)) {
+				if (firstMismatch == null) {
+					firstMismatch = identity;
+					firstMismatchDate = candidateDate;
+				}
+				continue;
+			}
+			int score = 100;
 			String candidateDeparture = textOrNull(segment.path("departure_airport"), "id");
 			String candidateArrival = textOrNull(segment.path("arrival_airport"), "id");
 			if (!isBlank(departureHint) && departureHint.equalsIgnoreCase(candidateDeparture)) score += 5;
@@ -439,9 +466,14 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 		}
 		if (matches.isEmpty()) {
 			String error = root == null ? null : textOrNull(root, "error");
-			String code = segments.isEmpty() && containsIgnoreCase(error, "no results")
-					? "SERPAPI_NO_RESULTS" : "SERPAPI_IDENTITY_MISMATCH";
-			throw new ExternalServiceUnavailableException(code);
+			if (segments.isEmpty() && containsIgnoreCase(error, "no results")) {
+				throw new ExternalServiceUnavailableException("SERPAPI_NO_RESULTS");
+			}
+			if (firstMissing != null) throw identityFailure(firstMissing, null);
+			if (firstMismatch != null) throw new IdentityFailureException(
+					ProviderFlightResult.IDENTITY_MISMATCH, "SERPAPI_IDENTITY_MISMATCH",
+					firstMismatch.actualFlightNumber(), firstMismatchDate);
+			throw new ExternalServiceUnavailableException("SERPAPI_NO_RESULTS");
 		}
 
 		int bestScore = matches.stream().mapToInt(ScoredJsonCandidate::score).max().orElseThrow();
@@ -455,6 +487,7 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 			throw new ExternalServiceUnavailableException("SERPAPI_IDENTITY_AMBIGUOUS");
 		}
 		JsonNode segment = bestMatches.get(0);
+		FlightIdentity identity = identityOf(segment, "flight_number", requestedFlightNumber);
 		JsonNode departure = segment.path("departure_airport");
 		JsonNode arrival = segment.path("arrival_airport");
 		LocalDate matchedDepartureDate = parseDatePart(textOrNull(departure, "time"));
@@ -464,8 +497,8 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 			throw new ExternalServiceUnavailableException("SERPAPI_ROUTE_INCOMPLETE");
 		}
 		FlightResponse flight = new FlightResponse(
-				requestedFlightNumber,
-				matchedDepartureDate == null ? requestedDate : matchedDepartureDate,
+				identity.actualFlightNumber(),
+				matchedDepartureDate,
 				selectedDeparture,
 				firstNonBlank(textOrNull(departure, "name"), selectedDeparture),
 				selectedArrival,
@@ -487,7 +520,7 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 				retrievedAt,
 				"SERPAPI_GOOGLE_FLIGHTS_SCHEDULE",
 				textOrNull(root == null ? null : root.path("search_metadata"), "google_flights_url"),
-				null,
+				identity.codeshares(),
 				false,
 				true,
 				false);
@@ -514,30 +547,49 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 	private JsonNode findDate(JsonNode flightResult, String requestedFlightNumber, LocalDate requestedDate,
 			String departureHint, String arrivalHint, String scheduledDepartureHint) {
 		JsonNode dates = flightResult.path("dates");
-		if (!dates.isArray()) return null;
+		if (!dates.isArray()) throw new ExternalServiceUnavailableException("SERPAPI_RESPONSE_INVALID");
+		if (dates.isEmpty()) throw new ExternalServiceUnavailableException("SERPAPI_NO_RESULTS");
 		List<ScoredJsonCandidate> matches = new ArrayList<>();
+		FlightIdentity firstMissing = null;
+		FlightIdentity firstMismatch = null;
+		LocalDate firstMismatchDate = null;
+		boolean verifiedIdentityExists = false;
 		for (JsonNode item : dates) {
-			String designator = firstNonBlank(textOrNull(item, "flight_designator"),
-					textOrNull(flightResult, "flight_designator"));
-			if (!isBlank(designator)
-					&& !normalizeFlight(requestedFlightNumber).equals(normalizeFlight(designator))) continue;
+			FlightIdentity identity = identityOf(item, "flight_designator", requestedFlightNumber);
 			LocalDate candidateDate = parseDatePart(textOrNull(item, "date"));
-			if (candidateDate == null) continue;
-			long dateDistance = Math.abs(java.time.temporal.ChronoUnit.DAYS.between(requestedDate, candidateDate));
-			if (dateDistance > 1) continue;
+			if (identity.missing()) {
+				if (firstMissing == null) firstMissing = identity;
+				continue;
+			}
+			if (!identity.verified()) {
+				if (firstMismatch == null) {
+					firstMismatch = identity;
+					firstMismatchDate = candidateDate;
+				}
+				continue;
+			}
+			verifiedIdentityExists = true;
+			if (candidateDate == null || !requestedDate.equals(candidateDate)) continue;
 			JsonNode metadata = item.path("metadata");
 			String candidateDeparture = firstNonBlank(textOrNull(item.path("departure_airport"), "id"),
 					textOrNull(metadata, "origin"));
 			String candidateArrival = firstNonBlank(textOrNull(item.path("arrival_airport"), "id"),
 					textOrNull(metadata, "destination"));
-			int score = dateDistance == 0 ? 100 : 10;
+			int score = 100;
 			if (!isBlank(departureHint) && departureHint.equalsIgnoreCase(candidateDeparture)) score += 5;
 			if (!isBlank(arrivalHint) && arrivalHint.equalsIgnoreCase(candidateArrival)) score += 5;
 			score += timeHintScore(parseOffsetDateTime(textOrNull(item.path("departure_airport"), "scheduled_time")),
 					scheduledDepartureHint);
 			matches.add(new ScoredJsonCandidate(item, score));
 		}
-		if (matches.isEmpty()) return null;
+		if (matches.isEmpty()) {
+			if (verifiedIdentityExists) return null;
+			if (firstMissing != null) throw identityFailure(firstMissing, null);
+			if (firstMismatch != null) throw new IdentityFailureException(
+					ProviderFlightResult.IDENTITY_MISMATCH, "SERPAPI_IDENTITY_MISMATCH",
+					firstMismatch.actualFlightNumber(), firstMismatchDate);
+			throw new ExternalServiceUnavailableException("SERPAPI_NO_RESULTS");
+		}
 		int bestScore = matches.stream().mapToInt(ScoredJsonCandidate::score).max().orElseThrow();
 		List<JsonNode> bestMatches = matches.stream().filter(candidate -> candidate.score() == bestScore)
 				.map(ScoredJsonCandidate::item).toList();
@@ -556,12 +608,9 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 		if (flightResult == null) return null;
 		JsonNode dates = flightResult.path("dates");
 		if (!dates.isArray()) return null;
-		String resultDesignator = textOrNull(flightResult, "flight_designator");
 		List<ScoredDateCandidate> matches = new ArrayList<>();
 		for (JsonNode item : dates) {
-			String designator = firstNonBlank(textOrNull(item, "flight_designator"), resultDesignator);
-			if (isBlank(designator)
-					|| !requestedFlightNumber.equals(normalizeFlight(designator))) continue;
+			if (!identityOf(item, "flight_designator", requestedFlightNumber).verified()) continue;
 			LocalDate candidateDate = parseDatePart(textOrNull(item, "date"));
 			if (candidateDate == null) continue;
 			JsonNode metadata = item.path("metadata");
@@ -719,7 +768,56 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 	}
 
 	private String normalizeFlight(String value) {
-		return value == null ? "" : value.replaceAll("[\\s-]", "").toUpperCase(Locale.ROOT);
+		return value == null ? "" : value.replaceAll("[\\s\\-‐‑‒–—−]", "").toUpperCase(Locale.ROOT);
+	}
+
+	private FlightIdentity identityOf(JsonNode candidate, String identityField, String requestedFlightNumber) {
+		String actual = normalizeFlight(textOrNull(candidate, identityField));
+		String codeshares = explicitCodeshares(candidate);
+		if (actual.isBlank()) return new FlightIdentity(null, codeshares, false, true);
+		String requested = normalizeFlight(requestedFlightNumber);
+		boolean verified = requested.equals(actual) || containsExplicitCodeshare(codeshares, requested);
+		return new FlightIdentity(actual, codeshares, verified, false);
+	}
+
+	private String explicitCodeshares(JsonNode candidate) {
+		if (candidate == null || !candidate.isObject()) return null;
+		LinkedHashSet<String> values = new LinkedHashSet<>();
+		for (String field : List.of("codeshare", "codeshares", "code_share", "code_shares")) {
+			collectExplicitFlightNumbers(candidate.path(field), values, 0);
+		}
+		return values.isEmpty() ? null : String.join(",", values);
+	}
+
+	private void collectExplicitFlightNumbers(JsonNode node, LinkedHashSet<String> output, int depth) {
+		if (node == null || node.isMissingNode() || node.isNull() || depth > 4) return;
+		if (node.isTextual()) {
+			Matcher matcher = EXPLICIT_FLIGHT_NUMBER.matcher(node.asText());
+			while (matcher.find()) output.add(normalizeFlight(matcher.group(1) + matcher.group(2)));
+			return;
+		}
+		if (node.isArray()) {
+			for (JsonNode item : node) collectExplicitFlightNumbers(item, output, depth + 1);
+			return;
+		}
+		if (node.isObject()) {
+			node.properties().forEach(entry -> collectExplicitFlightNumbers(entry.getValue(), output, depth + 1));
+		}
+	}
+
+	private boolean containsExplicitCodeshare(String codeshares, String requestedFlightNumber) {
+		if (codeshares == null || requestedFlightNumber == null) return false;
+		for (String codeshare : codeshares.split(",")) {
+			if (requestedFlightNumber.equals(normalizeFlight(codeshare))) return true;
+		}
+		return false;
+	}
+
+	private IdentityFailureException identityFailure(FlightIdentity identity, LocalDate actualDepartureDate) {
+		return new IdentityFailureException(
+				identity.missing() ? ProviderFlightResult.IDENTITY_UNVERIFIED : ProviderFlightResult.IDENTITY_MISMATCH,
+				identity.missing() ? "SERPAPI_IDENTITY_UNVERIFIED" : "SERPAPI_IDENTITY_MISMATCH",
+				identity.actualFlightNumber(), actualDepartureDate);
 	}
 
 	private String nullToEmpty(String value) {
@@ -735,17 +833,15 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 	}
 
 	private String outcomeFor(String code) {
-		if (code.endsWith("_401") || code.contains("AUTHENTICATION_FAILED")) return "AUTHENTICATION_FAILED";
-		if (code.endsWith("_403") || code.contains("QUOTA_EXCEEDED")) return "FORBIDDEN_OR_QUOTA";
-		if (code.contains("NO_RESULTS") || code.contains("IDENTITY_MISMATCH")) {
-			return "NOT_FOUND";
+		if (code.endsWith("_401") || code.contains("AUTHENTICATION_FAILED")) return ProviderFlightResult.AUTH_ERROR;
+		if (code.endsWith("_403") || code.contains("QUOTA_EXCEEDED") || code.endsWith("_429")) {
+			return ProviderFlightResult.RATE_LIMITED;
 		}
-		if (code.endsWith("_429")) return "RATE_LIMITED";
-		if (code.contains("TIMEOUT")) return "TIMEOUT";
-		if (code.contains("MISSING_ROUTE_HINT")) return "MISSING_ROUTE_HINT";
-		if (code.contains("INVALID_PROVIDER_REQUEST")) return "INVALID_REQUEST";
+		if (code.contains("NO_RESULTS")) return ProviderFlightResult.NOT_FOUND;
+		if (code.contains("TIMEOUT")) return ProviderFlightResult.TIMEOUT;
 		return code.contains("PARSE") || code.contains("ROUTE_INCOMPLETE")
-				? "PARSE_ERROR" : "UPSTREAM_ERROR";
+				|| code.contains("RESPONSE_INVALID") || code.contains("IDENTITY_AMBIGUOUS")
+				? ProviderFlightResult.PARSE_ERROR : ProviderFlightResult.UPSTREAM_ERROR;
 	}
 
 	private boolean containsAny(String value, String... candidates) {
@@ -766,5 +862,27 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 	}
 
 	private record ScoredDateCandidate(LocalDate date, int score) {
+	}
+
+	private record FlightIdentity(String actualFlightNumber, String codeshares,
+			boolean verified, boolean missing) {
+	}
+
+	private static final class IdentityFailureException extends ExternalServiceUnavailableException {
+		private final String outcome;
+		private final String actualFlightNumber;
+		private final LocalDate actualDepartureDate;
+
+		private IdentityFailureException(String outcome, String code, String actualFlightNumber,
+				LocalDate actualDepartureDate) {
+			super(code);
+			this.outcome = outcome;
+			this.actualFlightNumber = actualFlightNumber;
+			this.actualDepartureDate = actualDepartureDate;
+		}
+
+		private String outcome() { return outcome; }
+		private String actualFlightNumber() { return actualFlightNumber; }
+		private LocalDate actualDepartureDate() { return actualDepartureDate; }
 	}
 }

@@ -1,6 +1,7 @@
 package com.selene.onestepflight.service;
 
 import java.time.LocalDate;
+import java.text.Normalizer;
 import java.util.Locale;
 
 import org.springframework.stereotype.Service;
@@ -42,7 +43,8 @@ public class FlightService {
 			throw new InvalidFlightNumberException();
 		}
 
-		String normalized = flightNumber.replaceAll("[\\s-]", "").toUpperCase(Locale.ROOT);
+		String normalized = Normalizer.normalize(flightNumber, Normalizer.Form.NFKC)
+				.replaceAll("[\\p{Z}\\s\\-‐‑‒–—]", "").toUpperCase(Locale.ROOT);
 		if (!normalized.matches("[A-Z0-9]{2,3}[0-9]{1,4}[A-Z]?")) {
 			throw new InvalidFlightNumberException();
 		}

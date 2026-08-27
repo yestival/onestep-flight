@@ -144,29 +144,53 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 		if (records == null || !records.isArray()) {
 			return ProviderFlightResult.failure(providerName(), "PARSE_ERROR", "AERODATABOX_RESPONSE_NOT_ARRAY", retrievedAt);
 		}
+		if (records.isEmpty()) {
+			return ProviderFlightResult.failure(providerName(), ProviderFlightResult.NOT_FOUND,
+					"AERODATABOX_FLIGHT_NOT_FOUND", retrievedAt);
+		}
 
 		List<ScoredCandidate> matches = new ArrayList<>();
+		String firstMismatchNumber = null;
+		LocalDate firstMismatchDate = null;
+		boolean missingIdentity = false;
 		Iterator<JsonNode> iterator = records.iterator();
 		while (iterator.hasNext()) {
 			JsonNode candidate = iterator.next();
 			String number = normalizeFlight(text(candidate, "number"));
 			JsonNode departure = candidate.path("departure");
 			JsonNode arrival = candidate.path("arrival");
-			OffsetDateTime scheduled = readTime(departure, "scheduledTime");
+			OffsetDateTime scheduled = parseOffsetDateTime(text(departure.path("scheduledTime"), "local"));
+			LocalDate candidateDate = scheduled == null ? null : scheduled.toLocalDate();
 			String dep = airportCode(departure);
 			String arr = airportCode(arrival);
-			if (!normalizeFlight(requestedNumber).equals(number)) continue;
-			if (scheduled == null) continue;
-			long dateDistance = Math.abs(ChronoUnit.DAYS.between(requestedDate, scheduled.toLocalDate()));
-			if (dateDistance > 1) continue;
-			int score = dateDistance == 0 ? 100 : 10;
+			if (number.isBlank() || candidateDate == null) {
+				missingIdentity = true;
+				continue;
+			}
+			if (!normalizeFlight(requestedNumber).equals(number) || !requestedDate.equals(candidateDate)) {
+				if (firstMismatchNumber == null) {
+					firstMismatchNumber = number;
+					firstMismatchDate = candidateDate;
+				}
+				continue;
+			}
+			int score = 100;
 			if (!isBlank(departureHint) && departureHint.equalsIgnoreCase(dep)) score += 5;
 			if (!isBlank(arrivalHint) && arrivalHint.equalsIgnoreCase(arr)) score += 5;
 			score += timeHintScore(scheduled, scheduledDepartureHint);
 			matches.add(new ScoredCandidate(candidate, score));
 		}
 		if (matches.isEmpty()) {
-			return ProviderFlightResult.failure(providerName(), "NOT_FOUND", "AERODATABOX_FLIGHT_NOT_FOUND", retrievedAt);
+			if (firstMismatchNumber != null) {
+				return ProviderFlightResult.identityFailure(providerName(), ProviderFlightResult.IDENTITY_MISMATCH,
+						"AERODATABOX_IDENTITY_MISMATCH", firstMismatchNumber, firstMismatchDate, retrievedAt);
+			}
+			if (missingIdentity) {
+				return ProviderFlightResult.identityFailure(providerName(), ProviderFlightResult.IDENTITY_UNVERIFIED,
+						"AERODATABOX_IDENTITY_UNVERIFIED", null, null, retrievedAt);
+			}
+			return ProviderFlightResult.failure(providerName(), ProviderFlightResult.NOT_FOUND,
+					"AERODATABOX_FLIGHT_NOT_FOUND", retrievedAt);
 		}
 		int bestScore = matches.stream().mapToInt(ScoredCandidate::score).max().orElseThrow();
 		List<JsonNode> bestMatches = matches.stream().filter(candidate -> candidate.score() == bestScore)
@@ -225,11 +249,10 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 					classification.errorCode(), attemptedAt);
 		}
 		String outcome = switch (status) {
-			case 401 -> "AUTHENTICATION_FAILED";
-			case 403 -> "FORBIDDEN_OR_QUOTA";
-			case 404 -> "NOT_FOUND";
-			case 429 -> "RATE_LIMITED";
-			default -> "UPSTREAM_ERROR";
+			case 401 -> ProviderFlightResult.AUTH_ERROR;
+			case 403, 429 -> ProviderFlightResult.RATE_LIMITED;
+			case 404 -> ProviderFlightResult.NOT_FOUND;
+			default -> ProviderFlightResult.UPSTREAM_ERROR;
 		};
 		return ProviderFlightResult.failure(providerName(), outcome, "AERODATABOX_HTTP_" + status, attemptedAt);
 	}
@@ -240,23 +263,23 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 
 		if (containsAny(errorText, "subscription", "pricing plan", "current plan", "plan does not",
 				"tier", "not entitled", "not available for your plan", "provider restriction")) {
-			return new BadRequestClassification("FORBIDDEN_OR_QUOTA", "PLAN_OR_PROVIDER_RESTRICTION");
+			return new BadRequestClassification(ProviderFlightResult.RATE_LIMITED, "PLAN_OR_PROVIDER_RESTRICTION");
 		}
 		if (containsAny(errorText, "outside the data coverage", "outside data coverage", "out of coverage",
 				"outside the supported date", "date range limit", "maximum date range", "history limit")) {
-			return new BadRequestClassification("INVALID_REQUEST", "DATE_OUT_OF_COVERAGE");
+			return new BadRequestClassification(ProviderFlightResult.UPSTREAM_ERROR, "DATE_OUT_OF_COVERAGE");
 		}
 		if (containsAny(errorText, "invalid flight number", "malformed flight number",
 				"flight number format", "invalid searchparam", "invalid search param")) {
-			return new BadRequestClassification("INVALID_REQUEST", "INVALID_FLIGHT_NUMBER");
+			return new BadRequestClassification(ProviderFlightResult.UPSTREAM_ERROR, "AERODATABOX_INVALID_PROVIDER_FLIGHT_NUMBER");
 		}
 		if (errorText.contains("date") && containsAny(errorText, "invalid", "malformed", "format",
 				"must be", "datefromlocal", "datetolocal")) {
-			return new BadRequestClassification("INVALID_REQUEST", "INVALID_REQUEST_DATE");
+			return new BadRequestClassification(ProviderFlightResult.UPSTREAM_ERROR, "AERODATABOX_INVALID_PROVIDER_DATE");
 		}
 		if (containsAny(errorText, "missing required", "required parameter", "invalid parameter",
 				"invalid query", "bad request", "request validation")) {
-			return new BadRequestClassification("INVALID_REQUEST", "INVALID_PROVIDER_REQUEST");
+			return new BadRequestClassification(ProviderFlightResult.UPSTREAM_ERROR, "AERODATABOX_INVALID_PROVIDER_REQUEST");
 		}
 		return unknownBadRequest();
 	}
@@ -419,7 +442,7 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 	}
 
 	private String normalizeFlight(String value) {
-		return isBlank(value) ? "" : value.replaceAll("[\\s-]", "").toUpperCase(Locale.ROOT);
+		return isBlank(value) ? "" : value.replaceAll("[\\s\\-‐‑‒–—−]", "").toUpperCase(Locale.ROOT);
 	}
 
 	private String text(JsonNode node, String field) {

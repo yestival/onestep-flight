@@ -78,7 +78,7 @@ class AeroDataBoxFlightDataProviderTest {
 	}
 
 	@Test
-	void keepsTheProviderDateWhenOnlyAnAdjacentDayCandidateExists() {
+	void rejectsAnAdjacentDepartureDateAndPreservesTheProviderIdentity() {
 		Fixture fixture = fixture();
 		fixture.server().expect(request -> { }).andRespond(withSuccess("""
 				[{"number":"BA117",
@@ -88,9 +88,43 @@ class AeroDataBoxFlightDataProviderTest {
 
 		ProviderFlightResult result = fixture.provider().findFlight("BA117", DATE, "LHR", "JFK", false);
 
-		assertThat(result.successful()).isTrue();
+		assertThat(result.outcome()).isEqualTo("IDENTITY_MISMATCH");
+		assertThat(result.flightNumber()).isEqualTo("BA117");
 		assertThat(result.departureDate()).isEqualTo(DATE.minusDays(1));
 		fixture.server().verify();
+	}
+
+	@Test
+	void emptyDeparturesAreNotFound() {
+		Fixture fixture = fixture();
+		fixture.server().expect(request -> { }).andRespond(withSuccess(
+				"{\"departures\":[]}", MediaType.APPLICATION_JSON));
+
+		ProviderFlightResult result = fixture.provider().findFlight("BA117", DATE, null, null, false);
+
+		assertThat(result.outcome()).isEqualTo("NOT_FOUND");
+		fixture.server().verify();
+	}
+
+	@Test
+	void missingAndDifferentFlightNumbersHaveDistinctIdentityOutcomes() {
+		Fixture missing = fixture();
+		missing.server().expect(request -> { }).andRespond(withSuccess("""
+				[{"departure":{"scheduledTime":{"local":"2026-08-25T10:00:00+01:00"}}}]
+				""", MediaType.APPLICATION_JSON));
+		assertThat(missing.provider().findFlight("BA117", DATE, null, null, false).outcome())
+				.isEqualTo("IDENTITY_UNVERIFIED");
+		missing.server().verify();
+
+		Fixture different = fixture();
+		different.server().expect(request -> { }).andRespond(withSuccess("""
+				[{"number":"AF117","departure":{"scheduledTime":{"local":"2026-08-25T10:00:00+01:00"}}}]
+				""", MediaType.APPLICATION_JSON));
+		ProviderFlightResult mismatch = different.provider().findFlight("BA117", DATE, null, null, false);
+		assertThat(mismatch.outcome()).isEqualTo("IDENTITY_MISMATCH");
+		assertThat(mismatch.flightNumber()).isEqualTo("AF117");
+		assertThat(mismatch.departureDate()).isEqualTo(DATE);
+		different.server().verify();
 	}
 
 	@Test
@@ -129,15 +163,15 @@ class AeroDataBoxFlightDataProviderTest {
 	static Stream<Arguments> badRequests() {
 		return Stream.of(
 				Arguments.of("{\"message\":\"Invalid flight number format\"}",
-						"INVALID_REQUEST", "INVALID_FLIGHT_NUMBER"),
+						"UPSTREAM_ERROR", "AERODATABOX_INVALID_PROVIDER_FLIGHT_NUMBER"),
 				Arguments.of("{\"error\":{\"detail\":\"date must be formatted as YYYY-MM-DD\"}}",
-						"INVALID_REQUEST", "INVALID_REQUEST_DATE"),
+						"UPSTREAM_ERROR", "AERODATABOX_INVALID_PROVIDER_DATE"),
 				Arguments.of("{\"detail\":\"Date is outside the data coverage\"}",
-						"INVALID_REQUEST", "DATE_OUT_OF_COVERAGE"),
+						"UPSTREAM_ERROR", "DATE_OUT_OF_COVERAGE"),
 				Arguments.of("{\"error\":\"This endpoint is not available for your current plan\"}",
-						"FORBIDDEN_OR_QUOTA", "PLAN_OR_PROVIDER_RESTRICTION"),
+						"RATE_LIMITED", "PLAN_OR_PROVIDER_RESTRICTION"),
 				Arguments.of("{\"message\":\"Missing required parameter searchBy\"}",
-						"INVALID_REQUEST", "INVALID_PROVIDER_REQUEST"),
+						"UPSTREAM_ERROR", "AERODATABOX_INVALID_PROVIDER_REQUEST"),
 				Arguments.of("{\"message\":\"Rejected value BA117 for account 123\",\"account\":\"private\"}",
 						"UPSTREAM_ERROR", "AERODATABOX_HTTP_400"),
 				Arguments.of("not-json", "UPSTREAM_ERROR", "AERODATABOX_HTTP_400"));
@@ -145,8 +179,8 @@ class AeroDataBoxFlightDataProviderTest {
 
 	@ParameterizedTest
 	@CsvSource({
-			"401, AUTHENTICATION_FAILED, AERODATABOX_HTTP_401",
-			"403, FORBIDDEN_OR_QUOTA, AERODATABOX_HTTP_403",
+			"401, AUTH_ERROR, AERODATABOX_HTTP_401",
+			"403, RATE_LIMITED, AERODATABOX_HTTP_403",
 			"429, RATE_LIMITED, AERODATABOX_HTTP_429",
 			"500, UPSTREAM_ERROR, AERODATABOX_HTTP_500",
 			"503, UPSTREAM_ERROR, AERODATABOX_HTTP_503"

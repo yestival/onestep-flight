@@ -24,10 +24,29 @@ public class RestExceptionHandler {
 	@ExceptionHandler(AllFlightProvidersUnavailableException.class)
 	public ResponseEntity<ProviderAggregateError> handleAllProvidersUnavailable(
 			AllFlightProvidersUnavailableException exception) {
-		return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(new ProviderAggregateError(
-				"ALL_LIVE_FLIGHT_PROVIDERS_FAILED",
-				"暂时没有更新到实时航班状态。请稍后重试。",
-				"Live flight status is not available right now. Please try again later.",
+		String code = exception.code();
+		HttpStatus status = switch (code) {
+			case "FLIGHT_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+			case "LIVE_FLIGHT_TIMEOUT" -> HttpStatus.GATEWAY_TIMEOUT;
+			case "LIVE_FLIGHT_RATE_LIMITED" -> HttpStatus.TOO_MANY_REQUESTS;
+			default -> HttpStatus.BAD_GATEWAY;
+		};
+		String messageZh = switch (code) {
+			case "FLIGHT_NOT_FOUND" -> "没有查到这个航班。请检查航空公司代码、航班号和出发日期；如果信息来自上传文件，也可能是文件识别有误。";
+			case "LIVE_FLIGHT_TIMEOUT" -> "实时航班查询服务超时，无法据此判断该航班是否存在。请稍后重试。";
+			case "LIVE_FLIGHT_AUTH_ERROR" -> "实时航班数据源认证失败，当前无法确认该航班是否存在。请稍后重试。";
+			case "LIVE_FLIGHT_RATE_LIMITED" -> "实时航班数据源暂时达到查询限制，当前无法确认该航班是否存在。请稍后重试。";
+			default -> "当前无法确认该航班是否存在。请稍后重试。";
+		};
+		String messageEn = switch (code) {
+			case "FLIGHT_NOT_FOUND" -> "No flight was found. Check the airline code, flight number, and departure date; information from an uploaded file may also have been recognized incorrectly.";
+			case "LIVE_FLIGHT_TIMEOUT" -> "The live-flight lookup timed out. This does not show that the flight does not exist. Please try again later.";
+			case "LIVE_FLIGHT_AUTH_ERROR" -> "Live-flight provider authentication failed, so the flight cannot be verified right now. Please try again later.";
+			case "LIVE_FLIGHT_RATE_LIMITED" -> "Live-flight providers are temporarily rate-limited, so the flight cannot be verified right now. Please try again later.";
+			default -> "The flight cannot be verified right now. Please try again later.";
+		};
+		return ResponseEntity.status(status).body(new ProviderAggregateError(
+				code, messageZh, messageEn,
 				exception.providerResults(), Instant.now()));
 	}
 
@@ -44,8 +63,8 @@ public class RestExceptionHandler {
 	public ResponseEntity<ApiError> handleFlightNotFound() {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError(
 				"FLIGHT_NOT_FOUND",
-				"暂时找不到这个航班。当前演示仅支持 BA 117。",
-				"This flight is not available. The current demo supports BA 117 only.",
+				"没有查到这个航班。请检查航空公司代码、航班号和出发日期；如果信息来自上传文件，也可能是文件识别有误。",
+				"No flight was found. Check the airline code, flight number, and departure date; information from an uploaded file may also have been recognized incorrectly.",
 				Instant.now()));
 	}
 

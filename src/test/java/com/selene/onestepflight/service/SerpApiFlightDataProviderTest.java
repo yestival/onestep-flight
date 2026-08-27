@@ -48,6 +48,7 @@ class SerpApiFlightDataProviderTest {
 				  "flight_result":{
 				    "flight_designator":"BA 117",
 				    "dates":[{
+				      "flight_designator":"BA 117",
 				      "date":"2026-08-25",
 				      "metadata":{"origin":"CDG","destination":"XMN","status":"SCHEDULED_STATUS"},
 				      "departure_airport":{"id":"CDG","city":"Paris","scheduled_time":"2026-08-25T10:00:00+02:00"},
@@ -66,7 +67,7 @@ class SerpApiFlightDataProviderTest {
 	}
 
 	@Test
-	void acceptsAnAdjacentProviderDateWithoutRequiringAnOptionalDesignatorField() {
+	void missingCandidateFlightDesignatorIsIdentityUnverified() {
 		Fixture fixture = fixture();
 		fixture.server().expect(request -> { }).andRespond(withSuccess("""
 				{"search_metadata":{"status":"Success"},"flight_result":{"dates":[{
@@ -78,8 +79,51 @@ class SerpApiFlightDataProviderTest {
 
 		ProviderFlightResult result = fixture.provider().findFlight("BA117", DATE, null, null, false);
 
-		assertThat(result.successful()).isTrue();
-		assertThat(result.departureDate()).isEqualTo(DATE.plusDays(1));
+		assertThat(result.outcome()).isEqualTo("IDENTITY_UNVERIFIED");
+		assertThat(result.errorCode()).isEqualTo("SERPAPI_IDENTITY_UNVERIFIED");
+		fixture.server().verify();
+	}
+
+	@Test
+	void differentFlightNumberWithTheSameDigitsIsIdentityMismatch() {
+		Fixture fixture = fixture();
+		fixture.server().expect(request -> { }).andRespond(withSuccess("""
+				{"search_metadata":{"status":"Success"},"flight_result":{"dates":[{
+				  "flight_designator":"AF117","date":"2026-08-25",
+				  "metadata":{"origin":"LHR","destination":"JFK"}
+				}]}}
+				""", MediaType.APPLICATION_JSON));
+
+		ProviderFlightResult result = fixture.provider().findFlight("BA117", DATE, null, null, false);
+
+		assertThat(result.outcome()).isEqualTo("IDENTITY_MISMATCH");
+		assertThat(result.flightNumber()).isEqualTo("AF117");
+		assertThat(result.departureDate()).isEqualTo(DATE);
+		fixture.server().verify();
+	}
+
+	@ParameterizedTest
+	@CsvSource({"2026-08-24", "2026-08-26"})
+	void adjacentDatesCannotPassEitherFlightResultOrScheduleFallback(String adjacentDate) {
+		Fixture fixture = fixture();
+		fixture.server().expect(request -> { }).andRespond(withSuccess("""
+				{"search_metadata":{"status":"Success"},"flight_result":{"dates":[{
+				  "flight_designator":"BA117","date":"%s",
+				  "metadata":{"origin":"LHR","destination":"JFK"}
+				}]}}
+				""".formatted(adjacentDate), MediaType.APPLICATION_JSON));
+		fixture.server().expect(request -> { }).andRespond(withSuccess("""
+				{"search_metadata":{"status":"Success"},"selected_flights":[{"flights":[{
+				  "flight_number":"BA117",
+				  "departure_airport":{"id":"LHR","time":"%s 10:00"},
+				  "arrival_airport":{"id":"JFK","time":"%s 13:00"}
+				}]}]}
+				""".formatted(adjacentDate, adjacentDate), MediaType.APPLICATION_JSON));
+
+		ProviderFlightResult result = fixture.provider().findFlight("BA117", DATE, null, null, false);
+
+		assertThat(result.outcome()).isEqualTo("IDENTITY_MISMATCH");
+		assertThat(result.departureDate()).isEqualTo(LocalDate.parse(adjacentDate));
 		fixture.server().verify();
 	}
 
@@ -88,8 +132,8 @@ class SerpApiFlightDataProviderTest {
 		Fixture fixture = fixture();
 		fixture.server().expect(request -> { }).andRespond(withSuccess("""
 				{"search_metadata":{"status":"Success"},"flight_result":{"flight_designator":"BA117","dates":[
-				 {"date":"2026-08-25","metadata":{"origin":"LHR","destination":"JFK"},"departure_airport":{"id":"LHR","scheduled_time":"2026-08-25T09:00:00+01:00"},"arrival_airport":{"id":"JFK","scheduled_time":"2026-08-25T12:00:00-04:00"}},
-				 {"date":"2026-08-25","metadata":{"origin":"LHR","destination":"JFK"},"departure_airport":{"id":"LHR","scheduled_time":"2026-08-25T18:00:00+01:00"},"arrival_airport":{"id":"JFK","scheduled_time":"2026-08-25T21:00:00-04:00"}}
+					 {"flight_designator":"BA117","date":"2026-08-25","metadata":{"origin":"LHR","destination":"JFK"},"departure_airport":{"id":"LHR","scheduled_time":"2026-08-25T09:00:00+01:00"},"arrival_airport":{"id":"JFK","scheduled_time":"2026-08-25T12:00:00-04:00"}},
+					 {"flight_designator":"BA117","date":"2026-08-25","metadata":{"origin":"LHR","destination":"JFK"},"departure_airport":{"id":"LHR","scheduled_time":"2026-08-25T18:00:00+01:00"},"arrival_airport":{"id":"JFK","scheduled_time":"2026-08-25T21:00:00-04:00"}}
 				]}}
 				""", MediaType.APPLICATION_JSON));
 
@@ -112,8 +156,8 @@ class SerpApiFlightDataProviderTest {
 				  "flight_result":{
 				    "flight_designator":"BA117",
 				    "dates":[
-				      {"date":"2026-08-20","metadata":{"origin":"LHR","destination":"JFK"}},
-				      {"date":"2026-08-21","metadata":{"origin":"LHR","destination":"JFK"}}
+				      {"flight_designator":"BA117","date":"2026-08-20","metadata":{"origin":"LHR","destination":"JFK"}},
+				      {"flight_designator":"BA117","date":"2026-08-21","metadata":{"origin":"LHR","destination":"JFK"}}
 				    ]
 				  }
 				}
@@ -150,7 +194,7 @@ class SerpApiFlightDataProviderTest {
 	}
 
 	@Test
-	void reportsMissingRouteHintAsRecoverableOutcome() {
+	void emptyFlightResultDatesAreNotFound() {
 		Fixture fixture = fixture();
 		fixture.server().expect(request -> { }).andRespond(withSuccess("""
 				{"search_metadata":{"status":"Success"},
@@ -159,8 +203,8 @@ class SerpApiFlightDataProviderTest {
 
 		ProviderFlightResult result = fixture.provider().findFlight("BA117", DATE, null, null, false);
 
-		assertThat(result.outcome()).isEqualTo("MISSING_ROUTE_HINT");
-		assertThat(result.errorCode()).isEqualTo("SERPAPI_MISSING_ROUTE_HINT");
+		assertThat(result.outcome()).isEqualTo("NOT_FOUND");
+		assertThat(result.errorCode()).isEqualTo("SERPAPI_NO_RESULTS");
 		fixture.server().verify();
 	}
 
@@ -173,9 +217,9 @@ class SerpApiFlightDataProviderTest {
 			assertThat(decoded(query.getFirst("q"))).isEqualTo("Flight BA117");
 		}).andRespond(withSuccess("""
 				{"search_metadata":{"status":"Success"},"flight_result":{"flight_designator":"BA117","dates":[
-				 {"date":"2026-08-25","metadata":{"origin":"LHR","destination":"JFK"},"departure_airport":{"id":"LHR","scheduled_time":"2026-08-25T10:00:00+01:00"}},
-				 {"date":"2026-08-26","metadata":{"origin":"LHR","destination":"JFK"},"departure_airport":{"id":"LHR","scheduled_time":"2026-08-26T18:00:00+01:00"}},
-				 {"date":"2026-08-27","metadata":{"origin":"CDG","destination":"JFK"},"departure_airport":{"id":"CDG","scheduled_time":"2026-08-27T18:00:00+02:00"}}
+					 {"flight_designator":"BA117","date":"2026-08-25","metadata":{"origin":"LHR","destination":"JFK"},"departure_airport":{"id":"LHR","scheduled_time":"2026-08-25T10:00:00+01:00"}},
+					 {"flight_designator":"BA117","date":"2026-08-26","metadata":{"origin":"LHR","destination":"JFK"},"departure_airport":{"id":"LHR","scheduled_time":"2026-08-26T18:00:00+01:00"}},
+					 {"flight_designator":"BA117","date":"2026-08-27","metadata":{"origin":"CDG","destination":"JFK"},"departure_airport":{"id":"CDG","scheduled_time":"2026-08-27T18:00:00+02:00"}}
 				]}}
 				""", MediaType.APPLICATION_JSON));
 
@@ -190,8 +234,8 @@ class SerpApiFlightDataProviderTest {
 		Fixture fixture = fixture();
 		fixture.server().expect(request -> { }).andRespond(withSuccess("""
 				{"search_metadata":{"status":"Success"},"flight_result":{"flight_designator":"BA117","dates":[
-				 {"date":"2026-08-25","metadata":{"origin":"LHR","destination":"JFK"},"departure_airport":{"id":"LHR","scheduled_time":"2026-08-25T18:00:00+01:00"}},
-				 {"date":"2026-08-26","metadata":{"origin":"LHR","destination":"JFK"},"departure_airport":{"id":"LHR","scheduled_time":"2026-08-26T18:00:00+01:00"}}
+					 {"flight_designator":"BA117","date":"2026-08-25","metadata":{"origin":"LHR","destination":"JFK"},"departure_airport":{"id":"LHR","scheduled_time":"2026-08-25T18:00:00+01:00"}},
+					 {"flight_designator":"BA117","date":"2026-08-26","metadata":{"origin":"LHR","destination":"JFK"},"departure_airport":{"id":"LHR","scheduled_time":"2026-08-26T18:00:00+01:00"}}
 				]}}
 				""", MediaType.APPLICATION_JSON));
 
@@ -232,11 +276,11 @@ class SerpApiFlightDataProviderTest {
 	static Stream<Arguments> embeddedErrors() {
 		return Stream.of(
 				Arguments.of("{\"search_metadata\":{\"status\":\"Error\"},\"error\":{\"message\":\"Missing required parameter q\"}}",
-						"INVALID_REQUEST", "SERPAPI_INVALID_PROVIDER_REQUEST"),
+						"UPSTREAM_ERROR", "SERPAPI_INVALID_PROVIDER_REQUEST"),
 				Arguments.of("{\"search_metadata\":{\"status\":\"Error\"},\"error\":\"Invalid API key\"}",
-						"AUTHENTICATION_FAILED", "SERPAPI_AUTHENTICATION_FAILED"),
+						"AUTH_ERROR", "SERPAPI_AUTHENTICATION_FAILED"),
 				Arguments.of("{\"search_metadata\":{\"status\":\"Error\"},\"error\":\"Account has run out of searches\"}",
-						"FORBIDDEN_OR_QUOTA", "SERPAPI_QUOTA_EXCEEDED"),
+						"RATE_LIMITED", "SERPAPI_QUOTA_EXCEEDED"),
 				Arguments.of("{\"search_metadata\":{\"status\":\"Error\"},\"error\":\"No results found\"}",
 						"NOT_FOUND", "SERPAPI_NO_RESULTS"),
 				Arguments.of("{\"search_metadata\":{\"status\":\"Error\"}}",
@@ -260,9 +304,9 @@ class SerpApiFlightDataProviderTest {
 	static Stream<Arguments> badRequests() {
 		return Stream.of(
 				Arguments.of("{\"error\":\"Missing required parameter departure_id\"}",
-						"INVALID_REQUEST", "SERPAPI_INVALID_PROVIDER_REQUEST"),
+						"UPSTREAM_ERROR", "SERPAPI_INVALID_PROVIDER_REQUEST"),
 				Arguments.of("{\"error\":\"Invalid API key\"}",
-						"AUTHENTICATION_FAILED", "SERPAPI_AUTHENTICATION_FAILED"),
+						"AUTH_ERROR", "SERPAPI_AUTHENTICATION_FAILED"),
 				Arguments.of("{\"detail\":\"Private request 123 was rejected\"}",
 						"UPSTREAM_ERROR", "SERPAPI_HTTP_400"),
 				Arguments.of("not-json", "UPSTREAM_ERROR", "SERPAPI_HTTP_400"));
@@ -270,8 +314,8 @@ class SerpApiFlightDataProviderTest {
 
 	@ParameterizedTest
 	@CsvSource({
-			"401, AUTHENTICATION_FAILED, SERPAPI_HTTP_401",
-			"403, FORBIDDEN_OR_QUOTA, SERPAPI_HTTP_403",
+			"401, AUTH_ERROR, SERPAPI_HTTP_401",
+			"403, RATE_LIMITED, SERPAPI_HTTP_403",
 			"404, UPSTREAM_ERROR, SERPAPI_HTTP_404",
 			"429, RATE_LIMITED, SERPAPI_HTTP_429",
 			"500, UPSTREAM_ERROR, SERPAPI_HTTP_500",

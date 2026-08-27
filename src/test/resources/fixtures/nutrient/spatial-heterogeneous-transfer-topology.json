@@ -1,0 +1,104 @@
+{
+  "result": {
+    "documents": [
+      {
+        "entityType": "page",
+        "pageNumber": 1,
+        "contentBlocks": [
+          {
+            "kind": "heading",
+            "plainText": "Aug 4",
+            "rect": {"left": 20, "top": 20, "right": 100, "bottom": 40},
+            "score": 0.99
+          },
+          {
+            "type": "token",
+            "rawText": "LHR",
+            "bbox": [100, 100, 45, 20],
+            "confidence": {"score": 0.94}
+          },
+          {
+            "entityType": "line",
+            "content": {"value": "14:10"},
+            "boundingBox": {"x": 20, "y": 110, "width": 55, "height": 20}
+          },
+          {
+            "type": "token",
+            "text": "BA - 269",
+            "plainText": "BA - 269",
+            "bounds": {"x": 240, "y": 150, "width": 80, "height": 20},
+            "confidence": 0.98
+          },
+          {
+            "type": "unknown-leaf-wrapper",
+            "payload": {
+              "value": "LAX",
+              "page": {"pageIndex": 0},
+              "bounds": {"left": 100, "top": 220, "right": 145, "bottom": 240},
+              "score": 0.91
+            }
+          },
+          {
+            "kind": "time",
+            "value": "17:20",
+            "rect": {"left": 20, "top": 230, "right": 75, "bottom": 250},
+            "score": 0.90
+          },
+          {
+            "type": "paragraph",
+            "text": "Arrival Aug 5",
+            "bounds": {"x": 20, "y": 270, "width": 120, "height": 20},
+            "confidence": 0.97
+          },
+          {
+            "type": "token",
+            "text": "LAX",
+            "bounds": {"x": 100, "y": 320, "width": 45, "height": 20},
+            "confidence": 0.86
+          },
+          {
+            "kind": "time",
+            "content": "22:40",
+            "bbox": {"x": 20, "y": 330, "width": 55, "height": 20},
+            "score": 0.88
+          },
+          {
+            "type": "token",
+            "value": "QF 12",
+            "bounds": {"x": 240, "y": 370, "width": 70, "height": 20},
+            "confidence": 0.82
+          },
+          {
+            "type": "unknown-container",
+            "confidence": 0.31,
+            "children": [
+              {
+                "type": "token",
+                "text": "SYD",
+                "bounds": {"x": 100, "y": 440, "width": 45, "height": 20},
+                "score": 0.96
+              },
+              {
+                "type": "token",
+                "content": {"value": "06:10"},
+                "bounds": {"x": 20, "y": 450, "width": 55, "height": 20}
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "ARRIVAL Aug 6",
+            "bounds": {"x": 20, "y": 480, "width": 120, "height": 20},
+            "confidence": 0.95
+          },
+          {
+            "type": "paragraph",
+            "text": "PRIVATE-TRAVELER PNR REDACTED-MARKER QF I2",
+            "bounds": {"x": 400, "y": 520, "width": 260, "height": 20},
+            "confidence": 0.99
+          }
+        ]
+      }
+    ]
+  }
+}

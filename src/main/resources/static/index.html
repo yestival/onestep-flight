@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#1B2537">
   <title>OneStep Flight</title>
-  <link rel="stylesheet" href="styles.css?v=28">
+  <link rel="stylesheet" href="styles.css?v=29">
 </head>
 <body>
   <div class="app-shell">
@@ -86,8 +86,8 @@
         </div>
         <div class="loading-copy">
           <p class="eyebrow"><span class="eyebrow-line"></span><span>ONESTEP FLIGHT</span></p>
-          <h1 id="loading-title" data-i18n="loadingTitle">正在准备你的乘机步骤</h1>
-          <p class="loading-status" aria-live="polite" data-loading-status>正在安全读取文件</p>
+          <h1 id="loading-title" data-loading-fixed data-i18n="documentRecognitionWaiting">正在识别，请耐心等待</h1>
+          <p class="loading-status" aria-live="polite" aria-atomic="true" data-loading-status>正在安全读取文件</p>
           <div class="progress-track" role="progressbar" aria-label="Loading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="15"><span data-progress></span></div>
         </div>
       </section>
@@ -173,6 +173,7 @@
         <button class="home-back-button" type="button" data-action="home"><span aria-hidden="true">←</span> <span data-i18n="backHome">返回首页</span></button>
         <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="manualContext">填写航班信息</span></p><h1 id="manual-title" data-i18n="manualTitle">输入你的航班信息</h1><p class="lead" data-manual-lead data-i18n="manualLead">请输入航班号和出发日期。</p></div>
         <p class="manual-partial-notice" data-manual-partial-notice data-i18n="partialDocumentNotice" hidden>只读到部分信息，请补全后查询</p>
+        <p class="document-advisory" data-document-advisory role="status" hidden></p>
         <section class="segment-selector manual-document-segments" data-manual-document-segments aria-labelledby="manual-itinerary-title" hidden>
           <p class="eyebrow" data-i18n="itineraryContext">完整行程</p>
           <h2 id="manual-itinerary-title" data-i18n="manualItineraryTitle">文件中已读到的航段</h2>
@@ -181,6 +182,10 @@
         </section>
         <form class="manual-form" data-action="manual-submit">
           <div class="manual-fields">
+            <section class="review-candidates" data-review-candidates aria-labelledby="review-candidates-title" hidden>
+              <h2 id="review-candidates-title" data-i18n="reviewCandidatesTitle">请选择或修改冲突字段</h2>
+              <div data-review-candidate-fields></div>
+            </section>
             <div data-manual-flight-field>
               <label for="flight-input" data-i18n="flightLabel">航班号</label>
               <input class="manual-control" id="flight-input" name="flight" type="text" data-placeholder="flightPlaceholder" placeholder="For example BA 117" autocomplete="off" spellcheck="false" required>
@@ -315,7 +320,7 @@
     <div class="visually-hidden" role="status" aria-live="assertive" aria-atomic="true" data-live-region></div>
     <div class="toast" role="status" aria-live="polite" data-toast></div>
   </div>
-  <script src="locale.js?v=28"></script>
-  <script src="app.js?v=28"></script>
+  <script src="locale.js?v=29"></script>
+  <script src="app.js?v=29"></script>
 </body>
 </html>

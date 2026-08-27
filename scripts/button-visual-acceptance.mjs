@@ -42,6 +42,7 @@ const TARGET_SELECTOR = [
   '.scenario-actions button',
   '.end-journey-link',
   '.flight-candidate',
+  '.review-candidate',
   '.segment-option'
 ].join(',');
 
@@ -388,7 +389,31 @@ function sceneMeasurementExpression(scene, stopLabel) {
     } else if (sceneName === 'manual-partial') {
       scope = showScreen('manual');
       show('[data-manual-document-segments]');
-      hide('[data-manual-flight-field]');
+      show('[data-review-candidates], [data-manual-flight-confirmation]');
+      const reviewFields = document.querySelector('[data-review-candidate-fields]');
+      if (reviewFields) {
+        reviewFields.replaceChildren();
+        const group = document.createElement('section');
+        group.className = 'review-candidate-group';
+        const heading = document.createElement('strong');
+        heading.textContent = 'Flight number';
+        const list = document.createElement('div');
+        list.className = 'review-candidate-list';
+        ['BA117', 'BA171'].forEach((value, index) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'review-candidate';
+          button.setAttribute('aria-pressed', String(index === 0));
+          const candidateValue = document.createElement('strong');
+          candidateValue.textContent = value;
+          const details = document.createElement('span');
+          details.textContent = (index === 0 ? 'UNDERSTAND' : 'STRUCTURE') + ' · 78%';
+          button.append(candidateValue, details);
+          list.append(button);
+        });
+        group.append(heading, list);
+        reviewFields.append(group);
+      }
     } else if (sceneName === 'scenario-controls') {
       showScreen('welcome');
       show('[data-scenario-panel]');

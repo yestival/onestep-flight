@@ -1,6 +1,7 @@
 package com.selene.onestepflight.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
@@ -15,7 +16,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 
+import com.selene.onestepflight.controller.RestExceptionHandler;
 import com.selene.onestepflight.dto.ProviderFlightResult;
 
 class MultiSourceFlightRuntimeTest {
@@ -91,8 +94,8 @@ class MultiSourceFlightRuntimeTest {
 
 			assertTrue(elapsedMillis < 1_000, "sufficient AeroDataBox data should not wait for SerpApi timeout");
 			assertEquals("SUCCESS", snapshot.providerResults().get("AERODATABOX").outcome());
-			assertEquals("PENDING", snapshot.providerResults().get("SERPAPI").outcome());
-			assertEquals("SERPAPI_PENDING", snapshot.providerResults().get("SERPAPI").errorCode());
+			assertEquals("UPSTREAM_ERROR", snapshot.providerResults().get("SERPAPI").outcome());
+			assertEquals("SERPAPI_NOT_COMPLETED", snapshot.providerResults().get("SERPAPI").errorCode());
 			assertEquals("LHR", snapshot.flight().departureAirport());
 		} finally {
 			executor.shutdownNow();
@@ -113,8 +116,8 @@ class MultiSourceFlightRuntimeTest {
 			long elapsedMillis = Duration.ofNanos(System.nanoTime() - started).toMillis();
 
 			assertTrue(elapsedMillis < 1_000, "sufficient SerpApi data should not wait for AeroDataBox timeout");
-			assertEquals("PENDING", snapshot.providerResults().get("AERODATABOX").outcome());
-			assertEquals("AERODATABOX_PENDING", snapshot.providerResults().get("AERODATABOX").errorCode());
+			assertEquals("UPSTREAM_ERROR", snapshot.providerResults().get("AERODATABOX").outcome());
+			assertEquals("AERODATABOX_NOT_COMPLETED", snapshot.providerResults().get("AERODATABOX").errorCode());
 			assertEquals("SUCCESS", snapshot.providerResults().get("SERPAPI").outcome());
 			assertEquals("LHR", snapshot.flight().departureAirport());
 		} finally {
@@ -123,19 +126,62 @@ class MultiSourceFlightRuntimeTest {
 	}
 
 	@Test
-	void retriesSerpApiWithRouteHintsWhenAeroDataBoxFinishesAfterTheInitialStagger() {
+	void classifiesAllNotFoundAs404ButMixedNotFoundAndTimeoutAsProviderFailure() {
 		ExecutorService executor = Executors.newFixedThreadPool(4);
 		try {
-			CountingProvider aero = new CountingProvider("AERODATABOX", 300,
-					success("AERODATABOX", "LIVE"));
-			RouteDependentProvider serp = new RouteDependentProvider();
-			MultiSourceFlightService service = service(List.of(aero, serp), executor);
+			MultiSourceFlightService allNotFound = service(List.of(
+					new CountingProvider("AERODATABOX", 0, failure("AERODATABOX", "NOT_FOUND")),
+					new CountingProvider("SERPAPI", 0, failure("SERPAPI", "IDENTITY_MISMATCH"))), executor);
+			AllFlightProvidersUnavailableException missing = assertThrows(
+					AllFlightProvidersUnavailableException.class,
+					() -> allNotFound.findFlight("BA117", DATE, null, null, false));
+			assertEquals("FLIGHT_NOT_FOUND", missing.code());
+			assertEquals(HttpStatus.NOT_FOUND,
+					new RestExceptionHandler().handleAllProvidersUnavailable(missing).getStatusCode());
 
-			MultiSourceFlightSnapshot snapshot = service.findFlight("BA117", DATE, null, null, false);
+			MultiSourceFlightService mixed = service(List.of(
+					new CountingProvider("AERODATABOX", 0, failure("AERODATABOX", "NOT_FOUND")),
+					new CountingProvider("SERPAPI", 0, failure("SERPAPI", "TIMEOUT"))), executor);
+			AllFlightProvidersUnavailableException unavailable = assertThrows(
+					AllFlightProvidersUnavailableException.class,
+					() -> mixed.findFlight("BA117", DATE, null, null, false));
+			assertEquals("ALL_LIVE_FLIGHT_PROVIDERS_FAILED", unavailable.code());
+		} finally {
+			executor.shutdownNow();
+		}
+	}
 
-			assertEquals(2, serp.calls.get());
-			assertEquals("LHR/JFK", serp.lastRoute.get());
-			assertEquals("SUCCESS", snapshot.providerResults().get("SERPAPI").outcome());
+	@Test
+	void mixedTimeoutAndParseErrorIsNotClassifiedAsAllTimeout() {
+		ExecutorService executor = Executors.newFixedThreadPool(3);
+		try {
+			MultiSourceFlightService service = service(List.of(
+					new CountingProvider("AERODATABOX", 0, failure("AERODATABOX", "TIMEOUT")),
+					new CountingProvider("SERPAPI", 0, failure("SERPAPI", "PARSE_ERROR"))), executor);
+			AllFlightProvidersUnavailableException exception = assertThrows(
+					AllFlightProvidersUnavailableException.class,
+					() -> service.findFlight("BA117", DATE, null, null, false));
+			assertEquals("ALL_LIVE_FLIGHT_PROVIDERS_FAILED", exception.code());
+		} finally {
+			executor.shutdownNow();
+		}
+	}
+
+	@Test
+	void independentlyDowngradesSuccessWithoutExactRequestedIdentity() {
+		ExecutorService executor = Executors.newFixedThreadPool(3);
+		try {
+			ProviderFlightResult missingIdentity = successWithIdentity("AERODATABOX", null, DATE, null);
+			ProviderFlightResult differentIdentity = successWithIdentity("SERPAPI", "AF117", DATE, null);
+			MultiSourceFlightService service = service(List.of(
+					new CountingProvider("AERODATABOX", 0, missingIdentity),
+					new CountingProvider("SERPAPI", 0, differentIdentity)), executor);
+			AllFlightProvidersUnavailableException exception = assertThrows(
+					AllFlightProvidersUnavailableException.class,
+					() -> service.findFlight("BA117", DATE, null, null, false));
+			assertEquals("IDENTITY_UNVERIFIED", exception.providerResults().get("AERODATABOX").outcome());
+			assertEquals("IDENTITY_MISMATCH", exception.providerResults().get("SERPAPI").outcome());
+			assertEquals("AF117", exception.providerResults().get("SERPAPI").flightNumber());
 		} finally {
 			executor.shutdownNow();
 		}
@@ -176,6 +222,23 @@ class MultiSourceFlightRuntimeTest {
 				Instant.parse("2026-08-24T08:00:00Z"), Instant.now(), null, null, live, false);
 	}
 
+	private ProviderFlightResult failure(String provider, String outcome) {
+		return ProviderFlightResult.failure(provider, outcome, provider + "_" + outcome, Instant.now());
+	}
+
+	private ProviderFlightResult successWithIdentity(String provider, String flightNumber,
+			LocalDate departureDate, String codeshare) {
+		ProviderFlightResult base = success(provider, "LIVE");
+		return new ProviderFlightResult(provider, "SUCCESS", null, flightNumber, departureDate,
+				base.departureAirport(), base.departureAirportName(), base.arrivalAirport(), base.arrivalAirportName(),
+				base.scheduledDeparture(), base.estimatedDeparture(), base.actualDeparture(),
+				base.scheduledArrival(), base.estimatedArrival(), base.actualArrival(), base.boardingTime(),
+				base.terminal(), base.gate(), base.checkInDeskOrZone(), base.dedicatedBagDropDesk(),
+				base.arrivalBaggageBelt(), base.status(), base.departureDelayMinutes(),
+				base.arrivalDelayMinutes(), base.quality(), base.sourceUpdatedAt(), base.retrievedAt(),
+				base.sourceUrl(), codeshare, base.live(), false);
+	}
+
 	private static final class CountingProvider implements OperationalFlightDataProvider {
 		private final String name;
 		private final long delayMillis;
@@ -212,8 +275,8 @@ class MultiSourceFlightRuntimeTest {
 			calls.incrementAndGet();
 			lastRoute.set(departureAirportHint + "/" + arrivalAirportHint);
 			if (departureAirportHint == null || arrivalAirportHint == null) {
-				return ProviderFlightResult.failure("SERPAPI", "MISSING_ROUTE_HINT",
-						"SERPAPI_MISSING_ROUTE_HINT", Instant.now());
+				return ProviderFlightResult.failure("SERPAPI", "PARSE_ERROR",
+						"SERPAPI_ROUTE_INCOMPLETE", Instant.now());
 			}
 			return success("SERPAPI", "SCHEDULE");
 		}

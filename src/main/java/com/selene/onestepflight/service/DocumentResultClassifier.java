@@ -21,25 +21,34 @@ public final class DocumentResultClassifier {
 			boolean hasFlightNumber = hasText(segment.flightNumber());
 			boolean hasDepartureDate = segment.departureDate() != null;
 			allLookupReady &= hasFlightNumber && hasDepartureDate
-					&& trustedFlightNumber(segment) && !hasCriticalConflict(result, index);
+					&& !hasCriticalConflict(result, index);
 			anyIdentityField |= hasFlightNumber || hasDepartureDate || hasText(segment.departureMonthDay());
 		}
 		if (allLookupReady) return DocumentResultClassification.USABLE;
 		return anyIdentityField ? DocumentResultClassification.PARTIAL : DocumentResultClassification.UNUSABLE;
 	}
 
-	private static boolean trustedFlightNumber(DocumentFlightSegment segment) {
-		return segment.flightNumberConfidence() == DocumentFlightSegment.FlightNumberConfidence.HIGH
-				|| (segment.flightNumberConfirmedByUser()
-						&& !segment.requiresFlightNumberConfirmation());
+	private static boolean hasCriticalConflict(BoardingPassExtractionResponse result, int index) {
+		if (result == null) return false;
+		boolean structuredBlocking = result.reviewIssues().stream()
+				.anyMatch(issue -> issue.blocking()
+						&& (issue.segmentIndex() == null || issue.segmentIndex() == index)
+						&& ("flight_number".equals(issue.field())
+								|| "departure_date".equals(issue.field())));
+		if (structuredBlocking) return true;
+		if (result.needsReviewFields() == null) return false;
+		String prefix = result.segments().size() == 1 ? "" : "segments[" + index + "].";
+		return legacyConflictWithoutStructuredReplacement(result, index, prefix, "flight_number")
+				|| legacyConflictWithoutStructuredReplacement(result, index, prefix, "departure_date");
 	}
 
-	private static boolean hasCriticalConflict(BoardingPassExtractionResponse result, int index) {
-		if (result == null || result.needsReviewFields() == null) return false;
-		String prefix = result.segments().size() == 1 ? "" : "segments[" + index + "].";
-		return result.needsReviewFields().stream().anyMatch(value ->
-				(prefix + "conflict.flight_number").equals(value)
-						|| (prefix + "conflict.departure_date").equals(value));
+	private static boolean legacyConflictWithoutStructuredReplacement(
+			BoardingPassExtractionResponse result, int index, String prefix, String field) {
+		boolean legacyConflict = result.needsReviewFields().stream()
+				.anyMatch(value -> (prefix + "conflict." + field).equals(value));
+		if (!legacyConflict) return false;
+		return result.reviewIssues().stream().noneMatch(issue -> field.equals(issue.field())
+				&& (issue.segmentIndex() == null || issue.segmentIndex() == index));
 	}
 
 	public static boolean hasAnyFlightNumber(BoardingPassExtractionResponse result) {

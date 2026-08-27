@@ -12,7 +12,9 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import com.selene.onestepflight.dto.BoardingPassExtractionResponse;
+import com.selene.onestepflight.dto.DocumentFieldCandidate;
 import com.selene.onestepflight.dto.DocumentFlightSegment;
+import com.selene.onestepflight.dto.DocumentReviewIssue;
 import com.selene.onestepflight.dto.DocumentType;
 import com.selene.onestepflight.dto.ExtractedField;
 import com.selene.onestepflight.dto.FlightResponse;
@@ -78,32 +80,17 @@ class ResolvedFlightServiceDocumentSelectionTest {
 	}
 
 	@Test
-	void fallsBackToTheMatchingDocumentLegWhenEveryLiveProviderFailsAndKeepsItOnRefresh() {
+	void explicitLookupFailureNeverBecomesADocumentFallbackSuccess() {
 		CapturingMultiSource flights = new CapturingMultiSource(true);
 		ResolvedFlightService service = service(flights);
 		BoardingPassExtractionResponse document = document(List.of(
 				segmentWithPrintedOperations("MF825", DATE, "XMN", "CDG"),
 				segment("AF1668", LocalDate.of(2026, 8, 25), "CDG", "MAN")));
 
-		ResolvedFlightContext result = service.resolve(new ResolveFlightRequest(
-				"MF825", DATE, false, null, document, false));
-
-		assertThat(result.live()).isFalse();
-		assertThat(result.liveDataSource()).isEqualTo("DOCUMENT_FALLBACK");
-		assertThat(result.departureAirport()).isEqualTo("XMN");
-		assertThat(result.arrivalAirport()).isEqualTo("CDG");
-		assertThat(result.status()).isNull();
-		assertThat(result.scheduledDeparture()).isNull();
-		assertThat(result.dataRetrievedAt()).isNull();
-		assertThat(result.documentGate()).isEqualTo("B12");
-		assertThat(result.gate()).isNull();
-		assertThat(result.providerResults()).containsKey("AERODATABOX");
-		ResolvedFlightContext restored = service.refresh(result, false);
-		assertThat(restored.liveDataSource()).isEqualTo("DOCUMENT_FALLBACK");
-		assertThat(restored.gate()).isNull();
+		assertThatThrownBy(() -> service.resolve(new ResolveFlightRequest(
+				"MF825", DATE, false, null, document, false)))
+				.isInstanceOf(AllFlightProvidersUnavailableException.class);
 		assertThat(flights.calls).isEqualTo(1);
-		assertThat(service.refresh(result, true).liveDataSource()).isEqualTo("DOCUMENT_FALLBACK");
-		assertThat(flights.calls).isEqualTo(2);
 	}
 
 	@Test
@@ -145,6 +132,125 @@ class ResolvedFlightServiceDocumentSelectionTest {
 		assertThat(safe.get("departure_date").sourceLabel()).isNull();
 	}
 
+	@Test
+	void unresolvedCriticalReviewStopsProviderLookupOnTheServer() {
+		CapturingMultiSource flights = new CapturingMultiSource(false);
+		ResolvedFlightService service = service(flights);
+		DocumentReviewIssue blocking = new DocumentReviewIssue(0, "flight_number",
+				DocumentReviewIssue.Kind.ACTIONABLE, true,
+				List.of(reviewCandidate("MF825"), reviewCandidate("MF826")), null,
+				"MULTIPLE_UNRESOLVED_CANDIDATES");
+		BoardingPassExtractionResponse document = documentWithReview(
+				List.of(segment("MF825", DATE, "XMN", "CDG")), List.of(), List.of(blocking));
+
+		assertThatThrownBy(() -> service.resolve(new ResolveFlightRequest(
+				"MF825", DATE, false, null, document, false)))
+				.isInstanceOf(InvalidDocumentException.class)
+				.hasMessage("DOCUMENT_REVIEW_REQUIRED");
+		assertThat(flights.calls).isZero();
+	}
+
+	@Test
+	void explicitCriticalReviewWithoutCandidatesStillStopsProviderLookup() {
+		CapturingMultiSource flights = new CapturingMultiSource(false);
+		ResolvedFlightService service = service(flights);
+		DocumentReviewIssue blocking = new DocumentReviewIssue(0, "departure_date",
+				DocumentReviewIssue.Kind.ACTIONABLE, true, List.of(), null,
+				"LEGACY_CONFLICT_REQUIRES_MANUAL_INPUT");
+		BoardingPassExtractionResponse document = documentWithReview(
+				List.of(segment("MF825", DATE, "XMN", "CDG")), List.of(), List.of(blocking));
+
+		assertThatThrownBy(() -> service.resolve(new ResolveFlightRequest(
+				"MF825", DATE, false, null, document, false)))
+				.isInstanceOf(InvalidDocumentException.class)
+				.hasMessage("DOCUMENT_REVIEW_REQUIRED");
+		assertThat(flights.calls).isZero();
+	}
+
+	@Test
+	void legacyCriticalReviewStopsProviderLookupUnlessStructuredIssueReplacesIt() {
+		CapturingMultiSource flights = new CapturingMultiSource(false);
+		ResolvedFlightService service = service(flights);
+		BoardingPassExtractionResponse legacy = documentWithReview(
+				List.of(segment("MF825", DATE, "XMN", "CDG")),
+				List.of("conflict.flight_number"), List.of());
+
+		assertThatThrownBy(() -> service.resolve(new ResolveFlightRequest(
+				"MF825", DATE, false, null, legacy, false)))
+				.isInstanceOf(InvalidDocumentException.class)
+				.hasMessage("DOCUMENT_REVIEW_REQUIRED");
+		assertThat(flights.calls).isZero();
+	}
+
+	@Test
+	void ambiguousUnselectedLegacyCriticalConflictStopsProviderLookup() {
+		CapturingMultiSource flights = new CapturingMultiSource(false);
+		ResolvedFlightService service = service(flights);
+		BoardingPassExtractionResponse legacy = documentWithReview(List.of(
+				segment("MF825", DATE, "XMN", "CDG"),
+				segment("MF825", DATE, "CDG", "MAN")),
+				List.of("segments[0].conflict.flight_number"), List.of());
+
+		assertThatThrownBy(() -> service.resolve(new ResolveFlightRequest(
+				"MF825", DATE, false, null, legacy, false)))
+				.isInstanceOf(InvalidDocumentException.class)
+				.hasMessage("DOCUMENT_REVIEW_REQUIRED");
+		assertThat(flights.calls).isZero();
+	}
+
+	@Test
+	void explicitSafeSegmentIgnoresLegacyConflictOnAnotherLeg() {
+		CapturingMultiSource flights = new CapturingMultiSource(false);
+		ResolvedFlightService service = service(flights);
+		BoardingPassExtractionResponse legacy = documentWithReview(List.of(
+				segment("MF825", DATE, "XMN", "CDG"),
+				segment("AF1668", DATE.plusDays(1), "CDG", "MAN")),
+				List.of("segments[1].conflict.flight_number"), List.of());
+
+		service.resolve(new ResolveFlightRequest("MF825", DATE, false, null, legacy, 0, false));
+
+		assertThat(flights.calls).isOne();
+	}
+
+	@Test
+	void auxiliaryAdvisoryAndOtherSegmentsBlockingIssueDoNotBlockReadyLeg() {
+		CapturingMultiSource flights = new CapturingMultiSource(false);
+		ResolvedFlightService service = service(flights);
+		DocumentReviewIssue auxiliary = new DocumentReviewIssue(0, "arrival_time",
+				DocumentReviewIssue.Kind.ADVISORY, false, List.of(), "11:10",
+				"AUXILIARY_EVIDENCE_DISAGREEMENT");
+		DocumentReviewIssue otherLeg = new DocumentReviewIssue(1, "departure_date",
+				DocumentReviewIssue.Kind.ACTIONABLE, true,
+				List.of(reviewCandidate("departure_date", "2026-08-25", 1),
+						reviewCandidate("departure_date", "2026-08-26", 1)),
+				null, "MULTIPLE_UNRESOLVED_CANDIDATES");
+		BoardingPassExtractionResponse document = documentWithReview(List.of(
+				lowConfidenceSegment("MF825", DATE, "XMN", "CDG"),
+				segment("AF1668", DATE.plusDays(1), "CDG", "MAN")),
+				List.of(), List.of(auxiliary, otherLeg));
+
+		service.resolve(new ResolveFlightRequest("MF825", DATE, false, null, document, false));
+
+		assertThat(flights.calls).isOne();
+	}
+
+	@Test
+	void unrelatedUnselectedConflictDoesNotBlockManualLookup() {
+		CapturingMultiSource flights = new CapturingMultiSource(false);
+		ResolvedFlightService service = service(flights);
+		DocumentReviewIssue unrelated = new DocumentReviewIssue(0, "flight_number",
+				DocumentReviewIssue.Kind.ACTIONABLE, true,
+				List.of(reviewCandidate("AF1668"), reviewCandidate("AF1669")), null,
+				"MULTIPLE_UNRESOLVED_CANDIDATES");
+		BoardingPassExtractionResponse document = documentWithReview(List.of(
+				segment("AF1668", DATE.plusDays(1), "CDG", "MAN")),
+				List.of(), List.of(unrelated));
+
+		service.resolve(new ResolveFlightRequest("MF825", DATE, false, null, document, false));
+
+		assertThat(flights.calls).isOne();
+	}
+
 	private ResolvedFlightService service(MultiSourceFlightService flights) {
 		return new ResolvedFlightService(new FlightService(null, null), flights, null, new FlightTimeService());
 	}
@@ -155,8 +261,32 @@ class ResolvedFlightServiceDocumentSelectionTest {
 				false, false, Map.of(), segments, List.of(), "TEST_DOCUMENT", Instant.EPOCH);
 	}
 
+	private BoardingPassExtractionResponse documentWithReview(List<DocumentFlightSegment> segments,
+			List<String> reviewFields, List<DocumentReviewIssue> reviewIssues) {
+		BoardingPassExtractionResponse base = document(segments);
+		return new BoardingPassExtractionResponse(base.documentType(), base.flightNumber(),
+				base.departureDate(), base.departureMonthDay(), base.flightNumberConfidence(),
+				base.requiresFlightNumberConfirmation(), base.flightNumberConfirmedByUser(),
+				base.dateSource(), base.scheduledDeparture(), base.scheduledArrival(),
+				base.boardingTime(), base.departureAirport(), base.arrivalAirport(),
+				base.terminal(), base.gate(), base.seat(), false, false, base.fields(),
+				base.segments(), reviewFields, reviewIssues, base.dataSource(), base.extractedAt());
+	}
+
+	private DocumentFieldCandidate reviewCandidate(String value) {
+		return reviewCandidate("flight_number", value, 0);
+	}
+
+	private DocumentFieldCandidate reviewCandidate(String field, String value, int segmentIndex) {
+		return new DocumentFieldCandidate(field, value, value,
+				DocumentFieldCandidate.Source.STRUCTURE, 0.6d, 0, null,
+				DocumentFieldCandidate.AnchorType.FLIGHT_CARD, segmentIndex,
+				DocumentFieldCandidate.Disposition.CANDIDATE, "TEST_CANDIDATE");
+	}
+
 	private DocumentFlightSegment segment(String flightNumber, LocalDate date, String departure, String arrival) {
-		return new DocumentFlightSegment(flightNumber, date, departure, arrival,
+		return new DocumentFlightSegment(flightNumber, date,
+				"%02d-%02d".formatted(date.getMonthValue(), date.getDayOfMonth()), departure, arrival,
 				date + "T08:20", date + "T11:10", null, null, null, null,
 				0.99d, 0, null, Map.of());
 	}
@@ -166,6 +296,16 @@ class ResolvedFlightServiceDocumentSelectionTest {
 		return new DocumentFlightSegment(flightNumber, date, departure, arrival,
 				date + "T08:20", date + "T11:10", "07:35", "T3", "B12", "22A",
 				0.99d, 0, null, Map.of());
+	}
+
+	private DocumentFlightSegment lowConfidenceSegment(String flightNumber, LocalDate date,
+			String departure, String arrival) {
+		return new DocumentFlightSegment(flightNumber, date,
+				"%02d-%02d".formatted(date.getMonthValue(), date.getDayOfMonth()), departure, arrival,
+				date + "T08:20", date + "T11:10", null, null, null, null,
+				0.35d, 0, null, Map.of(),
+				DocumentFlightSegment.FlightNumberConfidence.LOW, false, false,
+				DocumentFlightSegment.DateSource.EXPLICIT_FULL_DATE);
 	}
 
 	private static final class CapturingMultiSource extends MultiSourceFlightService {

@@ -45,6 +45,7 @@
   var awaitingDocumentSelection = false;
   var documentRootFields = {};
   var documentRootReviewFields = [];
+  var documentRootReviewIssues = [];
   var confirmedDocumentFlightNumberIndexes = [];
   var flightRequestController = null;
   var lookupInFlight = false;
@@ -56,6 +57,7 @@
   var checkInStatusAnswer = null;
   var flightCorrectionOpen = false;
   var partialDocumentEntry = false;
+  var fieldStaffHelpContext = null;
   var qaJourneyEnabled = new URLSearchParams(window.location.search).get('qaJourney') === 'true';
   var activeDialog = null;
   var screens = document.querySelectorAll('.screen');
@@ -85,6 +87,25 @@
     bodyEs: 'Hola. Necesito ayuda con mi vuelo. ¿Puede ayudarme?'
   };
 
+  var fieldStaffContent = {
+    flight_number: {
+      titleZh: '请帮我确认航班号',
+      titleEn: 'Please help me confirm my flight number',
+      titleEs: 'Ayúdeme a confirmar mi número de vuelo',
+      bodyZh: '您好，我无法确认这份旅行文件中的航班号。\n请帮我查看这份文件，并告诉我正确的航班号。',
+      bodyEn: 'Hello. I cannot confirm the flight number in this travel document.\nPlease check the document and tell me the correct flight number.',
+      bodyEs: 'Hola. No puedo confirmar el número de vuelo de este documento de viaje.\nPor favor, revise el documento y dígame el número de vuelo correcto.'
+    },
+    departure_date: {
+      titleZh: '请帮我确认出发日期',
+      titleEn: 'Please help me confirm my departure date',
+      titleEs: 'Ayúdeme a confirmar mi fecha de salida',
+      bodyZh: '您好，我无法确认这份旅行文件中的出发日期。\n请帮我查看这份文件，并告诉我正确的出发日期。',
+      bodyEn: 'Hello. I cannot confirm the departure date in this travel document.\nPlease check the document and tell me the correct departure date.',
+      bodyEs: 'Hola. No puedo confirmar la fecha de salida de este documento de viaje.\nPor favor, revise el documento y dígame la fecha de salida correcta.'
+    }
+  };
+
   Object.assign(translations.zh, {
     upload: '上传出行文件',
     uploadHint: '支持行程单、电子客票、订单截图或登机牌',
@@ -99,11 +120,11 @@
     scheduledArrivalLocal: '计划到达 · 目的地当地时间', estimatedArrivalLocal: '预计到达 · 目的地当地时间', actualArrivalLocal: '实际到达 · 目的地当地时间',
     selectedSegment: '当前航段', chooseSegment: '选择这一段', readySegment: '可以查询', incompleteSegment: '补全这一段', pendingSegment: '请确认航班号', confirmSegment: '处理字段冲突',
     itineraryContext: '行程航段', itineraryTitle: '这份文件中的全部航段', itineraryLead: '以下航段按文件中的顺序显示。当前航段已标出。',
-    segmentSelectionContext: '行程航段', segmentSelectionTitle: '请选择航段', segmentSelectionLead: '所有航段都可以打开。选择后只会核对或补全；只有点击“查询真实航班”才会查询。',
+    segmentSelectionContext: '行程航段', segmentSelectionTitle: '请选择航段', segmentSelectionLead: '请选择需要查看的航段。',
     itineraryReadyContext: '所有航段均可查询', itineraryReadyTitle: '所有航段均可查询', itineraryReadyLead: '航班号可信、出发日期完整，且没有未解决的关键冲突。请选择一段，再点击“查询真实航班”。',
-    itineraryPendingContext: '存在待确认字段', itineraryPendingTitle: '请先确认部分航班号', itineraryPendingLead: '中置信度航班号已经预填。确认并保存不会查询真实航班。',
-    itineraryMissingContext: '存在缺失字段', itineraryMissingTitle: '请补全部分航段', itineraryMissingLead: '所有航段都已保留。补全并保存不会查询真实航班。',
-    itineraryConflictContext: '存在字段冲突', itineraryConflictTitle: '请处理识别冲突', itineraryConflictLead: '存在需要核对的识别结果。解决关键冲突前不会查询真实航班。',
+    itineraryPendingContext: '存在待确认字段', itineraryPendingTitle: '请先确认部分航班号', itineraryPendingLead: '请核对识别到的信息。',
+    itineraryMissingContext: '存在缺失字段', itineraryMissingTitle: '请补全部分航段', itineraryMissingLead: '部分航班信息缺失，请补全后继续。',
+    itineraryConflictContext: '存在字段冲突', itineraryConflictTitle: '请处理识别冲突', itineraryConflictLead: '识别到了不同的结果，请选择正确的信息。',
     flightCorrectionContext: '重新查找航班', flightCorrectionTitle: '请选择正确的航班', flightCorrectionLead: '没有可靠的其他候选航班。请重新上传文件，或手动输入航班号和日期。', flightCorrectionCandidatesLead: '请选择下面经过实时查询确认的候选航班，或重新上传文件、手动输入。',
     liveStatusUnavailable: '暂时没有更新到实时航班状态。请确认下面是不是你的航班。',
     checkInContext: '确认值机状态', checkInQuestion: '你已经完成值机了吗？', checkInQuestionLead: '已经拿到登机牌也算已完成值机。',
@@ -114,17 +135,17 @@
     completeShort: '完成', backStep: '返回', backStepAria: '返回上一步', shareLink: '分享链接', sharePng: '分享图片',
     shareLinkAria: '使用系统分享面板分享安全链接', sharePngAria: '使用系统分享面板分享脱敏行程图片',
     refreshShort: '刷新', refreshLiveAria: '刷新实时航班信息', refreshArrivalAria: '重新查询到达行李转盘',
-    staffCardInstruction: '请把这个页面拿给工作人员看', familyLead: '通过系统分享面板分享 48 小时有效的安全链接或脱敏行程图片。', globalFooter: '© 2026 OneStep Flight · 无障碍乘机指引',
+    staffCardInstruction: '请把这个页面拿给工作人员看。', fieldStaffHelp: '请工作人员帮忙', familyLead: '通过系统分享面板分享 48 小时有效的安全链接或脱敏行程图片。', globalFooter: '© 2026 OneStep Flight · 无障碍乘机指引',
     allFlightInfo: '查看全部航班信息', flightSourceLabel: '航班信息来源',
     departurePassedTitle: '这趟航班已经离港', departurePassedLead: '点击下方“请工作人员帮忙”，并前往航空公司服务柜台出示给工作人员。',
     enterNewFlight: '输入新的航班信息', backHome: '返回首页', uploadContext: '选择旅行文件', uploadTitle: '选择或上传文件', chooseFile: '选择文件',
-    manualItineraryTitle: '文件中已读到的航段', manualItineraryLead: '所有航段按文件顺序保留；信息不完整的航段也不会被删除。',
+    manualItineraryTitle: '文件中已读到的航段', manualItineraryLead: '请选择需要查看或补全的航段。',
     readySegmentLead: '这一段已具备高置信度或已确认的航班号、完整日期，且没有关键冲突。请点击“查询真实航班”。',
-    partialDateLead: '没有读到完整出发日期，请补全完整日期并保存。', partialFlightLead: '航班号缺失或不可信，请补全并保存。',
-    pendingFlightLead: '航班号可信度为中等。请核对预填值并明确确认；确认和保存都不会查询真实航班。',
-    confirmSegmentLead: '这一段存在需要处理的关键字段冲突。请核对相关字段并保存；保存不会查询真实航班。',
+    partialDateLead: '部分航班信息缺失，请补全后继续。', partialFlightLead: '部分航班信息缺失，请补全后继续。',
+    pendingFlightLead: '请核对识别到的信息。',
+    confirmSegmentLead: '识别到了不同的结果，请选择正确的信息。',
     saveCompletion: '保存补全', confirmFlightNumberLabel: '我已核对并确认这个航班号', confirmDepartureDateLabel: '我已核对并确认这个出发日期',
-    readyDocumentNotice: '此航段可以查询。', pendingDocumentNotice: '航班号需要你确认。', missingDocumentNotice: '此航段有缺失或不可信字段。', conflictDocumentNotice: '此航段存在字段冲突。'
+    readyDocumentNotice: '此航段信息完整。', pendingDocumentNotice: '请核对识别到的信息。', missingDocumentNotice: '部分航班信息缺失，请补全后继续。', conflictDocumentNotice: '识别到了不同的结果，请选择正确的信息。'
   });
   Object.assign(translations.en, {
     upload: 'Upload travel document',
@@ -140,11 +161,11 @@
     scheduledArrivalLocal: 'Scheduled arrival · Destination local time', estimatedArrivalLocal: 'Estimated arrival · Destination local time', actualArrivalLocal: 'Actual arrival · Destination local time',
     selectedSegment: 'Current segment', chooseSegment: 'Select this segment', readySegment: 'Ready to search', incompleteSegment: 'Complete this segment', pendingSegment: 'Confirm flight number', confirmSegment: 'Resolve field conflict',
     itineraryContext: 'Journey segments', itineraryTitle: 'Every segment in this document', itineraryLead: 'Segments are shown in document order. Your current segment is marked.',
-    segmentSelectionContext: 'Journey segments', segmentSelectionTitle: 'Choose a segment', segmentSelectionLead: 'Every segment can be opened. Selection only reviews or completes it; a live request occurs only after Search live flight.',
+    segmentSelectionContext: 'Journey segments', segmentSelectionTitle: 'Choose a segment', segmentSelectionLead: 'Choose the segment you want to review.',
     itineraryReadyContext: 'All segments are searchable', itineraryReadyTitle: 'All segments are ready to search', itineraryReadyLead: 'Each flight number is trusted, each departure date is complete, and no critical conflict remains. Choose a segment, then select Search live flight.',
-    itineraryPendingContext: 'Some fields need confirmation', itineraryPendingTitle: 'Confirm some flight numbers first', itineraryPendingLead: 'Medium-confidence flight numbers are prefilled. Confirmation and saving do not search live flights.',
-    itineraryMissingContext: 'Some fields are missing', itineraryMissingTitle: 'Complete some segments first', itineraryMissingLead: 'Every segment is preserved. Completing and saving do not search live flights.',
-    itineraryConflictContext: 'Some fields conflict', itineraryConflictTitle: 'Resolve recognition conflicts', itineraryConflictLead: 'Some recognized details need review. Live lookup stays blocked until critical conflicts are resolved.',
+    itineraryPendingContext: 'Some fields need confirmation', itineraryPendingTitle: 'Confirm some flight numbers first', itineraryPendingLead: 'Please check the information we found.',
+    itineraryMissingContext: 'Some fields are missing', itineraryMissingTitle: 'Complete some segments first', itineraryMissingLead: 'Some flight information is missing. Please complete it to continue.',
+    itineraryConflictContext: 'Some fields conflict', itineraryConflictTitle: 'Resolve recognition conflicts', itineraryConflictLead: 'We found different results. Please choose the correct information.',
     flightCorrectionContext: 'Find another flight', flightCorrectionTitle: 'Choose the correct flight', flightCorrectionLead: 'No reliable alternative flight was found. Upload another file or enter the flight number and date manually.', flightCorrectionCandidatesLead: 'Choose a candidate confirmed by live lookup below, upload another file, or enter the details manually.',
     liveStatusUnavailable: 'Live flight status has not updated yet. Please confirm whether the itinerary below is yours.',
     checkInContext: 'Confirm check-in status', checkInQuestion: 'Have you checked in?', checkInQuestionLead: 'Already having a boarding pass also counts as checked in.',
@@ -155,17 +176,17 @@
     completeShort: 'Done', backStep: 'Back', backStepAria: 'Go back to the previous step', shareLink: 'Share link', sharePng: 'Share image',
     shareLinkAria: 'Share the secure link with the system share panel', sharePngAria: 'Share the redacted journey image with the system share panel',
     refreshShort: 'Refresh', refreshLiveAria: 'Refresh live flight information', refreshArrivalAria: 'Check the arrival baggage belt again',
-    staffCardInstruction: 'Please show this page to a member of staff.', familyLead: 'Use the system share panel for a secure link valid for 48 hours or a redacted journey image.', globalFooter: '© 2026 OneStep Flight · Accessible air-travel guidance',
+    staffCardInstruction: 'Please show this page to a member of staff.', fieldStaffHelp: 'Ask staff for help', familyLead: 'Use the system share panel for a secure link valid for 48 hours or a redacted journey image.', globalFooter: '© 2026 OneStep Flight · Accessible air-travel guidance',
     allFlightInfo: 'View all flight information', flightSourceLabel: 'Flight information source',
     departurePassedTitle: 'This flight has departed', departurePassedLead: 'Select “Ask a member of staff” below, then go to the airline service desk and show it to a staff member.',
     enterNewFlight: 'Enter new flight information', backHome: 'Return home', uploadContext: 'Choose a travel document', uploadTitle: 'Choose or upload a file', chooseFile: 'Choose file',
-    manualItineraryTitle: 'Segments found in the file', manualItineraryLead: 'Every segment stays in document order, including segments with incomplete details.',
+    manualItineraryTitle: 'Segments found in the file', manualItineraryLead: 'Choose a segment to review or complete.',
     readySegmentLead: 'This segment has a high-confidence or user-confirmed flight number, a complete date, and no critical conflict. Select Search live flight.',
-    partialDateLead: 'No complete departure date was found. Enter the full date and save it.', partialFlightLead: 'The flight number is missing or untrusted. Complete and save it.',
-    pendingFlightLead: 'The flight number has medium confidence. Check the prefilled value and explicitly confirm it; confirmation and saving do not search live flights.',
-    confirmSegmentLead: 'This segment has a critical field conflict. Check the relevant fields and save them; saving does not search live flights.',
+    partialDateLead: 'Some flight information is missing. Please complete it to continue.', partialFlightLead: 'Some flight information is missing. Please complete it to continue.',
+    pendingFlightLead: 'Please check the information we found.',
+    confirmSegmentLead: 'We found different results. Please choose the correct information.',
     saveCompletion: 'Save completion', confirmFlightNumberLabel: 'I checked and confirm this flight number', confirmDepartureDateLabel: 'I checked and confirm this departure date',
-    readyDocumentNotice: 'This segment is ready to search.', pendingDocumentNotice: 'Confirm this flight number.', missingDocumentNotice: 'This segment has missing or untrusted fields.', conflictDocumentNotice: 'This segment contains a field conflict.'
+    readyDocumentNotice: 'This segment is complete.', pendingDocumentNotice: 'Please check the information we found.', missingDocumentNotice: 'Some flight information is missing. Please complete it to continue.', conflictDocumentNotice: 'We found different results. Please choose the correct information.'
   });
   Object.assign(translations.es, {
     upload: 'Subir documento de viaje',
@@ -181,11 +202,11 @@
     scheduledArrivalLocal: 'Llegada programada · Hora local de destino', estimatedArrivalLocal: 'Llegada estimada · Hora local de destino', actualArrivalLocal: 'Llegada real · Hora local de destino',
     selectedSegment: 'Tramo actual', chooseSegment: 'Elegir este tramo', readySegment: 'Listo para buscar', incompleteSegment: 'Completar este tramo', pendingSegment: 'Confirmar número de vuelo', confirmSegment: 'Resolver conflicto',
     itineraryContext: 'Tramos del viaje', itineraryTitle: 'Todos los tramos de este documento', itineraryLead: 'Los tramos aparecen en el orden del documento. El tramo actual está marcado.',
-    segmentSelectionContext: 'Tramos del viaje', segmentSelectionTitle: 'Elige un tramo', segmentSelectionLead: 'Todos los tramos se pueden abrir. Elegir solo permite revisar o completar; la consulta en directo ocurre únicamente al pulsar Buscar vuelo real.',
+    segmentSelectionContext: 'Tramos del viaje', segmentSelectionTitle: 'Elige un tramo', segmentSelectionLead: 'Elige el tramo que quieras revisar.',
     itineraryReadyContext: 'Todos los tramos se pueden buscar', itineraryReadyTitle: 'Todos los tramos están listos', itineraryReadyLead: 'Cada número de vuelo es fiable, cada fecha está completa y no quedan conflictos críticos. Elige un tramo y pulsa Buscar vuelo real.',
-    itineraryPendingContext: 'Hay campos por confirmar', itineraryPendingTitle: 'Confirma algunos números de vuelo', itineraryPendingLead: 'Los números de confianza media ya están rellenados. Confirmar y guardar no consulta vuelos reales.',
-    itineraryMissingContext: 'Hay campos incompletos', itineraryMissingTitle: 'Completa algunos tramos', itineraryMissingLead: 'Se conservan todos los tramos. Completar y guardar no consulta vuelos reales.',
-    itineraryConflictContext: 'Hay campos en conflicto', itineraryConflictTitle: 'Resuelve los conflictos de reconocimiento', itineraryConflictLead: 'Hay datos reconocidos que debes revisar. La consulta queda bloqueada hasta resolver los conflictos críticos.',
+    itineraryPendingContext: 'Hay campos por confirmar', itineraryPendingTitle: 'Confirma algunos números de vuelo', itineraryPendingLead: 'Compruebe la información encontrada.',
+    itineraryMissingContext: 'Hay campos incompletos', itineraryMissingTitle: 'Completa algunos tramos', itineraryMissingLead: 'Falta parte de la información del vuelo. Complétela para continuar.',
+    itineraryConflictContext: 'Hay campos en conflicto', itineraryConflictTitle: 'Resuelve los conflictos de reconocimiento', itineraryConflictLead: 'Encontramos resultados diferentes. Elija la información correcta.',
     flightCorrectionContext: 'Buscar otro vuelo', flightCorrectionTitle: 'Elige el vuelo correcto', flightCorrectionLead: 'No se encontró otro vuelo fiable. Sube otro archivo o introduce manualmente el vuelo y la fecha.', flightCorrectionCandidatesLead: 'Elige abajo un candidato confirmado mediante consulta en directo, sube otro archivo o introduce los datos manualmente.',
     liveStatusUnavailable: 'El estado del vuelo en directo aún no se ha actualizado. Confirma si el itinerario de abajo es el tuyo.',
     checkInContext: 'Confirmar la facturación', checkInQuestion: '¿Ya has facturado?', checkInQuestionLead: 'Tener ya la tarjeta de embarque también cuenta como haber facturado.',
@@ -196,17 +217,17 @@
     completeShort: 'Hecho', backStep: 'Volver', backStepAria: 'Volver al paso anterior', shareLink: 'Compartir enlace', sharePng: 'Compartir imagen',
     shareLinkAria: 'Compartir el enlace seguro con el panel del sistema', sharePngAria: 'Compartir la imagen anonimizada del viaje con el panel del sistema',
     refreshShort: 'Actualizar', refreshLiveAria: 'Actualizar la información del vuelo en directo', refreshArrivalAria: 'Volver a consultar la cinta de equipaje',
-    staffCardInstruction: 'Por favor, muestra esta página a un miembro del personal.', familyLead: 'Usa el panel del sistema para compartir un enlace seguro válido durante 48 horas o una imagen anonimizada del viaje.', globalFooter: '© 2026 OneStep Flight · Guía accesible para viajar en avión',
+    staffCardInstruction: 'Por favor, muestre esta página a un miembro del personal.', fieldStaffHelp: 'Pedir ayuda al personal', familyLead: 'Usa el panel del sistema para compartir un enlace seguro válido durante 48 horas o una imagen anonimizada del viaje.', globalFooter: '© 2026 OneStep Flight · Guía accesible para viajar en avión',
     allFlightInfo: 'Ver toda la información del vuelo', flightSourceLabel: 'Fuente de información del vuelo',
     departurePassedTitle: 'Este vuelo ya ha salido', departurePassedLead: 'Pulsa «Pedir ayuda al personal» y ve al mostrador de atención de la aerolínea para mostrárselo al personal.',
     enterNewFlight: 'Introducir un vuelo nuevo', backHome: 'Volver al inicio', uploadContext: 'Elegir un documento de viaje', uploadTitle: 'Elegir o subir un archivo', chooseFile: 'Elegir archivo',
-    manualItineraryTitle: 'Tramos encontrados en el archivo', manualItineraryLead: 'Se conservan todos los tramos en el orden del documento, incluso los incompletos.',
+    manualItineraryTitle: 'Tramos encontrados en el archivo', manualItineraryLead: 'Elija un tramo para revisarlo o completarlo.',
     readySegmentLead: 'Este tramo tiene un número de vuelo fiable o confirmado, una fecha completa y ningún conflicto crítico. Pulsa Buscar vuelo real.',
-    partialDateLead: 'No se encontró una fecha de salida completa. Introduce la fecha completa y guárdala.', partialFlightLead: 'Falta el número de vuelo o no es fiable. Complétalo y guárdalo.',
-    pendingFlightLead: 'El número de vuelo tiene confianza media. Revisa el valor rellenado y confírmalo expresamente; confirmar y guardar no consulta vuelos reales.',
-    confirmSegmentLead: 'Este tramo tiene un conflicto crítico. Revisa los campos correspondientes y guárdalos; guardar no consulta vuelos reales.',
+    partialDateLead: 'Falta parte de la información del vuelo. Complétela para continuar.', partialFlightLead: 'Falta parte de la información del vuelo. Complétela para continuar.',
+    pendingFlightLead: 'Compruebe la información encontrada.',
+    confirmSegmentLead: 'Encontramos resultados diferentes. Elija la información correcta.',
     saveCompletion: 'Guardar datos', confirmFlightNumberLabel: 'He comprobado y confirmo este número de vuelo', confirmDepartureDateLabel: 'He comprobado y confirmo esta fecha de salida',
-    readyDocumentNotice: 'Este tramo está listo para buscar.', pendingDocumentNotice: 'Confirma este número de vuelo.', missingDocumentNotice: 'Este tramo tiene campos incompletos o no fiables.', conflictDocumentNotice: 'Este tramo contiene un conflicto.'
+    readyDocumentNotice: 'Este tramo está completo.', pendingDocumentNotice: 'Compruebe la información encontrada.', missingDocumentNotice: 'Falta parte de la información del vuelo. Complétela para continuar.', conflictDocumentNotice: 'Encontramos resultados diferentes. Elija la información correcta.'
   });
 
   translations.zh.copyCard = '复制';
@@ -241,6 +262,55 @@
     chooseOtherFile: 'Elegir otro archivo', manualFlightNumber: 'Introducir el número de vuelo', documentUnusableWhy: '¿Por qué no se encontró nada?',
     documentUnusableReason: 'Es posible que el archivo esté incompleto, que el texto sea demasiado pequeño o borroso, o que no sea un documento de viaje de una aerolínea compatible. El sistema no inventará el número de vuelo ni la fecha que falten.',
     partialDocumentNotice: 'Solo se encontró parte de la información. Completa los datos antes de buscar.'
+  });
+
+  Object.assign(translations.zh, {
+    documentRecognitionWaiting: '正在识别，请耐心等待',
+    liveFlightLookupWaiting: '正在查询实时航班，请耐心等待',
+    confidenceAdvisory: '请核对识别到的信息。',
+    auxiliaryAdvisory: '请核对识别到的信息。',
+    advisorySegment: '请确认',
+    reviewCandidatesTitle: '识别到了不同的结果，请选择正确的信息。',
+    flightCandidatePrompt: '航班号候选',
+    dateCandidatePrompt: '出发日期候选',
+    manualConflictPrompt: '没有可显示的候选值，请在下方输入并确认。',
+    queryTarget: '查询 {flight} · {date}',
+    itineraryReadyLead: '航班号和出发日期已完整。请选择要继续的航段。',
+    readySegmentLead: '请核对航班号和出发日期。',
+    pendingFlightLead: '请核对识别到的信息。',
+    partialFlightLead: '部分航班信息缺失，请补全后继续。'
+  });
+  Object.assign(translations.en, {
+    documentRecognitionWaiting: 'Recognizing your document. Please wait.',
+    liveFlightLookupWaiting: 'Looking up live flight information. Please wait.',
+    confidenceAdvisory: 'Please check the information we found.',
+    auxiliaryAdvisory: 'Please check the information we found.',
+    advisorySegment: 'Please confirm',
+    reviewCandidatesTitle: 'We found different results. Please choose the correct information.',
+    flightCandidatePrompt: 'Flight-number candidates',
+    dateCandidatePrompt: 'Departure-date candidates',
+    manualConflictPrompt: 'No candidate value can be displayed. Enter and confirm the value below.',
+    queryTarget: 'Search {flight} · {date}',
+    itineraryReadyLead: 'The flight number and departure date are complete. Choose a segment to continue.',
+    readySegmentLead: 'Check the flight number and departure date.',
+    pendingFlightLead: 'Please check the information we found.',
+    partialFlightLead: 'Some flight information is missing. Please complete it to continue.'
+  });
+  Object.assign(translations.es, {
+    documentRecognitionWaiting: 'Reconociendo el documento. Espera un momento.',
+    liveFlightLookupWaiting: 'Consultando el vuelo en tiempo real. Espera un momento.',
+    confidenceAdvisory: 'Compruebe la información encontrada.',
+    auxiliaryAdvisory: 'Compruebe la información encontrada.',
+    advisorySegment: 'Confirmar',
+    reviewCandidatesTitle: 'Encontramos resultados diferentes. Elija la información correcta.',
+    flightCandidatePrompt: 'Candidatos de número de vuelo',
+    dateCandidatePrompt: 'Candidatos de fecha de salida',
+    manualConflictPrompt: 'No hay ningún valor candidato visible. Introduce y confirma el valor abajo.',
+    queryTarget: 'Buscar {flight} · {date}',
+    itineraryReadyLead: 'El número de vuelo y la fecha de salida están completos. Elija un tramo para continuar.',
+    readySegmentLead: 'Compruebe el número de vuelo y la fecha de salida.',
+    pendingFlightLead: 'Compruebe la información encontrada.',
+    partialFlightLead: 'Falta parte de la información del vuelo. Complétela para continuar.'
   });
 
   var completionLabels = {
@@ -415,6 +485,7 @@
     document.querySelectorAll('[data-action="upload"], [data-action="demo-flight"], [data-action="manual-submit"] button[type="submit"], [data-action="continue"], [data-action="new-flight-info"], [data-action="select-segment"]').forEach(function (button) {
       var action = button.dataset.action;
       var continueBlocked = action === 'continue' && (awaitingDocumentSelection || !currentFlight
+		|| isDocumentFallbackFlight(currentFlight)
         || departureStopReason(currentFlight)
         || currentFlight && currentFlight.requiresUserConfirmation && !conflictsConfirmed);
       button.disabled = lookupInFlight || Boolean(continueBlocked);
@@ -450,7 +521,7 @@
   }
 
   function normalizeFlightNumber(value) {
-    return String(value || '').replace(/[\s-]/g, '').toUpperCase();
+    return String(value || '').replace(/[\s\u002D\u2010-\u2015\u2212]/g, '').toUpperCase();
   }
 
   function fetchJson(url, options) {
@@ -823,7 +894,8 @@
     document.querySelector('[data-flight-status]').textContent = textFor(status);
     var departureBlock = renderDeparturePassedConfirmation(flight);
     var continueButton = document.querySelector('[data-action="continue"]');
-    continueButton.disabled = Boolean(departureBlock || flight.requiresUserConfirmation && !conflictsConfirmed);
+    continueButton.disabled = Boolean(documentFallback || departureBlock
+      || flight.requiresUserConfirmation && !conflictsConfirmed);
     var continueLabel = continueButton.querySelector('[data-button-label]') || continueButton;
     continueLabel.textContent = t('yesContinue');
     continueButton.setAttribute('aria-label', t('yesContinueAria'));
@@ -838,11 +910,17 @@
     queueAutomaticSpeech();
   }
 
-  function runLoading(messages) {
+  function runLoading(messages, fixedMessageKey) {
     showScreen('loading');
+    var fixed = document.querySelector('[data-loading-fixed]');
     var status = document.querySelector('[data-loading-status]');
     var progress = document.querySelector('[data-progress]');
     var progressBar = document.querySelector('.progress-track');
+    fixedMessageKey = fixedMessageKey || 'liveFlightLookupWaiting';
+    if (fixed) {
+      fixed.dataset.i18n = fixedMessageKey;
+      fixed.textContent = t(fixedMessageKey);
+    }
     status.textContent = textFor(messages[0]);
     progress.style.width = '10%';
     progressBar.setAttribute('aria-valuenow', '10');
@@ -922,6 +1000,10 @@
         field = String(field);
         return field.indexOf(reviewPrefix) === 0 ? field.substring(reviewPrefix.length) : field;
       });
+    var selectedReviewIssues = documentRootReviewIssues.map(normalizeReviewIssue)
+      .filter(function (issue) {
+        return issue && (issue.segmentIndex == null || issue.segmentIndex === index);
+      }).map(function (issue) { return reviewIssuePayload(issue, index); });
     return Object.assign({}, source, {
       flightNumber: segment.flightNumber || null,
       flightNumberConfidence: segment.flightNumberConfidence || null,
@@ -940,6 +1022,7 @@
       seat: segment.seat || null,
       fields: selectedFields,
       needsReviewFields: selectedReviewFields,
+      reviewIssues: selectedReviewIssues,
       segments: documentSegments.slice()
     });
   }
@@ -949,8 +1032,8 @@
     var state = documentSegmentState(segment, index);
     var conflict = state === 'CONFLICT';
     var incomplete = !validDocumentDepartureDate(segment.departureDate)
-      || !validDocumentFlightNumber(segment.flightNumber)
-      || normalizeFlightNumberConfidence(segment) === 'LOW';
+      || !validDocumentFlightNumber(segment.flightNumber);
+    var advisory = documentSegmentHasAdvisory(index, segment);
     var item = document.createElement('button');
     item.type = 'button';
     item.dataset.action = 'select-segment';
@@ -958,6 +1041,7 @@
     item.className = 'segment-option' + (incomplete ? ' is-incomplete' : '')
       + (state === 'NEEDS_CONFIRMATION' ? ' is-pending' : '')
       + (conflict ? ' is-conflict' : '')
+      + (advisory && !conflict ? ' is-advisory' : '')
       + (index === selectedDocumentSegmentIndex ? ' is-selected' : '');
     if (index === selectedDocumentSegmentIndex) item.setAttribute('aria-current', 'true');
     item.disabled = lookupInFlight;
@@ -972,7 +1056,8 @@
     choice.textContent = state === 'CONFLICT' ? t('confirmSegment')
       : state === 'MISSING' ? t('incompleteSegment')
         : state === 'NEEDS_CONFIRMATION' ? t('pendingSegment')
-          : index === selectedDocumentSegmentIndex ? t('selectedSegment') : t('readySegment');
+          : advisory ? t('advisorySegment')
+            : index === selectedDocumentSegmentIndex ? t('selectedSegment') : t('readySegment');
     item.append(heading, details, choice);
     return item;
   }
@@ -1002,6 +1087,7 @@
     updateConfirmModeVisibility();
     var continueButton = document.querySelector('[data-action="continue"]');
     if (continueButton) continueButton.disabled = lookupInFlight || awaitingDocumentSelection || !currentFlight
+	  || isDocumentFallbackFlight(currentFlight)
       || Boolean(departureStopReason(currentFlight)
         || currentFlight.requiresUserConfirmation && !conflictsConfirmed);
   }
@@ -1100,6 +1186,7 @@
       awaitingDocumentSelection = false;
       documentRootFields = {};
       documentRootReviewFields = [];
+      documentRootReviewIssues = [];
       confirmedDocumentFlightNumberIndexes = [];
     }
     flightCorrectionOpen = false;
@@ -1116,7 +1203,7 @@
     currentError = null;
     retryRequest = function () { startFlightLookup(normalized, departureDate, demo, documentResult, demoScenario); };
     setLookupBusy(true);
-    runLoading(loadingMessages);
+    runLoading(loadingMessages, 'liveFlightLookupWaiting');
 
     postFlightJson('/api/journeys/resolve-flight',
       resolvePayload(normalized, departureDate, demo, documentResult, demoScenario, false), function () {
@@ -1198,6 +1285,144 @@
       || documentSegmentFlightNumberConfirmed(segment, index);
   }
 
+  function canonicalReviewField(value) {
+    value = String(value || '').replace(/^segments\[(\d+)\]\./, '');
+    return value.replace(/^conflict\./i, '').replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+      .replace(/[.\s-]+/g, '_').toLowerCase();
+  }
+
+  function reviewIssueSegmentIndex(issue) {
+    if (!issue || typeof issue !== 'object') return null;
+    if (issue.segmentIndex != null && String(issue.segmentIndex).trim() !== '') {
+      var explicit = Number(issue.segmentIndex);
+      if (Number.isInteger(explicit) && explicit >= 0) return explicit;
+    }
+    var match = /^segments\[(\d+)\]\./.exec(String(issue.field || ''));
+    return match ? Number(match[1]) : null;
+  }
+
+  function reviewCandidateValue(candidate) {
+    if (candidate == null) return '';
+    if (typeof candidate !== 'object') return String(candidate).trim();
+    var value = candidate.normalizedValue != null ? candidate.normalizedValue
+      : candidate.value != null ? candidate.value : candidate.rawValue;
+    return value == null ? '' : String(value).trim();
+  }
+
+  function normalizeReviewCandidate(candidate) {
+    var value = reviewCandidateValue(candidate);
+    if (!value) return null;
+    var source = candidate && typeof candidate === 'object' ? candidate.source : null;
+    var confidence = candidate && typeof candidate === 'object' ? Number(candidate.confidence) : NaN;
+    return Object.assign({}, candidate && typeof candidate === 'object' ? candidate : {}, {
+      value: value,
+      normalizedValue: value,
+      source: source == null ? null : String(source),
+      confidence: Number.isFinite(confidence) ? confidence : null
+    });
+  }
+
+  function normalizeReviewIssue(issue) {
+    if (!issue || typeof issue !== 'object') return null;
+    var seen = {};
+    var candidates = (Array.isArray(issue.candidates) ? issue.candidates : [])
+      .map(normalizeReviewCandidate).filter(function (candidate) {
+        if (!candidate || seen[candidate.value]) return false;
+        seen[candidate.value] = true;
+        return true;
+      });
+    var selectedValue = reviewCandidateValue(issue.selectedValue);
+    var status = String(issue.status || '').trim().toUpperCase();
+    return Object.assign({}, issue, {
+      segmentIndex: reviewIssueSegmentIndex(issue),
+      field: canonicalReviewField(issue.field),
+      kind: String(issue.kind || 'REVIEW').trim().toUpperCase(),
+      blocking: issue.blocking === true,
+      candidates: candidates,
+      selectedValue: selectedValue || null,
+      reason: issue.reason == null ? null : String(issue.reason),
+      resolved: issue.resolved === true || status === 'RESOLVED' || Boolean(selectedValue),
+      legacy: issue.legacy === true
+    });
+  }
+
+  function reviewIssuePayload(issue, segmentIndex) {
+    return {
+      segmentIndex: segmentIndex,
+      field: issue.field,
+      kind: issue.kind,
+      blocking: issue.blocking,
+      candidates: issue.candidates.map(function (candidate) {
+        return {
+          field: candidate.field || issue.field,
+          rawValue: candidate.rawValue == null ? candidate.value : candidate.rawValue,
+          normalizedValue: candidate.normalizedValue || candidate.value,
+          source: candidate.source,
+          confidence: candidate.confidence,
+          page: candidate.page == null ? null : candidate.page,
+          boundingBox: candidate.boundingBox || null,
+          nearbyAnchor: candidate.nearbyAnchor || 'UNKNOWN',
+          segmentIndex: segmentIndex,
+          disposition: candidate.disposition || 'CANDIDATE',
+          reason: candidate.reason || issue.reason || 'UNSPECIFIED'
+        };
+      }),
+      selectedValue: issue.selectedValue,
+      reason: issue.reason
+    };
+  }
+
+  function reviewFieldCurrentValue(field, segment) {
+    segment = segment || {};
+    if (field === 'flight_number') return normalizeFlightNumber(segment.flightNumber);
+    if (field === 'departure_date') return String(segment.departureDate || '');
+    return String(segment[field] || '');
+  }
+
+  function legacyReviewIssue(field, index, segment) {
+    var local = String(field || '').replace(/^segments\[\d+\]\./, '');
+    if (local.toLowerCase().indexOf('conflict.') !== 0) return null;
+    var canonical = canonicalReviewField(local);
+    var value = reviewFieldCurrentValue(canonical, segment);
+    return normalizeReviewIssue({
+      segmentIndex: index,
+      field: canonical,
+      kind: 'LEGACY_CONFLICT',
+      blocking: canonical === 'flight_number' || canonical === 'departure_date',
+      candidates: value ? [{ value: value, source: 'LEGACY' }] : [],
+      legacy: true
+    });
+  }
+
+  function reviewIssueIsCritical(issue) {
+    return issue && (issue.field === 'flight_number' || issue.field === 'departure_date');
+  }
+
+  function reviewIssueIsBlockingCritical(issue) {
+    if (!reviewIssueIsCritical(issue) || issue.blocking !== true || issue.resolved) return false;
+    return true;
+  }
+
+  function documentSegmentReviewIssues(index, reviewIssues, reviewFields, segment) {
+    segment = segment || documentSegments[index] || {};
+    var issueSource = Array.isArray(reviewIssues) ? reviewIssues : documentRootReviewIssues;
+    var normalized = issueSource.map(normalizeReviewIssue).filter(function (issue) {
+      return issue && (issue.segmentIndex == null || issue.segmentIndex === index);
+    });
+    var legacyFields = documentSegmentReviewFields(index, reviewFields);
+    legacyFields.forEach(function (field) {
+      var legacy = legacyReviewIssue(field, index, segment);
+      if (legacy && !normalized.some(function (issue) {
+        return issue.field === legacy.field;
+      })) normalized.push(legacy);
+    });
+    if (String(segment.dateSource || '').toUpperCase() === 'CONFLICT'
+        && !normalized.some(function (issue) { return issue.field === 'departure_date'; })) {
+      normalized.push(legacyReviewIssue('conflict.departure_date', index, segment));
+    }
+    return normalized.filter(Boolean);
+  }
+
   function reviewFieldIsCriticalConflict(field) {
     field = String(field || '').replace(/^segments\[\d+\]\./, '').toLowerCase();
     return field === 'conflict.flight_number' || field === 'conflict.flightnumber'
@@ -1216,16 +1441,26 @@
       || field === 'conflict.departure_date' || field === 'conflict.departuredate';
   }
 
-  function documentSegmentHasCriticalConflict(index, segment, reviewFields) {
-    return String(segment && segment.dateSource || '').toUpperCase() === 'CONFLICT'
-      || documentSegmentReviewFields(index, reviewFields).some(reviewFieldIsCriticalConflict);
+  function documentSegmentHasCriticalConflict(index, segment, reviewFields, reviewIssues) {
+    return documentSegmentReviewIssues(index, reviewIssues, reviewFields, segment)
+      .some(reviewIssueIsBlockingCritical);
   }
 
-  function documentSegmentLookupReady(segment, index, reviewFields) {
+  function documentSegmentHasAdvisory(index, segment, reviewFields, reviewIssues) {
+    var confidence = normalizeFlightNumberConfidence(segment);
+    if (validDocumentFlightNumber(segment && segment.flightNumber)
+		&& confidence === 'LOW') return true;
+    return documentSegmentReviewIssues(index, reviewIssues, reviewFields, segment).some(function (issue) {
+		return issue.field === 'departure_date' && !issue.resolved && !reviewIssueIsBlockingCritical(issue)
+        && issue.kind !== 'INTERNAL' && issue.kind !== 'RESOLVED';
+    });
+  }
+
+  function documentSegmentLookupReady(segment, index, reviewFields, reviewIssues) {
     segment = segment || {};
-    return documentSegmentFlightNumberTrusted(segment, index)
+    return validDocumentFlightNumber(segment.flightNumber)
       && validDocumentDepartureDate(segment.departureDate)
-      && !documentSegmentHasCriticalConflict(index, segment, reviewFields);
+      && !documentSegmentHasCriticalConflict(index, segment, reviewFields, reviewIssues);
   }
 
   function documentSegmentReviewFields(index, reviewFields) {
@@ -1241,19 +1476,14 @@
   }
 
   function documentSegmentHasConflict(index) {
-    return documentSegmentReviewFields(index).some(function (field) {
-      return String(field).indexOf('conflict.') === 0;
-    });
+    return documentSegmentHasCriticalConflict(index, documentSegments[index]);
   }
 
   function documentSegmentState(segment, index) {
     segment = segment || {};
-    if (documentSegmentHasConflict(index)
-        || String(segment.dateSource || '').toUpperCase() === 'CONFLICT') return 'CONFLICT';
+    if (documentSegmentHasCriticalConflict(index, segment)) return 'CONFLICT';
     if (!validDocumentDepartureDate(segment.departureDate)
-        || !validDocumentFlightNumber(segment.flightNumber)
-        || normalizeFlightNumberConfidence(segment) === 'LOW') return 'MISSING';
-    if (!documentSegmentFlightNumberTrusted(segment, index)) return 'NEEDS_CONFIRMATION';
+        || !validDocumentFlightNumber(segment.flightNumber)) return 'MISSING';
     return 'QUERYABLE';
   }
 
@@ -1276,9 +1506,8 @@
     if (!segment || normalizeFlightNumber(segment.flightNumber) !== flightNumber
         || segment.departureDate !== departureDate) return localeText(
       '当前航段已变化，请重新选择并核对。', 'This segment changed. Select and review it again.', 'Este tramo cambió. Selecciónalo y revísalo de nuevo.');
-    if (!documentSegmentFlightNumberTrusted(segment, index)) return localeText(
-      '请先确认航班号并保存。', 'Confirm and save the flight number first.', 'Confirma y guarda primero el número de vuelo.');
-    if (documentSegmentHasCriticalConflict(index, segment)) return localeText(
+    if (documentSegmentHasCriticalConflict(index, segment,
+        documentResult.needsReviewFields, documentResult.reviewIssues)) return localeText(
       '请先解决航班号或出发日期冲突。', 'Resolve the flight-number or departure-date conflict first.', 'Resuelve primero el conflicto del número de vuelo o la fecha de salida.');
     return null;
   }
@@ -1290,7 +1519,7 @@
       ? normalizeFlightNumber(segment.flightNumber) : null;
     normalized.flightNumberConfidence = normalizeFlightNumberConfidence(segment);
     normalized.flightNumberConfirmedByUser = Boolean(segment.flightNumberConfirmedByUser);
-    normalized.requiresFlightNumberConfirmation = normalized.flightNumberConfidence === 'MEDIUM'
+	normalized.requiresFlightNumberConfirmation = normalized.flightNumberConfidence === 'LOW'
       && !normalized.flightNumberConfirmedByUser;
     normalized.dateSource = String(segment.dateSource || '').trim().toUpperCase() || null;
     var departureDate = String(segment.departureDate || '').trim();
@@ -1314,6 +1543,8 @@
     var normalized = result && typeof result === 'object' ? Object.assign({}, result) : {};
     normalized.segments = Array.isArray(normalized.segments)
       ? normalized.segments.map(normalizeDocumentSegment) : [];
+    normalized.reviewIssues = Array.isArray(normalized.reviewIssues)
+      ? normalized.reviewIssues.map(normalizeReviewIssue).filter(Boolean) : [];
     return normalized;
   }
 
@@ -1323,7 +1554,8 @@
     var usableIndexes = [];
     segments.forEach(function (segment, index) {
       segment = segment || {};
-      if (documentSegmentLookupReady(segment, index, result && result.needsReviewFields)) {
+      if (documentSegmentLookupReady(segment, index, result && result.needsReviewFields,
+          result && result.reviewIssues)) {
         usableIndexes.push(index);
       }
     });
@@ -1363,6 +1595,13 @@
     if (partialNotice) partialNotice.hidden = true;
     var panel = document.querySelector('[data-manual-document-segments]');
     if (panel) panel.hidden = true;
+    var advisory = document.querySelector('[data-document-advisory]');
+    if (advisory) {
+      advisory.hidden = true;
+      advisory.textContent = '';
+    }
+    var candidates = document.querySelector('[data-review-candidates]');
+    if (candidates) candidates.hidden = true;
     var flightField = document.querySelector('[data-manual-flight-field]');
     var dateField = document.querySelector('[data-manual-date-field]');
     setManualFieldState(flightField, document.getElementById('flight-input'), true);
@@ -1371,6 +1610,8 @@
       document.getElementById('flight-confirm-input'), false);
     setManualConfirmationState(document.querySelector('[data-manual-date-confirmation]'),
       document.getElementById('date-confirm-input'), false);
+    renderFieldStaffHelp(flightField, 'flight_number', null, '');
+    renderFieldStaffHelp(dateField, 'departure_date', null, '');
     var primary = document.querySelector('[data-manual-primary]');
     if (primary) {
       primary.dataset.mode = 'query';
@@ -1408,7 +1649,6 @@
     var dateInput = document.getElementById('date-input');
     if (flightInput) {
       flightInput.value = validDocumentFlightNumber(selected.flightNumber)
-          && normalizeFlightNumberConfidence(selected) !== 'LOW'
         ? formatFlightNumber(selected.flightNumber) : '';
       flightInput.setCustomValidity('');
     }
@@ -1419,6 +1659,126 @@
       document.getElementById('flight-confirm-input'), false);
     setManualConfirmationState(document.querySelector('[data-manual-date-confirmation]'),
       document.getElementById('date-confirm-input'), false);
+  }
+
+  function renderManualReviewCandidates(index, segment) {
+    var panel = document.querySelector('[data-review-candidates]');
+    var fields = document.querySelector('[data-review-candidate-fields]');
+    if (!panel || !fields) return;
+    var issues = documentSegmentReviewIssues(index, null, null, segment)
+      .filter(reviewIssueIsBlockingCritical);
+    fields.replaceChildren();
+    panel.hidden = !issues.length;
+    issues.forEach(function (issue) {
+      var group = document.createElement('section');
+      group.className = 'review-candidate-group';
+      var heading = document.createElement('strong');
+      heading.textContent = t(issue.field === 'flight_number' ? 'flightCandidatePrompt' : 'dateCandidatePrompt');
+      group.append(heading);
+      if (issue.candidates.length) {
+        var list = document.createElement('div');
+        list.className = 'review-candidate-list';
+        issue.candidates.forEach(function (candidate) {
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'review-candidate';
+          button.dataset.action = 'select-review-candidate';
+          button.dataset.segmentIndex = String(index);
+          button.dataset.reviewField = issue.field;
+          button.dataset.candidateValue = candidate.value;
+          var value = document.createElement('strong');
+          value.textContent = candidate.value;
+          button.append(value);
+          var currentValue = reviewFieldCurrentValue(issue.field, segment);
+          button.setAttribute('aria-pressed', String(currentValue === candidate.value));
+          list.append(button);
+        });
+        group.append(list);
+      } else {
+        var empty = document.createElement('p');
+        empty.className = 'review-candidate-empty';
+        empty.textContent = t('manualConflictPrompt');
+        group.append(empty);
+      }
+      fields.append(group);
+    });
+  }
+
+  function renderFieldStaffHelp(fieldElement, field, state, currentReading) {
+    if (!fieldElement) return;
+    var existing = fieldElement.querySelector('[data-field-staff-help]');
+    if (!state) {
+      if (existing) existing.remove();
+      return;
+    }
+    var button = existing;
+    if (!button) {
+      var template = document.querySelector('[data-action="staff"]');
+      button = template ? template.cloneNode(true) : document.createElement('button');
+      button.type = 'button';
+      button.className = 'button button-secondary button-large staff-help-button';
+      button.dataset.action = 'field-staff';
+      button.dataset.fieldStaffHelp = field;
+      button.dataset.i18nAria = 'helpAria';
+      if (!template) {
+        var label = document.createElement('span');
+        button.append(label);
+      }
+      fieldElement.append(button);
+    }
+    button.dataset.action = 'field-staff';
+    button.dataset.fieldStaffHelp = field;
+    button.dataset.fieldState = state;
+    button.dataset.currentReading = currentReading || '';
+    button.setAttribute('aria-label', t('helpAria'));
+    var labelElement = button.querySelector('span');
+    if (labelElement) {
+      labelElement.dataset.i18n = 'fieldStaffHelp';
+      labelElement.textContent = t('fieldStaffHelp');
+    }
+  }
+
+  function documentSegmentAdvisoryCopy(index, segment) {
+    var messages = [];
+    var confidence = normalizeFlightNumberConfidence(segment);
+    if (validDocumentFlightNumber(segment && segment.flightNumber)
+		&& confidence === 'LOW') messages.push(t('confidenceAdvisory'));
+    var auxiliary = documentSegmentReviewIssues(index, null, null, segment).some(function (issue) {
+      return !issue.resolved && !reviewIssueIsBlockingCritical(issue)
+        && issue.kind !== 'INTERNAL' && issue.kind !== 'RESOLVED';
+    });
+    if (auxiliary) messages.push(t('auxiliaryAdvisory'));
+    return messages.filter(function (message, messageIndex) {
+      return messages.indexOf(message) === messageIndex;
+    }).join(' ');
+  }
+
+  function selectDocumentReviewCandidate(button) {
+    var index = Number(button && button.dataset.segmentIndex);
+    var field = button && button.dataset.reviewField;
+    var value = button && button.dataset.candidateValue || '';
+    if (!Number.isInteger(index) || index !== selectedDocumentSegmentIndex
+        || (field !== 'flight_number' && field !== 'departure_date')) return;
+    var input = document.getElementById(field === 'flight_number' ? 'flight-input' : 'date-input');
+    var confirmation = document.getElementById(field === 'flight_number'
+      ? 'flight-confirm-input' : 'date-confirm-input');
+    if (!input) return;
+    if (field === 'flight_number') input.value = formatFlightNumber(value);
+    else setDateInputValue(input, value);
+    input.setCustomValidity('');
+    if (confirmation && !confirmation.disabled) confirmation.checked = true;
+    document.querySelectorAll('[data-action="select-review-candidate"][data-review-field="'
+        + field + '"]').forEach(function (candidateButton) {
+      candidateButton.setAttribute('aria-pressed', String(candidateButton === button));
+    });
+    input.focus();
+  }
+
+  function documentQueryTargetLabel(segment) {
+    return t('queryTarget', {
+      flight: normalizeFlightNumber(segment && segment.flightNumber || ''),
+      date: formatDate(segment && segment.departureDate)
+    });
   }
 
   function renderManualDocumentEntry() {
@@ -1434,31 +1794,51 @@
       ? documentSegments[selectedDocumentSegmentIndex] || {} : {};
     var hasFlightNumber = validDocumentFlightNumber(selected.flightNumber);
     var hasDepartureDate = validDocumentDepartureDate(selected.departureDate);
-    var reviewFields = documentSegmentReviewFields(selectedDocumentSegmentIndex);
-    var flightConflict = reviewFields.some(function (field) {
-      return reviewFieldIsFlightNumber(field) && String(field).toLowerCase().indexOf('conflict.') >= 0;
-    });
-    var dateConflict = String(selected.dateSource || '').toUpperCase() === 'CONFLICT'
-      || reviewFields.some(function (field) {
-        return reviewFieldIsDepartureDate(field) && String(field).toLowerCase().indexOf('conflict.') >= 0;
-      });
-    var flightTrusted = documentSegmentFlightNumberTrusted(selected, selectedDocumentSegmentIndex);
-    var flightNeedsConfirmation = hasFlightNumber && (!flightTrusted || flightConflict);
-    var dateNeedsConfirmation = hasDepartureDate && dateConflict;
+    var blockingIssues = documentSegmentReviewIssues(selectedDocumentSegmentIndex, null, null, selected)
+      .filter(reviewIssueIsBlockingCritical);
+    var allCriticalIssues = documentSegmentReviewIssues(selectedDocumentSegmentIndex, null, null, selected)
+      .filter(reviewIssueIsCritical);
+    var legacyReviewFields = documentSegmentReviewFields(selectedDocumentSegmentIndex);
+    var flightConflict = blockingIssues.some(function (issue) { return issue.field === 'flight_number'; });
+    var dateConflict = blockingIssues.some(function (issue) { return issue.field === 'departure_date'; });
+    var flightReview = allCriticalIssues.some(function (issue) {
+		return issue.field === 'flight_number' && !issue.resolved && !reviewIssueIsBlockingCritical(issue);
+	}) && normalizeFlightNumberConfidence(selected) === 'LOW'
+		|| legacyReviewFields.some(reviewFieldIsFlightNumber)
+			&& normalizeFlightNumberConfidence(selected) === 'LOW'
+		|| hasFlightNumber && normalizeFlightNumberConfidence(selected) === 'LOW';
+    var dateReview = allCriticalIssues.some(function (issue) {
+		return issue.field === 'departure_date' && !issue.resolved && !reviewIssueIsBlockingCritical(issue);
+    }) || legacyReviewFields.some(reviewFieldIsDepartureDate);
     var flightField = document.querySelector('[data-manual-flight-field]');
     var dateField = document.querySelector('[data-manual-date-field]');
-    setManualFieldState(flightField, document.getElementById('flight-input'), !flightTrusted || flightConflict);
-    setManualFieldState(dateField, document.getElementById('date-input'), !hasDepartureDate || dateConflict);
+    setManualFieldState(flightField, document.getElementById('flight-input'),
+      !hasFlightNumber || flightConflict || flightReview);
+    setManualFieldState(dateField, document.getElementById('date-input'),
+      !hasDepartureDate || dateConflict || dateReview);
     setManualConfirmationState(document.querySelector('[data-manual-flight-confirmation]'),
-      document.getElementById('flight-confirm-input'), flightNeedsConfirmation);
+      document.getElementById('flight-confirm-input'), flightConflict || flightReview);
     setManualConfirmationState(document.querySelector('[data-manual-date-confirmation]'),
-      document.getElementById('date-confirm-input'), dateNeedsConfirmation);
+      document.getElementById('date-confirm-input'), dateConflict || dateReview);
+    renderManualReviewCandidates(selectedDocumentSegmentIndex, selected);
+    renderFieldStaffHelp(flightField, 'flight_number', !hasFlightNumber ? 'MISSING'
+      : flightConflict ? 'CONFLICT' : flightReview ? 'REVIEW' : null,
+      flightReview && !flightConflict ? normalizeFlightNumber(selected.flightNumber) : '');
+    renderFieldStaffHelp(dateField, 'departure_date', !hasDepartureDate ? 'MISSING'
+      : dateConflict ? 'CONFLICT' : dateReview ? 'REVIEW' : null,
+      dateReview && !dateConflict ? selected.departureDate : '');
+    var advisory = document.querySelector('[data-document-advisory]');
+    var advisoryText = documentSegmentAdvisoryCopy(selectedDocumentSegmentIndex, selected);
+    if (advisory) {
+      advisory.hidden = !advisoryText;
+      advisory.textContent = advisoryText;
+    }
     var ready = documentSegmentLookupReady(selected, selectedDocumentSegmentIndex);
     var state = documentSegmentState(selected, selectedDocumentSegmentIndex);
     var leadKey = documentSegmentHasCriticalConflict(selectedDocumentSegmentIndex, selected)
-      ? 'confirmSegmentLead' : state === 'NEEDS_CONFIRMATION' ? 'pendingFlightLead'
-        : ready ? 'readySegmentLead' : hasFlightNumber && !hasDepartureDate ? 'partialDateLead'
-          : hasDepartureDate && !flightTrusted ? 'partialFlightLead' : 'manualLead';
+      ? 'confirmSegmentLead' : flightReview || dateReview ? 'pendingFlightLead' : ready ? 'readySegmentLead'
+        : hasFlightNumber && !hasDepartureDate ? 'partialDateLead'
+          : hasDepartureDate && !hasFlightNumber ? 'partialFlightLead' : 'manualLead';
     var lead = document.querySelector('[data-manual-lead]');
     if (lead) {
       lead.dataset.i18n = leadKey;
@@ -1468,17 +1848,23 @@
     if (notice) {
       var noticeKey = state === 'CONFLICT' ? 'conflictDocumentNotice'
         : state === 'MISSING' ? 'missingDocumentNotice'
-          : state === 'NEEDS_CONFIRMATION' ? 'pendingDocumentNotice' : 'readyDocumentNotice';
+          : 'readyDocumentNotice';
       notice.dataset.i18n = noticeKey;
       notice.textContent = t(noticeKey);
     }
     var primary = document.querySelector('[data-manual-primary]');
     if (primary) {
       var mode = ready ? 'query' : 'save';
-      var primaryKey = ready ? 'searchLiveFlight' : 'saveCompletion';
       primary.dataset.mode = mode;
-      primary.dataset.i18n = primaryKey;
-      primary.textContent = t(primaryKey);
+      if (ready) {
+        primary.removeAttribute('data-i18n');
+        primary.textContent = documentQueryTargetLabel(selected);
+        primary.setAttribute('aria-label', primary.textContent);
+      } else {
+        primary.dataset.i18n = 'saveCompletion';
+        primary.textContent = t('saveCompletion');
+        primary.removeAttribute('aria-label');
+      }
     }
     var demo = document.querySelector('.manual-actions [data-action="demo-flight"]');
     if (demo) demo.hidden = partialDocumentEntry;
@@ -1501,45 +1887,60 @@
     });
   }
 
+  function clearDocumentSegmentReviewIssues(index, predicate) {
+    documentRootReviewIssues = documentRootReviewIssues.filter(function (rawIssue) {
+      var issue = normalizeReviewIssue(rawIssue);
+      if (!issue) return false;
+      if (issue.segmentIndex != null && issue.segmentIndex !== index) return true;
+      if (issue.segmentIndex == null && documentSegments.length > 1) return true;
+      return !predicate(issue.field);
+    });
+  }
+
   function applyDocumentSegmentCompletion(index, flightNumber, departureDate, confirmations) {
     index = Number(index);
     if (!Number.isInteger(index) || index < 0 || index >= documentSegments.length) return null;
     var current = documentSegments[index] || {};
     confirmations = confirmations || {};
-    var flightNeedsUpdate = !documentSegmentFlightNumberTrusted(current, index)
-      || documentSegmentReviewFields(index).some(reviewFieldIsFlightNumber);
+    var blockingIssues = documentSegmentReviewIssues(index, null, null, current)
+      .filter(reviewIssueIsBlockingCritical);
+    var flightConflict = blockingIssues.some(function (issue) { return issue.field === 'flight_number'; });
+    var dateConflict = blockingIssues.some(function (issue) { return issue.field === 'departure_date'; });
+    var flightNeedsUpdate = !validDocumentFlightNumber(current.flightNumber) || flightConflict;
     var dateNeedsUpdate = !validDocumentDepartureDate(current.departureDate)
-      || documentSegmentReviewFields(index).some(reviewFieldIsDepartureDate)
-      || String(current.dateSource || '').toUpperCase() === 'CONFLICT';
+      || dateConflict;
     var completedFlightNumber = flightNeedsUpdate ? normalizeFlightNumber(flightNumber)
       : normalizeFlightNumber(current.flightNumber);
     var completedDepartureDate = dateNeedsUpdate ? departureDate : current.departureDate;
     if (!validDocumentFlightNumber(completedFlightNumber)
         || !validDocumentDepartureDate(completedDepartureDate)) return null;
-    if (validDocumentMonthDay(current.departureMonthDay)
+    if (!dateConflict && validDocumentMonthDay(current.departureMonthDay)
         && documentMonthDayFromDate(completedDepartureDate) !== current.departureMonthDay) return null;
     var updated = Object.assign({}, current);
     if (flightNeedsUpdate) {
-      if (validDocumentFlightNumber(current.flightNumber) && !confirmations.flightNumber) return null;
+      if (flightConflict && !confirmations.flightNumber) return null;
       updated.flightNumber = completedFlightNumber;
       updated.flightNumberConfirmedByUser = true;
       updated.requiresFlightNumberConfirmation = false;
       confirmedDocumentFlightNumberIndexes = confirmedDocumentFlightNumberIndexes
         .filter(function (value) { return value !== index; }).concat(index);
       clearDocumentSegmentReviewFields(index, reviewFieldIsFlightNumber);
+      clearDocumentSegmentReviewIssues(index, function (field) { return field === 'flight_number'; });
     }
     if (dateNeedsUpdate) {
-      if (validDocumentDepartureDate(current.departureDate) && !confirmations.departureDate) return null;
+      if (dateConflict && !confirmations.departureDate) return null;
       updated.departureDate = completedDepartureDate;
       updated.departureMonthDay = documentMonthDayFromDate(completedDepartureDate);
       updated.dateSource = 'EXPLICIT_FULL_DATE';
       clearDocumentSegmentReviewFields(index, reviewFieldIsDepartureDate);
+      clearDocumentSegmentReviewIssues(index, function (field) { return field === 'departure_date'; });
     }
     documentSegments[index] = updated;
     syncUsableDocumentSegmentIndexes();
     if (pendingDocument) pendingDocument = Object.assign({}, pendingDocument, {
       segments: documentSegments.slice(),
-      needsReviewFields: documentRootReviewFields.slice()
+      needsReviewFields: documentRootReviewFields.slice(),
+      reviewIssues: documentRootReviewIssues.slice()
     });
     return updated;
   }
@@ -1549,11 +1950,15 @@
     usableDocumentSegmentIndexes = assessment.usableIndexes.slice();
     documentRootFields = Object.assign({}, result.fields || {});
     documentRootReviewFields = Array.isArray(result.needsReviewFields) ? result.needsReviewFields.slice() : [];
+    documentRootReviewIssues = Array.isArray(result.reviewIssues)
+      ? result.reviewIssues.map(normalizeReviewIssue).filter(Boolean) : [];
     confirmedDocumentFlightNumberIndexes = documentSegments.reduce(function (indexes, segment, index) {
       if (segment && segment.flightNumberConfirmedByUser) indexes.push(index);
       return indexes;
     }, []);
-    pendingDocument = Object.assign({}, result, { segments: documentSegments.slice() });
+    pendingDocument = Object.assign({}, result, {
+      segments: documentSegments.slice(), reviewIssues: documentRootReviewIssues.slice()
+    });
     syncUsableDocumentSegmentIndexes();
   }
 
@@ -1608,7 +2013,7 @@
     currentError = null;
     retryRequest = function () { uploadDocument(file); };
     setLookupBusy(true);
-    runLoading(uploadLoadingMessages);
+    runLoading(uploadLoadingMessages, 'documentRecognitionWaiting');
     var extraction = fetchJson('/api/documents/travel-document', {
       method: 'POST', body: formData,
       onResponse: function () { updateLoadingProgress(72, uploadLoadingMessages, 1); }
@@ -1665,7 +2070,7 @@
     currentError = null;
     retryRequest = resolveUploadedFlight;
     setLookupBusy(true);
-    runLoading(loadingMessages);
+    runLoading(loadingMessages, 'liveFlightLookupWaiting');
     var request = resolvePayload(currentFlight.flightNumber, currentFlight.departureDate, false, pendingDocument, null, false);
     return postFlightJson('/api/journeys/resolve-flight', request, function () {
       updateLoadingProgress(72, loadingMessages, 1);
@@ -2821,7 +3226,63 @@
     );
   }
 
+  function fieldStaffReading(context, locale) {
+    if (!context || !context.currentReading) return '';
+    var value = context.field === 'departure_date'
+      ? formatDateForLocale(context.currentReading,
+        locale === 'zh' ? 'zh-CN' : locale === 'es' ? 'es-ES' : 'en-GB')
+      : formatFlightNumber(context.currentReading);
+    if (!value || value === '—') return '';
+    return (locale === 'zh' ? '当前识别：' : locale === 'es' ? 'Lectura actual: ' : 'Current reading: ') + value;
+  }
+
+  function setStaffParagraph(element, body, reading) {
+    if (!element) return;
+    element.replaceChildren(document.createTextNode(body));
+    if (reading) {
+      element.append(document.createElement('br'), document.createElement('br'),
+        document.createTextNode(reading));
+    }
+  }
+
+  function renderFieldStaffCard(context) {
+    var content = fieldStaffContent[context.field];
+    if (!content) return false;
+    var instructionEn = document.querySelector('[data-staff-instruction-en]');
+    var instructionPrimary = document.querySelector('[data-staff-instruction-primary]');
+    if (instructionEn) instructionEn.hidden = true;
+    if (instructionPrimary) {
+      instructionPrimary.textContent = t('staffCardInstruction');
+      instructionPrimary.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale;
+      instructionPrimary.hidden = false;
+    }
+    var closeButton = document.querySelector('[data-action="close-staff"]');
+    if (closeButton) closeButton.setAttribute('aria-label', t('close'));
+    var completedPanel = document.querySelector('[data-staff-completed]');
+    if (completedPanel) completedPanel.hidden = true;
+    var flightStrip = document.querySelector('[data-staff-flight-strip]');
+    if (flightStrip) flightStrip.hidden = true;
+    var facts = document.querySelector('[data-staff-facts]');
+    if (facts) facts.replaceChildren();
+    var titlePrimary = document.querySelector('[data-staff-title-primary]');
+    var titleEn = document.querySelector('[data-staff-title-en]');
+    var bodyPrimary = document.querySelector('[data-staff-primary]');
+    var bodyEn = document.querySelector('[data-staff-en]');
+    var primarySuffix = currentLocale === 'zh' ? 'Zh' : currentLocale === 'es' ? 'Es' : 'En';
+    titlePrimary.textContent = content['title' + primarySuffix];
+    titlePrimary.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale;
+    titleEn.textContent = content.titleEn;
+    titleEn.hidden = currentLocale === 'en';
+    setStaffParagraph(bodyPrimary, content['body' + primarySuffix],
+      fieldStaffReading(context, currentLocale));
+    bodyPrimary.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale;
+    setStaffParagraph(bodyEn, content.bodyEn, fieldStaffReading(context, 'en'));
+    bodyEn.hidden = currentLocale === 'en';
+    return true;
+  }
+
   function renderStaffCard() {
+    if (fieldStaffHelpContext && renderFieldStaffCard(fieldStaffHelpContext)) return;
     var instructionEn = document.querySelector('[data-staff-instruction-en]');
     var instructionPrimary = document.querySelector('[data-staff-instruction-primary]');
     if (instructionEn) {
@@ -2835,6 +3296,8 @@
     }
     var closeButton = document.querySelector('[data-action="close-staff"]');
     if (closeButton) closeButton.setAttribute('aria-label', t('close'));
+    var completedPanel = document.querySelector('[data-staff-completed]');
+    if (completedPanel) completedPanel.hidden = false;
     var titlePrimary = document.querySelector('[data-staff-title-primary]');
     var titleEn = document.querySelector('[data-staff-title-en]');
     titlePrimary.textContent = currentLocale === 'zh' ? staffContent.titleZh : currentLocale === 'es' ? staffContent.titleEs : staffContent.titleEn;
@@ -2942,6 +3405,20 @@
   }
 
   function staffCardText() {
+    if (fieldStaffHelpContext && fieldStaffContent[fieldStaffHelpContext.field]) {
+      var content = fieldStaffContent[fieldStaffHelpContext.field];
+      var primarySuffix = currentLocale === 'zh' ? 'Zh' : currentLocale === 'es' ? 'Es' : 'En';
+      var fieldText = t('staffCardInstruction') + '\n\n'
+        + content['title' + primarySuffix] + '\n\n' + content['body' + primarySuffix];
+      var primaryReading = fieldStaffReading(fieldStaffHelpContext, currentLocale);
+      if (primaryReading) fieldText += '\n\n' + primaryReading;
+      if (currentLocale !== 'en') {
+        fieldText += '\n\n' + content.titleEn + '\n\n' + content.bodyEn;
+        var englishReading = fieldStaffReading(fieldStaffHelpContext, 'en');
+        if (englishReading) fieldText += '\n\n' + englishReading;
+      }
+      return fieldText;
+    }
     var progress = completedProgressText();
     var primaryTitle = currentLocale === 'zh' ? staffContent.titleZh : currentLocale === 'es' ? staffContent.titleEs : staffContent.titleEn;
     var primaryBody = currentLocale === 'zh' ? staffContent.bodyZh : currentLocale === 'es' ? staffContent.bodyEs : staffContent.bodyEn;
@@ -3163,19 +3640,9 @@
       || /^\/api\/journeys\/(?:resolve-flight|refresh-flight|next-action)(?:\?|$)/.test(url);
   }
 
-  function providerErrorSignal(details) {
-    var results = details && details.providerResults;
-    if (!results || typeof results !== 'object') return '';
-    return Object.keys(results).map(function (key) {
-      var result = results[key] || {};
-      return [key, result.provider, result.outcome, result.errorCode].filter(Boolean).join(' ');
-    }).join(' ').toUpperCase();
-  }
-
   function liveFlightErrorCopy(error, details, code) {
     var status = Number(error && error.status) || 0;
     var normalizedCode = String(code || '').toUpperCase();
-    var signal = providerErrorSignal(details);
     var generic = {
       titleZh: '实时航班状态暂未更新', titleEn: 'Flight information is unavailable right now',
       titleEs: 'La información del vuelo no está disponible ahora',
@@ -3191,30 +3658,55 @@
       es: 'La consulta tardó más de 20 segundos y se detuvo de forma segura. Comprueba la conexión y vuelve a intentarlo.'
     };
     if (normalizedCode === 'FLIGHT_NOT_FOUND') return {
-      titleZh: '未找到该日期的航班', titleEn: 'No flight was found for this date', titleEs: 'No se encontró el vuelo para esta fecha',
-      zh: '请确认航班号和出发日期后重试。',
-      en: 'Check the flight number and departure date, then try again.',
-      es: 'Comprueba el número de vuelo y la fecha de salida y vuelve a intentarlo.'
+      titleZh: '没有找到这个航班', titleEn: 'No flight was found', titleEs: 'No se encontró este vuelo',
+      zh: '没有查到这个航班。请检查航空公司代码、航班号和出发日期；如果信息来自上传文件，也可能是文件识别有误。',
+      en: 'No flight was found. Check the airline code, flight number, and departure date; information from an uploaded file may also have been recognized incorrectly.',
+      es: 'No se encontró este vuelo. Comprueba el código de la aerolínea, el número de vuelo y la fecha de salida; si la información procede de un archivo subido, también puede haberse reconocido incorrectamente.'
     };
+	if (normalizedCode === 'LIVE_FLIGHT_TIMEOUT') return {
+	  titleZh: '实时航班查询服务超时', titleEn: 'The live-flight lookup timed out', titleEs: 'La consulta del vuelo agotó el tiempo',
+	  zh: '实时航班查询服务超时，无法据此判断该航班是否存在。请稍后重试。',
+	  en: 'The live-flight lookup timed out. This does not show that the flight does not exist. Please try again later.',
+	  es: 'La consulta del vuelo en tiempo real agotó el tiempo. Esto no significa que el vuelo no exista. Inténtalo de nuevo más tarde.'
+	};
+	if (normalizedCode === 'LIVE_FLIGHT_AUTH_ERROR') return {
+	  titleZh: '实时航班数据源认证失败', titleEn: 'Live-flight authentication failed', titleEs: 'Falló la autenticación de vuelos',
+	  zh: '当前无法确认该航班是否存在。请稍后重试。',
+	  en: 'The flight cannot be verified right now. Please try again later.',
+	  es: 'Ahora no se puede confirmar si el vuelo existe. Inténtalo de nuevo más tarde.'
+	};
+	if (normalizedCode === 'LIVE_FLIGHT_RATE_LIMITED') return {
+	  titleZh: '实时航班查询暂时受限', titleEn: 'Live-flight lookup is temporarily limited', titleEs: 'La consulta de vuelos está limitada temporalmente',
+	  zh: '当前无法确认该航班是否存在。请稍后重试。',
+	  en: 'The flight cannot be verified right now. Please try again later.',
+	  es: 'Ahora no se puede confirmar si el vuelo existe. Inténtalo de nuevo más tarde.'
+	};
+	if (normalizedCode === 'ALL_LIVE_FLIGHT_PROVIDERS_FAILED') return {
+	  titleZh: '暂时无法确认这个航班', titleEn: 'The flight cannot be verified right now',
+	  titleEs: 'No se puede verificar el vuelo ahora',
+	  zh: '当前无法确认该航班是否存在。请稍后重试。',
+	  en: 'The flight cannot be verified right now. Please try again later.',
+	  es: 'Ahora no se puede confirmar si el vuelo existe. Inténtalo de nuevo más tarde.'
+	};
     if (normalizedCode.indexOf('INVALID_') === 0 || status === 400) return {
       titleZh: '航班号或日期有误', titleEn: 'The flight number or date is invalid', titleEs: 'El número de vuelo o la fecha no son válidos',
       zh: '请检查航班号和出发日期，然后重试。',
       en: 'Check the flight number and departure date, then try again.',
       es: 'Comprueba el número de vuelo y la fecha de salida y vuelve a intentarlo.'
     };
-    if (status === 429 || /(RATE.?LIMIT|QUOTA|HTTP.?429|TOO.?MANY)/.test(normalizedCode + ' ' + signal)) return {
+	if (status === 429) return {
       titleZh: '实时航班查询暂时受限', titleEn: 'Live-flight lookup is temporarily limited', titleEs: 'La consulta de vuelos está limitada temporalmente',
       zh: '查询过于频繁，或外部数据源已达到限制。请稍后重试。',
       en: 'There were too many requests, or an external data source reached its limit. Try again later.',
       es: 'Hubo demasiadas consultas o una fuente externa alcanzó su límite. Inténtalo de nuevo más tarde.'
     };
-    if (/TIMEOUT/.test(normalizedCode + ' ' + signal)) return {
+	if (status === 504) return {
       titleZh: '实时数据源响应超时', titleEn: 'The live data source timed out', titleEs: 'La fuente de datos en tiempo real agotó el tiempo',
       zh: '实时数据源未在规定时间内响应。请稍后重试。',
       en: 'The live data source did not respond in time. Try again later.',
       es: 'La fuente de datos en tiempo real no respondió a tiempo. Inténtalo de nuevo más tarde.'
     };
-    if (normalizedCode === 'ALL_LIVE_FLIGHT_PROVIDERS_FAILED' || status === 502) return {
+	if (status === 502) return {
       titleZh: '实时航班数据源暂时不可用', titleEn: 'Live-flight data sources are temporarily unavailable',
       titleEs: 'Las fuentes de datos de vuelos no están disponibles temporalmente',
       zh: '实时航班数据源暂时无法返回结果。请稍后重试。',
@@ -3491,7 +3983,8 @@
     setTimeout(function () { toast.classList.remove('is-visible'); }, 2600);
   }
 
-  function showStaff() {
+  function showStaff(context) {
+    fieldStaffHelpContext = context && fieldStaffContent[context.field] ? context : null;
     stopSpeech(false);
     renderStaffCard();
     openDialog('[data-staff-overlay]', '[data-action="close-staff"]');
@@ -4165,6 +4658,7 @@
     awaitingDocumentSelection = false;
     documentRootFields = {};
     documentRootReviewFields = [];
+    documentRootReviewIssues = [];
     confirmedDocumentFlightNumberIndexes = [];
     flightCorrectionOpen = false;
     partialDocumentEntry = false;
@@ -4204,6 +4698,7 @@
         partialDocumentEntry: partialDocumentEntry,
         documentRootFields: documentRootFields,
         documentRootReviewFields: documentRootReviewFields,
+        documentRootReviewIssues: documentRootReviewIssues,
         conflictsConfirmed: conflictsConfirmed,
         clockAnchor: clockAnchor,
         refreshStatusState: refreshStatusState,
@@ -4378,6 +4873,10 @@
     documentRootReviewFields = Array.isArray(saved.documentRootReviewFields)
       ? saved.documentRootReviewFields.slice()
       : pendingDocument && Array.isArray(pendingDocument.needsReviewFields) ? pendingDocument.needsReviewFields.slice() : [];
+    documentRootReviewIssues = Array.isArray(saved.documentRootReviewIssues)
+      ? saved.documentRootReviewIssues.map(normalizeReviewIssue).filter(Boolean)
+      : pendingDocument && Array.isArray(pendingDocument.reviewIssues)
+        ? pendingDocument.reviewIssues.map(normalizeReviewIssue).filter(Boolean) : [];
     confirmedDocumentFlightNumberIndexes = documentSegments.reduce(function (indexes, segment, index) {
       if (segment && segment.flightNumberConfirmedByUser) indexes.push(index);
       return indexes;
@@ -4469,6 +4968,7 @@
     }
     if (action === 'journey-back') goBack();
     if (action === 'select-segment') selectDocumentSegment(actionElement.dataset.segmentIndex);
+    if (action === 'select-review-candidate') selectDocumentReviewCandidate(actionElement);
     if (action === 'manual') {
       resetManualDocumentEntry();
       document.querySelector('[data-manual-partial-notice]').hidden = true;
@@ -4495,6 +4995,12 @@
         announce(t('segmentSelectionTitle'));
         return;
       }
+	  if (isDocumentFallbackFlight(currentFlight)) {
+		announce(localeText('上传文件中的信息尚未经过实时航班验证，不能进入值机流程。',
+		  'The uploaded document has not been verified against a live flight, so check-in guidance cannot start.',
+		  'El documento subido no se ha verificado con un vuelo real, por lo que no se puede iniciar la guía de facturación.'));
+		return;
+	  }
       if (departureStopReason(currentFlight)) {
         renderDeparturePassedConfirmation(currentFlight);
         showScreen('confirm');
@@ -4534,6 +5040,11 @@
     if (action === 'retry' && retryRequest) retryRequest();
     if (action === 'speak') speak();
     if (action === 'staff') showStaff();
+    if (action === 'field-staff') showStaff({
+      field: actionElement.dataset.fieldStaffHelp,
+      currentReading: actionElement.dataset.fieldState === 'REVIEW'
+        ? actionElement.dataset.currentReading : ''
+    });
     if (action === 'close-staff') closeStaff();
     if (action === 'copy-staff') copyText(staffCardText(), localeText('大字卡内容已复制。', 'Staff card copied.', 'Texto de la tarjeta copiado.'));
     if (action === 'family') showFamily();
@@ -4592,12 +5103,12 @@
         startFlightLookup(segment.flightNumber, segment.departureDate, false, readyResult);
         return;
       }
-      var reviewFields = documentSegmentReviewFields(index);
-      var flightNeedsUpdate = !documentSegmentFlightNumberTrusted(segment, index)
-        || reviewFields.some(reviewFieldIsFlightNumber);
+      var blockingIssues = documentSegmentReviewIssues(index, null, null, segment)
+        .filter(reviewIssueIsBlockingCritical);
+      var flightNeedsUpdate = !validDocumentFlightNumber(segment.flightNumber)
+        || blockingIssues.some(function (issue) { return issue.field === 'flight_number'; });
       var dateNeedsUpdate = !validDocumentDepartureDate(segment.departureDate)
-        || reviewFields.some(reviewFieldIsDepartureDate)
-        || String(segment.dateSource || '').toUpperCase() === 'CONFLICT';
+        || blockingIssues.some(function (issue) { return issue.field === 'departure_date'; });
       flightNumber = flightNeedsUpdate ? flightNumber : segment.flightNumber;
       departureDate = dateNeedsUpdate ? departureDate : segment.departureDate;
       if (!validDocumentFlightNumber(flightNumber)) {

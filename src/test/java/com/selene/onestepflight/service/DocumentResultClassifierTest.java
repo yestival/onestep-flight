@@ -83,14 +83,14 @@ class DocumentResultClassifierTest {
 	}
 
 	@Test
-	void mediumConfidenceFlightRequiresExplicitUserConfirmationBeforeLookup() {
+	void mediumConfidenceFlightIsLookupReadyWithoutConfidenceOnlyBlocking() {
 		DocumentFlightSegment pending = trustedSegment(
 				DocumentFlightSegment.FlightNumberConfidence.MEDIUM, true, false);
 		DocumentFlightSegment confirmed = trustedSegment(
 				DocumentFlightSegment.FlightNumberConfidence.MEDIUM, false, true);
 
 		assertThat(DocumentResultClassifier.classify(response(DocumentType.ITINERARY, List.of(pending))))
-				.isEqualTo(DocumentResultClassification.PARTIAL);
+				.isEqualTo(DocumentResultClassification.USABLE);
 		assertThat(DocumentResultClassifier.classify(response(DocumentType.ITINERARY, List.of(confirmed))))
 				.isEqualTo(DocumentResultClassification.USABLE);
 	}

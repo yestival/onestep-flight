@@ -13,6 +13,8 @@ class FlightServiceNormalizationTest {
 	void acceptsTheOptionalTrailingLetterAllowedByDocumentExtraction() {
 		assertThat(service.normalize("ba 117a")).isEqualTo("BA117A");
 		assertThat(service.normalize("U2-1234Z")).isEqualTo("U21234Z");
+		assertThat(service.normalize("QF–12")).isEqualTo("QF12");
+		assertThat(service.normalize("BA‑117")).isEqualTo("BA117");
 	}
 
 	@Test

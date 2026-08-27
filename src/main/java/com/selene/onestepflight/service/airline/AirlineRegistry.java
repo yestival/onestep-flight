@@ -34,6 +34,7 @@ import java.util.regex.Pattern;
 public final class AirlineRegistry {
 	private static final String SNAPSHOT_RESOURCE = "/airlines/openflights-airlines.dat";
 	private static final String METADATA_RESOURCE = "/airlines/openflights-airlines.properties";
+	private static final String NAME_ALIASES_RESOURCE = "/airlines/airline-name-aliases.tsv";
 	private static final Pattern IATA = Pattern.compile("[A-Z0-9]{2}");
 	private static final Pattern ICAO = Pattern.compile("[A-Z]{3}");
 	private static final Pattern IATA_FLIGHT = Pattern.compile("^([A-Z0-9]{2})\\d{1,4}[A-Z]?$", Pattern.CASE_INSENSITIVE);
@@ -49,9 +50,15 @@ public final class AirlineRegistry {
 	private final Map<String, List<AirlineRecord>> byName;
 	private final Map<String, List<AirlineRecord>> byAlias;
 	private final Map<String, List<AirlineRecord>> byCallsign;
+	private final Map<String, List<AirlineRecord>> byCuratedAlias;
 	private final Map<AirlineRecord, Integer> sourceOrder;
 
 	private AirlineRegistry(AirlineRegistryMetadata metadata, List<AirlineRecord> records) {
+		this(metadata, records, List.of());
+	}
+
+	private AirlineRegistry(AirlineRegistryMetadata metadata, List<AirlineRecord> records,
+			List<AirlineNameAlias> curatedAliases) {
 		this.metadata = Objects.requireNonNull(metadata, "metadata");
 		this.records = List.copyOf(records);
 		this.sourceOrder = new IdentityHashMap<>();
@@ -63,12 +70,17 @@ public final class AirlineRegistry {
 		this.byName = index(this.records, AirlineRecord::name, AirlineRegistry::identityKey, null);
 		this.byAlias = index(this.records, AirlineRecord::alias, AirlineRegistry::identityKey, null);
 		this.byCallsign = index(this.records, AirlineRecord::callsign, AirlineRegistry::identityKey, null);
+		this.byCuratedAlias = aliasIndex(curatedAliases, this.byIata);
 	}
 
 	public static AirlineRegistry loadDefault() {
 		try (InputStream metadataStream = requiredResource(METADATA_RESOURCE);
-				InputStream snapshotStream = requiredResource(SNAPSHOT_RESOURCE)) {
-			return fromSnapshot(snapshotStream.readAllBytes(), readMetadata(metadataStream));
+				InputStream snapshotStream = requiredResource(SNAPSHOT_RESOURCE);
+				InputStream aliasesStream = requiredResource(NAME_ALIASES_RESOURCE)) {
+			byte[] snapshot = snapshotStream.readAllBytes();
+			AirlineRegistryMetadata metadata = readMetadata(metadataStream);
+			validateSnapshot(snapshot, metadata);
+			return new AirlineRegistry(metadata, parse(snapshot), parseAliases(aliasesStream));
 		} catch (IOException exception) {
 			throw new IllegalStateException("Unable to load bundled airline registry", exception);
 		}
@@ -77,16 +89,21 @@ public final class AirlineRegistry {
 	static AirlineRegistry fromSnapshot(byte[] snapshot, AirlineRegistryMetadata metadata) {
 		Objects.requireNonNull(snapshot, "snapshot");
 		Objects.requireNonNull(metadata, "metadata");
+		validateSnapshot(snapshot, metadata);
+		List<AirlineRecord> records = parse(snapshot);
+		return new AirlineRegistry(metadata, records);
+	}
+
+	private static void validateSnapshot(byte[] snapshot, AirlineRegistryMetadata metadata) {
 		String actualHash = sha256(snapshot);
 		if (!actualHash.equalsIgnoreCase(metadata.originalSha256())) {
 			throw new IllegalStateException("Airline registry checksum mismatch");
 		}
-		List<AirlineRecord> records = parse(snapshot);
-		if (records.size() != metadata.recordCount()) {
+		int count = parse(snapshot).size();
+		if (count != metadata.recordCount()) {
 			throw new IllegalStateException("Airline registry record count mismatch: expected "
-					+ metadata.recordCount() + " but found " + records.size());
+					+ metadata.recordCount() + " but found " + count);
 		}
-		return new AirlineRegistry(metadata, records);
 	}
 
 	public AirlineRegistryMetadata metadata() {
@@ -129,10 +146,28 @@ public final class AirlineRegistry {
 		addIdentityCandidates(identity, AirlineMatchType.NAME, byName, candidates, seen, matches);
 		addIdentityCandidates(identity, AirlineMatchType.ALIAS, byAlias, candidates, seen, matches);
 		addIdentityCandidates(identity, AirlineMatchType.CALLSIGN, byCallsign, candidates, seen, matches);
+		addIdentityCandidates(identity, AirlineMatchType.ALIAS, byCuratedAlias, candidates, seen, matches);
 		candidates.sort(Comparator.comparingInt(sourceOrder::get));
 		AirlineMatchType matchType = matches.isEmpty() ? AirlineMatchType.NONE
 				: matches.size() == 1 ? matches.iterator().next() : AirlineMatchType.MULTIPLE_IDENTIFIERS;
 		return resolve(identity, matchType, candidates);
+	}
+
+	/** Exact normalized lookup limited to carrier display names and aliases. */
+	public AirlineResolution searchDisplayName(String query) {
+		String identity = identityKey(query);
+		if (identity == null) return noMatch(null);
+		List<AirlineRecord> curated = byCuratedAlias.get(identity);
+		if (curated != null && !curated.isEmpty()) {
+			return resolve(identity, AirlineMatchType.ALIAS, curated);
+		}
+		Set<AirlineRecord> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+		List<AirlineRecord> candidates = new ArrayList<>();
+		addCandidates(candidates, seen, byName.get(identity));
+		addCandidates(candidates, seen, byAlias.get(identity));
+		candidates.sort(Comparator.comparingInt(sourceOrder::get));
+		return resolve(identity, candidates.isEmpty() ? AirlineMatchType.NONE
+				: AirlineMatchType.NAME, candidates);
 	}
 
 	/**
@@ -316,6 +351,49 @@ public final class AirlineRegistry {
 		return Map.copyOf(immutable);
 	}
 
+	private static List<AirlineNameAlias> parseAliases(InputStream stream) throws IOException {
+		List<AirlineNameAlias> aliases = new ArrayList<>();
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+			String line;
+			int lineNumber = 0;
+			while ((line = reader.readLine()) != null) {
+				lineNumber++;
+				if (line.isBlank() || line.stripLeading().startsWith("#")) continue;
+				String[] parts = line.split("\\t", -1);
+				if ((parts.length < 2 || parts.length > 4) || identityKey(parts[0]) == null
+						|| !IATA.matcher(Objects.toString(codeKey(parts[1]), "")).matches()) {
+					throw new IllegalStateException("Invalid airline alias row at line " + lineNumber);
+				}
+				String icao = parts.length == 3 ? codeKey(parts[2]) : null;
+				if (icao != null && !ICAO.matcher(icao).matches()) {
+					throw new IllegalStateException("Invalid airline alias ICAO at line " + lineNumber);
+				}
+				String carrierName = parts.length == 4 ? nullable(parts[3]) : null;
+				aliases.add(new AirlineNameAlias(parts[0], codeKey(parts[1]), icao, carrierName));
+			}
+		}
+		return List.copyOf(aliases);
+	}
+
+	private static Map<String, List<AirlineRecord>> aliasIndex(List<AirlineNameAlias> aliases,
+			Map<String, List<AirlineRecord>> byIata) {
+		Map<String, List<AirlineRecord>> mutable = new LinkedHashMap<>();
+		for (AirlineNameAlias alias : aliases) {
+			String key = identityKey(alias.name());
+			List<AirlineRecord> records = byIata.getOrDefault(alias.iata(), List.of()).stream()
+					.filter(record -> alias.icao() == null || alias.icao().equals(record.icao()))
+					.filter(record -> alias.carrierName() == null
+							|| Objects.equals(identityKey(alias.carrierName()), identityKey(record.name())))
+					.toList();
+			if (key == null || records.isEmpty()) continue;
+			List<AirlineRecord> values = mutable.computeIfAbsent(key, ignored -> new ArrayList<>());
+			for (AirlineRecord record : records) if (!values.contains(record)) values.add(record);
+		}
+		Map<String, List<AirlineRecord>> immutable = new LinkedHashMap<>();
+		mutable.forEach((key, value) -> immutable.put(key, List.copyOf(value)));
+		return Map.copyOf(immutable);
+	}
+
 	private static InputStream requiredResource(String path) {
 		InputStream stream = AirlineRegistry.class.getResourceAsStream(path);
 		if (stream == null) throw new IllegalStateException("Missing airline registry resource " + path);
@@ -381,5 +459,8 @@ public final class AirlineRegistry {
 		} catch (NoSuchAlgorithmException impossible) {
 			throw new IllegalStateException("SHA-256 is unavailable", impossible);
 		}
+	}
+
+	private record AirlineNameAlias(String name, String iata, String icao, String carrierName) {
 	}
 }
