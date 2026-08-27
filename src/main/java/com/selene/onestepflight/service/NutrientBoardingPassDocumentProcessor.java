@@ -16,6 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -47,16 +48,34 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(NutrientBoardingPassDocumentProcessor.class);
 	private static final String EXTRACT_ENDPOINT = "https://api.nutrient.io/extraction/extract";
+	static final String IMAGE_DATA_SOURCE = "NUTRIENT_DWS_IMAGE_UNDERSTAND";
 	private static final List<String> SEGMENT_FIELD_NAMES = List.of(
 			"flight_number", "departure_date", "departure_airport", "arrival_airport",
 			"scheduled_departure", "scheduled_arrival", "boarding_time", "terminal", "gate", "seat");
+	private static final List<String> IMAGE_SEGMENT_FIELD_NAMES = List.of(
+			"flight_number", "departure_date", "departure_month_day", "departure_date_precision",
+			"departure_airport", "arrival_airport", "scheduled_departure", "scheduled_arrival",
+			"boarding_time", "terminal", "gate", "seat");
 	private static final Set<String> REQUIRED_IDENTITY_FIELDS = Set.of(
 			"flight_number", "departure_date", "departure_airport", "arrival_airport");
 
 	private final RestClient restClient;
 	private final ObjectMapper objectMapper;
+	private final String apiKeyOverride;
 
+	@Autowired
 	public NutrientBoardingPassDocumentProcessor(ObjectMapper objectMapper) {
+		this(objectMapper, productionRestClient(), null);
+	}
+
+	NutrientBoardingPassDocumentProcessor(ObjectMapper objectMapper, RestClient restClient,
+			String apiKeyOverride) {
+		this.objectMapper = objectMapper;
+		this.restClient = restClient;
+		this.apiKeyOverride = apiKeyOverride;
+	}
+
+	private static RestClient productionRestClient() {
 		HttpClient.Builder clientBuilder = HttpClient.newBuilder()
 				.connectTimeout(Duration.ofSeconds(8))
 				.followRedirects(HttpClient.Redirect.NORMAL)
@@ -69,15 +88,14 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 		// Nutrient's extraction endpoint currently resets chunked multipart uploads.
 		// Buffering is bounded by the controller's 10 MB upload limit and gives the
 		// JDK client an exact Content-Length without changing TLS verification.
-		this.restClient = RestClient.builder()
+		return RestClient.builder()
 				.requestFactory(new BufferingClientHttpRequestFactory(requestFactory))
 				.build();
-		this.objectMapper = objectMapper;
 	}
 
 	@Override
 	public BoardingPassExtractionResponse extract(byte[] documentBytes, String filename, String contentType) {
-		String apiKey = System.getenv("NUTRIENT_API_KEY");
+		String apiKey = apiKeyOverride == null ? System.getenv("NUTRIENT_API_KEY") : apiKeyOverride;
 		if (apiKey == null || apiKey.isBlank()) {
 			throw new ExternalServiceNotConfiguredException("NUTRIENT");
 		}
@@ -85,7 +103,8 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 
 		JsonNode response;
 		try {
-			response = requestExtraction(documentBytes, filename, contentType, apiKey);
+			response = requestExtraction(documentBytes, filename, contentType, apiKey,
+					isImageContentType(contentType));
 		} catch (RestClientResponseException exception) {
 			LOGGER.warn("provider=NUTRIENT stage=extraction httpStatus={} rootCauseType={} category=HTTP_REJECTED message={}",
 					exception.getStatusCode().value(), exception.getClass().getName(),
@@ -102,14 +121,15 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 			throw new ExternalServiceUnavailableException("NUTRIENT_EXTRACTION_FAILED");
 		}
 
-		return toResponse(response);
+		return isImageContentType(contentType) ? toImageResponse(response) : toResponse(response);
 	}
 
-	private JsonNode requestExtraction(byte[] documentBytes, String filename, String contentType, String apiKey)
+	private JsonNode requestExtraction(byte[] documentBytes, String filename, String contentType, String apiKey,
+			boolean image)
 			throws JacksonException {
 		MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 		body.add("file", filePart(documentBytes, filename, contentType));
-		body.add("instructions", instructionsPart());
+		body.add("instructions", image ? imageInstructionsPart() : instructionsPart());
 		ResponseEntity<JsonNode> response = restClient.post()
 				.uri(EXTRACT_ENDPOINT)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
@@ -120,6 +140,11 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 		LOGGER.info("provider=NUTRIENT stage=extraction httpStatus={} contentType={}",
 				response.getStatusCode().value(), response.getHeaders().getContentType());
 		return response.getBody();
+	}
+
+	private boolean isImageContentType(String contentType) {
+		return MediaType.IMAGE_JPEG_VALUE.equalsIgnoreCase(contentType)
+				|| MediaType.IMAGE_PNG_VALUE.equalsIgnoreCase(contentType);
 	}
 
 	private HttpEntity<ByteArrayResource> filePart(byte[] bytes, String filename, String contentType) {
@@ -144,6 +169,16 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 		return new HttpEntity<>(objectMapper.writeValueAsString(instructions), headers);
 	}
 
+	private HttpEntity<String> imageInstructionsPart() throws JacksonException {
+		Map<String, Object> instructions = new LinkedHashMap<>();
+		instructions.put("mode", "understand");
+		instructions.put("schema", imageDocumentSchema());
+		instructions.put("citationsEnabled", true);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		return new HttpEntity<>(objectMapper.writeValueAsString(instructions), headers);
+	}
+
 	Map<String, Object> documentSchema() {
 		Map<String, Object> properties = new LinkedHashMap<>();
 		properties.put("document_type", enumProperty(
@@ -157,6 +192,45 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 		// no flight identity is required or invented.
 		schema.put("required", List.of("document_type", "segments"));
 		return schema;
+	}
+
+	Map<String, Object> imageDocumentSchema() {
+		Map<String, Object> properties = new LinkedHashMap<>();
+		properties.put("document_type", enumProperty(
+				"Classify only the visible image. Use UNKNOWN for a non-flight image or when the type is unclear."));
+		properties.put("segments", imageSegmentArrayProperty());
+		Map<String, Object> schema = new LinkedHashMap<>();
+		schema.put("type", "object");
+		schema.put("description", "Extract visible flight legs in top-to-bottom order. Bind each flight number, route, date, and time to its own flight block. A clearly scoped itinerary-header date may apply to following legs until a new date or journey section. Never copy fields between legs or infer a year. If only month and day are visible, omit departure_date and use departure_month_day. Omit uncertain values and sensitive passenger or booking data.");
+		schema.put("properties", properties);
+		schema.put("required", List.of("document_type", "segments"));
+		return schema;
+	}
+
+	private Map<String, Object> imageSegmentArrayProperty() {
+		Map<String, Object> segmentProperties = new LinkedHashMap<>();
+		segmentProperties.put("flight_number", stringProperty("The flight designator actually printed inside this visual segment. Omit it when not explicitly visible, and never infer it from an airline name or copy it from another segment."));
+		segmentProperties.put("departure_date", stringProperty("Local departure date in ISO YYYY-MM-DD format. Return it only when this visual segment explicitly shows a four-digit year; otherwise omit it."));
+		segmentProperties.put("departure_month_day", stringProperty("Local departure month and day in MM-DD format when month and day are visible. This does not authorize inferring a year."));
+		segmentProperties.put("departure_date_precision", stringEnumProperty(
+				List.of("FULL_DATE_VISIBLE", "MONTH_DAY_ONLY", "UNKNOWN"),
+				"Use FULL_DATE_VISIBLE only when a four-digit departure year is explicitly visible in this visual segment; use MONTH_DAY_ONLY when only month and day are visible; otherwise use UNKNOWN."));
+		segmentProperties.put("departure_airport", stringProperty("Three-letter IATA departure airport code printed in this same visual segment."));
+		segmentProperties.put("arrival_airport", stringProperty("Three-letter IATA arrival airport code printed in this same visual segment."));
+		segmentProperties.put("scheduled_departure", stringProperty("Scheduled local departure date and time in ISO format only when complete without guessing a year. Never use an arrival value."));
+		segmentProperties.put("scheduled_arrival", stringProperty("Scheduled local arrival date and time in ISO format only when complete without guessing a year."));
+		segmentProperties.put("boarding_time", stringProperty("Local boarding time in HH:mm format when printed in this same visual segment."));
+		segmentProperties.put("terminal", stringProperty("Departure terminal exactly as printed in this same visual segment, without guessing."));
+		segmentProperties.put("gate", stringProperty("Departure gate exactly as printed in this same visual segment, without guessing."));
+		segmentProperties.put("seat", stringProperty("Seat number exactly as printed in this same visual segment, when present."));
+		Map<String, Object> items = new LinkedHashMap<>();
+		items.put("type", "object");
+		items.put("properties", segmentProperties);
+		Map<String, Object> array = new LinkedHashMap<>();
+		array.put("type", "array");
+		array.put("description", "Every visually independent flight segment in original top-to-bottom order. Do not merge, reorder, complete, or cross-bind fields between segments.");
+		array.put("items", items);
+		return array;
 	}
 
 	private Map<String, Object> segmentArrayProperty() {
@@ -186,6 +260,10 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 				"type", "string",
 				"enum", List.of("BOARDING_PASS", "ITINERARY", "E_TICKET", "BOOKING_CONFIRMATION", "UNKNOWN"),
 				"description", description);
+	}
+
+	private Map<String, Object> stringEnumProperty(List<String> values, String description) {
+		return Map.of("type", "string", "enum", values, "description", description);
 	}
 
 	BoardingPassExtractionResponse toResponse(JsonNode response) {
@@ -239,6 +317,203 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 				List.copyOf(needsReview),
 				"NUTRIENT_DWS_DATA_EXTRACTION",
 				Instant.now());
+	}
+
+	BoardingPassExtractionResponse toImageResponse(JsonNode response) {
+		if (response == null || !response.path("output").path("data").isObject()) {
+			throw new ExternalServiceUnavailableException("NUTRIENT_RESPONSE_INVALID");
+		}
+
+		JsonNode data = response.path("output").path("data");
+		JsonNode metadata = response.path("output").path("metadata");
+		Map<String, ExtractedField> fields = new LinkedHashMap<>();
+		ExtractedField rawDocumentType = extractedField(data, metadata, "document_type");
+		DocumentType documentType = DocumentType.fromProviderValue(rawDocumentType.value());
+		fields.put("document_type", new ExtractedField(documentType.name(), rawDocumentType.confidence(),
+				rawDocumentType.page(), rawDocumentType.boundingBox(), rawDocumentType.sourceLabel()));
+
+		List<String> needsReview = new ArrayList<>();
+		if (rawDocumentType.value() == null
+				|| rawDocumentType.confidence() < DocumentType.HIGH_CONFIDENCE_THRESHOLD) {
+			needsReview.add("document_type");
+		}
+		List<DocumentFlightSegment> segments = parseImageSegments(data, metadata, needsReview);
+		if (segments.size() == 1) {
+			fields.putAll(segments.get(0).fields());
+			for (int index = 0; index < needsReview.size(); index++) {
+				needsReview.set(index, needsReview.get(index).replace("segments[0].", ""));
+			}
+		}
+		if (documentType == DocumentType.UNKNOWN && !needsReview.contains("document_type")) {
+			needsReview.add(0, "document_type");
+		}
+		return new BoardingPassExtractionResponse(
+				documentType,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				false,
+				false,
+				fields,
+				segments,
+				List.copyOf(needsReview),
+				IMAGE_DATA_SOURCE,
+				Instant.now());
+	}
+
+	private List<DocumentFlightSegment> parseImageSegments(JsonNode data, JsonNode metadata,
+			List<String> needsReview) {
+		List<DocumentFlightSegment> segments = new ArrayList<>();
+		JsonNode segmentData = data.path("segments");
+		if (!segmentData.isArray()) return List.of();
+		for (int index = 0; index < segmentData.size(); index++) {
+			segments.add(parseImageSegment(segmentData.path(index), segmentMetadata(metadata, index),
+					index, needsReview));
+		}
+
+		Map<String, Integer> flightNumberCounts = new LinkedHashMap<>();
+		for (DocumentFlightSegment segment : segments) {
+			if (segment.flightNumber() != null) {
+				flightNumberCounts.merge(segment.flightNumber(), 1, Integer::sum);
+			}
+		}
+		for (int index = 0; index < segments.size(); index++) {
+			DocumentFlightSegment segment = segments.get(index);
+			if (segment.flightNumber() == null
+					|| flightNumberCounts.getOrDefault(segment.flightNumber(), 0) < 2) continue;
+			segments.set(index, withFlightNumberConfirmation(segment));
+			addReviewField(needsReview, "segments[" + index + "].flight_number");
+		}
+		return List.copyOf(segments);
+	}
+
+	private DocumentFlightSegment parseImageSegment(JsonNode data, JsonNode metadata, int index,
+			List<String> needsReview) {
+		Map<String, ExtractedField> rawFields = new LinkedHashMap<>();
+		for (String fieldName : IMAGE_SEGMENT_FIELD_NAMES) {
+			rawFields.put(fieldName, extractedField(data, metadata, fieldName,
+					"segments[" + index + "]." + fieldName));
+		}
+
+		String precision = normalizeDatePrecision(rawFields.get("departure_date_precision").value());
+		LocalDate fullDate = "FULL_DATE_VISIBLE".equals(precision)
+				? parseDate(rawFields.get("departure_date").value()) : null;
+		String monthDay = validMonthDay(rawFields.get("departure_month_day").value());
+		Map<String, ExtractedField> segmentFields = new LinkedHashMap<>();
+		for (String fieldName : IMAGE_SEGMENT_FIELD_NAMES) {
+			ExtractedField rawField = rawFields.get(fieldName);
+			String value = switch (fieldName) {
+				case "departure_date" -> fullDate == null ? null : fullDate.toString();
+				case "departure_month_day" -> monthDay;
+				case "departure_date_precision" -> precision;
+				case "scheduled_departure", "scheduled_arrival" ->
+						fullDate == null ? null : validDateTime(rawField.value());
+				default -> sanitizeField(fieldName, rawField).value();
+			};
+			segmentFields.put(fieldName, withValue(rawField, value));
+		}
+
+		ExtractedField flightNumberField = segmentFields.get("flight_number");
+		String flightNumber = flightNumberField.value();
+		DocumentFlightSegment.FlightNumberConfidence flightConfidence =
+				flightNumberConfidence(flightNumberField.confidence());
+		if (flightNumber == null || flightConfidence == DocumentFlightSegment.FlightNumberConfidence.LOW) {
+			addReviewField(needsReview, "segments[" + index + "].flight_number");
+		}
+		if (fullDate == null) {
+			addReviewField(needsReview, "segments[" + index + "].departure_date");
+		}
+		for (String fieldName : List.of("departure_airport", "arrival_airport", "scheduled_departure",
+				"scheduled_arrival", "boarding_time", "terminal", "gate", "seat")) {
+			ExtractedField field = segmentFields.get(fieldName);
+			if (field.value() != null && field.confidence() < 0.65d) {
+				addReviewField(needsReview, "segments[" + index + "]." + fieldName);
+			}
+		}
+
+		ExtractedField identity = segmentFields.get("flight_number");
+		return new DocumentFlightSegment(
+				flightNumber,
+				fullDate,
+				monthDay,
+				normalizeAirport(segmentFields.get("departure_airport").value()),
+				normalizeAirport(segmentFields.get("arrival_airport").value()),
+				segmentFields.get("scheduled_departure").value(),
+				segmentFields.get("scheduled_arrival").value(),
+				segmentFields.get("boarding_time").value(),
+				segmentFields.get("terminal").value(),
+				segmentFields.get("gate").value(),
+				segmentFields.get("seat").value(),
+				segmentConfidence(segmentFields),
+				identity.page(),
+				identity.boundingBox(),
+				segmentFields,
+				flightConfidence,
+				flightNumber != null
+						&& flightConfidence == DocumentFlightSegment.FlightNumberConfidence.LOW,
+				false,
+				fullDate == null ? DocumentFlightSegment.DateSource.MISSING
+						: DocumentFlightSegment.DateSource.EXPLICIT_FULL_DATE);
+	}
+
+	private DocumentFlightSegment withFlightNumberConfirmation(DocumentFlightSegment segment) {
+		Map<String, ExtractedField> imageFields = new LinkedHashMap<>(segment.fields());
+		// The record's public whitelist intentionally removes this image-only control
+		// field. Reattach it just for construction so the image confirmation flag is
+		// not mistaken for a legacy PDF advisory.
+		imageFields.put("departure_date_precision",
+				new ExtractedField(null, 0.0d, null, null, null));
+		return new DocumentFlightSegment(segment.flightNumber(), segment.departureDate(),
+				segment.departureMonthDay(), segment.departureAirport(), segment.arrivalAirport(),
+				segment.scheduledDeparture(), segment.scheduledArrival(), segment.boardingTime(),
+				segment.terminal(), segment.gate(), segment.seat(), segment.confidence(),
+				segment.page(), segment.boundingBox(), imageFields, segment.flightNumberConfidence(),
+				true, segment.flightNumberConfirmedByUser(), segment.dateSource());
+	}
+
+	private ExtractedField withValue(ExtractedField field, String value) {
+		return new ExtractedField(value, field.confidence(), field.page(), field.boundingBox(),
+				field.sourceLabel());
+	}
+
+	private void addReviewField(List<String> needsReview, String field) {
+		if (!needsReview.contains(field)) needsReview.add(field);
+	}
+
+	private DocumentFlightSegment.FlightNumberConfidence flightNumberConfidence(double confidence) {
+		if (!Double.isFinite(confidence) || confidence <= 0.0d) {
+			return DocumentFlightSegment.FlightNumberConfidence.LOW;
+		}
+		if (confidence < 0.60d) {
+			return DocumentFlightSegment.FlightNumberConfidence.LOW;
+		}
+		return confidence < 0.85d ? DocumentFlightSegment.FlightNumberConfidence.MEDIUM
+				: DocumentFlightSegment.FlightNumberConfidence.HIGH;
+	}
+
+	private String normalizeDatePrecision(String value) {
+		if (value == null) return "UNKNOWN";
+		String normalized = value.trim().toUpperCase(Locale.ROOT);
+		return List.of("FULL_DATE_VISIBLE", "MONTH_DAY_ONLY", "UNKNOWN").contains(normalized)
+				? normalized : "UNKNOWN";
+	}
+
+	private String validMonthDay(String value) {
+		if (value == null || !value.matches("\\d{2}-\\d{2}")) return null;
+		try {
+			LocalDate.of(2000, Integer.parseInt(value.substring(0, 2)),
+					Integer.parseInt(value.substring(3, 5)));
+			return value;
+		} catch (RuntimeException exception) {
+			return null;
+		}
 	}
 
 	private List<DocumentFlightSegment> parseSegments(JsonNode data, JsonNode metadata,

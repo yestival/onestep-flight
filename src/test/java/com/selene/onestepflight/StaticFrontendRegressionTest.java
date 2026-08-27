@@ -342,8 +342,8 @@ class StaticFrontendRegressionTest {
     @Test
     void documentSegmentsAreNormalizedBeforeTheirFirstClassification() throws IOException {
         String js = resource("app.js");
-        String normalization = js.substring(js.indexOf("function normalizeDocumentSegment(segment)"),
-                js.indexOf("function classifyDocumentResult(result)"));
+		String normalization = js.substring(js.indexOf("function normalizeDocumentSegment(segment, dataSource)"),
+				js.indexOf("function classifyDocumentResult(result)"));
         String uploadFlow = js.substring(js.indexOf("function uploadDocument(file)"),
                 js.indexOf("function beginFlight(flight, documentResult)"));
 
@@ -353,7 +353,7 @@ class StaticFrontendRegressionTest {
         assertTrue(normalization.contains("normalized.departureDate = match[1]"));
         assertTrue(normalization.contains("normalized.departureMonthDay = documentMonthDayFromDate(match[1])"));
         assertTrue(normalization.contains("validDocumentMonthDay(segment.departureMonthDay)"));
-        assertTrue(normalization.contains("normalized.segments.map(normalizeDocumentSegment)"));
+		assertTrue(normalization.contains("normalizeDocumentSegment(segment, normalized.dataSource)"));
         assertFalse(normalization.contains("Date.parse("));
         assertFalse(normalization.contains("toISOString("));
         assertTrue(uploadFlow.indexOf("result = normalizeDocumentResult(result)")

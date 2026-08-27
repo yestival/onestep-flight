@@ -34,7 +34,8 @@ public record BoardingPassExtractionResponse(
 		String dataSource,
 		Instant extractedAt) {
 	private static final Set<String> ALLOWED_EVIDENCE_FIELDS = Set.of(
-			"document_type", "flight_number", "airline_name", "departure_date", "scheduled_departure",
+			"document_type", "flight_number", "airline_name", "departure_date", "departure_month_day",
+			"scheduled_departure",
 			"scheduled_arrival", "boarding_time", "departure_airport", "arrival_airport",
 			"terminal", "departure_terminal", "arrival_terminal", "gate", "seat");
 

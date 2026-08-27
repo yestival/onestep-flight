@@ -47,7 +47,8 @@ public record DocumentFlightSegment(
 	}
 
 	private static final Set<String> ALLOWED_FIELDS = Set.of(
-			"flight_number", "airline_name", "departure_date", "departure_airport", "arrival_airport",
+			"flight_number", "airline_name", "departure_date", "departure_month_day",
+			"departure_airport", "arrival_airport",
 			"scheduled_departure", "scheduled_arrival", "boarding_time", "terminal",
 			"departure_terminal", "arrival_terminal", "gate", "seat");
 	private static final Pattern FLIGHT_NUMBER_PATTERN = Pattern.compile(
@@ -82,6 +83,8 @@ public record DocumentFlightSegment(
 	}
 
 	public DocumentFlightSegment {
+		boolean imageExtractionEvidence = fields != null
+				&& fields.containsKey("departure_date_precision");
 		departureMonthDay = normalizeMonthDay(departureMonthDay);
 		if (departureDate != null) departureMonthDay = monthDay(departureDate);
 		flightNumberConfidence = Objects.requireNonNullElse(flightNumberConfidence,
@@ -94,12 +97,12 @@ public record DocumentFlightSegment(
 			flightNumberConfidence = FlightNumberConfidence.LOW;
 			requiresFlightNumberConfirmation = false;
 			flightNumberConfirmedByUser = false;
-		} else if (flightNumberConfidence == FlightNumberConfidence.HIGH) {
+		} else if (flightNumberConfirmedByUser) {
 			requiresFlightNumberConfirmation = false;
-			flightNumberConfirmedByUser = false;
-		} else {
-			// Confidence is advisory. A single syntactically valid candidate is lookup
-			// eligible; only a structured unresolved multi-candidate issue can block.
+		} else if (!imageExtractionEvidence) {
+			// Existing PDF and non-image candidates remain advisory-only. Image
+			// extraction supplies its precision evidence before the public field
+			// whitelist is applied, allowing its explicit confirmation gate to survive.
 			requiresFlightNumberConfirmation = false;
 		}
 		dateSource = Objects.requireNonNullElse(dateSource, defaultDateSource(departureDate));

@@ -46,6 +46,7 @@ sandbox.confirmedDocumentFlightNumberIndexes = [];
 sandbox.documentRootReviewFields = [];
 sandbox.documentRootReviewIssues = [];
 sandbox.documentSegments = [];
+sandbox.pendingDocument = null;
 sandbox.currentLocale = 'en';
 sandbox.localeText = (zh, en) => en;
 
@@ -712,4 +713,180 @@ test('preserves an explicit valid date and rejects an impossible ISO date-time',
   assert.equal(normalized.segments[1].departureMonthDay, null);
   assert.equal(normalized.segments[2].departureDate, '2026-09-05');
   assert.equal(normalized.segments[2].departureMonthDay, '09-05');
+});
+
+test('image month-day precision discards an invented full date and never derives one from scheduled departure', () => {
+  const normalized = api.normalizeDocumentResult({
+    dataSource: 'NUTRIENT_DWS_IMAGE_UNDERSTAND',
+    segments: [{
+      flightNumber: 'KL1036', flightNumberConfidence: 'HIGH',
+      departureDate: '2024-08-04', departureMonthDay: '08-04', dateSource: 'MISSING',
+      scheduledDeparture: '2024-08-04T17:30',
+      fields: { flight_number: { value: 'KL1036', confidence: 0.99 } }
+    }]
+  });
+  const assessment = plain(api.classifyDocumentResult(normalized));
+
+  assert.equal(normalized.segments[0].departureDate, null);
+  assert.equal(normalized.segments[0].departureMonthDay, '08-04');
+  assert.equal(normalized.segments[0].dateSource, 'MISSING');
+  assert.equal(api.documentSegmentLookupReady(normalized.segments[0], 0, [], [],
+    normalized.dataSource, normalized.segments), false);
+  assert.equal(assessment.outcome, 'PARTIAL');
+  assert.deepEqual(assessment.usableIndexes, []);
+});
+
+test('image full visible date remains queryable without airport fields when the flight evidence is reliable', () => {
+  const normalized = api.normalizeDocumentResult({
+    dataSource: 'NUTRIENT_DWS_IMAGE_UNDERSTAND',
+    segments: [{
+      flightNumber: 'MF812', flightNumberConfidence: 'HIGH',
+      departureDate: '2025-07-22', departureMonthDay: '07-22',
+      dateSource: 'EXPLICIT_FULL_DATE',
+      fields: { flight_number: { value: 'MF812', confidence: 0.99 } }
+    }]
+  });
+
+  assert.equal(normalized.segments[0].departureDate, '2025-07-22');
+  assert.equal(normalized.segments[0].departureAirport, undefined);
+  assert.equal(normalized.segments[0].arrivalAirport, undefined);
+  assert.equal(api.documentSegmentLookupReady(normalized.segments[0], 0, [], [],
+    normalized.dataSource, normalized.segments), true);
+  assert.equal(plain(api.classifyDocumentResult(normalized)).outcome, 'USABLE');
+});
+
+test('duplicate image flight numbers preserve both legs and require confirmation before either can query', () => {
+  const source = {
+    dataSource: 'NUTRIENT_DWS_IMAGE_UNDERSTAND',
+    segments: [
+      {
+        flightNumber: 'KL1036', flightNumberConfidence: 'HIGH',
+        requiresFlightNumberConfirmation: true,
+        departureDate: '2025-07-22', dateSource: 'EXPLICIT_FULL_DATE',
+        departureAirport: 'AMS', arrivalAirport: 'MAD',
+        fields: { flight_number: { value: 'KL1036', confidence: 0.99 } }
+      },
+      {
+        flightNumber: 'KL1036', flightNumberConfidence: 'HIGH',
+        requiresFlightNumberConfirmation: true,
+        departureDate: '2025-07-23', dateSource: 'EXPLICIT_FULL_DATE',
+        departureAirport: 'MAD', arrivalAirport: 'AMS',
+        fields: { flight_number: { value: 'KL1036', confidence: 0.98 } }
+      }
+    ]
+  };
+  const normalized = api.normalizeDocumentResult(source);
+  const assessment = plain(api.classifyDocumentResult(normalized));
+  sandbox.documentSegments = normalized.segments;
+  sandbox.pendingDocument = normalized;
+  sandbox.documentRootReviewFields = [];
+  sandbox.documentRootReviewIssues = [];
+  sandbox.confirmedDocumentFlightNumberIndexes = [];
+
+  assert.deepEqual(plain(normalized.segments.map(segment => segment.flightNumber)),
+    ['KL1036', 'KL1036']);
+  assert.deepEqual(plain(normalized.segments.map(segment => segment.departureAirport)),
+    ['AMS', 'MAD']);
+  assert.equal(api.documentSegmentState(normalized.segments[0], 0), 'NEEDS_CONFIRMATION');
+  assert.equal(api.documentSegmentState(normalized.segments[1], 1), 'NEEDS_CONFIRMATION');
+  assert.equal(api.documentSegmentLookupReady(normalized.segments[0], 0), false);
+  assert.equal(api.documentSegmentLookupReady(normalized.segments[1], 1), false);
+  assert.equal(assessment.outcome, 'PARTIAL');
+  assert.deepEqual(assessment.usableIndexes, []);
+
+  installSegmentDisplayFixture();
+  sandbox.pendingDocument = normalized;
+  sandbox.documentSegments = normalized.segments;
+  const options = normalized.segments.map((segment, index) => api.createSegmentDisplay(segment, index));
+  assert.equal(options[0].children[2].textContent, '请确认航班号');
+  assert.equal(options[1].children[2].textContent, '请确认航班号');
+});
+
+test('distinct image flight numbers stay in visual order without cross-segment rewriting', () => {
+  const normalized = plain(api.normalizeDocumentResult({
+    dataSource: 'NUTRIENT_DWS_IMAGE_UNDERSTAND',
+    segments: [
+      {
+        flightNumber: 'KL1036', departureDate: '2025-07-22', dateSource: 'EXPLICIT_FULL_DATE',
+        departureAirport: 'AMS', arrivalAirport: 'MAD', scheduledDeparture: '2025-07-22T08:10',
+        fields: { flight_number: { value: 'KL1036', confidence: 0.99 } }
+      },
+      {
+        flightNumber: 'MF812', departureDate: '2025-07-23', dateSource: 'EXPLICIT_FULL_DATE',
+        departureAirport: 'XMN', arrivalAirport: 'AMS', scheduledDeparture: '2025-07-23T11:20',
+        fields: { flight_number: { value: 'MF812', confidence: 0.98 } }
+      }
+    ]
+  }));
+
+  assert.deepEqual(normalized.segments.map(segmentIdentity), [
+    { flightNumber: 'KL1036', departureAirport: 'AMS', arrivalAirport: 'MAD', scheduledDeparture: '2025-07-22T08:10' },
+    { flightNumber: 'MF812', departureAirport: 'XMN', arrivalAirport: 'AMS', scheduledDeparture: '2025-07-23T11:20' }
+  ]);
+});
+
+test('zero or missing image flight evidence confidence normalizes to LOW and blocks lookup', () => {
+  for (const fields of [
+    { flight_number: { value: 'MF812', confidence: 0 } },
+    {}
+  ]) {
+    const normalized = api.normalizeDocumentResult({
+      dataSource: 'NUTRIENT_DWS_IMAGE_UNDERSTAND',
+      segments: [{
+        flightNumber: 'MF812', flightNumberConfidence: 'HIGH',
+        departureDate: '2025-07-22', dateSource: 'EXPLICIT_FULL_DATE', fields
+      }]
+    });
+    assert.equal(normalized.segments[0].flightNumberConfidence, 'LOW');
+    assert.equal(normalized.segments[0].requiresFlightNumberConfirmation, true);
+    assert.equal(api.documentSegmentLookupReady(normalized.segments[0], 0, [], [],
+      normalized.dataSource, normalized.segments), false);
+    assert.equal(plain(api.classifyDocumentResult(normalized)).outcome, 'PARTIAL');
+  }
+});
+
+test('confirming an image flight number clears the real lookup gate without changing another segment', () => {
+  const normalized = api.normalizeDocumentResult({
+    dataSource: 'NUTRIENT_DWS_IMAGE_UNDERSTAND',
+    segments: [{
+      flightNumber: 'MF812', flightNumberConfidence: 'LOW',
+      requiresFlightNumberConfirmation: true,
+      departureDate: '2025-07-22', dateSource: 'EXPLICIT_FULL_DATE',
+      fields: { flight_number: { value: 'MF812', confidence: 0 } }
+    }]
+  });
+  sandbox.documentSegments = normalized.segments;
+  sandbox.pendingDocument = normalized;
+  sandbox.documentRootReviewFields = ['flight_number'];
+  sandbox.documentRootReviewIssues = [];
+  sandbox.confirmedDocumentFlightNumberIndexes = [];
+  sandbox.usableDocumentSegmentIndexes = [];
+
+  assert.equal(api.applyDocumentSegmentCompletion(0, 'MF812', '2025-07-22', {}), null);
+  const completed = api.applyDocumentSegmentCompletion(0, 'MF812', '2025-07-22', {
+    flightNumber: true
+  });
+  assert.equal(completed.flightNumberConfirmedByUser, true);
+  assert.equal(api.documentSegmentLookupReady(sandbox.documentSegments[0], 0), true);
+  assert.equal(api.documentSegmentState(sandbox.documentSegments[0], 0), 'QUERYABLE');
+
+  const edited = api.normalizeDocumentResult({
+    dataSource: 'NUTRIENT_DWS_IMAGE_UNDERSTAND',
+    segments: [{
+      flightNumber: 'MF812', flightNumberConfidence: 'LOW',
+      requiresFlightNumberConfirmation: true,
+      departureDate: '2025-07-22', dateSource: 'EXPLICIT_FULL_DATE',
+      fields: { flight_number: { value: 'MF812', confidence: 0 } }
+    }]
+  });
+  sandbox.documentSegments = edited.segments;
+  sandbox.pendingDocument = edited;
+  sandbox.documentRootReviewFields = ['flight_number'];
+  sandbox.documentRootReviewIssues = [];
+  sandbox.confirmedDocumentFlightNumberIndexes = [];
+
+  const corrected = api.applyDocumentSegmentCompletion(0, 'MF813', '2025-07-22', {});
+  assert.equal(corrected.flightNumber, 'MF813');
+  assert.equal(corrected.flightNumberConfirmedByUser, true);
+  assert.equal(api.documentSegmentLookupReady(sandbox.documentSegments[0], 0), true);
 });

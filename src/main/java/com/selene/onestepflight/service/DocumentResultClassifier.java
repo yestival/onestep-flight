@@ -20,7 +20,13 @@ public final class DocumentResultClassifier {
 			if (segment == null) continue;
 			boolean hasFlightNumber = hasText(segment.flightNumber());
 			boolean hasDepartureDate = segment.departureDate() != null;
-			allLookupReady &= hasFlightNumber && hasDepartureDate
+			boolean imageConfirmationPending = NutrientBoardingPassDocumentProcessor.IMAGE_DATA_SOURCE
+					.equals(result.dataSource())
+					&& !Boolean.TRUE.equals(segment.flightNumberConfirmedByUser())
+					&& (Boolean.TRUE.equals(segment.requiresFlightNumberConfirmation())
+							|| segment.flightNumberConfidence()
+									== DocumentFlightSegment.FlightNumberConfidence.LOW);
+			allLookupReady &= hasFlightNumber && hasDepartureDate && !imageConfirmationPending
 					&& !hasCriticalConflict(result, index);
 			anyIdentityField |= hasFlightNumber || hasDepartureDate || hasText(segment.departureMonthDay());
 		}

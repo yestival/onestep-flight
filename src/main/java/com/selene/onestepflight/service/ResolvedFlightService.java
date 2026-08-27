@@ -39,7 +39,7 @@ import com.selene.onestepflight.dto.ResolvedFlightContext;
 public class ResolvedFlightService {
 	private static final double DOCUMENT_AIRPORT_HINT_CONFIDENCE_THRESHOLD = 0.65d;
 	private static final Set<String> ALLOWED_DOCUMENT_EVIDENCE_FIELDS = Set.of(
-			"document_type", "flight_number", "departure_date", "scheduled_departure",
+			"document_type", "flight_number", "departure_date", "departure_month_day", "scheduled_departure",
 			"scheduled_arrival", "boarding_time", "departure_airport", "arrival_airport",
 			"terminal", "gate", "seat");
 	private static final Pattern INDEXED_LEGACY_CRITICAL_CONFLICT = Pattern.compile(
@@ -80,6 +80,16 @@ public class ResolvedFlightService {
 			BoardingPassExtractionResponse selectedDocument,
 			String normalizedFlightNumber, LocalDate requestedDate) {
 		if (selectedDocument != null && hasBlockingCriticalReview(selectedDocument)) {
+			throw new InvalidDocumentException("DOCUMENT_REVIEW_REQUIRED");
+		}
+		if (selectedDocument != null && originalDocument != null
+				&& NutrientBoardingPassDocumentProcessor.IMAGE_DATA_SOURCE
+						.equals(originalDocument.dataSource())
+				&& !Boolean.TRUE.equals(selectedDocument.flightNumberConfirmedByUser())
+				&& originalDocument.segments().stream()
+						.filter(segment -> Objects.equals(normalizeDocumentFlight(segment.flightNumber()),
+								normalizedFlightNumber))
+						.limit(2).count() >= 2) {
 			throw new InvalidDocumentException("DOCUMENT_REVIEW_REQUIRED");
 		}
 		if (selectedDocument != null || originalDocument == null) return;
@@ -149,6 +159,16 @@ public class ResolvedFlightService {
 	}
 
 	private boolean hasBlockingCriticalReview(BoardingPassExtractionResponse document) {
+		if (NutrientBoardingPassDocumentProcessor.IMAGE_DATA_SOURCE.equals(document.dataSource())
+				&& !document.segments().isEmpty()) {
+			DocumentFlightSegment segment = document.segments().get(0);
+			if (!Boolean.TRUE.equals(segment.flightNumberConfirmedByUser())
+					&& (Boolean.TRUE.equals(segment.requiresFlightNumberConfirmation())
+							|| segment.flightNumberConfidence()
+									== DocumentFlightSegment.FlightNumberConfidence.LOW)) {
+				return true;
+			}
+		}
 		boolean structuredBlocking = document.reviewIssues().stream()
 				.anyMatch(issue -> issue.blocking() && ("flight_number".equals(issue.field())
 						|| "departure_date".equals(issue.field())));
@@ -654,7 +674,8 @@ public class ResolvedFlightService {
 						? normalized : null;
 			}
 			case "departure_airport", "arrival_airport" -> normalizeAirport(trimmed);
-			case "departure_date" -> trimmed.matches("[\\p{L}\\p{N} ./\\-]+") ? trimmed : null;
+			case "departure_date", "departure_month_day" ->
+					trimmed.matches("[\\p{L}\\p{N} ./\\-]+") ? trimmed : null;
 			case "scheduled_departure", "scheduled_arrival", "boarding_time" ->
 					trimmed.matches("[0-9T:+\\-Z ]+") ? trimmed : null;
 			case "terminal", "gate", "seat" ->
@@ -691,7 +712,8 @@ public class ResolvedFlightService {
 	}
 
 	private String safeDocumentDataSource(String value) {
-		return "NUTRIENT_DWS_DATA_EXTRACTION".equals(value) ? value : null;
+		return ("NUTRIENT_DWS_DATA_EXTRACTION".equals(value)
+				|| NutrientBoardingPassDocumentProcessor.IMAGE_DATA_SOURCE.equals(value)) ? value : null;
 	}
 
 	private String firstNonBlank(String first, String second) {

@@ -235,6 +235,49 @@ class ResolvedFlightServiceDocumentSelectionTest {
 	}
 
 	@Test
+	void unconfirmedLowConfidenceImageFlightNumberStopsProviderLookupOnTheServer() {
+		CapturingMultiSource flights = new CapturingMultiSource(false);
+		ResolvedFlightService service = service(flights);
+		DocumentFlightSegment unconfirmed = imageSegment(false);
+		BoardingPassExtractionResponse document = imageDocument(unconfirmed);
+
+		assertThatThrownBy(() -> service.resolve(new ResolveFlightRequest(
+				"MF825", DATE, false, null, document, 0, false)))
+				.isInstanceOf(InvalidDocumentException.class)
+				.hasMessage("DOCUMENT_REVIEW_REQUIRED");
+		assertThat(flights.calls).isZero();
+	}
+
+	@Test
+	void userConfirmedImageFlightNumberCanReachProviderLookup() {
+		CapturingMultiSource flights = new CapturingMultiSource(false);
+		ResolvedFlightService service = service(flights);
+		BoardingPassExtractionResponse document = imageDocument(imageSegment(true));
+
+		service.resolve(new ResolveFlightRequest("MF825", DATE, false, null, document, 0, false));
+
+		assertThat(flights.calls).isOne();
+	}
+
+	@Test
+	void duplicateImageFlightNumbersStillStopProviderLookupAfterJsonRoundTrip() {
+		CapturingMultiSource flights = new CapturingMultiSource(false);
+		ResolvedFlightService service = service(flights);
+		DocumentFlightSegment first = segment("MF825", DATE, "XMN", "CDG");
+		DocumentFlightSegment second = segment("MF825", DATE.plusDays(1), "CDG", "MAN");
+		BoardingPassExtractionResponse document = new BoardingPassExtractionResponse(
+				DocumentType.ITINERARY, null, null, null, null, null, null, null,
+				null, null, null, false, false, Map.of(), List.of(first, second), List.of(),
+				NutrientBoardingPassDocumentProcessor.IMAGE_DATA_SOURCE, Instant.EPOCH);
+
+		assertThatThrownBy(() -> service.resolve(new ResolveFlightRequest(
+				"MF825", DATE, false, null, document, 0, false)))
+				.isInstanceOf(InvalidDocumentException.class)
+				.hasMessage("DOCUMENT_REVIEW_REQUIRED");
+		assertThat(flights.calls).isZero();
+	}
+
+	@Test
 	void unrelatedUnselectedConflictDoesNotBlockManualLookup() {
 		CapturingMultiSource flights = new CapturingMultiSource(false);
 		ResolvedFlightService service = service(flights);
@@ -271,6 +314,20 @@ class ResolvedFlightServiceDocumentSelectionTest {
 				base.boardingTime(), base.departureAirport(), base.arrivalAirport(),
 				base.terminal(), base.gate(), base.seat(), false, false, base.fields(),
 				base.segments(), reviewFields, reviewIssues, base.dataSource(), base.extractedAt());
+	}
+
+	private BoardingPassExtractionResponse imageDocument(DocumentFlightSegment segment) {
+		return new BoardingPassExtractionResponse(DocumentType.ITINERARY, null, null,
+				null, null, null, null, null, null, null, null,
+				false, false, Map.of(), List.of(segment), List.of("flight_number"),
+				NutrientBoardingPassDocumentProcessor.IMAGE_DATA_SOURCE, Instant.EPOCH);
+	}
+
+	private DocumentFlightSegment imageSegment(boolean confirmed) {
+		return new DocumentFlightSegment("MF825", DATE, "08-24", "XMN", "CDG",
+				DATE + "T08:20", DATE + "T11:10", null, null, null, null,
+				0.45d, 0, null, Map.of(), DocumentFlightSegment.FlightNumberConfidence.LOW,
+				!confirmed, confirmed, DocumentFlightSegment.DateSource.EXPLICIT_FULL_DATE);
 	}
 
 	private DocumentFieldCandidate reviewCandidate(String value) {

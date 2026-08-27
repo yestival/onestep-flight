@@ -1228,15 +1228,26 @@
     return /^[A-Z0-9]{2,3}\d{1,4}[A-Z]?$/.test(normalizeFlightNumber(value));
   }
 
-  function normalizeFlightNumberConfidence(segment) {
+  function isImageDocumentSource(dataSource) {
+    return String(dataSource || '').trim().toUpperCase() === 'NUTRIENT_DWS_IMAGE_UNDERSTAND';
+  }
+
+  function activeDocumentDataSource(dataSource) {
+    return dataSource || pendingDocument && pendingDocument.dataSource || null;
+  }
+
+  function normalizeFlightNumberConfidence(segment, dataSource) {
     segment = segment || {};
+    var evidence = segment.fields && segment.fields.flight_number;
+    var confidence = evidence && Number(evidence.confidence);
+    if (isImageDocumentSource(activeDocumentDataSource(dataSource))
+        && (!Number.isFinite(confidence) || confidence <= 0)) return 'LOW';
     var explicit = String(segment.flightNumberConfidence || '').trim().toUpperCase();
     if (explicit === 'HIGH' || explicit === 'MEDIUM' || explicit === 'LOW') return explicit;
     if (!validDocumentFlightNumber(segment.flightNumber)) return 'LOW';
     if (segment.requiresFlightNumberConfirmation === true) return 'MEDIUM';
-    var evidence = segment.fields && segment.fields.flight_number;
-    var confidence = evidence && Number(evidence.confidence);
-    if (Number.isFinite(confidence) && confidence > 0 && confidence < 0.60) return 'LOW';
+    if (!Number.isFinite(confidence) || confidence <= 0) return 'LOW';
+    if (confidence < 0.60) return 'LOW';
     if (Number.isFinite(confidence) && confidence >= 0.60 && confidence < 0.85) return 'MEDIUM';
     return 'HIGH';
   }
@@ -1281,8 +1292,29 @@
 
   function documentSegmentFlightNumberTrusted(segment, index) {
     if (!validDocumentFlightNumber(segment && segment.flightNumber)) return false;
+    if (imageSegmentNeedsFlightNumberConfirmation(segment, index)) return false;
     return normalizeFlightNumberConfidence(segment) === 'HIGH'
       || documentSegmentFlightNumberConfirmed(segment, index);
+  }
+
+  function imageSegmentHasDuplicateFlightNumber(segment, segments) {
+    if (!validDocumentFlightNumber(segment && segment.flightNumber)) return false;
+    var normalized = normalizeFlightNumber(segment.flightNumber);
+    var source = Array.isArray(segments) ? segments : documentSegments;
+    return source.filter(function (candidate) {
+      return validDocumentFlightNumber(candidate && candidate.flightNumber)
+        && normalizeFlightNumber(candidate.flightNumber) === normalized;
+    }).length >= 2;
+  }
+
+  function imageSegmentNeedsFlightNumberConfirmation(segment, index, dataSource, segments) {
+    if (!isImageDocumentSource(activeDocumentDataSource(dataSource))
+        || !validDocumentFlightNumber(segment && segment.flightNumber)
+        || Boolean(segment && segment.flightNumberConfirmedByUser)
+        || !dataSource && documentSegmentFlightNumberConfirmed(segment, index)) return false;
+    return segment.requiresFlightNumberConfirmation === true
+      || normalizeFlightNumberConfidence(segment, dataSource) === 'LOW'
+      || imageSegmentHasDuplicateFlightNumber(segment, segments);
   }
 
   function canonicalReviewField(value) {
@@ -1456,10 +1488,11 @@
     });
   }
 
-  function documentSegmentLookupReady(segment, index, reviewFields, reviewIssues) {
+  function documentSegmentLookupReady(segment, index, reviewFields, reviewIssues, dataSource, segments) {
     segment = segment || {};
     return validDocumentFlightNumber(segment.flightNumber)
       && validDocumentDepartureDate(segment.departureDate)
+      && !imageSegmentNeedsFlightNumberConfirmation(segment, index, dataSource, segments)
       && !documentSegmentHasCriticalConflict(index, segment, reviewFields, reviewIssues);
   }
 
@@ -1479,16 +1512,21 @@
     return documentSegmentHasCriticalConflict(index, documentSegments[index]);
   }
 
-  function documentSegmentState(segment, index) {
+  function documentSegmentState(segment, index, dataSource, segments) {
     segment = segment || {};
     if (documentSegmentHasCriticalConflict(index, segment)) return 'CONFLICT';
     if (!validDocumentDepartureDate(segment.departureDate)
         || !validDocumentFlightNumber(segment.flightNumber)) return 'MISSING';
+    if (imageSegmentNeedsFlightNumberConfirmation(segment, index, dataSource, segments)) {
+      return 'NEEDS_CONFIRMATION';
+    }
     return 'QUERYABLE';
   }
 
   function documentItineraryState() {
-    var states = documentSegments.map(documentSegmentState);
+    var states = documentSegments.map(function (segment, index) {
+      return documentSegmentState(segment, index);
+    });
     if (states.indexOf('CONFLICT') >= 0) return 'CONFLICT';
     if (states.indexOf('MISSING') >= 0) return 'MISSING';
     if (states.indexOf('NEEDS_CONFIRMATION') >= 0) return 'NEEDS_CONFIRMATION';
@@ -1509,20 +1547,37 @@
     if (documentSegmentHasCriticalConflict(index, segment,
         documentResult.needsReviewFields, documentResult.reviewIssues)) return localeText(
       '请先解决航班号或出发日期冲突。', 'Resolve the flight-number or departure-date conflict first.', 'Resuelve primero el conflicto del número de vuelo o la fecha de salida.');
+    if (imageSegmentNeedsFlightNumberConfirmation(segment, index, documentResult.dataSource,
+        documentSegments)) return localeText(
+      '请先确认或修改识别到的航班号。', 'Confirm or edit the recognized flight number first.', 'Confirma o edita primero el número de vuelo reconocido.');
     return null;
   }
 
-  function normalizeDocumentSegment(segment) {
+  function normalizeDocumentSegment(segment, dataSource) {
     if (!segment || typeof segment !== 'object') return {};
     var normalized = Object.assign({}, segment);
     normalized.flightNumber = validDocumentFlightNumber(segment.flightNumber)
       ? normalizeFlightNumber(segment.flightNumber) : null;
-    normalized.flightNumberConfidence = normalizeFlightNumberConfidence(segment);
+    normalized.flightNumberConfidence = normalizeFlightNumberConfidence(segment, dataSource);
     normalized.flightNumberConfirmedByUser = Boolean(segment.flightNumberConfirmedByUser);
 	normalized.requiresFlightNumberConfirmation = normalized.flightNumberConfidence === 'LOW'
-      && !normalized.flightNumberConfirmedByUser;
+      && !normalized.flightNumberConfirmedByUser
+      || Boolean(segment.requiresFlightNumberConfirmation)
+        && !normalized.flightNumberConfirmedByUser;
     normalized.dateSource = String(segment.dateSource || '').trim().toUpperCase() || null;
     var departureDate = String(segment.departureDate || '').trim();
+    if (isImageDocumentSource(dataSource)) {
+      normalized.departureMonthDay = validDocumentMonthDay(segment.departureMonthDay)
+        ? String(segment.departureMonthDay).trim() : null;
+      if (normalized.dateSource === 'EXPLICIT_FULL_DATE'
+          && validDocumentDepartureDate(departureDate)) {
+        normalized.departureDate = departureDate;
+        normalized.departureMonthDay = documentMonthDayFromDate(departureDate);
+      } else {
+        normalized.departureDate = null;
+      }
+      return normalized;
+    }
     if (validDocumentDepartureDate(departureDate)) {
       normalized.departureDate = departureDate;
       normalized.departureMonthDay = documentMonthDayFromDate(departureDate);
@@ -1542,7 +1597,9 @@
   function normalizeDocumentResult(result) {
     var normalized = result && typeof result === 'object' ? Object.assign({}, result) : {};
     normalized.segments = Array.isArray(normalized.segments)
-      ? normalized.segments.map(normalizeDocumentSegment) : [];
+      ? normalized.segments.map(function (segment) {
+        return normalizeDocumentSegment(segment, normalized.dataSource);
+      }) : [];
     normalized.reviewIssues = Array.isArray(normalized.reviewIssues)
       ? normalized.reviewIssues.map(normalizeReviewIssue).filter(Boolean) : [];
     return normalized;
@@ -1555,7 +1612,7 @@
     segments.forEach(function (segment, index) {
       segment = segment || {};
       if (documentSegmentLookupReady(segment, index, result && result.needsReviewFields,
-          result && result.reviewIssues)) {
+          result && result.reviewIssues, result && result.dataSource, segments)) {
         usableIndexes.push(index);
       }
     });
@@ -1799,6 +1856,8 @@
     var allCriticalIssues = documentSegmentReviewIssues(selectedDocumentSegmentIndex, null, null, selected)
       .filter(reviewIssueIsCritical);
     var legacyReviewFields = documentSegmentReviewFields(selectedDocumentSegmentIndex);
+    var imageFlightConfirmation = imageSegmentNeedsFlightNumberConfirmation(
+      selected, selectedDocumentSegmentIndex);
     var flightConflict = blockingIssues.some(function (issue) { return issue.field === 'flight_number'; });
     var dateConflict = blockingIssues.some(function (issue) { return issue.field === 'departure_date'; });
     var flightReview = allCriticalIssues.some(function (issue) {
@@ -1806,7 +1865,8 @@
 	}) && normalizeFlightNumberConfidence(selected) === 'LOW'
 		|| legacyReviewFields.some(reviewFieldIsFlightNumber)
 			&& normalizeFlightNumberConfidence(selected) === 'LOW'
-		|| hasFlightNumber && normalizeFlightNumberConfidence(selected) === 'LOW';
+		|| hasFlightNumber && normalizeFlightNumberConfidence(selected) === 'LOW'
+      || imageFlightConfirmation;
     var dateReview = allCriticalIssues.some(function (issue) {
 		return issue.field === 'departure_date' && !issue.resolved && !reviewIssueIsBlockingCritical(issue);
     }) || legacyReviewFields.some(reviewFieldIsDepartureDate);
@@ -1906,7 +1966,9 @@
       .filter(reviewIssueIsBlockingCritical);
     var flightConflict = blockingIssues.some(function (issue) { return issue.field === 'flight_number'; });
     var dateConflict = blockingIssues.some(function (issue) { return issue.field === 'departure_date'; });
-    var flightNeedsUpdate = !validDocumentFlightNumber(current.flightNumber) || flightConflict;
+    var imageFlightConfirmation = imageSegmentNeedsFlightNumberConfirmation(current, index);
+    var flightNeedsUpdate = !validDocumentFlightNumber(current.flightNumber) || flightConflict
+      || imageFlightConfirmation;
     var dateNeedsUpdate = !validDocumentDepartureDate(current.departureDate)
       || dateConflict;
     var completedFlightNumber = flightNeedsUpdate ? normalizeFlightNumber(flightNumber)
@@ -1918,7 +1980,9 @@
         && documentMonthDayFromDate(completedDepartureDate) !== current.departureMonthDay) return null;
     var updated = Object.assign({}, current);
     if (flightNeedsUpdate) {
-      if (flightConflict && !confirmations.flightNumber) return null;
+      var flightNumberChanged = completedFlightNumber !== normalizeFlightNumber(current.flightNumber);
+      if ((flightConflict || imageFlightConfirmation)
+          && !confirmations.flightNumber && !flightNumberChanged) return null;
       updated.flightNumber = completedFlightNumber;
       updated.flightNumberConfirmedByUser = true;
       updated.requiresFlightNumberConfirmation = false;
@@ -4853,7 +4917,9 @@
     pendingDocument = fromOfflineStorage ? null : saved.document || null;
     documentSegments = (Array.isArray(saved.documentSegments) ? saved.documentSegments
       : pendingDocument && Array.isArray(pendingDocument.segments) ? pendingDocument.segments : [])
-      .map(normalizeDocumentSegment);
+      .map(function (segment) {
+        return normalizeDocumentSegment(segment, pendingDocument && pendingDocument.dataSource);
+      });
     usableDocumentSegmentIndexes = Array.isArray(saved.usableDocumentSegmentIndexes)
       ? saved.usableDocumentSegmentIndexes.filter(function (index) {
         return Number.isInteger(index) && index >= 0 && index < documentSegments.length;
@@ -5106,7 +5172,8 @@
       var blockingIssues = documentSegmentReviewIssues(index, null, null, segment)
         .filter(reviewIssueIsBlockingCritical);
       var flightNeedsUpdate = !validDocumentFlightNumber(segment.flightNumber)
-        || blockingIssues.some(function (issue) { return issue.field === 'flight_number'; });
+        || blockingIssues.some(function (issue) { return issue.field === 'flight_number'; })
+        || imageSegmentNeedsFlightNumberConfirmation(segment, index);
       var dateNeedsUpdate = !validDocumentDepartureDate(segment.departureDate)
         || blockingIssues.some(function (issue) { return issue.field === 'departure_date'; });
       flightNumber = flightNeedsUpdate ? flightNumber : segment.flightNumber;
@@ -5123,7 +5190,10 @@
         dateInput.reportValidity();
         return;
       }
-      if (flightConfirmation && !flightConfirmation.disabled && !flightConfirmation.checked) {
+      var flightNumberChanged = normalizeFlightNumber(flightNumber)
+        !== normalizeFlightNumber(segment.flightNumber);
+      if (flightConfirmation && !flightConfirmation.disabled && !flightConfirmation.checked
+          && !flightNumberChanged) {
         flightConfirmation.setCustomValidity(localeText(
           '请明确确认这个航班号。', 'Explicitly confirm this flight number.', 'Confirma expresamente este número de vuelo.'));
         flightConfirmation.reportValidity();
