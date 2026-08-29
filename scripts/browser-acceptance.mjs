@@ -191,6 +191,7 @@ const summary = {
     staff: { count: 0, iconContract: false, speech: {}, lifecycle: false,
       cardOrder: false, locator: false, extraAssistance: false, browserBack: false },
     confirmSpeech: { text: null, displayedFacts: null, passed: false },
+    journeyProblem: { requests: [], locales: {}, responsive: {}, historical: false, passed: false },
     family: { controls: null, responsive: {}, nativeLink: false, nativeFile: false,
       forbiddenUiAbsent: false, clipboardUnused: false },
     mockedApiCalls: {},
@@ -512,12 +513,16 @@ function deterministicInjectionSource() {
       selectedSample: 'outbound',
       apiCalls: [],
       resolveRequests: [],
+      refreshRequests: [],
+      journeyProblemRequests: [],
+      journeyProblemMode: 'ANSWER',
       staffRequests: [],
       shareCreates: [],
       unexpectedRequests: [],
       nativeShares: [],
       canShareCalls: [],
       clipboardWrites: [],
+      flights,
       speech: { utterances: [], cancels: 0, speaking: false, pending: false, current: null }
     };
     try { localStorage.clear(); sessionStorage.clear(); } catch (_) {}
@@ -542,6 +547,37 @@ function deterministicInjectionSource() {
         state.resolveRequests.push(clone(request));
         const key = String(request.flightNumber || '').replace(/\\s+/g, '').toUpperCase();
         if (flights[key]) return response(clone(flights[key]));
+      }
+      if (url.pathname === '/api/journeys/refresh-flight' && method === 'POST') {
+        let request = {};
+        try { request = JSON.parse(String(init.body || '{}')); } catch (_) {}
+        state.refreshRequests.push(clone(request));
+        const key = String(request.flightNumber || '').replace(/\s+/g, '').toUpperCase();
+        if (flights[key]) return response(clone(flights[key]));
+      }
+      if (url.pathname === '/api/assistance/journey-problem' && method === 'POST') {
+        let request = {};
+        try { request = JSON.parse(String(init.body || '{}')); } catch (_) {}
+        state.journeyProblemRequests.push(clone(request));
+        const answers = {
+          zh: '请先到航空公司柜台询问能否继续乘坐当前航班。请留意新的起飞时间。',
+          en: 'Ask the airline desk whether you can still take this flight. Monitor the updated departure time.',
+          es: 'Pregunta en el mostrador si aún puedes tomar este vuelo. Consulta la nueva hora de salida.'
+        };
+        if (state.journeyProblemMode === 'DELAY' || state.journeyProblemMode === 'DELAY_RECOVERY') {
+          return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => resolve(new Response(JSON.stringify({
+              answer: answers[request.locale] || answers.en,
+              status: 'ANSWER',
+              retrievedAt: new Date().toISOString()
+            }), { status: 200, headers: { 'Content-Type': 'application/json' } })), 250);
+            if (init.signal) init.signal.addEventListener('abort', () => {
+              clearTimeout(timer); reject(new DOMException('Aborted', 'AbortError'));
+            }, { once: true });
+          });
+        }
+        if (state.journeyProblemMode === 'FAIL') return response({ code: 'UPSTREAM_UNAVAILABLE' }, 503);
+        return response({ answer: answers[request.locale] || answers.en, status: 'ANSWER', retrievedAt: new Date().toISOString() });
       }
       if (url.pathname === '/api/assistance/staff-guidance' && method === 'POST') {
         let request = {};
@@ -644,6 +680,23 @@ function deterministicInjectionSource() {
       configurable: true, value: FixedSpeechSynthesisUtterance
     });
     Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: speechApi });
+
+    state.journeyProblemRequests = [];
+    state.recognitionMode = 'success';
+    state.recognitionTranscript = '语音识别的完整情况';
+    class FixedSpeechRecognition {
+      constructor() { this.lang = ''; this.continuous = true; this.interimResults = true; this.maxAlternatives = 0; }
+      start() {
+        setTimeout(() => {
+          if (state.recognitionMode === 'success') {
+            if (this.onresult) this.onresult({ results: [[{ transcript: state.recognitionTranscript }]] });
+            if (this.onend) this.onend();
+          } else if (this.onerror) this.onerror({ error: 'no-speech' });
+        }, 0);
+      }
+      abort() { state.recognitionAborts = (state.recognitionAborts || 0) + 1; }
+    }
+    Object.defineProperty(window, 'SpeechRecognition', { configurable: true, value: FixedSpeechRecognition });
 
     const normalizeShare = (payload) => ({
       title: payload && payload.title || null,
@@ -939,9 +992,9 @@ async function verifyStaffIconContract(page) {
 
 async function verifyStaffSpeech(page) {
   const expected = {
-    zh: { text: '请把这张卡给工作人员看。需要寻找工作人员时，请点屏幕顶部的“帮我找人”。需要了解这里可以提供的额外协助时，请点屏幕底部的“查看这里可以提供的额外协助”。', lang: 'zh-CN' },
-    en: { text: 'Please show this card to a member of staff. To find staff, select “Help me find staff” at the top of the screen. To learn about additional assistance available here, select “View additional assistance available here” at the bottom of the screen.', lang: 'en-US' },
-    es: { text: 'Muestre esta tarjeta a un miembro del personal. Para buscar personal, pulse «Ayúdame a encontrar personal» en la parte superior de la pantalla. Para conocer la asistencia adicional disponible aquí, pulse «Ver la asistencia adicional disponible aquí» en la parte inferior de la pantalla.', lang: 'es-ES' }
+    zh: { text: '请把这个页面给工作人员看。需要时可联系机场。', lang: 'zh-CN' },
+    en: { text: 'Please show this screen to a member of staff. Contact the airport if needed.', lang: 'en-US' },
+    es: { text: 'Muestre esta pantalla a un miembro del personal. Contacte con el aeropuerto si lo necesita.', lang: 'es-ES' }
   };
   let lifecyclePassed = true;
   for (const [locale, contract] of Object.entries(expected)) {
@@ -1107,6 +1160,39 @@ async function verifyStaffLocatorExperience(page) {
     'closing the whole staff overlay did not stop speech and restore focus', closeContract);
 }
 
+async function verifyCurrentStaffExperience(page) {
+  await click(page, '.screen-confirm > .confirm-choice-actions [data-action="continue"]');
+  await activeScreen(page, 'step');
+  await evaluate(page, `window.__fixedAcceptance.resetSpeech()`);
+  await evaluate(page, `window.__fixedAcceptance.staffTrigger = document.querySelector('.screen-step [data-action="staff"]')`);
+  await click(page, '.screen-step [data-action="staff"]');
+  await waitFor(page, `!document.querySelector('[data-staff-overlay]').hidden`, 'current staff card');
+  const contract = await evaluate(page, `(() => {
+    const overlay = document.querySelector('[data-staff-overlay]');
+    const card = overlay.querySelector('[data-staff-card-view]');
+    return {
+      cardVisible: card && !card.hidden,
+      resourceHidden: overlay.querySelector('[data-airport-resource-view]').hidden,
+      closeCount: overlay.querySelectorAll('[data-action="close-staff"]').length,
+      forbiddenCount: overlay.querySelectorAll('[data-action="find-staff"], [data-action="open-extra-assistance"], [data-action*="copy"]').length,
+      speechCount: window.__fixedAcceptance.speech.utterances.length
+    };
+  })()`);
+  requireAcceptance(contract.cardVisible && contract.resourceHidden && contract.closeCount === 1
+      && contract.forbiddenCount === 0 && contract.speechCount === 1,
+    'current staff card contract failed', contract);
+  const cancelsBefore = await evaluate(page, `window.__fixedAcceptance.speech.cancels`);
+  await click(page, '[data-action="close-staff"]');
+  await waitFor(page, `document.querySelector('[data-staff-overlay]').hidden`, 'close current staff card');
+  requireAcceptance(await evaluate(page, `window.__fixedAcceptance.speech.cancels > ${cancelsBefore}
+    && document.activeElement && document.activeElement.dataset.action === 'staff'`),
+    'staff close did not cancel speech or restore focus');
+  summary.deterministic.staff.cardOrder = true;
+  summary.deterministic.staff.locator = true;
+  summary.deterministic.staff.extraAssistance = true;
+  summary.deterministic.staff.browserBack = true;
+}
+
 async function selectOutboundSegments(page) {
   await uploadFixedDocument(page, 'outbound', 'selected');
   const resolverCount = await evaluate(page, `window.__fixedAcceptance.resolveRequests.length`);
@@ -1178,6 +1264,17 @@ async function selectOutboundSegments(page) {
   summary.deterministic.requestCounts.rapidDoubleClick = 1;
   summary.deterministic.requestCounts.explicitQuery = 1;
   summary.deterministic.departedFirst = true;
+  await click(page, '[data-departure-passed-confirmation] [data-action="open-journey-problem"]');
+  await waitFor(page, `!document.querySelector('[data-journey-problem-overlay]').hidden`,
+    'departure-passed journey problem dialog');
+  requireAcceptance(await evaluate(page, `(() => {
+    const step = document.querySelector('[data-journey-problem-connection-step]');
+    return step && !step.hidden && step.innerText.trim()
+      && step.querySelectorAll('[data-action="journey-problem-connection"]').length === 2;
+  })()`), 'departure-passed journey problem dialog did not start at the connection question');
+  await click(page, '[data-action="close-journey-problem"]');
+  await waitFor(page, `document.querySelector('[data-journey-problem-overlay]').hidden`,
+    'close departure-passed journey problem dialog');
   await verifyStaffIconContract(page);
   await verifyStaffSpeech(page);
 
@@ -1268,8 +1365,8 @@ async function verifyConfirmationSpeech(page) {
   const spoken = await evaluate(page, `window.__fixedAcceptance.speech.utterances[0]`);
   requireAcceptance(spoken.text.includes('AF 1668') && !spoken.text.includes('MF 825')
     && spoken.text.includes('航站楼') && spoken.text.includes('登机口') && spoken.text.includes('登机时间')
-    && spoken.text.includes(displayed.terminal) && spoken.text.includes(displayed.gate)
-    && spoken.text.includes(displayed.boarding) && spoken.lang === 'zh-CN' && spoken.rate === 0.88,
+    && spoken.text.includes('2E') && spoken.text.includes('英文字母 B') && spoken.text.includes('12 号登机口')
+    && spoken.text.includes('08') && spoken.text.includes('45') && spoken.lang === 'zh-CN' && spoken.rate === 0.88,
   'confirmation speech does not match the displayed second-segment facts', { spoken, displayed });
   await click(page, '.screen-confirm > .confirm-assistance-actions [data-action="speak"]');
   await waitFor(page, `!window.__fixedAcceptance.speech.speaking`, 'confirmation speech stop');
@@ -1381,6 +1478,204 @@ async function verifyFamilySharing(page) {
   summary.deterministic.family.clipboardUnused = true;
 }
 
+async function verifyJourneyProblem(page) {
+  requireAcceptance(await evaluate(page, `document.querySelector('[data-screen="welcome"] [data-journey-problem-entry]') === null`),
+    'welcome exposes the journey-problem entry');
+  requireAcceptance(await evaluate(page, `(() => {
+    const entry = document.querySelector('[data-departure-passed-confirmation] [data-journey-problem-entry]');
+    return entry && entry.closest('[data-departure-passed-confirmation]').hidden;
+  })()`), 'ordinary confirmation exposes a visible journey-problem entry');
+
+  const alreadyOnStep = await evaluate(page, `!document.querySelector('[data-screen="step"]').hidden`);
+  if (!alreadyOnStep) await click(page, '.screen-confirm > .confirm-choice-actions [data-action="continue"]');
+  await activeScreen(page, 'step');
+  await waitFor(page, `Boolean(document.querySelector('.screen-step [data-action="open-journey-problem"]'))`, 'journey problem entry');
+
+  await evaluate(page, `(() => {
+    const flight = window.__fixedAcceptance.flights.AF1668;
+    flight.status = 'DELAYED';
+    flight.estimatedDeparture = '2026-09-05T10:20:00+02:00';
+    flight.delayMinutes = 55;
+    flight.latestChanges = [
+      { type: 'STATUS_CHANGED', oldValue: 'SCHEDULED', newValue: 'DELAYED', critical: true, detectedAt: '2026-09-05T07:10:00Z' },
+      { type: 'DEPARTURE_TIME_CHANGED', oldValue: '2026-09-05T09:25:00+02:00', newValue: '2026-09-05T10:20:00+02:00', critical: true, detectedAt: '2026-09-05T07:10:00Z' }
+    ];
+    document.querySelector('[data-action="refresh-flight"]').click();
+  })()`);
+  await waitFor(page, `Boolean(document.querySelector('.screen-step .flight-change-journey-problem-link'))`, 'journey problem flight-change link');
+  await click(page, '.screen-step .flight-change-journey-problem-link');
+  requireAcceptance(await evaluate(page, `document.activeElement === document.querySelector('.screen-step [data-action="open-journey-problem"]')`),
+    'flight-change link did not focus the gold entry');
+
+  const localeContracts = {
+    zh: { question: '这班之后还要转机吗？', mode: 'ANSWER', statement: '航班晚点了，我现在该做什么？',
+      answer: '请先到航空公司柜台询问能否继续乘坐当前航班。 请留意新的起飞时间。', confirmation: '请与航空公司工作人员确认。', lang: 'zh-CN' },
+    en: { question: 'Do you have another flight after this one?', mode: 'RECOVERY', statement: 'My flight is delayed. What should I do?',
+      answer: 'Ask the airline desk whether you can still take this flight. Monitor the updated departure time.', confirmation: 'Please confirm with airline staff.', lang: 'en-US' },
+    es: { question: '¿Tienes que hacer conexión después de este vuelo?', mode: 'FAIL', statement: 'Mi vuelo está retrasado. ¿Qué debo hacer?',
+      answer: 'No te preocupes. Conserva tu tarjeta de embarque y los datos del vuelo, y explica al personal de la aerolínea la situación que has descrito para que pueda confirmar el siguiente paso.', confirmation: 'Confírmalo con el personal de la aerolínea.', lang: 'es-ES' }
+  };
+  const bannedJourneyCopy = /无法找到|没有找到|未找到|找不到|可靠的解决方案|could not find|cannot find|unable to find|no reliable solution|no se pudo encontrar|ninguna solución fiable/i;
+  for (const [locale, contract] of Object.entries(localeContracts)) {
+    await setValue(page, '#locale-select', locale);
+    await click(page, '.screen-step [data-action="open-journey-problem"]');
+    await waitFor(page, `!document.querySelector('[data-journey-problem-overlay]').hidden`, `${locale} journey dialog`);
+    const initial = await evaluate(page, `(() => ({
+      question: document.querySelector('[data-journey-problem-connection-step]').innerText.trim(),
+      formHidden: document.querySelector('[data-journey-problem-form]').hidden,
+      resultHidden: document.querySelector('[data-journey-problem-result]').hidden,
+      buttonCount: document.querySelectorAll('[data-action="journey-problem-connection"]').length
+    }))()`);
+    requireAcceptance(initial.question.includes(contract.question) && initial.formHidden && initial.resultHidden && initial.buttonCount === 2,
+      `${locale} journey dialog initial state is wrong`, initial);
+    await click(page, '[data-action="journey-problem-connection"][data-connection="false"]');
+    requireAcceptance(await evaluate(page, `document.querySelector('[data-journey-problem-transfer-prompt]').hidden
+      && !document.querySelector('[data-journey-problem-form]').hidden`), `${locale} no-connection state is wrong`);
+    await evaluate(page, `window.__fixedAcceptance.journeyProblemMode = ${JSON.stringify(contract.mode)};
+      window.__fixedAcceptance.resetSpeech()`);
+    await setValue(page, '[data-journey-problem-statement]', contract.statement);
+    await click(page, '[data-journey-problem-submit]');
+    await waitFor(page, `!document.querySelector('[data-journey-problem-result]').hidden`, `${locale} journey result`);
+    const localeResult = await evaluate(page, `(() => ({
+      answer: document.querySelector('[data-journey-problem-answer]').textContent.trim(),
+      confirmation: document.querySelector('[data-journey-problem-confirmation]').textContent.trim(),
+      speech: window.__fixedAcceptance.speech.utterances.at(-1),
+      cardText: document.querySelector('[data-journey-problem-card]').innerText,
+      request: window.__fixedAcceptance.journeyProblemRequests.at(-1)
+    }))()`);
+    requireAcceptance(localeResult.request.locale === locale
+        && localeResult.request.passengerStatement === contract.statement
+        && localeResult.answer === contract.answer
+        && localeResult.confirmation === contract.confirmation
+        && localeResult.speech && localeResult.speech.lang === contract.lang
+        && localeResult.speech.text.includes(contract.answer) && localeResult.speech.text.includes(contract.confirmation)
+        && !/\b(?:ANSWER|RECOVERY|FALLBACK)\b/.test(localeResult.cardText)
+        && !bannedJourneyCopy.test(localeResult.answer),
+      `${locale} submitted journey contract failed`, localeResult);
+    summary.deterministic.journeyProblem.locales[locale] = true;
+    await click(page, '[data-action="close-journey-problem"]');
+  }
+
+  await setValue(page, '#locale-select', 'zh');
+  await evaluate(page, `window.__fixedAcceptance.journeyProblemMode = 'ANSWER'`);
+  await click(page, '.screen-step [data-action="open-journey-problem"]');
+  await click(page, '[data-action="journey-problem-connection"][data-connection="true"]');
+  requireAcceptance(await evaluate(page, `!document.querySelector('[data-journey-problem-transfer-prompt]').hidden
+    && document.querySelector('[data-journey-problem-transfer-prompt]').textContent.trim() === '请尽力说明下一班的起飞时间、航班号和目的地。'
+    && Boolean(document.querySelector('[data-action="journey-problem-voice"] svg'))`), 'connection input state is wrong');
+  await click(page, '[data-action="journey-problem-voice"]');
+  await waitFor(page, `document.querySelector('[data-journey-problem-statement]').value.includes('语音识别的完整情况')`, 'voice recognition success');
+  await evaluate(page, `window.__fixedAcceptance.recognitionMode = 'failure'`);
+  await click(page, '[data-action="journey-problem-voice"]');
+  await waitFor(page, `document.querySelector('[data-journey-problem-input-status]').textContent.trim() === '未识别成功'`, 'voice recognition failure');
+
+  const statement = '原文：AF1668 延误；下一班大概晚上八点，请完整保留。';
+  await setValue(page, '[data-journey-problem-statement]', statement);
+  await evaluate(page, `window.__fixedAcceptance.resetSpeech()`);
+  await click(page, '[data-journey-problem-submit]');
+  await waitFor(page, `!document.querySelector('[data-journey-problem-result]').hidden`, 'journey problem result');
+  const result = await evaluate(page, `(() => ({
+    request: window.__fixedAcceptance.journeyProblemRequests.at(-1),
+    answer: document.querySelector('[data-journey-problem-answer]').textContent.trim(),
+    confirmation: document.querySelector('[data-journey-problem-confirmation]').textContent.trim(),
+    speech: window.__fixedAcceptance.speech.utterances.at(-1)
+  }))()`);
+  requireAcceptance(result.request.currentFlight.flightNumber === 'AF1668'
+      && result.request.currentFlight.status === 'DELAYED'
+      && result.request.currentFlight.estimatedDeparture === '2026-09-05T10:20:00+02:00'
+      && result.request.passengerStatement === statement
+       && result.answer.split(/[。！？]/).filter(Boolean).length <= 2
+       && result.confirmation === '请与航空公司工作人员确认。'
+      && result.speech && result.speech.text.includes(result.answer) && result.speech.text.includes(result.confirmation),
+    'journey problem request/result/speech contract failed', result);
+
+  for (const viewport of [{ label: '320x800', width: 320, height: 800, scale: 1 },
+    { label: '390x844', width: 390, height: 844, scale: 1 }, { label: '200%', width: 195, height: 422, scale: 2 }]) {
+    await page.send('Emulation.setDeviceMetricsOverride', { width: viewport.width, height: viewport.height,
+      deviceScaleFactor: viewport.scale, mobile: true });
+    await page.send('Emulation.setPageScaleFactor', { pageScaleFactor: viewport.scale });
+    const noOverflow = await hasNoHorizontalOverflow(page);
+    requireAcceptance(noOverflow, `journey problem overflow at ${viewport.label}`);
+    summary.deterministic.journeyProblem.responsive[viewport.label] = true;
+  }
+  await page.send('Emulation.setPageScaleFactor', { pageScaleFactor: 1 });
+  await page.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+  const cancels = await evaluate(page, `window.__fixedAcceptance.speech.cancels`);
+  await click(page, '[data-action="close-journey-problem"]');
+  requireAcceptance(await evaluate(page, `window.__fixedAcceptance.speech.cancels > ${cancels}`), 'closing journey dialog did not stop speech');
+
+  for (const mode of ['DELAY', 'DELAY_RECOVERY']) {
+    await setValue(page, '#locale-select', 'en');
+    await evaluate(page, `window.__fixedAcceptance.journeyProblemMode = ${JSON.stringify(mode)}`);
+    await click(page, '.screen-step [data-action="open-journey-problem"]');
+    await click(page, '[data-action="journey-problem-connection"][data-connection="false"]');
+    await setValue(page, '[data-journey-problem-statement]', 'My flight is delayed and I am worried.');
+    await click(page, '[data-journey-problem-submit]');
+    await click(page, '[data-action="close-journey-problem"]');
+    await delay(350);
+    const closedState = await evaluate(page, `({
+      overlayHidden: document.querySelector('[data-journey-problem-overlay]').hidden,
+      answer: document.querySelector('[data-journey-problem-answer]').textContent.trim(),
+      resultHidden: document.querySelector('[data-journey-problem-result]').hidden
+    })`);
+    requireAcceptance(closedState.overlayHidden && !closedState.answer && closedState.resultHidden,
+      `${mode} request updated the closed journey card`, closedState);
+  }
+
+  await navigate(page, `${BASE_URL}/`);
+  await waitFor(page, `Boolean(window.__fixedAcceptance)`, 'historical flight acceptance reset');
+  await evaluate(page, `(() => {
+    const flight = window.__fixedAcceptance.flights.AF1668;
+    flight.departureDate = '2026-07-29';
+    flight.scheduledDeparture = '2026-07-29T09:25:00+02:00';
+    flight.estimatedDeparture = '2026-07-29T10:20:00+02:00';
+    flight.actualDeparture = null;
+    flight.scheduledArrival = '2026-07-29T10:00:00+01:00';
+    flight.status = 'DELAYED';
+    flight.timeContext.serverNow = '2026-08-29T07:00:00Z';
+    flight.timeContext.effectiveDeparture = '2026-07-29T10:20:00+02:00';
+    flight.timeContext.effectiveArrival = '2026-07-29T10:55:00+01:00';
+    flight.timeContext.boardingTime = '2026-07-29T08:45:00+02:00';
+  })()`);
+  await setValue(page, '#locale-select', 'en');
+  await click(page, '[data-screen="welcome"] [data-action="manual"]');
+  await setValue(page, '#flight-input', 'AF1668');
+  await setValue(page, '#date-input', '2026-07-29');
+  await evaluate(page, `document.querySelector('.manual-form').requestSubmit()`);
+  await activeScreen(page, 'confirm');
+  await waitFor(page, `document.getElementById('departure-passed-title').textContent.trim() === 'This flight’s departure time has passed'`,
+    'past-time flight title');
+  const historical = await evaluate(page, `(() => ({
+    title: document.getElementById('departure-passed-title').textContent.trim(),
+    lead: document.querySelector('[data-departure-passed-confirmation] .lead').textContent.trim(),
+    status: document.querySelector('[data-departure-passed-status]').textContent.trim(),
+    continueDisabled: document.querySelector('[data-action="continue"]').disabled,
+    problemVisible: !document.querySelector('[data-departure-passed-confirmation] [data-journey-problem-entry]').hidden
+  }))()`);
+  requireAcceptance(historical.title === 'This flight’s departure time has passed'
+      && historical.lead === 'If you have not boarded, go to the airline service desk or select “Flight problem” below.'
+      && historical.status === 'Departure time passed' && historical.continueDisabled && historical.problemVisible,
+    'historical flight should use the existing past-time flow', historical);
+  await evaluate(page, `window.__fixedAcceptance.journeyProblemMode = 'ANSWER'`);
+  await click(page, '[data-departure-passed-confirmation] [data-action="open-journey-problem"]');
+  await click(page, '[data-action="journey-problem-connection"][data-connection="false"]');
+  await setValue(page, '[data-journey-problem-statement]', 'This flight was delayed last month and I need help now.');
+  await click(page, '[data-journey-problem-submit]');
+  await waitFor(page, `!document.querySelector('[data-journey-problem-result]').hidden`, 'historical journey result');
+  const historicalResult = await evaluate(page, `({
+    answer: document.querySelector('[data-journey-problem-answer]').textContent.trim(),
+    request: window.__fixedAcceptance.journeyProblemRequests.at(-1)
+  })`);
+  requireAcceptance(historicalResult.answer === 'Ask the airline desk whether you can still take this flight. Monitor the updated departure time.'
+      && historicalResult.request.currentFlight.departureDate === '2026-07-29'
+      && historicalResult.request.currentFlight.currentTime
+      && historicalResult.request.currentFlight.status === 'DELAYED'
+      && !bannedJourneyCopy.test(historicalResult.answer), 'historical journey submission failed', historicalResult);
+  summary.deterministic.journeyProblem.historical = true;
+  summary.deterministic.journeyProblem.requests = await evaluate(page, `window.__fixedAcceptance.journeyProblemRequests`);
+  summary.deterministic.journeyProblem.passed = true;
+}
+
 async function runDeterministicContract(page) {
   await testLocalesAndResponsive(page);
   await verifyRepeatedSamples(page);
@@ -1391,7 +1686,8 @@ async function runDeterministicContract(page) {
   await verifyFamilySharing(page);
   await click(page, '[data-family-overlay] [data-action="close-family"]');
   await waitFor(page, `document.querySelector('[data-family-overlay]').hidden`, 'close family before staff locator');
-  await verifyStaffLocatorExperience(page);
+  await verifyCurrentStaffExperience(page);
+  await verifyJourneyProblem(page);
   const networkState = await evaluate(page, `({
     apiCalls: window.__fixedAcceptance.apiCalls,
     unexpectedRequests: window.__fixedAcceptance.unexpectedRequests
@@ -1407,7 +1703,7 @@ async function runDeterministicContract(page) {
     'fixed acceptance reached a real API endpoint', page.realApiRequests);
   requireAcceptance(networkState.unexpectedRequests.length === 0,
     'fixed acceptance attempted an unapproved API request', networkState.unexpectedRequests);
-  summary.deterministic.passed = true;
+  summary.deterministic.passed = summary.deterministic.journeyProblem.passed;
 }
 
 function safeRemoveTemp(directory, prefix) {

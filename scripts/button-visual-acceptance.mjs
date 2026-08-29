@@ -71,7 +71,13 @@ const SCENES = [
   'staff-locator-dialog',
   'staff-failure-dialog',
   'staff-extra-dialog',
+  'airport-resource-result',
+  'qa-airport',
   'family-dialog',
+  'journey-problem-first',
+  'journey-problem-input',
+  'journey-problem-result',
+  'journey-problem-fallback',
   'end-dialog',
   'board-dialog',
   'landed-dialog'
@@ -375,7 +381,7 @@ function sceneMeasurementExpression(scene, stopLabel) {
         singleRow: singleRow && responsiveColumns === columns, equalWidth });
     }
 
-    hide('[data-screen], [data-staff-overlay], .confirm-overlay');
+    hide('[data-screen], [data-staff-overlay], .confirm-overlay, [data-qa-airport-panel]');
     elements('[data-screen]').forEach((screen) => screen.classList.remove('is-active'));
     hide('[data-departure-passed-confirmation], [data-segment-selector], [data-manual-document-segments], [data-flight-correction], [data-conflict-card], [data-live-status-unavailable]');
     hide('[data-checkin-question], [data-checkin-choices], [data-step-question], [data-step-result]');
@@ -508,6 +514,7 @@ function sceneMeasurementExpression(scene, stopLabel) {
       scope = showScreen('step');
       show('[data-step-result], [data-complete-action], .screen-step [data-action="journey-back"], [data-action="refresh-arrival"]');
       showChildren('.step-assistance-actions');
+      showChildren('.screen-step [data-airport-resource-row]');
       if (sceneName === 'formal-action-stop') {
         const label = document.querySelector('.step-assistance-actions [data-speech-label]');
         if (label) label.textContent = stopLabel;
@@ -532,16 +539,23 @@ function sceneMeasurementExpression(scene, stopLabel) {
         'staff-locator-dialog': '[data-staff-overlay]',
         'staff-failure-dialog': '[data-staff-overlay]',
         'staff-extra-dialog': '[data-staff-overlay]',
+        'airport-resource-result': '[data-staff-overlay]',
         'family-dialog': '[data-family-overlay]',
+        'journey-problem-first': '[data-journey-problem-overlay]',
+        'journey-problem-input': '[data-journey-problem-overlay]',
+        'journey-problem-result': '[data-journey-problem-overlay]',
+        'journey-problem-fallback': '[data-journey-problem-overlay]',
         'end-dialog': '[data-end-overlay]',
         'board-dialog': '[data-board-overlay]',
         'landed-dialog': '[data-landed-overlay]'
       };
-      scope = document.querySelector(overlaySelectors[sceneName]);
+      scope = sceneName === 'qa-airport' ? document.querySelector('[data-qa-airport-panel]')
+        : document.querySelector(overlaySelectors[sceneName]);
       if (!scope) throw new Error('Unknown scene: ' + sceneName);
       scope.hidden = false;
       if (sceneName === 'staff-dialog') {
         show('[data-staff-card-view], [data-action="find-staff"], [data-action="open-extra-assistance"]');
+        show('[data-staff-contact-button]');
         hide('[data-staff-locator-view], [data-staff-extra-view]');
       }
       if (sceneName === 'staff-locator-dialog') {
@@ -566,9 +580,37 @@ function sceneMeasurementExpression(scene, stopLabel) {
         hide('[data-staff-card-view], [data-staff-locator-view]');
         show('[data-staff-extra-view]');
       }
+      if (sceneName === 'airport-resource-result') {
+        hide('[data-staff-card-view]');
+        show('[data-airport-resource-view], [data-airport-map-result], [data-airport-phone-result],'
+          + ' [data-airport-contact-result], [data-action="retry-airport-resource"], [data-airport-resource-back]');
+      }
+      if (sceneName === 'qa-airport') show('[data-qa-airport-panel]');
       if (sceneName === 'family-dialog') {
         showChildren('[data-family-overlay] .family-actions');
         addGrid('[data-family-overlay] .family-actions', 2, true, true);
+      }
+      if (sceneName === 'journey-problem-first') {
+        show('[data-journey-problem-connection-step]');
+        hide('[data-journey-problem-form], [data-journey-problem-result]');
+        const connectionColumns = innerWidth <= 520 ? 1 : 2;
+        addGrid('[data-journey-problem-overlay] .journey-problem-connection-actions', connectionColumns,
+          connectionColumns === 2);
+      }
+      if (sceneName === 'journey-problem-input') {
+        hide('[data-journey-problem-connection-step], [data-journey-problem-result]');
+        show('[data-journey-problem-form], [data-journey-problem-transfer-prompt]');
+      }
+      if (sceneName === 'journey-problem-result' || sceneName === 'journey-problem-fallback') {
+        hide('[data-journey-problem-connection-step], [data-journey-problem-form]');
+        show('[data-journey-problem-result]');
+        const locale = document.documentElement.lang;
+        const confirmations = { zh: '请与航空公司工作人员确认。', en: 'Please confirm with airline staff.', es: 'Confírmalo con el personal de la aerolínea.' };
+        const normal = { zh: '请先到航空公司柜台询问能否继续乘坐当前航班。请留意新的起飞时间。', en: 'Please take your boarding pass to the airline service desk and explain what happened.', es: 'Lleva tu tarjeta de embarque al mostrador de la aerolínea y explica lo ocurrido.' };
+        const fallback = { zh: '先别着急，请保留登机牌和航班信息，并把你刚才说明的情况告诉航空公司工作人员，请他们协助确认下一步安排。', en: 'Please don’t worry. Keep your boarding pass and flight details, and explain the situation you described to airline staff so they can help confirm the next step.', es: 'No te preocupes. Conserva tu tarjeta de embarque y los datos del vuelo, y explica al personal de la aerolínea la situación que has descrito para que pueda confirmar el siguiente paso.' };
+        document.querySelector('[data-journey-problem-answer]').textContent = sceneName === 'journey-problem-fallback'
+          ? fallback[locale] : normal[locale];
+        document.querySelector('[data-journey-problem-confirmation]').textContent = confirmations[locale];
       }
       if (sceneName === 'board-dialog') addGrid('[data-board-overlay] .two-choice-grid', 2);
       if (sceneName === 'landed-dialog') addGrid('[data-landed-overlay] .two-choice-grid', 2);
@@ -617,6 +659,16 @@ function sceneMeasurementExpression(scene, stopLabel) {
       const buttonStyle = getComputedStyle(button);
       const buttonFailures = [];
       if (buttonRect.width < 43.5 || buttonRect.height < 43.5) buttonFailures.push('touch target is smaller than 44x44');
+      if (button.dataset.action === 'open-journey-problem' && buttonRect.height < 71.5) {
+        buttonFailures.push('gold journey-problem entry is shorter than 72px');
+      }
+      if (button.dataset.action === 'journey-problem-voice') {
+        const microphone = button.querySelector('.journey-problem-microphone-icon');
+        const microphoneRect = microphone && microphone.getBoundingClientRect();
+        if (!microphoneRect || microphoneRect.width < 27.5 || microphoneRect.height < 27.5) {
+          buttonFailures.push('journey-problem microphone is smaller than 28px');
+        }
+      }
       if (!insideViewportHorizontally(buttonRect)) buttonFailures.push('button leaves the horizontal viewport');
 
       const renderedTextRects = textRects(button);

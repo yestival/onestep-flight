@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#1B2537">
   <title>OneStep Flight</title>
-  <link rel="stylesheet" href="styles.css?v=37">
+  <link rel="stylesheet" href="styles.css?v=39">
 </head>
 <body>
   <div class="app-shell">
@@ -139,6 +139,9 @@
           <div class="confirm-assistance-actions">
             <button class="support-button assistance-button" type="button" data-action="speak" aria-pressed="false" data-i18n-aria="speakAria"><svg class="speech-icon" viewBox="2 4 20 16" aria-hidden="true" focusable="false"><path d="M4 10v4h4l5 4V6l-5 4H4zm12 0a4 4 0 010 4m2-7a8 8 0 010 10"/></svg><span data-speech-label data-i18n="speak">朗读</span></button>
             <button class="support-button assistance-button family-help-button" type="button" data-action="family" data-share-entry hidden data-i18n-aria="familyAria"><svg class="family-share-icon" viewBox="1 0 22 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><circle class="family-share-node" cx="18" cy="5" r="2.4"/><circle class="family-share-node" cx="6" cy="12" r="2.4"/><circle class="family-share-node" cx="18" cy="19" r="2.4"/><path class="family-share-link" d="M8.1 10.8 15.9 6.2"/><path class="family-share-link" d="M8.1 13.2 15.9 17.8"/></svg><span data-i18n="shareShort">分享</span></button>
+          </div>
+          <div class="journey-problem-entry departure-passed-journey-problem-entry" data-journey-problem-entry>
+            <button class="button button-large journey-problem-button" type="button" data-action="open-journey-problem" data-i18n="journeyProblem">航程出问题</button>
           </div>
         </section>
         <section class="segment-selector" data-segment-selector hidden aria-labelledby="segment-selector-title">
@@ -286,6 +289,9 @@
         <button class="button button-secondary arrival-refresh-button" type="button" data-action="refresh-arrival" data-i18n-aria="refreshArrivalAria" hidden><span data-i18n="refreshShort">刷新</span></button>
         <p class="refresh-status" data-refresh-status aria-live="polite"></p>
         <details class="timeline-panel"><summary data-i18n="journeyTimeline">查看本次行程记录</summary><ol data-journey-timeline></ol></details>
+        <div class="journey-problem-entry" data-journey-problem-entry>
+          <button class="button button-large journey-problem-button" type="button" data-action="open-journey-problem" data-i18n="journeyProblem">航程出问题</button>
+        </div>
       </section>
 
       <section class="screen screen-complete" data-screen="complete" aria-labelledby="complete-title" hidden>
@@ -359,13 +365,35 @@
       </div>
     </div>
     <div class="confirm-overlay" data-family-overlay hidden role="dialog" aria-modal="true" aria-labelledby="family-title"><div class="confirm-card family-card"><button class="card-close family-overlay-close" type="button" data-action="close-family" data-i18n-aria="close" aria-label="关闭"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6L18 18M18 6L6 18"></path></svg></button><h1 id="family-title" data-i18n="familyTitle">分享行程给家属</h1><p data-i18n="familyLead">通过系统分享面板分享 48 小时有效的安全链接或脱敏行程图片。</p><p class="share-local-warning" data-share-local-warning hidden data-i18n="localhostWarning">当前是 localhost：其他设备无法打开这个地址。请部署到可访问的网址后再分享。</p><p class="share-status" data-share-status role="status" aria-live="polite"></p><p class="share-expiry" data-share-expiry></p><div class="family-actions"><button class="button button-primary" type="button" data-action="share-family" data-i18n="shareLink" data-i18n-aria="shareLinkAria">分享链接</button><button class="button button-secondary" type="button" data-action="share-family-card" data-i18n="sharePng" data-i18n-aria="sharePngAria">分享图片</button></div></div></div>
+    <div class="confirm-overlay journey-problem-overlay" data-journey-problem-overlay hidden role="dialog" aria-modal="true" aria-labelledby="journey-problem-title">
+      <div class="confirm-card journey-problem-card" data-journey-problem-card aria-busy="false">
+        <button class="card-close journey-problem-close" type="button" data-action="close-journey-problem" data-i18n-aria="journeyProblemCloseAria" aria-label="关闭"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6L18 18M18 6L6 18"></path></svg></button>
+        <h1 id="journey-problem-title" data-i18n="journeyProblem">航程出问题</h1>
+        <section data-journey-problem-connection-step>
+          <p class="journey-problem-question" data-i18n="journeyProblemConnectionQuestion">这班之后还要转机吗？</p>
+          <div class="journey-problem-connection-actions">
+            <button class="button button-primary button-large" type="button" data-action="journey-problem-connection" data-connection="true" data-i18n="journeyProblemConnectionYes">要转机</button>
+            <button class="button button-secondary button-large" type="button" data-action="journey-problem-connection" data-connection="false" data-i18n="journeyProblemConnectionNo">不转机</button>
+          </div>
+        </section>
+        <form data-journey-problem-form hidden>
+          <p class="journey-problem-transfer-prompt" data-journey-problem-transfer-prompt data-i18n="journeyProblemTransferPrompt" hidden>请尽力说明下一班的起飞时间、航班号和目的地。</p>
+          <label class="visually-hidden" for="journey-problem-statement" data-i18n="journeyProblemStatementLabel">请说明遇到的情况</label>
+          <textarea id="journey-problem-statement" class="journey-problem-textarea" data-journey-problem-statement data-placeholder="journeyProblemPlaceholder" placeholder="请说明遇到的情况" maxlength="1000" required></textarea>
+          <button class="button button-secondary journey-problem-voice-button" type="button" data-action="journey-problem-voice" data-i18n-aria="journeyProblemVoiceAria"><svg class="journey-problem-microphone-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="12" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"></path></svg><span data-journey-problem-voice-label data-i18n="journeyProblemVoice">语音输入</span></button>
+          <p class="journey-problem-input-status" data-journey-problem-input-status role="status" aria-live="polite"></p>
+          <button class="button button-primary button-large journey-problem-submit" type="submit" data-journey-problem-submit data-i18n="journeyProblemSubmit" disabled>提交情况</button>
+        </form>
+        <section class="journey-problem-result" data-journey-problem-result role="status" aria-live="polite" aria-atomic="true" hidden><p class="journey-problem-answer" data-journey-problem-answer></p><p class="journey-problem-confirmation" data-journey-problem-confirmation></p></section>
+      </div>
+    </div>
     <div class="confirm-overlay" data-end-overlay hidden role="dialog" aria-modal="true" aria-labelledby="end-title"><div class="confirm-card"><h1 id="end-title" data-i18n="endConfirmTitle">确定要结束本次指引吗？</h1><p data-i18n="endConfirmLead">结束后，当前步骤记录会从这台设备清除。</p><div class="choice-actions"><button class="button button-primary button-large" type="button" data-action="cancel-end" data-i18n="continueJourney">继续指引</button><button class="button button-secondary button-large" type="button" data-action="confirm-end" data-i18n="confirmEnd">结束并返回首页</button></div></div></div>
     <div class="confirm-overlay" data-board-overlay hidden role="dialog" aria-modal="true" aria-labelledby="board-confirm-title"><div class="confirm-card"><h1 id="board-confirm-title" data-i18n="boardConfirmTitle">确认你已经登机吗？</h1><p data-i18n="boardConfirmLead">确认后将进入机上模式，到达后继续提供下机指引。</p><button class="support-button dialog-speech-button" type="button" data-action="speak" aria-pressed="false" data-i18n-aria="speakAria"><svg class="speech-icon" viewBox="2 4 20 16" aria-hidden="true" focusable="false"><path d="M4 10v4h4l5 4V6l-5 4H4zm12 0a4 4 0 010 4m2-7a8 8 0 010 10"/></svg><span data-speech-label data-i18n="speak">朗读</span></button><div class="choice-actions two-choice-grid"><button class="button button-primary button-large" type="button" data-action="confirm-board" data-i18n="confirmBoard">是，我已经登机</button><button class="button button-secondary button-large" type="button" data-action="cancel-board" data-i18n="cancelBoard">返回，再检查一下</button></div></div></div>
     <div class="confirm-overlay" data-landed-overlay hidden role="dialog" aria-modal="true" aria-labelledby="landed-confirm-title"><div class="confirm-card"><h1 id="landed-confirm-title" data-i18n="landedConfirmTitle">确认你已经下飞机吗？</h1><p data-i18n="landedConfirmLead">确认后，我们会继续指引你领取行李或前往出口。</p><button class="support-button dialog-speech-button" type="button" data-action="speak" aria-pressed="false" data-i18n-aria="speakAria"><svg class="speech-icon" viewBox="2 4 20 16" aria-hidden="true" focusable="false"><path d="M4 10v4h4l5 4V6l-5 4H4zm12 0a4 4 0 010 4m2-7a8 8 0 010 10"/></svg><span data-speech-label data-i18n="speak">朗读</span></button><div class="choice-actions two-choice-grid"><button class="button button-primary button-large" type="button" data-action="confirm-landed" data-i18n="confirmLanded">是，我已经下飞机</button><button class="button button-secondary button-large" type="button" data-action="cancel-landed" data-i18n="cancelLanded">返回，再检查一下</button></div></div></div>
     <div class="visually-hidden" role="status" aria-live="assertive" aria-atomic="true" data-live-region></div>
     <div class="toast" role="status" aria-live="polite" data-toast></div>
   </div>
-  <script src="locale.js?v=37"></script>
-  <script src="app.js?v=37"></script>
+  <script src="locale.js?v=39"></script>
+  <script src="app.js?v=39"></script>
 </body>
 </html>

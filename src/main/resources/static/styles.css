@@ -568,6 +568,36 @@ html[lang="es"]{--multi-control-font-size:25px}
   .screen h1,.screen h2,.section-heading>*,.confirm-card h1,.confirm-card p{min-width:0;max-width:100%;word-break:normal;overflow-wrap:normal;hyphens:none}
 }
 
+/* Journey problem assistance. */
+.journey-problem-entry{width:100%;margin:30px 0 4px}
+.departure-passed-journey-problem-entry{margin-top:26px}
+.journey-problem-button{width:100%;max-width:none;min-height:72px;border:3px solid #8e742f;background:#d2b45f;color:#1b2537;font-size:clamp(22px,4vw,28px);font-weight:850}
+.journey-problem-button:hover{background:#e4ca73}
+.journey-problem-button:active{transform:translateY(2px)}
+.journey-problem-button:focus-visible{outline:4px solid var(--color-focus,#1d5f91);outline-offset:4px}
+.journey-problem-card{width:min(100%,680px);max-width:680px;padding-top:76px;overflow-wrap:anywhere}
+.journey-problem-close{position:absolute;top:16px;right:16px;margin:0}
+.journey-problem-card h1{margin-top:0;padding-right:44px;font-size:clamp(34px,6vw,52px)}
+.journey-problem-question{font-size:clamp(22px,3.6vw,28px);font-weight:800;line-height:1.45}
+.journey-problem-connection-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:22px}
+.journey-problem-connection-actions .button{width:100%;max-width:none;min-height:68px}
+[data-journey-problem-form]{min-width:0}
+.journey-problem-transfer-prompt{margin:0 0 14px;color:var(--color-text-secondary);font-size:clamp(17px,2.5vw,21px);font-weight:750;line-height:1.5}
+.journey-problem-textarea{display:block;box-sizing:border-box;width:100%;max-width:100%;min-height:170px;padding:16px;border:2px solid var(--color-border);border-radius:var(--radius-small);background:var(--color-surface);color:var(--color-text);font:inherit;font-size:clamp(19px,3vw,23px);line-height:1.55;resize:vertical}
+.journey-problem-textarea:focus-visible{border-color:var(--color-primary);outline:4px solid color-mix(in srgb,var(--color-primary) 35%,transparent);outline-offset:2px}
+.journey-problem-voice-button{display:flex;width:100%;max-width:none;min-height:56px;margin-top:14px;align-items:center;justify-content:center;gap:10px}
+.journey-problem-microphone-icon{flex:0 0 30px;width:30px;min-width:28px;height:30px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.journey-problem-input-status{min-height:28px;margin:8px 0;color:var(--color-danger,#8d2635);font-weight:800}
+.journey-problem-submit{width:100%;max-width:none;min-height:68px}
+.journey-problem-submit:disabled,.journey-problem-voice-button:disabled{cursor:not-allowed;opacity:.52}
+.journey-problem-result{min-width:0}
+.journey-problem-answer{margin:8px 0 18px;font-size:clamp(20px,3.4vw,25px);line-height:1.55;overflow-wrap:anywhere}
+.journey-problem-confirmation{margin:0;color:var(--color-text-secondary);font-size:clamp(17px,2.8vw,21px);font-weight:750;line-height:1.5;overflow-wrap:anywhere}
+.flight-change-journey-problem-link{display:block;width:100%;min-height:44px;margin:6px 0 0;padding:8px 0;border:0;background:transparent;color:#f6df94;font:inherit;font-size:max(15px,.92em);font-weight:750;line-height:1.45;text-align:left;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.flight-change-journey-problem-link:focus-visible{outline:3px solid currentColor;outline-offset:3px}
+@media(max-width:520px){.journey-problem-connection-actions{grid-template-columns:minmax(0,1fr)}.journey-problem-card{padding:70px 16px 22px}.journey-problem-card h1{padding-right:36px}}
+@media(forced-colors:active){.journey-problem-button{border-color:ButtonText;background:ButtonFace;color:ButtonText}.journey-problem-button:focus-visible,.flight-change-journey-problem-link:focus-visible{outline-color:Highlight}.journey-problem-microphone-icon,.flight-change-journey-problem-link{color:LinkText;forced-color-adjust:auto}}
+
 /* Operational changes stay in normal document flow and use one accessible visual contract. */
 :root{
   --flight-change-bg:#163D75;
@@ -790,6 +820,17 @@ html[lang="es"]{--multi-control-font-size:25px}
 @media(max-width:319px){
   .airport-resource-actions{grid-template-columns:minmax(0,1fr)}
   .airport-resource-button{width:100%;max-width:none}
+}
+
+@media(max-width:480px){
+  .airport-resource-actions{grid-template-columns:minmax(0,1fr)}
+  .airport-resource-button{width:100%;max-width:none;white-space:normal;overflow-wrap:anywhere}
+}
+
+@media(max-width:220px){
+  .airport-resource-qa{box-sizing:border-box;width:calc(100% - 8px);padding:10px 6px}
+  .airport-resource-qa h2,.airport-resource-qa label,.airport-resource-qa form{min-width:0;max-width:100%;overflow-wrap:anywhere}
+  .airport-resource-qa input{box-sizing:border-box;width:100%;min-width:0}
 }
 
 @media(max-width:390px){

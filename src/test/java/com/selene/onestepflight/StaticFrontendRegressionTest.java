@@ -17,6 +17,65 @@ class StaticFrontendRegressionTest {
     }
 
     @Test
+    void journeyProblemEntryDialogControlsAndCacheVersionAreStaticRegressionProtected() throws IOException {
+        String html = resource("index.html");
+        String js = resource("app.js");
+        String worker = resource("service-worker.js");
+        String welcome = html.substring(html.indexOf("data-screen=\"welcome\""), html.indexOf("data-screen=\"upload\""));
+        String manual = html.substring(html.indexOf("data-screen=\"manual\""), html.indexOf("data-screen=\"error\""));
+        String confirm = html.substring(html.indexOf("data-screen=\"confirm\""), html.indexOf("data-screen=\"step\""));
+        String ordinaryConfirm = confirm.substring(0, confirm.indexOf("data-departure-passed-confirmation"))
+                + confirm.substring(confirm.indexOf("data-segment-selector"));
+        String step = html.substring(html.indexOf("data-screen=\"step\""), html.indexOf("data-screen=\"complete\""));
+        String departed = confirm.substring(confirm.indexOf("data-departure-passed-confirmation"),
+                confirm.indexOf("data-segment-selector"));
+        String overlay = html.substring(html.indexOf("data-journey-problem-overlay"), html.indexOf("data-end-overlay"));
+
+        assertFalse(welcome.contains("data-journey-problem-entry"));
+        assertFalse(manual.contains("data-journey-problem-entry"));
+        assertFalse(ordinaryConfirm.contains("data-journey-problem-entry"));
+        assertTrue(step.lastIndexOf("data-journey-problem-entry") > step.indexOf("timeline-panel"));
+        assertTrue(departed.contains("data-journey-problem-entry"));
+        assertTrue(overlay.contains("journey-problem-close"));
+        assertEquals(2, overlay.split("data-action=\"journey-problem-connection\"", -1).length - 1);
+        assertTrue(overlay.contains("请尽力说明下一班的起飞时间、航班号和目的地。"));
+        assertFalse(html.contains("不清楚的内容可以不写。"));
+        assertTrue(overlay.contains("data-journey-problem-statement"));
+        assertTrue(overlay.contains("journey-problem-microphone-icon"));
+        assertTrue(overlay.contains("data-action=\"journey-problem-voice\""));
+        assertTrue(overlay.contains("data-journey-problem-submit"));
+        assertTrue(overlay.contains("data-journey-problem-result"));
+        assertTrue(html.contains("styles.css?v=39"));
+        assertTrue(html.contains("locale.js?v=39"));
+        assertTrue(html.contains("app.js?v=39"));
+        assertTrue(worker.contains("onestep-flight-shell-"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v39'"));
+        assertTrue(worker.contains("/app.js?v=39"));
+        assertTrue(js.contains("POST") || js.contains("method: 'POST'"));
+    }
+
+    @Test
+    void journeyProblemHistoricalSubmissionAndSingleFallbackContractsAreStaticRegressionProtected()
+            throws IOException {
+        String js = resource("app.js");
+
+        assertFalse(js.contains("return 'HISTORICAL_FLIGHT'"));
+        assertFalse(js.contains("historicalFlightTitle"));
+        assertTrue(js.contains("departureTimePassedStatus: '起飞时间已过'"));
+        assertTrue(js.contains("departureTimePassedStatus: 'Departure time passed'"));
+        assertTrue(js.contains("departureTimePassedStatus: 'Hora de salida pasada'"));
+        assertFalse(js.contains("function journeyProblemFallbackSituation(payload)"));
+        assertTrue(js.contains("journeyProblemFallback: '先别着急，请保留登机牌和航班信息"));
+        assertTrue(js.contains("journeyProblemFallback: 'Please don’t worry. Keep your boarding pass and flight details"));
+        assertTrue(js.contains("journeyProblemFallback: 'No te preocupes. Conserva tu tarjeta de embarque y los datos del vuelo"));
+        assertFalse(js.contains("journeyProblemFallbackHistorical"));
+        assertFalse(js.contains("journeyProblemFallbackMissed"));
+        assertFalse(js.contains("journeyProblemFallbackConnection"));
+        assertTrue(js.contains("renderJourneyProblemResult(response.answer, payload.locale, payload)"));
+        assertTrue(js.contains("window.setTimeout(function () { controller.abort(); }, 45000)"));
+    }
+
+    @Test
     void nativeDateInputIsAbsoluteAndVisibleDateTracksValueAndLanguage() throws IOException {
         String html = resource("index.html");
         String css = resource("styles.css");
@@ -536,7 +595,7 @@ class StaticFrontendRegressionTest {
         String refreshArrival = js.substring(js.indexOf("function refreshArrivalInfo(options)"),
                 js.indexOf("function maybeRefreshArrivalOnEntry()"));
         String refreshControls = js.substring(js.indexOf("function updateRefreshControls()"),
-                js.indexOf("function setDeparturePassedStaffContent()"));
+                js.indexOf("function setDeparturePassedStaffContent("));
         String scheduler = js.substring(js.indexOf("function autoRefreshDelayMs("),
                 js.indexOf("function refreshFlight(options)"));
 
@@ -694,13 +753,13 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("No se encontró información del vuelo"));
         assertTrue(js.contains("Only some information was found"));
         assertTrue(js.contains("Solo se encontró parte de la información"));
-        assertTrue(html.contains("styles.css?v=37"));
-        assertTrue(html.contains("locale.js?v=37"));
-        assertTrue(html.contains("app.js?v=37"));
-        assertFalse(html.contains("?v=36"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v37'"));
-        assertFalse(worker.contains("CACHE_PREFIX + 'v36'"));
-        for (String asset : new String[] { "/styles.css?v=37", "/locale.js?v=37", "/app.js?v=37",
+        assertTrue(html.contains("styles.css?v=39"));
+        assertTrue(html.contains("locale.js?v=39"));
+        assertTrue(html.contains("app.js?v=39"));
+        assertFalse(html.contains("?v=37"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v39'"));
+        assertFalse(worker.contains("CACHE_PREFIX + 'v37'"));
+        for (String asset : new String[] { "/styles.css?v=39", "/locale.js?v=39", "/app.js?v=39",
                 "/share.css?v=33", "/share.js?v=33" }) {
             assertTrue(worker.contains("'" + asset + "'"), asset);
         }
@@ -724,7 +783,7 @@ class StaticFrontendRegressionTest {
         assertTrue(shareHtml.contains("aria-label=\"Choose language\""));
         assertTrue(index.contains("Now, take the next step"));
         assertTrue(shareHtml.contains("Loading the shared journey"));
-        assertTrue(index.contains("locale.js?v=37"));
+        assertTrue(index.contains("locale.js?v=39"));
         assertTrue(shareHtml.contains("/share.css?v=33"));
         assertTrue(shareHtml.contains("/locale.js?v=33"));
         assertTrue(shareHtml.contains("/share.js?v=33"));
@@ -1011,8 +1070,8 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("staffCardInstruction: '请把这个页面给工作人员看。需要时可联系机场。'"));
         assertTrue(js.contains("staffCardInstruction: 'Please show this screen to a member of staff. Contact the airport if needed.'"));
         assertTrue(js.contains("staffCardInstruction: 'Muestre esta pantalla a un miembro del personal. Contacte con el aeropuerto si lo necesita.'"));
-        assertTrue(js.contains("function startSpeechText(text, automatic)"));
-        String speechStarter = js.substring(js.indexOf("function startSpeechText(text, automatic)"),
+        assertTrue(js.contains("function startSpeechText(text, automatic, localeOverride)"));
+        String speechStarter = js.substring(js.indexOf("function startSpeechText(text, automatic, localeOverride)"),
                 js.indexOf("function startSpeech(automatic)"));
         assertTrue(speechStarter.contains("if (!speechIsSupported())"));
         assertTrue(speechStarter.contains("new SpeechSynthesisUtterance(text)"));

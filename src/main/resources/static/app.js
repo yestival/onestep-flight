@@ -86,6 +86,10 @@
   var lastFlightChangeSignature = '';
   var presentedFlightChangeSignatures = Object.create(null);
   var flightChangeDismissTimer = null;
+  var journeyProblemState = { hasConnection: null, busy: false, answer: null, responseLocale: null };
+  var journeyProblemRecognition = null;
+  var journeyProblemRequestController = null;
+  var journeyProblemRequestGeneration = 0;
   var demoScenariosEnabled = new URLSearchParams(window.location.search).get('demoScenarios') === 'true';
   var activeDemoScenarioId = null;
   var qaJourneyEnabled = new URLSearchParams(window.location.search).get('qaJourney') === 'true';
@@ -109,6 +113,44 @@
   translations.zh.technicalDetails = '调试详情';
   translations.en.technicalDetails = 'Debug details';
   translations.es.technicalDetails = 'Detalles de depuración';
+  Object.assign(translations.zh, {
+    journeyProblem: '航程出问题', journeyProblemCloseAria: '关闭航程问题卡片',
+    journeyProblemConnectionQuestion: '这班之后还要转机吗？', journeyProblemConnectionYes: '要转机',
+    journeyProblemConnectionNo: '不转机', journeyProblemTransferPrompt: '请尽力说明下一班的起飞时间、航班号和目的地。',
+    journeyProblemStatementLabel: '请说明遇到的情况', journeyProblemPlaceholder: '请说明遇到的情况',
+    journeyProblemVoice: '语音输入', journeyProblemVoiceAria: '使用语音说明情况', journeyProblemListening: '正在听',
+    journeyProblemSpeechFailed: '未识别成功', journeyProblemSubmit: '提交情况', journeyProblemLoading: '正在寻找解决方案……',
+    journeyProblemAlert: '可点击页面最下方的“航程出问题”。',
+    journeyProblemAlertDeparted: '如果你还没有上飞机，请点击页面最下方的“航程出问题”。',
+    journeyProblemConfirmStaff: '请与航空公司工作人员确认。',
+    journeyProblemFallback: '先别着急，请保留登机牌和航班信息，并把你刚才说明的情况告诉航空公司工作人员，请他们协助确认下一步安排。'
+  });
+  Object.assign(translations.en, {
+    journeyProblem: 'Flight problem', journeyProblemCloseAria: 'Close flight problem card',
+    journeyProblemConnectionQuestion: 'Do you have another flight after this one?',
+    journeyProblemConnectionYes: 'Yes, I have a connection', journeyProblemConnectionNo: 'No connection',
+    journeyProblemTransferPrompt: 'Please give the next flight’s departure time, flight number, and destination as fully as possible.',
+    journeyProblemStatementLabel: 'Describe what happened', journeyProblemPlaceholder: 'Describe what happened',
+    journeyProblemVoice: 'Voice input', journeyProblemVoiceAria: 'Describe the problem by voice', journeyProblemListening: 'Listening',
+    journeyProblemSpeechFailed: 'Not recognized', journeyProblemSubmit: 'Submit details', journeyProblemLoading: 'Finding a solution…',
+    journeyProblemAlert: 'Select “Flight problem” at the bottom of the page.',
+    journeyProblemAlertDeparted: 'If you have not boarded, select “Flight problem” at the bottom of the page.',
+    journeyProblemConfirmStaff: 'Please confirm with airline staff.',
+    journeyProblemFallback: 'Please don’t worry. Keep your boarding pass and flight details, and explain the situation you described to airline staff so they can help confirm the next step.'
+  });
+  Object.assign(translations.es, {
+    journeyProblem: 'Problema con el viaje', journeyProblemCloseAria: 'Cerrar la tarjeta del problema de viaje',
+    journeyProblemConnectionQuestion: '¿Tienes que hacer conexión después de este vuelo?',
+    journeyProblemConnectionYes: 'Sí, tengo conexión', journeyProblemConnectionNo: 'No tengo conexión',
+    journeyProblemTransferPrompt: 'Indica lo mejor posible la hora de salida, el número de vuelo y el destino del siguiente vuelo.',
+    journeyProblemStatementLabel: 'Describe lo ocurrido', journeyProblemPlaceholder: 'Describe lo ocurrido',
+    journeyProblemVoice: 'Entrada por voz', journeyProblemVoiceAria: 'Describe el problema por voz', journeyProblemListening: 'Escuchando',
+    journeyProblemSpeechFailed: 'No se reconoció', journeyProblemSubmit: 'Enviar información', journeyProblemLoading: 'Buscando una solución…',
+    journeyProblemAlert: 'Selecciona «Problema con el viaje» al final de la página.',
+    journeyProblemAlertDeparted: 'Si todavía no has subido al avión, selecciona «Problema con el viaje» al final de la página.',
+    journeyProblemConfirmStaff: 'Confírmalo con el personal de la aerolínea.',
+    journeyProblemFallback: 'No te preocupes. Conserva tu tarjeta de embarque y los datos del vuelo, y explica al personal de la aerolínea la situación que has descrito para que pueda confirmar el siguiente paso.'
+  });
 
   var staffContent = {
     titleZh: '请帮助我', titleEn: 'Please help me', titleEs: 'Por favor, ayúdeme',
@@ -175,7 +217,9 @@
     refreshShort: '刷新', refreshLiveAria: '刷新实时航班信息', refreshArrivalAria: '重新查询到达行李转盘',
     staffCardInstruction: '请把这个页面给工作人员看。需要时可联系机场。', fieldStaffHelp: '请工作人员帮忙', familyLead: '通过系统分享面板分享 48 小时有效的安全链接或脱敏行程图片。', globalFooter: '© 2026 OneStep Flight · 无障碍乘机指引',
     allFlightInfo: '查看全部航班信息', flightSourceLabel: '航班信息来源',
-    departurePassedTitle: '这趟航班已经离港', departurePassedLead: '点击下方“请工作人员帮忙”，并前往航空公司服务柜台出示给工作人员。',
+    departurePassedTitle: '这趟航班已经离港', departurePassedLead: '点击下方“请工作人员帮忙”，并前往航空公司服务柜台出示给工作人员。', departurePassedStatus: '已离港',
+    cancelledFlightTitle: '这趟航班已取消', cancelledFlightLead: '请前往航空公司服务柜台；也可以点击下方“航程出问题”说明你的情况。', cancelledFlightStatus: '已取消',
+    departureTimePassedTitle: '这趟航班的起飞时间已过', departureTimePassedLead: '如果你还没有登机，请前往航空公司服务柜台；也可以点击下方“航程出问题”。', departureTimePassedStatus: '起飞时间已过',
     enterNewFlight: '输入新的航班信息', backHome: '返回首页', uploadContext: '选择旅行文件', uploadTitle: '选择或上传文件', chooseFile: '选择文件',
     manualItineraryTitle: '文件中已读到的航段', manualItineraryLead: '请选择需要查看或补全的航段。',
     readySegmentLead: '这一段已具备高置信度或已确认的航班号、完整日期，且没有关键冲突。请点击“查询真实航班”。',
@@ -216,7 +260,9 @@
     refreshShort: 'Refresh', refreshLiveAria: 'Refresh live flight information', refreshArrivalAria: 'Check the arrival baggage belt again',
     staffCardInstruction: 'Please show this screen to a member of staff. Contact the airport if needed.', fieldStaffHelp: 'Ask staff for help', familyLead: 'Use the system share panel for a secure link valid for 48 hours or a redacted journey image.', globalFooter: '© 2026 OneStep Flight · Accessible air-travel guidance',
     allFlightInfo: 'View all flight information', flightSourceLabel: 'Flight information source',
-    departurePassedTitle: 'This flight has departed', departurePassedLead: 'Select “Ask a member of staff” below, then go to the airline service desk and show it to a staff member.',
+    departurePassedTitle: 'This flight has departed', departurePassedLead: 'Select “Ask a member of staff” below, then go to the airline service desk and show it to a staff member.', departurePassedStatus: 'Departed',
+    cancelledFlightTitle: 'This flight is cancelled', cancelledFlightLead: 'Go to the airline service desk, or select “Flight problem” below to explain what happened.', cancelledFlightStatus: 'Cancelled',
+    departureTimePassedTitle: 'This flight’s departure time has passed', departureTimePassedLead: 'If you have not boarded, go to the airline service desk or select “Flight problem” below.', departureTimePassedStatus: 'Departure time passed',
     enterNewFlight: 'Enter new flight information', backHome: 'Return home', uploadContext: 'Choose a travel document', uploadTitle: 'Choose or upload a file', chooseFile: 'Choose file',
     manualItineraryTitle: 'Segments found in the file', manualItineraryLead: 'Choose a segment to review or complete.',
     readySegmentLead: 'This segment has a high-confidence or user-confirmed flight number, a complete date, and no critical conflict. Select Search live flight.',
@@ -257,7 +303,9 @@
     refreshShort: 'Actualizar', refreshLiveAria: 'Actualizar la información del vuelo en directo', refreshArrivalAria: 'Volver a consultar la cinta de equipaje',
     staffCardInstruction: 'Muestre esta pantalla a un miembro del personal. Contacte con el aeropuerto si lo necesita.', fieldStaffHelp: 'Pedir ayuda al personal', familyLead: 'Usa el panel del sistema para compartir un enlace seguro válido durante 48 horas o una imagen anonimizada del viaje.', globalFooter: '© 2026 OneStep Flight · Guía accesible para viajar en avión',
     allFlightInfo: 'Ver toda la información del vuelo', flightSourceLabel: 'Fuente de información del vuelo',
-    departurePassedTitle: 'Este vuelo ya ha salido', departurePassedLead: 'Pulsa «Pedir ayuda al personal» y ve al mostrador de atención de la aerolínea para mostrárselo al personal.',
+    departurePassedTitle: 'Este vuelo ya ha salido', departurePassedLead: 'Pulsa «Pedir ayuda al personal» y ve al mostrador de atención de la aerolínea para mostrárselo al personal.', departurePassedStatus: 'Ya ha salido',
+    cancelledFlightTitle: 'Este vuelo está cancelado', cancelledFlightLead: 'Ve al mostrador de la aerolínea o selecciona «Problema con el viaje» para explicar lo ocurrido.', cancelledFlightStatus: 'Cancelado',
+    departureTimePassedTitle: 'La hora de salida de este vuelo ya pasó', departureTimePassedLead: 'Si no has embarcado, ve al mostrador de la aerolínea o selecciona «Problema con el viaje».', departureTimePassedStatus: 'Hora de salida pasada',
     enterNewFlight: 'Introducir un vuelo nuevo', backHome: 'Volver al inicio', uploadContext: 'Elegir un documento de viaje', uploadTitle: 'Elegir o subir un archivo', chooseFile: 'Elegir archivo',
     manualItineraryTitle: 'Tramos encontrados en el archivo', manualItineraryLead: 'Elija un tramo para revisarlo o completarlo.',
     readySegmentLead: 'Este tramo tiene un número de vuelo fiable o confirmado, una fecha completa y ningún conflicto crítico. Pulsa Buscar vuelo real.',
@@ -1038,7 +1086,8 @@
   }
 
   function isDepartureStopReason(reason) {
-    return reason === 'DEPARTURE_TIME_PASSED' || reason === 'FLIGHT_ALREADY_DEPARTED';
+    return reason === 'FLIGHT_CANCELLED' || reason === 'DEPARTURE_TIME_PASSED'
+      || reason === 'FLIGHT_ALREADY_DEPARTED';
   }
 
   function isDepartureStopAction(action) {
@@ -1073,9 +1122,9 @@
       || flight && flight.departureDate;
     if (!flight || !/^\d{4}-\d{2}-\d{2}$/.test(String(selectedDate || ''))) return null;
     if (flight.departureDate && flight.departureDate !== selectedDate) return null;
+    var departureOffset = flight.timeContext && flight.timeContext.departureUtcOffset;
     var effective = flight.actualDeparture || flight.estimatedDeparture || flight.scheduledDeparture;
     var dateAnchor = flight.scheduledDeparture || effective;
-    var departureOffset = flight.timeContext && flight.timeContext.departureUtcOffset;
     if (dateAnchor) {
       var anchorDate = departureLocalDate(dateAnchor, departureOffset);
       if (!anchorDate || anchorDate !== selectedDate) return null;
@@ -1088,6 +1137,7 @@
     if (flight.actualDeparture || status.indexOf('DEPARTED') === 0 || status.indexOf('ARRIVED') === 0) {
       return 'FLIGHT_ALREADY_DEPARTED';
     }
+    if (status.indexOf('CANCEL') === 0) return 'FLIGHT_CANCELLED';
     if (!effective || status === 'BOARDING') return null;
     var serverNow = flight.timeContext && flight.timeContext.serverNow;
     var effectiveMs = Date.parse(effective);
@@ -1095,6 +1145,16 @@
     return Number.isFinite(effectiveMs) && Number.isFinite(serverNowMs)
       && serverNowMs - effectiveMs >= 15 * 60 * 1000
       ? 'DEPARTURE_TIME_PASSED' : null;
+  }
+
+  function departureStopCopy(reason) {
+    if (reason === 'FLIGHT_CANCELLED') return {
+      title: t('cancelledFlightTitle'), lead: t('cancelledFlightLead'), status: t('cancelledFlightStatus')
+    };
+    if (reason === 'DEPARTURE_TIME_PASSED') return {
+      title: t('departureTimePassedTitle'), lead: t('departureTimePassedLead'), status: t('departureTimePassedStatus')
+    };
+    return { title: t('departurePassedTitle'), lead: t('departurePassedLead'), status: t('departurePassedStatus') };
   }
 
   function departureReferenceText(flight) {
@@ -1114,13 +1174,16 @@
     screen.setAttribute('aria-labelledby', reason ? 'departure-passed-title' : 'confirm-title');
     panel.hidden = !reason;
     if (!reason) return null;
+    var copy = departureStopCopy(reason);
+    document.getElementById('departure-passed-title').textContent = copy.title;
+    panel.querySelector('.lead').textContent = copy.lead;
     document.querySelector('[data-departure-passed-flight]').textContent = formatFlightNumber(flight.flightNumber);
     document.querySelector('[data-departure-passed-date]').textContent = formatDate(flight.departureDate);
-    document.querySelector('[data-departure-passed-status]').textContent = localeText('已离港', 'Departed', 'Ya ha salido');
+    document.querySelector('[data-departure-passed-status]').textContent = copy.status;
     var reference = document.querySelector('[data-departure-passed-reference]');
     reference.textContent = departureReferenceText(flight);
     reference.hidden = !reference.textContent;
-    setDeparturePassedStaffContent();
+    setDeparturePassedStaffContent(reason);
     return reason;
   }
 
@@ -3652,7 +3715,10 @@
   function renderFlightChanges() {
     var groups = currentFlightChangeGroups();
     var critical = displayedFlightChanges.some(function (change) { return change.critical === true; });
-    var renderSignature = JSON.stringify([currentLocale, critical, groups]);
+    var problemButtonVisible = Boolean(activeJourneyProblemButton());
+    var problemAlertKey = !journeyContext || !journeyContext.boarded && departureStopReason(currentFlight)
+      ? 'journeyProblemAlertDeparted' : 'journeyProblemAlert';
+    var renderSignature = JSON.stringify([currentLocale, critical, groups, problemButtonVisible, problemAlertKey]);
     document.querySelectorAll('[data-flight-change-alert]').forEach(function (alert) {
       var ownerScreen = alert.closest('.screen');
       var active = ownerScreen && ownerScreen.dataset.screen === currentScreen;
@@ -3678,6 +3744,14 @@
         });
         alert.appendChild(group);
       });
+      if (problemButtonVisible) {
+        var problemLink = document.createElement('button');
+        problemLink.type = 'button';
+        problemLink.className = 'flight-change-journey-problem-link';
+        problemLink.dataset.action = 'scroll-to-journey-problem';
+        problemLink.textContent = t(problemAlertKey);
+        alert.appendChild(problemLink);
+      }
     });
   }
 
@@ -4136,12 +4210,21 @@
     if (waitButton) waitButton.disabled = disabled;
   }
 
-  function setDeparturePassedStaffContent() {
+  function setDeparturePassedStaffContent(reason) {
     var flight = formatFlightNumber(currentFlight && currentFlight.flightNumber) || '—';
     var date = currentFlight && currentFlight.departureDate;
     var dateZh = formatDateForLocale(date, 'zh-CN');
     var dateEn = formatDateForLocale(date, 'en-GB');
     var dateEs = formatDateForLocale(date, 'es-ES');
+    if (reason === 'FLIGHT_CANCELLED') {
+      setStaffContent(
+        '航班已取消，请告诉我下一步', 'My flight is cancelled. What should I do?',
+        '我的航班 ' + flight + ' 显示已经取消。请问我现在应该怎么办？',
+        'My flight ' + flight + ' is shown as cancelled. What should I do now?',
+        'Mi vuelo está cancelado. ¿Qué debo hacer?',
+        'Mi vuelo ' + flight + ' aparece cancelado. ¿Qué debo hacer ahora?');
+      return;
+    }
     setStaffContent(
       '航班已经离港，请帮我改签或重新预订',
       'This flight has departed. Please help me rebook',
@@ -4155,14 +4238,8 @@
     var flight = formatFlightNumber(currentFlight && currentFlight.flightNumber);
     var gate = currentFlight && currentFlight.gate;
     var reason = action.reason || '';
-    if (reason === 'FLIGHT_CANCELLED') {
-      setStaffContent('航班已取消，请告诉我下一步', 'My flight is cancelled. What should I do?',
-        '我的航班 ' + flight + ' 显示已经取消。请问我现在应该怎么办？',
-        'My flight ' + flight + ' is shown as cancelled. What should I do now?');
-      return;
-    }
-    if (reason === 'DEPARTURE_TIME_PASSED' || reason === 'FLIGHT_ALREADY_DEPARTED') {
-      setDeparturePassedStaffContent();
+    if (isDepartureStopReason(reason)) {
+      setDeparturePassedStaffContent(reason);
       return;
     }
     var content = {
@@ -5327,7 +5404,8 @@
           document.querySelector('[data-flight-correction-lead]').textContent]);
       }
       if (departureStopReason(currentFlight)) {
-        return compactSpeechParts([t('departurePassedTitle'), t('departurePassedLead'),
+        var stopCopy = departureStopCopy(departureStopReason(currentFlight));
+        return compactSpeechParts([stopCopy.title, stopCopy.lead,
           formatFlightNumber(currentFlight.flightNumber), formatDate(currentFlight.departureDate)]);
       }
       var route = (currentFlight.departureAirport || '') + ' ' + localeText('到', 'to', 'a') + ' ' + (currentFlight.arrivalAirport || '');
@@ -5389,8 +5467,9 @@
     if (showMessage && wasSpeaking) showToast(localeText('朗读已停止。', 'Reading stopped.', 'Lectura detenida.'));
   }
 
-  function startSpeechText(text, automatic) {
-    text = normalizeSpeechText(text, currentLocale);
+  function startSpeechText(text, automatic, localeOverride) {
+    var speechLocale = normalizeLocale(localeOverride || currentLocale);
+    text = normalizeSpeechText(text, speechLocale);
     if (!text) return;
     stopSpeech(false);
     if (!speechIsSupported()) {
@@ -5399,8 +5478,8 @@
     }
     var generation = ++speechGeneration;
     var utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale === 'es' ? 'es-ES' : 'en-US';
-    var voicePrefix = currentLocale === 'zh' ? 'zh' : currentLocale === 'es' ? 'es' : 'en';
+    utterance.lang = speechLocale === 'zh' ? 'zh-CN' : speechLocale === 'es' ? 'es-ES' : 'en-US';
+    var voicePrefix = speechLocale === 'zh' ? 'zh' : speechLocale === 'es' ? 'es' : 'en';
     var voices = typeof window.speechSynthesis.getVoices === 'function' ? window.speechSynthesis.getVoices() : [];
     var matchingVoice = voices.find(function (voice) {
       return String(voice.lang || '').toLowerCase().indexOf(voicePrefix) === 0;
@@ -5526,6 +5605,243 @@
     closeDialog('[data-staff-overlay]');
     staffReturnFocusElement = null;
     if (returnFocus && document.contains(returnFocus) && !returnFocus.disabled) returnFocus.focus();
+  }
+
+  function resetJourneyProblemState() {
+    journeyProblemState = { hasConnection: null, busy: false, answer: null, responseLocale: null };
+    var card = document.querySelector('[data-journey-problem-card]');
+    var connectionStep = document.querySelector('[data-journey-problem-connection-step]');
+    var form = document.querySelector('[data-journey-problem-form]');
+    var result = document.querySelector('[data-journey-problem-result]');
+    var textarea = document.querySelector('[data-journey-problem-statement]');
+    var voice = document.querySelector('[data-action="journey-problem-voice"]');
+    var status = document.querySelector('[data-journey-problem-input-status]');
+    var answer = document.querySelector('[data-journey-problem-answer]');
+    var confirmation = document.querySelector('[data-journey-problem-confirmation]');
+    if (card) card.setAttribute('aria-busy', 'false');
+    setHidden(connectionStep, false);
+    setHidden(form, true);
+    setHidden(result, true);
+    setHidden(document.querySelector('[data-journey-problem-transfer-prompt]'), true);
+    if (textarea) { textarea.value = ''; textarea.disabled = false; }
+    if (voice) voice.disabled = false;
+    if (status) status.textContent = '';
+    if (answer) answer.textContent = '';
+    if (confirmation) confirmation.textContent = '';
+    var voiceLabel = document.querySelector('[data-journey-problem-voice-label]');
+    if (voiceLabel) voiceLabel.textContent = t('journeyProblemVoice');
+    var submit = document.querySelector('[data-journey-problem-submit]');
+    if (submit) { submit.textContent = t('journeyProblemSubmit'); submit.disabled = true; }
+  }
+
+  function openJourneyProblem() {
+    if (!currentFlight || !activeJourneyProblemButton()) return;
+    resetJourneyProblemState();
+    openDialog('[data-journey-problem-overlay]', '[data-action="journey-problem-connection"]');
+  }
+
+  function chooseJourneyProblemConnection(hasConnection) {
+    journeyProblemState.hasConnection = Boolean(hasConnection);
+    setHidden(document.querySelector('[data-journey-problem-connection-step]'), true);
+    setHidden(document.querySelector('[data-journey-problem-form]'), false);
+    setHidden(document.querySelector('[data-journey-problem-transfer-prompt]'), !journeyProblemState.hasConnection);
+    var textarea = document.querySelector('[data-journey-problem-statement]');
+    if (textarea) textarea.focus();
+    updateJourneyProblemSubmitState();
+  }
+
+  function stopJourneyProblemVoiceInput() {
+    if (journeyProblemRecognition) {
+      var recognition = journeyProblemRecognition;
+      journeyProblemRecognition = null;
+      recognition.onend = null;
+      try { recognition.abort(); } catch (error) { /* Speech recognition is optional. */ }
+    }
+    var label = document.querySelector('[data-journey-problem-voice-label]');
+    if (label) label.textContent = t('journeyProblemVoice');
+  }
+
+  function startJourneyProblemVoiceInput() {
+    stopSpeech(false);
+    stopJourneyProblemVoiceInput();
+    var status = document.querySelector('[data-journey-problem-input-status]');
+    var label = document.querySelector('[data-journey-problem-voice-label]');
+    if (status) status.textContent = '';
+    var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Recognition) {
+      if (status) status.textContent = t('journeyProblemSpeechFailed');
+      return;
+    }
+    var recognition = new Recognition();
+    journeyProblemRecognition = recognition;
+    recognition.lang = currentLocale === 'zh' ? 'zh-CN' : currentLocale === 'es' ? 'es-ES' : 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    if (label) label.textContent = t('journeyProblemListening');
+    var restore = function () {
+      if (journeyProblemRecognition === recognition) journeyProblemRecognition = null;
+      if (label) label.textContent = t('journeyProblemVoice');
+    };
+    recognition.onresult = function (event) {
+      var transcript = event.results && event.results[0] && event.results[0][0]
+        ? String(event.results[0][0].transcript || '').trim() : '';
+      var textarea = document.querySelector('[data-journey-problem-statement]');
+      if (transcript && textarea) textarea.value = (textarea.value.trim() ? textarea.value + ' ' : '') + transcript;
+      if (!transcript && status) status.textContent = t('journeyProblemSpeechFailed');
+      updateJourneyProblemSubmitState();
+    };
+    recognition.onerror = function () { if (status) status.textContent = t('journeyProblemSpeechFailed'); restore(); };
+    recognition.onnomatch = function () { if (status) status.textContent = t('journeyProblemSpeechFailed'); };
+    recognition.onend = restore;
+    try { recognition.start(); } catch (error) { if (status) status.textContent = t('journeyProblemSpeechFailed'); restore(); }
+  }
+
+  function updateJourneyProblemSubmitState() {
+    var textarea = document.querySelector('[data-journey-problem-statement]');
+    var submit = document.querySelector('[data-journey-problem-submit]');
+    if (submit) submit.disabled = journeyProblemState.busy || !textarea || !textarea.value.trim();
+  }
+
+  function currentJourneyProblemAirport() {
+    var arrival = isArrivalPhase();
+    var preferredCode = arrival ? currentFlight.arrivalAirport : currentFlight.departureAirport;
+    var fallbackCode = arrival ? currentFlight.departureAirport : currentFlight.arrivalAirport;
+    var preferredName = arrival ? currentFlight.arrivalAirportName : currentFlight.departureAirportName;
+    var fallbackName = arrival ? currentFlight.departureAirportName : currentFlight.arrivalAirportName;
+    return {
+      problemAirport: preferredCode || fallbackCode,
+      problemAirportName: preferredCode ? preferredName : fallbackName,
+      offsetMinutes: arrival ? arrivalOffsetMinutes() : departureOffsetMinutes(),
+      phase: arrival ? 'ARRIVAL' : 'DEPARTURE'
+    };
+  }
+
+  function buildJourneyProblemPayload() {
+    var textarea = document.querySelector('[data-journey-problem-statement]');
+    var airport = currentJourneyProblemAirport();
+    var time = currentFlight.timeContext || {};
+    return {
+      hasConnection: Boolean(journeyProblemState.hasConnection),
+      passengerStatement: textarea ? textarea.value.trim() : '',
+      locale: currentLocale,
+      currentFlight: {
+        flightNumber: currentFlight.flightNumber, departureDate: currentFlight.departureDate,
+        departureAirport: currentFlight.departureAirport, departureAirportName: currentFlight.departureAirportName,
+        arrivalAirport: currentFlight.arrivalAirport, arrivalAirportName: currentFlight.arrivalAirportName,
+        problemAirport: airport.problemAirport, problemAirportName: airport.problemAirportName,
+        problemPhase: airport.phase, scheduledDeparture: currentFlight.scheduledDeparture,
+        estimatedDeparture: currentFlight.estimatedDeparture, actualDeparture: currentFlight.actualDeparture,
+        effectiveDeparture: time.effectiveDeparture || currentFlight.effectiveDeparture,
+        scheduledArrival: currentFlight.scheduledArrival, estimatedArrival: currentFlight.estimatedArrival,
+        actualArrival: currentFlight.actualArrival, boardingTime: time.boardingTime || currentFlight.boardingTime,
+        terminal: currentFlight.terminal, arrivalTerminal: currentFlight.arrivalTerminal,
+        gate: currentFlight.gate, status: currentFlight.status, delayMinutes: currentFlight.delayMinutes,
+        arrivalDelayMinutes: currentFlight.arrivalDelayMinutes, codeshare: currentFlight.codeshare,
+        dataLastUpdatedAt: currentFlight.dataLastUpdatedAt || time.dataLastUpdatedAt,
+        dataRetrievedAt: currentFlight.dataRetrievedAt || time.dataRetrievedAt,
+        currentTime: calibratedNowIso(), currentLocalTime: formatLocalNowFor(currentLocale, airport.offsetMinutes),
+        latestChanges: (currentFlight.latestChanges || []).map(function (change) {
+          return { type: change.type, oldValue: change.oldValue, newValue: change.newValue,
+            critical: change.critical, detectedAt: change.detectedAt };
+        })
+      }
+    };
+  }
+
+  function journeyProblemFallback(locale) {
+    return translations[normalizeLocale(locale)].journeyProblemFallback;
+  }
+
+  function limitJourneyProblemSentences(value) {
+    var text = String(value || '').replace(/\s+/g, ' ').trim();
+    var matches = text.match(/[^。！？.!?]+[。！？.!?]+(?:[”’"']+)?/g);
+    return matches && matches.length ? matches.slice(0, 2).map(function (sentence) {
+      return sentence.trim();
+    }).join(' ') : text;
+  }
+
+  function renderJourneyProblemResult(answer, responseLocale, payload) {
+    var locale = normalizeLocale(responseLocale);
+    var safeAnswer = limitJourneyProblemSentences(answer) || journeyProblemFallback(locale);
+    var confirmation = translations[locale].journeyProblemConfirmStaff;
+    journeyProblemState.busy = false;
+    journeyProblemState.answer = safeAnswer;
+    journeyProblemState.responseLocale = locale;
+    document.querySelector('[data-journey-problem-card]').setAttribute('aria-busy', 'false');
+    setHidden(document.querySelector('[data-journey-problem-connection-step]'), true);
+    setHidden(document.querySelector('[data-journey-problem-form]'), true);
+    setHidden(document.querySelector('[data-journey-problem-result]'), false);
+    document.querySelector('[data-journey-problem-answer]').textContent = safeAnswer;
+    document.querySelector('[data-journey-problem-confirmation]').textContent = confirmation;
+    startSpeechText(safeAnswer + ' ' + confirmation, true, locale);
+  }
+
+  function submitJourneyProblem() {
+    if (journeyProblemState.busy || journeyProblemState.hasConnection == null || !currentFlight) return;
+    var payload = buildJourneyProblemPayload();
+    if (!payload.passengerStatement) return;
+    stopJourneyProblemVoiceInput();
+    journeyProblemState.busy = true;
+    document.querySelector('[data-journey-problem-card]').setAttribute('aria-busy', 'true');
+    var textarea = document.querySelector('[data-journey-problem-statement]');
+    var voice = document.querySelector('[data-action="journey-problem-voice"]');
+    var submit = document.querySelector('[data-journey-problem-submit]');
+    textarea.disabled = true;
+    voice.disabled = true;
+    submit.disabled = true;
+    submit.textContent = translations[payload.locale].journeyProblemLoading;
+    var controller = new AbortController();
+    journeyProblemRequestController = controller;
+    var generation = ++journeyProblemRequestGeneration;
+    var timeout = window.setTimeout(function () { controller.abort(); }, 45000);
+    fetch('/api/assistance/journey-problem', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload), signal: controller.signal
+    }).then(function (response) {
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      return response.json();
+    }).then(function (response) {
+      if (generation !== journeyProblemRequestGeneration) return;
+      if (!response || !String(response.answer || '').trim()) {
+        renderJourneyProblemResult(journeyProblemFallback(payload.locale), payload.locale, payload);
+        return;
+      }
+      renderJourneyProblemResult(response.answer, payload.locale, payload);
+    }).catch(function () {
+      if (generation === journeyProblemRequestGeneration) {
+        renderJourneyProblemResult(journeyProblemFallback(payload.locale), payload.locale, payload);
+      }
+    }).finally(function () {
+      window.clearTimeout(timeout);
+      if (journeyProblemRequestController === controller) journeyProblemRequestController = null;
+    });
+  }
+
+  function closeJourneyProblem() {
+    stopJourneyProblemVoiceInput();
+    if (journeyProblemRequestController) journeyProblemRequestController.abort();
+    journeyProblemRequestController = null;
+    journeyProblemRequestGeneration += 1;
+    stopSpeech(false);
+    closeDialog('[data-journey-problem-overlay]');
+    resetJourneyProblemState();
+  }
+
+  function activeJourneyProblemButton() {
+    var buttons = Array.from(document.querySelectorAll('[data-action="open-journey-problem"]'));
+    return buttons.find(function (button) {
+      var screen = button.closest('.screen');
+      return screen && screen.dataset.screen === currentScreen && !button.closest('[hidden]');
+    }) || null;
+  }
+
+  function scrollToJourneyProblemButton() {
+    var button = activeJourneyProblemButton();
+    if (!button) return;
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    button.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+    button.focus({ preventScroll: true });
   }
 
   function openDialog(dialogSelector, focusSelector) {
@@ -6524,7 +6840,8 @@
       if (departureStopReason(currentFlight)) {
         renderDeparturePassedConfirmation(currentFlight);
         showScreen('confirm');
-        announce(localeText('这趟航班已经离港，请不要开始普通乘机步骤。', 'This flight has departed. Do not start the normal airport steps.', 'Este vuelo ya ha salido. No inicies los pasos normales del aeropuerto.'));
+        var stopCopy = departureStopCopy(departureStopReason(currentFlight));
+        announce(compactSpeechParts([stopCopy.title, stopCopy.lead]));
         return;
       }
       if (!currentFlight.timeContext && !isDocumentFallbackFlight(currentFlight)) {
@@ -6580,6 +6897,13 @@
     if (action === 'refresh-flight') refreshFlight({ source: 'manual' });
     if (action === 'refresh-arrival') refreshArrivalInfo({ source: 'manual' });
     if (action === 'new-flight-info') beginNewFlightInformation();
+    if (action === 'open-journey-problem') openJourneyProblem();
+    if (action === 'close-journey-problem') closeJourneyProblem();
+    if (action === 'journey-problem-connection') {
+      chooseJourneyProblemConnection(actionElement.dataset.connection === 'true');
+    }
+    if (action === 'journey-problem-voice') startJourneyProblemVoiceInput();
+    if (action === 'scroll-to-journey-problem') scrollToJourneyProblemButton();
   });
 
   fileInput.addEventListener('change', function () {
@@ -6683,6 +7007,12 @@
     startFlightLookup(flightNumber, departureDate, false, null);
   });
 
+  document.querySelector('[data-journey-problem-form]').addEventListener('submit', function (event) {
+    event.preventDefault();
+    submitJourneyProblem();
+  });
+  document.querySelector('[data-journey-problem-statement]').addEventListener('input', updateJourneyProblemSubmitState);
+
   ['flight-input', 'date-input', 'flight-confirm-input', 'date-confirm-input'].forEach(function (id) {
     var input = document.getElementById(id);
     if (input) input.addEventListener('input', function () { input.setCustomValidity(''); });
@@ -6704,7 +7034,7 @@
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Tab' && activeDialog) {
       var focusable = Array.from(activeDialog.querySelectorAll(
-        'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'))
+        'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'))
         .filter(function (element) { return !element.hidden && element.offsetParent !== null; });
       if (focusable.length) {
         var first = focusable[0];
@@ -6720,7 +7050,8 @@
       return;
     }
     if (event.key !== 'Escape') return;
-    if (!document.querySelector('[data-staff-overlay]').hidden) closeStaff();
+    if (!document.querySelector('[data-journey-problem-overlay]').hidden) closeJourneyProblem();
+    else if (!document.querySelector('[data-staff-overlay]').hidden) closeStaff();
     else if (!document.querySelector('[data-family-overlay]').hidden) closeFamily();
     else if (!document.querySelector('[data-board-overlay]').hidden) closeBoardConfirmation();
     else if (!document.querySelector('[data-landed-overlay]').hidden) closeLandedConfirmation();
