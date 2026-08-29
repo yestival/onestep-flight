@@ -49,6 +49,8 @@ const TARGET_SELECTOR = [
 const SCENES = [
   'welcome',
   'scenario-controls',
+  'scenario-confirm-controls',
+  'scenario-step-controls',
   'upload',
   'document-unusable',
   'manual',
@@ -66,6 +68,9 @@ const SCENES = [
   'departure-exception',
   'complete',
   'staff-dialog',
+  'staff-locator-dialog',
+  'staff-failure-dialog',
+  'staff-extra-dialog',
   'family-dialog',
   'end-dialog',
   'board-dialog',
@@ -316,6 +321,10 @@ async function initializePage(page) {
     document.querySelectorAll(${JSON.stringify(TARGET_SELECTOR)}).forEach((button, index) => {
       button.dataset.buttonVisualTestId = 'control-' + index;
     });
+    if (manualSegmentOptions) {
+      manualSegmentOptions.dataset.buttonVisualControlIds = Array.from(manualSegmentOptions.children)
+        .map((button) => button.dataset.buttonVisualTestId || '').join(',');
+    }
     return true;
   })()`);
 }
@@ -361,7 +370,9 @@ function sceneMeasurementExpression(scene, stopLabel) {
       });
     }
     function addGrid(selector, columns, singleRow = true, equalWidth = false) {
-      grids.push({ selector, columns, singleRow, equalWidth });
+      const responsiveColumns = innerWidth <= 220 ? 1 : columns;
+      grids.push({ selector, columns: responsiveColumns,
+        singleRow: singleRow && responsiveColumns === columns, equalWidth });
     }
 
     hide('[data-screen], [data-staff-overlay], .confirm-overlay');
@@ -389,6 +400,26 @@ function sceneMeasurementExpression(scene, stopLabel) {
     } else if (sceneName === 'manual-partial') {
       scope = showScreen('manual');
       show('[data-manual-document-segments]');
+      show('[data-manual-document-help]');
+      const manualSegments = document.querySelector('[data-manual-segment-options]');
+      if (manualSegments && !manualSegments.children.length) {
+        const fixtureIds = (manualSegments.dataset.buttonVisualControlIds || '').split(',');
+        [['MF 825', 'XMN → CDG · date needed'], ['AF 1668', 'CDG → MAN · incomplete']]
+          .forEach(([title, detail], index) => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.dataset.action = 'select-segment';
+            item.dataset.segmentIndex = String(index);
+            item.dataset.buttonVisualTestId = fixtureIds[index] || 'manual-segment-' + index;
+            item.className = 'segment-option is-incomplete' + (index ? '' : ' is-selected');
+            const strong = document.createElement('strong');
+            strong.textContent = title;
+            const span = document.createElement('span');
+            span.textContent = detail;
+            item.append(strong, span);
+            manualSegments.appendChild(item);
+          });
+      }
       show('[data-review-candidates], [data-manual-flight-confirmation]');
       const reviewFields = document.querySelector('[data-review-candidate-fields]');
       if (reviewFields) {
@@ -418,6 +449,13 @@ function sceneMeasurementExpression(scene, stopLabel) {
       showScreen('welcome');
       show('[data-scenario-panel]');
       scope = document.querySelector('[data-scenario-panel]');
+    } else if (sceneName === 'scenario-confirm-controls' || sceneName === 'scenario-step-controls') {
+      const scenarioScreen = showScreen(sceneName === 'scenario-confirm-controls' ? 'confirm' : 'step');
+      scope = scenarioScreen.querySelector('[data-scenario-test-card]');
+      scope.hidden = false;
+      showChildren(sceneName === 'scenario-confirm-controls'
+        ? '.screen-confirm [data-scenario-test-card]'
+        : '.screen-step [data-scenario-test-card]');
     } else if (sceneName === 'confirm-flight') {
       scope = showScreen('confirm');
       show('.screen-confirm > [data-action="journey-back"]');
@@ -491,6 +529,9 @@ function sceneMeasurementExpression(scene, stopLabel) {
     } else {
       const overlaySelectors = {
         'staff-dialog': '[data-staff-overlay]',
+        'staff-locator-dialog': '[data-staff-overlay]',
+        'staff-failure-dialog': '[data-staff-overlay]',
+        'staff-extra-dialog': '[data-staff-overlay]',
         'family-dialog': '[data-family-overlay]',
         'end-dialog': '[data-end-overlay]',
         'board-dialog': '[data-board-overlay]',
@@ -499,6 +540,32 @@ function sceneMeasurementExpression(scene, stopLabel) {
       scope = document.querySelector(overlaySelectors[sceneName]);
       if (!scope) throw new Error('Unknown scene: ' + sceneName);
       scope.hidden = false;
+      if (sceneName === 'staff-dialog') {
+        show('[data-staff-card-view], [data-action="find-staff"], [data-action="open-extra-assistance"]');
+        hide('[data-staff-locator-view], [data-staff-extra-view]');
+      }
+      if (sceneName === 'staff-locator-dialog') {
+        hide('[data-staff-card-view], [data-staff-extra-view], [data-staff-guidance-loading], [data-staff-guidance-failure]');
+        show('[data-staff-locator-view], [data-staff-guidance-result], [data-staff-identification-section],'
+          + ' [data-staff-map-action], [data-staff-contact-action], [data-action="listen-staff-guidance"],'
+          + ' [data-action="toggle-staff-sources"]');
+        const locationList = document.querySelector('[data-staff-location-list]');
+        if (locationList) locationList.innerHTML = '<article class="staff-location-card"><h3>机场旅客信息服务台</h3><p>安检前 · 出发层 · 旅客信息区域</p><p>机场旅客服务人员</p><a class="staff-location-source" href="https://example.invalid">查看官网来源</a></article>';
+        const identityList = document.querySelector('[data-staff-identification-list]');
+        if (identityList) identityList.innerHTML = '<li>可寻找佩戴机场工作证的旅客服务人员</li>';
+        const mapAction = document.querySelector('[data-staff-map-action]');
+        const contactAction = document.querySelector('[data-staff-contact-action]');
+        if (mapAction) mapAction.href = 'https://example.invalid/map';
+        if (contactAction) contactAction.href = 'https://example.invalid/contact';
+      }
+      if (sceneName === 'staff-failure-dialog') {
+        hide('[data-staff-card-view], [data-staff-extra-view], [data-staff-guidance-loading], [data-staff-guidance-result]');
+        show('[data-staff-locator-view], [data-staff-guidance-failure], [data-action="retry-staff-guidance"]');
+      }
+      if (sceneName === 'staff-extra-dialog') {
+        hide('[data-staff-card-view], [data-staff-locator-view]');
+        show('[data-staff-extra-view]');
+      }
       if (sceneName === 'family-dialog') {
         showChildren('[data-family-overlay] .family-actions');
         addGrid('[data-family-overlay] .family-actions', 2, true, true);

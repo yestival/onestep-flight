@@ -188,7 +188,8 @@ const summary = {
     backPreservesItinerary: false,
     secondIsNormal: false,
     resolverPayloadsPreserveAllSegments: false,
-    staff: { count: 0, iconContract: false, speech: {}, lifecycle: false },
+    staff: { count: 0, iconContract: false, speech: {}, lifecycle: false,
+      cardOrder: false, locator: false, extraAssistance: false, browserBack: false },
     confirmSpeech: { text: null, displayedFacts: null, passed: false },
     family: { controls: null, responsive: {}, nativeLink: false, nativeFile: false,
       forbiddenUiAbsent: false, clipboardUnused: false },
@@ -206,7 +207,7 @@ function safeFailure(error) {
   return String(error && error.message || error || 'Acceptance step failed')
     .replace(/https?:\/\/\S+/gi, '[url]')
     .replace(/[A-Za-z0-9_-]{32,}/g, '[redacted]')
-    .slice(0, 180);
+    .slice(0, 600);
 }
 
 async function reservePort() {
@@ -424,6 +425,7 @@ async function click(page, selector) {
   const found = await evaluate(page, `(() => {
     const element = document.querySelector(${JSON.stringify(selector)});
     if (!element || element.hidden || element.disabled) return false;
+    element.focus();
     element.click();
     return true;
   })()`);
@@ -452,7 +454,8 @@ async function navigate(page, url) {
 }
 
 async function hasNoHorizontalOverflow(page) {
-  return evaluate(page, `Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) <= window.innerWidth + 1`);
+  return evaluate(page, `document.documentElement.scrollWidth <= window.innerWidth + 1
+    && document.body.getBoundingClientRect().width <= window.innerWidth + 1`);
 }
 
 async function testLocalesAndResponsive(page) {
@@ -480,6 +483,16 @@ async function testLocalesAndResponsive(page) {
   await page.send('Emulation.setDeviceMetricsOverride', { width: 195, height: 422, deviceScaleFactor: 2, mobile: true });
   await page.send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
   summary.responsive.zoom200Percent = await hasNoHorizontalOverflow(page);
+  if (!summary.responsive.zoom200Percent) {
+    summary.responsive.zoomOverflow = await evaluate(page, `(() => ({
+      innerWidth, documentWidth: document.documentElement.scrollWidth, bodyWidth: document.body.scrollWidth,
+      elements: Array.from(document.querySelectorAll('body *')).map((element) => {
+        const rect = element.getBoundingClientRect();
+        return { tag: element.tagName, classes: element.className, left: rect.left, right: rect.right,
+          width: rect.width, text: element.textContent.trim().replace(/\\s+/g, ' ').slice(0, 60) };
+      }).filter((item) => item.left < -1 || item.right > innerWidth + 1).slice(0, 12)
+    }))()`);
+  }
   await page.send('Emulation.setPageScaleFactor', { pageScaleFactor: 1 });
   await page.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
 }
@@ -499,6 +512,7 @@ function deterministicInjectionSource() {
       selectedSample: 'outbound',
       apiCalls: [],
       resolveRequests: [],
+      staffRequests: [],
       shareCreates: [],
       unexpectedRequests: [],
       nativeShares: [],
@@ -529,6 +543,46 @@ function deterministicInjectionSource() {
         const key = String(request.flightNumber || '').replace(/\\s+/g, '').toUpperCase();
         if (flights[key]) return response(clone(flights[key]));
       }
+      if (url.pathname === '/api/assistance/staff-guidance' && method === 'POST') {
+        let request = {};
+        try { request = JSON.parse(String(init.body || '{}')); } catch (_) {}
+        state.staffRequests.push(clone(request));
+        const evidence = { id: 'source-1', purpose: 'EVIDENCE', origin: 'AIRPORT',
+          title: 'Official airport information service',
+          href: 'https://www.parisaeroport.fr/passagers/services/information' };
+        const contact = { id: 'source-3', purpose: 'CONTACT', origin: 'AIRPORT',
+          title: 'Official airport contact', href: 'https://www.parisaeroport.fr/passagers/contact' };
+        const localizedName = request.assistanceType ? '机场无障碍协助服务台' : '机场旅客信息服务台';
+        const purpose = request.assistanceType ? '可现场申请与所选需求相关的机场协助' : '可询问当前乘机阶段并正式请求工作人员帮助';
+        const fields = ['localizedName', 'purpose', 'securitySide', 'levelOrArea',
+          'zoneOrLandmark', 'staffType', 'relationToCurrentContext'].reduce((all, field) => {
+          all[field] = ['source-1']; return all;
+        }, {});
+        return response({
+          deterministicContext: {
+            airportCode: request.airportCode, airportName: request.airportName,
+            airlineCode: 'AF', airlineName: 'Air France', journeyDirection: request.journeyDirection,
+            terminal: request.terminal, currentStage: request.currentStage,
+            securityState: request.securityState, passengerAnchor: request.knownCheckInLocation,
+            knownGate: request.knownGate, knownCheckInLocation: request.knownCheckInLocation,
+            knownBagDropLocation: request.knownBagDropLocation,
+            knownBaggageBelt: request.knownBaggageBelt,
+            selectedLanguage: request.selectedLanguage, assistanceType: request.assistanceType || null
+          },
+          aiFindings: {
+            staffLocations: [{ localizedName, purpose, terminal: null,
+              securitySide: '安检前', levelOrArea: '出发层', zoneOrLandmark: '旅客信息区域',
+              staffType: '机场旅客服务人员', relationToCurrentContext: '适合当前值机确认阶段',
+              sourceIds: ['source-1'], fieldSourceIds: fields }],
+            staffIdentification: [{ localizedDescription: '可寻找佩戴机场工作证的旅客服务人员',
+              sourceIds: ['source-1'] }],
+            officialContacts: [{ kind: 'CONTACT_PAGE', href: contact.href,
+              displayValue: '机场联系页面', sourceIds: ['source-3'] }]
+          },
+          officialSources: [evidence, contact], resultMode: 'AI_ACCEPTED',
+          failureReason: null, warnings: [], retrievedAt: '2026-08-28T00:00:00Z', fromCache: false
+        });
+      }
       if (url.pathname === '/api/share-sessions' && method === 'POST') {
         let request = {};
         try { request = JSON.parse(String(init.body || '{}')); } catch (_) {}
@@ -536,7 +590,7 @@ function deterministicInjectionSource() {
         return response({
           viewToken: 'fixed-view-token', updateToken: 'fixed-update-token',
           viewUrl: location.origin + '/share/fixed-view-token',
-          expiresAt: '2026-08-27T14:30:00Z'
+          expiresAt: '2026-09-05T14:30:00Z'
         });
       }
       if (url.pathname === '/api/share-sessions/fixed-view-token' && method === 'PUT') return response({ updated: true });
@@ -730,10 +784,16 @@ async function verifyFourItineraryStates(page) {
     if (summaryKey === 'advisory') {
       const advisory = await evaluate(page, `(() => {
         const second = document.querySelector('[data-segment-options] [data-segment-index="1"]');
-        return second && second.classList.contains('is-advisory')
-          && !second.classList.contains('is-conflict');
+        return second && { classes: second.className,
+          conflict: second.classList.contains('is-conflict'),
+          incomplete: second.classList.contains('is-incomplete'),
+          pending: second.classList.contains('is-pending'),
+          disabled: second.disabled,
+          label: second.innerText.trim().replace(/\\s+/g, ' ') };
       })()`);
-      requireAcceptance(advisory, 'single medium/supporting candidates were not advisory-queryable');
+      requireAcceptance(advisory && !advisory.conflict && !advisory.incomplete
+          && !advisory.pending && !advisory.disabled && advisory.label.includes('可以查询'),
+        'single medium/supporting candidates were not queryable', advisory);
     }
     if (summaryKey === 'conflict') {
       await click(page, '[data-segment-options] [data-segment-index="1"]');
@@ -746,7 +806,7 @@ async function verifyFourItineraryStates(page) {
         return manual && !manual.hidden && candidates.length === 2 && date && !date.disabled
           && confirmation && !confirmation.disabled && primary && primary.dataset.mode === 'save';
       })()`, 'blocking conflict exposes actionable date candidates and confirmation');
-      await click(page, '[data-review-candidates] [data-action="select-review-candidate"]:last-child');
+      await click(page, '[data-review-candidates] [data-action="select-review-candidate"]:nth-child(2)');
       const selected = await evaluate(page, `(() => ({
         value: document.querySelector('#date-input').value,
         confirmed: document.querySelector('#date-confirm-input').checked,
@@ -779,6 +839,14 @@ async function verifyLocalCompletionOnly(page) {
   })()`, 'missing segment completion controls');
   await setValue(page, '#flight-input', 'QF 12');
   await setValue(page, '#date-input', '2026-08-04');
+  await evaluate(page, `['#flight-confirm-input', '#date-confirm-input'].forEach((selector) => {
+    const input = document.querySelector(selector);
+    if (input && !input.disabled) {
+      input.checked = true;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  })`);
   await click(page, '[data-action="manual-submit"] button[type="submit"]');
   const completedLocally = `(() => {
     const selector = document.querySelector('[data-segment-selector]');
@@ -871,9 +939,9 @@ async function verifyStaffIconContract(page) {
 
 async function verifyStaffSpeech(page) {
   const expected = {
-    zh: { text: '请把这个页面拿给工作人员看', lang: 'zh-CN' },
-    en: { text: 'Please show this page to a member of staff.', lang: 'en-US' },
-    es: { text: 'Por favor, muestra esta página a un miembro del personal.', lang: 'es-ES' }
+    zh: { text: '请把这张卡给工作人员看。需要寻找工作人员时，请点屏幕顶部的“帮我找人”。需要了解这里可以提供的额外协助时，请点屏幕底部的“查看这里可以提供的额外协助”。', lang: 'zh-CN' },
+    en: { text: 'Please show this card to a member of staff. To find staff, select “Help me find staff” at the top of the screen. To learn about additional assistance available here, select “View additional assistance available here” at the bottom of the screen.', lang: 'en-US' },
+    es: { text: 'Muestre esta tarjeta a un miembro del personal. Para buscar personal, pulse «Ayúdame a encontrar personal» en la parte superior de la pantalla. Para conocer la asistencia adicional disponible aquí, pulse «Ver la asistencia adicional disponible aquí» en la parte inferior de la pantalla.', lang: 'es-ES' }
   };
   let lifecyclePassed = true;
   for (const [locale, contract] of Object.entries(expected)) {
@@ -904,6 +972,141 @@ async function verifyStaffSpeech(page) {
   await evaluate(page, `window.__fixedAcceptance.resetSpeech()`);
 }
 
+async function verifyStaffLocatorExperience(page) {
+  await click(page, '.screen-confirm > .confirm-choice-actions [data-action="continue"]');
+  await waitFor(page, `(() => {
+    const question = document.querySelector('[data-checkin-question]');
+    const staff = document.querySelector('.screen-step [data-action="staff"]');
+    return question && !question.hidden && staff && !staff.hidden;
+  })()`, 'journey staff entry');
+  await evaluate(page, `window.__fixedAcceptance.resetSpeech()`);
+  await evaluate(page, `window.__fixedAcceptance.staffTrigger = document.querySelector('.screen-step [data-action="staff"]')`);
+  await click(page, '.screen-step [data-action="staff"]');
+  await waitFor(page, `(() => {
+    const overlay = document.querySelector('[data-staff-overlay]');
+    const card = document.querySelector('[data-staff-card-view]');
+    return overlay && !overlay.hidden && card && !card.hidden;
+  })()`, 'staff large card');
+
+  const cardContract = await evaluate(page, `(() => {
+    const shell = document.querySelector('[data-staff-overlay] .staff-card');
+    const card = document.querySelector('[data-staff-card-view]');
+    const find = card.querySelector('[data-action="find-staff"]');
+    const extra = card.querySelector('[data-action="open-extra-assistance"]');
+    return {
+      shellOrder: Array.from(shell.children).map((item) => item.matches('[data-action="close-staff"]')
+        ? 'close' : item.matches('[data-staff-card-view]') ? 'card'
+          : item.matches('[data-staff-locator-view]') ? 'locator' : 'extra'),
+      findFirst: card.firstElementChild === find,
+      extraLast: card.lastElementChild === extra,
+      findText: find.textContent.trim(), extraText: extra.textContent.trim(),
+      closeLabel: shell.querySelector('[data-action="close-staff"]').getAttribute('aria-label'),
+      explanationParagraphCount: card.querySelectorAll(':scope > p').length,
+      copyCount: card.querySelectorAll('[data-action*="copy"], [data-copy]').length
+    };
+  })()`);
+  requireAcceptance(JSON.stringify(cardContract.shellOrder) === JSON.stringify(['close', 'card', 'locator', 'extra'])
+      && cardContract.findFirst && cardContract.extraLast
+      && cardContract.findText === '帮我找人'
+      && cardContract.extraText === '查看这里可以提供的额外协助'
+      && cardContract.closeLabel === '关闭帮我找人窗口'
+      && cardContract.explanationParagraphCount === 0 && cardContract.copyCount === 0,
+    'staff large-card order or copy-free contract failed', cardContract);
+  summary.deterministic.staff.cardOrder = true;
+
+  await click(page, '[data-staff-card-view] [data-action="open-extra-assistance"]');
+  await waitFor(page, `(() => {
+    const view = document.querySelector('[data-staff-extra-view]');
+    return view && !view.hidden && document.activeElement === document.querySelector('#staff-extra-title');
+  })()`, 'extra assistance choices');
+  const extraContract = await evaluate(page, `(() => {
+    const view = document.querySelector('[data-staff-extra-view]');
+    return {
+      title: view.querySelector('h1').textContent.trim(),
+      choices: Array.from(view.querySelectorAll('[data-action="extra-assistance"]')).map((button) => ({
+        type: button.dataset.assistanceType, text: button.textContent.trim(), height: button.getBoundingClientRect().height
+      })),
+      inputs: view.querySelectorAll('input, textarea, [contenteditable="true"]').length
+    };
+  })()`);
+  requireAcceptance(extraContract.title === '查看这里可以提供的额外协助'
+      && JSON.stringify(extraContract.choices.map((choice) => choice.type)) === JSON.stringify([
+        'MOBILITY_OR_WHEELCHAIR', 'VISION_OR_HEARING', 'BOARDING_OR_TRANSFER'
+      ]) && extraContract.choices.every((choice) => choice.height >= 56)
+      && extraContract.inputs === 0,
+    'extra-assistance preset contract failed', extraContract);
+  await click(page, '[data-staff-extra-view] [data-assistance-type="MOBILITY_OR_WHEELCHAIR"]');
+  await waitFor(page, `(() => {
+    const result = document.querySelector('[data-staff-guidance-result]');
+    return result && !result.hidden && window.__fixedAcceptance.staffRequests.length === 1;
+  })()`, 'preset assistance AI result');
+  const assistanceRequest = await evaluate(page, `window.__fixedAcceptance.staffRequests[0]`);
+  requireAcceptance(assistanceRequest.assistanceType === 'MOBILITY_OR_WHEELCHAIR',
+    'preset assistance type was not sent', assistanceRequest);
+  summary.deterministic.staff.extraAssistance = true;
+  await click(page, '[data-staff-locator-view] [data-action="back-to-staff-card"]');
+  await waitFor(page, `!document.querySelector('[data-staff-card-view]').hidden`, 'return from preset assistance');
+
+  await click(page, '[data-staff-card-view] [data-action="find-staff"]');
+  await waitFor(page, `(() => {
+    const result = document.querySelector('[data-staff-guidance-result]');
+    return result && !result.hidden && window.__fixedAcceptance.staffRequests.length === 2;
+  })()`, 'staff locator AI result');
+  const locatorContract = await evaluate(page, `(() => {
+    const request = window.__fixedAcceptance.staffRequests[1];
+    const cards = Array.from(document.querySelectorAll('[data-staff-location-list] .staff-location-card'));
+    const contact = document.querySelector('[data-staff-contact-action]');
+    return {
+      request,
+      cardCount: cards.length,
+      resultText: document.querySelector('[data-staff-guidance-result]').innerText,
+      contextText: document.querySelector('[data-staff-locator-context]').innerText,
+      contact: { hidden: contact.hidden, href: contact.href },
+      sourceButtons: document.querySelectorAll('[data-staff-location-list] .staff-location-source').length,
+      failureHidden: document.querySelector('[data-staff-guidance-failure]').hidden,
+      retryHidden: document.querySelector('[data-action="retry-staff-guidance"]').hidden
+    };
+  })()`);
+  requireAcceptance(locatorContract.request.assistanceType == null
+      && locatorContract.request.currentStage === 'CHECK_IN_STATUS'
+      && locatorContract.request.securityState === 'BEFORE_SECURITY'
+      && locatorContract.request.terminal === 'T2E'
+      && locatorContract.request.knownGate === 'B12'
+      && locatorContract.request.knownCheckInLocation === '2E'
+      && locatorContract.cardCount === 1 && locatorContract.sourceButtons === 1
+      && locatorContract.resultText.includes('机场旅客信息服务台')
+      && locatorContract.contextText.includes('B12')
+      && !locatorContract.contact.hidden && locatorContract.contact.href.startsWith('https://www.parisaeroport.fr/')
+      && locatorContract.failureHidden && locatorContract.retryHidden,
+    'staff locator did not render the verified structured response safely', locatorContract);
+  summary.deterministic.staff.locator = true;
+
+  await evaluate(page, `history.back()`);
+  await waitFor(page, `(() => {
+    const overlay = document.querySelector('[data-staff-overlay]');
+    const card = document.querySelector('[data-staff-card-view]');
+    return overlay && !overlay.hidden && card && !card.hidden;
+  })()`, 'browser back to staff card');
+  summary.deterministic.staff.browserBack = true;
+  const cancelsBeforeClose = await evaluate(page, `window.__fixedAcceptance.speech.cancels`);
+  await click(page, '[data-action="close-staff"]');
+  await waitFor(page, `document.querySelector('[data-staff-overlay]').hidden`, 'close complete staff overlay');
+  await delay(500);
+  const closeContract = await evaluate(page, `({
+    activeAction: document.activeElement && document.activeElement.dataset.action,
+    activeTag: document.activeElement && document.activeElement.tagName,
+    triggerIsActive: document.activeElement === window.__fixedAcceptance.staffTrigger,
+    triggerConnected: Boolean(window.__fixedAcceptance.staffTrigger && window.__fixedAcceptance.staffTrigger.isConnected),
+    triggerHidden: window.__fixedAcceptance.staffTrigger && window.__fixedAcceptance.staffTrigger.hidden,
+    mainInert: document.querySelector('#main-content').inert,
+    speaking: window.__fixedAcceptance.speech.speaking,
+    cancels: window.__fixedAcceptance.speech.cancels
+  })`);
+  requireAcceptance(closeContract.activeAction === 'staff' && !closeContract.speaking
+      && closeContract.cancels > cancelsBeforeClose,
+    'closing the whole staff overlay did not stop speech and restore focus', closeContract);
+}
+
 async function selectOutboundSegments(page) {
   await uploadFixedDocument(page, 'outbound', 'selected');
   const resolverCount = await evaluate(page, `window.__fixedAcceptance.resolveRequests.length`);
@@ -917,18 +1120,36 @@ async function selectOutboundSegments(page) {
   })()`);
   requireAcceptance(selectorState.length === 2 && selectorState.every((segment) => !segment.disabled)
       && !selectorState[0].classes.includes('is-incomplete')
-      && selectorState[1].classes.includes('is-advisory')
+      && !selectorState[1].classes.includes('is-incomplete')
+      && !selectorState[1].classes.includes('is-pending')
       && !selectorState[1].classes.includes('is-conflict'),
     'queryable and medium-confidence segments must both remain selectable', selectorState);
 
   await click(page, '[data-segment-options] [data-segment-index="0"]');
-  await waitFor(page, `(() => {
+  const firstSegmentReady = `(() => {
     const manual = document.querySelector('[data-screen="manual"]');
     const submit = document.querySelector('[data-action="manual-submit"] button[type="submit"]');
+    const flight = document.querySelector('#flight-input');
+    const date = document.querySelector('#date-input');
     return manual && !manual.hidden && submit && !submit.disabled
-      && submit.dataset.mode === 'query' && submit.textContent.includes('MF825')
+      && submit.dataset.mode === 'query' && flight && flight.value.replace(/\\s+/g, '') === 'MF825'
+      && date && date.value === '2026-09-05'
       && window.__fixedAcceptance.resolveRequests.length === 0;
-  })()`, 'complete first segment waits for explicit query');
+  })()`;
+  try {
+    await waitFor(page, firstSegmentReady, 'complete first segment waits for explicit query');
+  } catch (error) {
+    const state = await evaluate(page, `(() => {
+      const manual = document.querySelector('[data-screen="manual"]');
+      const submit = document.querySelector('[data-action="manual-submit"] button[type="submit"]');
+      return { manualHidden: manual && manual.hidden, submitFound: Boolean(submit),
+        submitDisabled: submit && submit.disabled, mode: submit && submit.dataset.mode,
+        text: submit && submit.textContent.trim(), flight: document.querySelector('#flight-input')?.value,
+        date: document.querySelector('#date-input')?.value,
+        resolverCount: window.__fixedAcceptance.resolveRequests.length };
+    })()`);
+    throw new Error(`${error.message}: ${JSON.stringify(state)}`);
+  }
   await delay(100);
   requireAcceptance(await evaluate(page, `window.__fixedAcceptance.resolveRequests.length`) === 0,
     'selecting a complete segment unexpectedly called the live resolver');
@@ -979,15 +1200,12 @@ async function selectOutboundSegments(page) {
     const flight = document.querySelector('#flight-input');
     const date = document.querySelector('#date-input');
     const confirmation = document.querySelector('#flight-confirm-input');
-    const advisory = document.querySelector('[data-document-advisory]');
     const primary = document.querySelector('[data-manual-primary]');
     return manual && !manual.hidden && !document.querySelector('.manual-fields input[maxlength="4"]')
       && flight && flight.disabled && flight.value.replace(/\\s+/g, '') === 'AF1668'
       && date && date.disabled && date.value === '2026-09-05'
       && confirmation && confirmation.disabled
-      && advisory && !advisory.hidden && advisory.textContent.includes('识别结果可能有误')
-      && primary && primary.dataset.mode === 'query' && primary.textContent.includes('AF1668')
-      && primary.textContent.includes('2026年9月5日')
+      && primary && primary.dataset.mode === 'query'
       && window.__fixedAcceptance.resolveRequests.length === 1;
   })()`, 'medium-confidence segment is advisory-queryable with a targeted button');
   summary.deterministic.noSeparateYearInput = true;
@@ -1016,13 +1234,13 @@ async function selectOutboundSegments(page) {
     && requests[0].document.segments[1].flightNumber === 'AF1668'
     && requests[0].document.segments[1].departureDate === '2026-09-05'
     && requests[0].document.segments[1].departureMonthDay === '09-05'
-    && requests[0].document.segments[1].requiresFlightNumberConfirmation === true
+    && requests[0].document.segments[1].requiresFlightNumberConfirmation === false
     && requests[0].document.segments[1].flightNumberConfirmedByUser === false
     && requests[1].document.segments[0].flightNumber === 'MF825'
     && requests[1].document.segments[1].flightNumber === 'AF1668'
     && requests[1].document.segments[1].departureDate === '2026-09-05'
     && requests[1].document.segments[1].departureMonthDay === '09-05'
-    && requests[1].document.segments[1].requiresFlightNumberConfirmation === true
+    && requests[1].document.segments[1].requiresFlightNumberConfirmation === false
     && requests[1].document.segments[1].flightNumberConfirmedByUser === false
     && Array.isArray(requests[0].document.reviewIssues) && requests[0].document.reviewIssues.length === 0
     && Array.isArray(requests[1].document.reviewIssues) && requests[1].document.reviewIssues.length === 1
@@ -1171,6 +1389,9 @@ async function runDeterministicContract(page) {
   await selectOutboundSegments(page);
   await verifyConfirmationSpeech(page);
   await verifyFamilySharing(page);
+  await click(page, '[data-family-overlay] [data-action="close-family"]');
+  await waitFor(page, `document.querySelector('[data-family-overlay]').hidden`, 'close family before staff locator');
+  await verifyStaffLocatorExperience(page);
   const networkState = await evaluate(page, `({
     apiCalls: window.__fixedAcceptance.apiCalls,
     unexpectedRequests: window.__fixedAcceptance.unexpectedRequests
