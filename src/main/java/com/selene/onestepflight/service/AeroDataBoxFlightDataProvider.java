@@ -223,6 +223,7 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 				airportCode(departure), airportName(departure), airportCode(arrival), airportName(arrival),
 				scheduledDeparture, estimatedDeparture, actualDeparture, scheduledArrival, estimatedArrival,
 				actualArrival, readTime(departure, "boardingTime"), normalizeTerminal(text(departure, "terminal")),
+				normalizeTerminal(text(arrival, "terminal")),
 				clean(text(departure, "gate")), clean(text(departure, "checkInDesk")),
 				readDedicatedBagDrop(departure), clean(text(arrival, "baggageBelt")),
 				normalizeStatus(text(item, "status")),
@@ -367,7 +368,7 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 				value.departureDate(), value.departureAirport(), value.departureAirportName(), value.arrivalAirport(),
 				value.arrivalAirportName(), value.scheduledDeparture(), value.estimatedDeparture(), value.actualDeparture(),
 				value.scheduledArrival(), value.estimatedArrival(), value.actualArrival(), value.boardingTime(),
-				value.terminal(), value.gate(), value.checkInDeskOrZone(), value.dedicatedBagDropDesk(),
+				value.terminal(), value.arrivalTerminal(), value.gate(), value.checkInDeskOrZone(), value.dedicatedBagDropDesk(),
 				value.arrivalBaggageBelt(), value.status(),
 				value.departureDelayMinutes(), value.arrivalDelayMinutes(), value.quality(), value.sourceUpdatedAt(),
 				value.retrievedAt(), value.sourceUrl(), value.codeshare(), value.live(), fromCache);

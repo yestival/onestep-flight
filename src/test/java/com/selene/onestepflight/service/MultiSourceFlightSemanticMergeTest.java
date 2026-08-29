@@ -33,6 +33,8 @@ class MultiSourceFlightSemanticMergeTest {
 		assertThat(snapshot.fieldProvenance().get("arrivalAirportName").conflict()).isFalse();
 		assertThat(snapshot.fieldProvenance().get("scheduledDeparture").conflict()).isFalse();
 		assertThat(snapshot.fieldProvenance().get("terminal").conflict()).isFalse();
+		assertThat(snapshot.flight().arrivalTerminal()).isEqualTo("Terminal 4");
+		assertThat(snapshot.fieldProvenance().get("arrivalTerminal").conflict()).isFalse();
 		assertThat(snapshot.fieldProvenance().get("gate").conflict()).isFalse();
 		assertThat(snapshot.fieldProvenance().get("status").conflict()).isFalse();
 		assertThat(snapshot.fieldProvenance().get("checkInDeskOrZone").conflict()).isFalse();
@@ -95,7 +97,7 @@ class MultiSourceFlightSemanticMergeTest {
 		return new ProviderFlightResult(provider, "SUCCESS", null, flightNumber, DATE,
 				departureAirport, departureAirportName, arrivalAirport, arrivalAirportName,
 				departure, departure, null, departure.plusHours(11), null, null, departure.minusMinutes(45),
-				terminal, gate, checkIn, null, null, status, null, null, "LIVE",
+				terminal, "Terminal 4", gate, checkIn, null, null, status, null, null, "LIVE",
 				UPDATED, UPDATED, null, null, true, false);
 	}
 
@@ -104,7 +106,7 @@ class MultiSourceFlightSemanticMergeTest {
 				date, result.departureAirport(), result.departureAirportName(), result.arrivalAirport(),
 				result.arrivalAirportName(), result.scheduledDeparture(), result.estimatedDeparture(),
 				result.actualDeparture(), result.scheduledArrival(), result.estimatedArrival(), result.actualArrival(),
-				result.boardingTime(), result.terminal(), result.gate(), result.checkInDeskOrZone(),
+				result.boardingTime(), result.terminal(), result.arrivalTerminal(), result.gate(), result.checkInDeskOrZone(),
 				result.dedicatedBagDropDesk(), result.arrivalBaggageBelt(), result.status(),
 				result.departureDelayMinutes(), result.arrivalDelayMinutes(), result.quality(),
 				result.sourceUpdatedAt(), result.retrievedAt(), result.sourceUrl(), result.codeshare(),

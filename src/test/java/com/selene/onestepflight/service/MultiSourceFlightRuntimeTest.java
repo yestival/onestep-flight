@@ -217,7 +217,7 @@ class MultiSourceFlightRuntimeTest {
 				"LHR", "London Heathrow", "JFK", "John F. Kennedy", departure,
 				live ? departure.plusMinutes(5) : null, null,
 				departure.plusHours(8), null, null, null,
-				live ? "5" : null, null, null, null, null,
+				live ? "5" : null, live ? "8" : null, null, null, null, null,
 				live ? "EXPECTED" : null, null, null, quality,
 				Instant.parse("2026-08-24T08:00:00Z"), Instant.now(), null, null, live, false);
 	}
@@ -233,7 +233,7 @@ class MultiSourceFlightRuntimeTest {
 				base.departureAirport(), base.departureAirportName(), base.arrivalAirport(), base.arrivalAirportName(),
 				base.scheduledDeparture(), base.estimatedDeparture(), base.actualDeparture(),
 				base.scheduledArrival(), base.estimatedArrival(), base.actualArrival(), base.boardingTime(),
-				base.terminal(), base.gate(), base.checkInDeskOrZone(), base.dedicatedBagDropDesk(),
+				base.terminal(), base.arrivalTerminal(), base.gate(), base.checkInDeskOrZone(), base.dedicatedBagDropDesk(),
 				base.arrivalBaggageBelt(), base.status(), base.departureDelayMinutes(),
 				base.arrivalDelayMinutes(), base.quality(), base.sourceUpdatedAt(), base.retrievedAt(),
 				base.sourceUrl(), codeshare, base.live(), false);

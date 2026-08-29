@@ -1,0 +1,10 @@
+package com.selene.onestepflight.service;
+
+public enum PhoneEvidenceTier {
+	TWO_OFFICIAL_SOURCES,
+	VERIFIED_PASSENGER_PAGE,
+	VERIFIED_STRUCTURED_MAPS,
+	VERIFIED_STRUCTURED_ENTITY,
+	AI_BOUND_DISCOVERY,
+	UNVERIFIED
+}

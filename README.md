@@ -53,10 +53,13 @@ Render's free web service can spin down after 15 minutes without inbound traffic
 |---|---|---|
 | Nutrient Data Extraction API | Extract fields and citations from PDF/JPG/PNG travel documents | Real external API when configured; no fixture fallback |
 | SerpApi Flight Result | Flight-result status, route, gate/terminal and operational times when returned | Real external API when configured |
+| SerpApi Google Search / AI Mode / Maps | Find a verified airport map and the current airport's main general-passenger contact | Map discovery and multilingual phone lookup remain separate; only verified airport/operator sources or an exact Google Maps airport-location fallback are accepted |
 | AeroDataBox via RapidAPI | Flight-number/date lookup, quality, departure times, terminal, gate and `checkInDesk` | Real external API when configured |
 | VariFlight Tripmatch MCP | `searchFlightsByNumber` using JSON-RPC/MCP over JSON or SSE | Real external API when configured |
 
 AeroDataBox `departure.baggageBelt` is deliberately ignored because it describes the **arrival reclaim carousel**, not a departure bag-drop desk. `checkInDesk` is treated only as a check-in area; when a dedicated bag-drop desk is unknown, OneStep may direct the traveler there to ask staff where bag drop is. OneStep labels a destination as a dedicated bag-drop desk only when a provider explicitly returns a dedicated bag-drop field.
+
+SerpApi real-time flight data keeps operational flight state synchronized. Airport resources are resolved independently and strictly on demand: confirming a flight or showing a journey step performs no airport-resource lookup; the first **View airport map** click requests only the map, and the first **Contact airport** click requests only the contact. **View airport map** searches verified official domains first, uses a map-only AI task only when needed, and executes the AI-proposed local-language map query when the proposed URL is unusable; true interactive maps, map documents, and official map landing pages outrank guide pages, with an exact Google Maps airport location as a labelled fallback. **Contact airport** uses a separate multilingual AI task for one general passenger-information, customer-service, contact-centre, or airport-switchboard number with a directly bound official citation, then executes its official-domain local-language query when the dedicated field has no verified phone. If no safe number is public, OneStep offers a verified official contact page. Both features reuse the existing `SERPAPI_API_KEY`.
 
 ## Multi-source merge and provenance
 
@@ -87,6 +90,7 @@ Completed journey state and the latest flight snapshot are sent to the backend f
 - `GET /api/integrations/status` — readiness only, no secret values.
 - `POST /api/documents/boarding-pass` — Nutrient extraction and field evidence.
 - `GET /api/flights/{flightNumber}?departureDate=YYYY-MM-DD&demo=false` — original SerpApi adapter endpoint.
+- `POST /api/assistance/airport-resources` — independent verified map and general-passenger contact resources for the current airport context.
 - `POST /api/journeys/resolve-flight` — merge document evidence with all configured live providers.
 - `POST /api/journeys/next-action` — re-resolve within cache rules and calculate one next action.
 - `POST /api/journeys/refresh-flight` — force a new provider query for the confirmation snapshot.
@@ -94,6 +98,8 @@ Completed journey state and the latest flight snapshot are sent to the backend f
 - `GET /api/share-sessions/{viewToken}` — read the current shared journey state without login.
 - `PUT /api/share-sessions/{viewToken}` — update it with the private `X-Share-Update-Token` header.
 - `DELETE /api/share-sessions/{viewToken}` — stop sharing with the private `X-Share-Update-Token` header.
+
+Airport resource lookup first resolves IATA against the generated local OurAirports identity catalog (canonical name, municipality, country and coordinates). Google Search and Google Maps retain typed candidates that are reconciled against that canonical entity; an IATA substring in a hostname or an “official website” snippet is never sufficient. Google AI Mode is limited to strict-JSON discovery on already verified airport/operator domains. Libphonenumber normalizes ordinary numbers in the airport’s country, preserves compatible national short codes only from verified passenger pages, and keeps phone/page provenance atomic. Map discovery independently ranks official interactive maps, entry pages, PDFs, official external-link chains and an exact Google Maps airport-place fallback. Results remain safely unavailable when the resource-specific evidence threshold is not met.
 
 The resolved journey response exposes `providerResults`, `fieldProvenance`, `conflicts`, `retrievedAt`, `freshestSourceUpdatedAt`, `stale`, `live`, and `demo` alongside normalized flight, route, times, terminal, gate, check-in area, any explicitly known dedicated bag-drop desk, and the independently modelled arrival baggage belt when published.
 
@@ -110,9 +116,11 @@ The read-only family page is served at `/share/{viewToken}`. It needs no login, 
 5. Confirm the flight. Answer whether checked baggage is present and complete one action at a time.
 6. Use **返回上一步 / Back one step** at the bottom of the journey; user-entered progress is restored while newer live updates remain intact.
 7. Use **朗读当前步骤 / Read this step aloud** to hear the action, destination, terminal, gate, counter/zone, and time.
-8. Use the single **请工作人员帮忙 / Ask a member of staff** button for the bilingual high-contrast card and copy action.
+8. At the bottom of a normal journey step, use **查看机场地图 / View airport map** or **联系机场 / Contact airport**. The high-contrast help card keeps only **联系机场 / Contact airport** at the upper left and the close button at the upper right; it never shows a map entry. Calling still requires a second explicit tap on the displayed number.
 9. Use **分享行程给家属 / Share journey with family** to create a live link, preview it in a second tab, share/copy it, or save a privacy-safe PNG card. Meaningful journey changes update the same link; **Stop sharing** revokes it.
 10. Switch 中文/English/Español, reload to verify session recovery, and repeat at 360×800, 390×844, and 200% zoom.
+
+For local airport-resource checks, `?qaAirport=1` shows the **Airport information lookup** card only on `localhost`, `127.0.0.1`, or `::1` while the flight-confirmation screen is active. Enter an IATA code and optional terminal; the single query action refreshes map and contact results together and presents only passenger-facing actions. Technical diagnostics remain in the live-test report and application logs, not in the query result UI.
 
 ## Safe fixture scenarios
 
@@ -122,7 +130,7 @@ For a same-day end-to-end state-machine check, open <http://localhost:8080/?qaJo
 
 ## Current prototype limitations
 
-- Airport maps, walking time, security queues, airline eligibility rules, and a globally authoritative bag-drop desk feed are not available.
+- Only official airport/operator map and passenger-contact resources returned and verified from the current lookup are used; walking time, security queues, airline eligibility rules, indoor navigation, and a globally authoritative bag-drop desk feed are not available.
 - Browser speech quality depends on installed operating-system voices.
 - Family sharing is deliberately account-free and stores only a short, privacy-minimized journey snapshot. The default local profile uses in-memory H2 and loses links on restart; the `prod` profile uses PostgreSQL and preserves them until their 48-hour expiry while that database remains available. There is no caregiver account or messaging service.
 - Provider plans, quotas, historical coverage, and field availability vary. Missing data is shown as missing and should be confirmed with airport staff and airport displays.

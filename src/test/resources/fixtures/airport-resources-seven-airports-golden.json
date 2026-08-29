@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-08-29T03:00:00Z",
+  "verificationMethod": "Each airport/operator passenger contact and airport-map page was independently opened and checked; application results were not used as the sole truth source.",
+  "airports": {
+    "LHR": {
+      "primaryPhoneE164": "+443443351801",
+      "alternativePhones": [],
+      "phoneRole": "Heathrow contact centre",
+      "contactUrls": ["https://www.heathrow.com/contact-us"],
+      "mapUrls": ["https://www.heathrow.com/at-the-airport/airport-maps", "https://maps.heathrow.com/"],
+      "sources": [
+        {"kind":"CONTACT","title":"Contact Us | Heathrow","url":"https://www.heathrow.com/contact-us","evidence":"Passenger contact page labels 0344 335 1801 as the Heathrow contact centre and separates specialist contacts."},
+        {"kind":"MAP","title":"Airport maps | Heathrow","url":"https://www.heathrow.com/at-the-airport/airport-maps","evidence":"Official page links the interactive map and terminal 2, 3, 4 and 5 maps separately from transport maps."}
+      ]
+    },
+    "JFK": {
+      "primaryPhoneE164": "+17182444444",
+      "alternativePhones": [],
+      "phoneRole": "General airport customer support",
+      "contactUrls": ["https://www.jfkairport.com/contact-us"],
+      "mapUrls": ["https://www.jfkairport.com/explore-jfk/airport-map", "https://maps.jfkairport.com/"],
+      "sources": [
+        {"kind":"CONTACT","title":"Contact Us - JFK Airport","url":"https://www.jfkairport.com/contact-us","evidence":"Official page says general JFK airport questions should call +1 (718) 244-4444."},
+        {"kind":"MAP","title":"JFK Airport Maps","url":"https://www.jfkairport.com/explore-jfk/airport-map","evidence":"Official entry links an interactive map covering terminals, gates, AirTrain, amenities and pick-up areas."}
+      ]
+    },
+    "CDG": {
+      "primaryPhoneE164": "+33170363950",
+      "alternativePhones": [{"value":"3950","scope":"NATIONAL_SHORT_CODE"}],
+      "phoneRole": "Paris Aéroport passenger information/customer service",
+      "contactUrls": ["https://www.parisaeroport.fr/passagers/services/pour-vous-aider/formulaire--contact", "https://www.parisaeroport.fr/en/passengers/services/for-you-to-help-you/contact-form"],
+      "mapUrls": ["https://www.parisaeroport.fr/en/passengers/at-the-airport/terminals-map/cdg", "https://www.parisaeroport.fr/en/passengers/at-the-airport/services/services-map/cdg"],
+      "sources": [
+        {"kind":"CONTACT","title":"Paris Aéroport passenger contact","url":"https://www.parisaeroport.fr/passagers/services/pour-vous-aider/formulaire--contact","evidence":"Official passenger contact route; official passenger materials list 3950 domestically and +33 1 70 36 39 50 internationally."},
+        {"kind":"MAP","title":"Terminal maps at Paris-CDG Airport","url":"https://www.parisaeroport.fr/en/passengers/at-the-airport/terminals-map/cdg","evidence":"Official passenger page covers CDG terminals 1, 2A-2G and 3."}
+      ]
+    },
+    "AMS": {
+      "primaryPhoneE164": "+31207940800",
+      "alternativePhones": [{"value":"0900 0141","scope":"NATIONAL"}],
+      "phoneRole": "24/7 Schiphol customer contact center",
+      "contactUrls": ["https://www.schiphol.nl/en/contact-schiphol/"],
+      "mapUrls": ["https://www.schiphol.nl/en/airport-maps/"],
+      "sources": [
+        {"kind":"CONTACT","title":"Schiphol | Contact us for questions and complaints","url":"https://www.schiphol.nl/en/contact-schiphol/","evidence":"Official page labels the center 24/7 and gives 0900 0141 domestically and +31 20 7940800 from abroad."},
+        {"kind":"MAP","title":"Schiphol Map | Find your way around the airport","url":"https://www.schiphol.nl/en/airport-maps/","evidence":"Official passenger airport-map entry for facilities and wayfinding, not a parking-only or transport map."}
+      ]
+    },
+    "XMN": {
+      "primaryPhoneE164": "+8659296363",
+      "alternativePhones": [],
+      "phoneRole": "Public flight and passenger information service",
+      "contactUrls": ["https://www.xiamenairport.com.cn/lkzn/lkxz-xwfw.aspx"],
+      "mapUrls": ["https://xiamenairport.com.cn/lkzn/hjldt.aspx", "https://www.xiamenairport.com.cn/lkzn/hjldt.aspx"],
+      "sources": [
+        {"kind":"CONTACT","title":"厦门机场问询服务","url":"https://www.xiamenairport.com.cn/lkzn/lkxz-xwfw.aspx","evidence":"Operator page says it serves the public with flight and passenger-process enquiries at 0592-96363."},
+        {"kind":"MAP","title":"厦门机场候机楼地图","url":"https://xiamenairport.com.cn/lkzn/hjldt.aspx","evidence":"Operator page divides terminal maps by departure/arrival and T3/T4."}
+      ]
+    },
+    "HND": {
+      "primaryPhoneE164": "+81357578111",
+      "alternativePhones": [],
+      "phoneRole": "Haneda Airport Terminal Information",
+      "contactUrls": ["https://tokyo-haneda.com/en/contact/index.html", "https://tokyo-haneda.com/contact/index.html"],
+      "mapUrls": ["https://tokyo-haneda.com/en/floor/index.html", "https://platinumaps.jp/d/haneda"],
+      "sources": [
+        {"kind":"CONTACT","title":"Questions & Comments | Haneda Airport Passenger Terminal","url":"https://tokyo-haneda.com/en/contact/index.html","evidence":"Official passenger page labels 03-5757-8111 as Haneda Airport Terminal Information and provides real inquiry-form links."},
+        {"kind":"MAP","title":"Floor Guide | Haneda Airport Passenger Terminal","url":"https://tokyo-haneda.com/en/floor/index.html","evidence":"Official floor guide covers T1, T2 and T3 and links the external HANEDA MAP with an official chain."}
+      ]
+    },
+    "DXB": {
+      "primaryPhoneE164": "+97142245555",
+      "alternativePhones": [],
+      "phoneRole": "24/7 DXB customer contact centre",
+      "contactUrls": ["https://dubaiairports.ae/contact-information/contact-us-directly/contact-centre"],
+      "mapUrls": ["https://dubaiairports.ae/maps-home", "https://dubaiairports.ae/express-maps"],
+      "sources": [
+        {"kind":"CONTACT","title":"Dubai Airports customer contact centre","url":"https://media.dubaiairports.ae/dubai-airports-launches-always-on-multichannel-customer-contact-centre/","evidence":"Operator announcement says the DXB centre is always-on with 24/7 bilingual support and lists 04-224 5555."},
+        {"kind":"MAP","title":"DXB Maps | Terminal Maps & Wayfinding","url":"https://dubaiairports.ae/maps-home","evidence":"Official DXB terminal-map and wayfinding entry, not a parking, noise or transport-only map."}
+      ]
+    }
+  }
+}

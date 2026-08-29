@@ -44,9 +44,9 @@ class AeroDataBoxFlightDataProviderTest {
 				[
 				  {
 				    "number":"BA 117",
-				    "departure":{"airport":{"iata":"CDG","name":"Paris"},
+				    "departure":{"airport":{"iata":"CDG","name":"Paris"},"terminal":"2",
 				      "scheduledTime":{"local":"2026-08-25T10:00:00+02:00"}},
-				    "arrival":{"airport":{"iata":"XMN","name":"Xiamen"},
+				    "arrival":{"airport":{"iata":"XMN","name":"Xiamen"},"terminal":"4",
 				      "scheduledTime":{"local":"2026-08-25T22:00:00+08:00"}},
 				    "status":"Scheduled"
 				  },
@@ -74,6 +74,8 @@ class AeroDataBoxFlightDataProviderTest {
 		assertThat(result.departureDate()).isEqualTo(DATE);
 		assertThat(result.departureAirport()).isEqualTo("CDG");
 		assertThat(result.arrivalAirport()).isEqualTo("XMN");
+		assertThat(result.terminal()).isEqualTo("Terminal 2");
+		assertThat(result.arrivalTerminal()).isEqualTo("Terminal 4");
 		fixture.server().verify();
 	}
 

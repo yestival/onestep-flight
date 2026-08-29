@@ -205,6 +205,8 @@ public class VariFlightMcpFlightDataProvider implements OperationalFlightDataPro
 				actualArrival, findAirportTime(item, departure, "boardingTime", "boardTime"),
 				normalizeTerminal(findText(item, "depTerminal", "departureTerminal", "terminal",
 						"FlightDepTerminal", "DepTerminal")),
+				normalizeTerminal(findText(item, "arrTerminal", "arrivalTerminal", "destinationTerminal",
+						"FlightArrTerminal", "ArrTerminal")),
 				clean(findText(item, "depGate", "departureGate", "gate", "BoardGate")),
 				clean(findText(item, "checkInCounter", "checkinCounter", "checkInDesk", "check_in_counter",
 						"CheckinTable")),
@@ -561,7 +563,7 @@ public class VariFlightMcpFlightDataProvider implements OperationalFlightDataPro
 				value.departureDate(), value.departureAirport(), value.departureAirportName(), value.arrivalAirport(),
 				value.arrivalAirportName(), value.scheduledDeparture(), value.estimatedDeparture(), value.actualDeparture(),
 				value.scheduledArrival(), value.estimatedArrival(), value.actualArrival(), value.boardingTime(),
-				value.terminal(), value.gate(), value.checkInDeskOrZone(), value.dedicatedBagDropDesk(),
+				value.terminal(), value.arrivalTerminal(), value.gate(), value.checkInDeskOrZone(), value.dedicatedBagDropDesk(),
 				value.arrivalBaggageBelt(), value.status(),
 				value.departureDelayMinutes(), value.arrivalDelayMinutes(), value.quality(), value.sourceUpdatedAt(),
 				value.retrievedAt(), value.sourceUrl(), value.codeshare(), value.live(), fromCache);

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-08-29T08:00:00Z",
+  "verificationMethod": "Independent checks of current airport/operator passenger contact and map pages before any new live SerpApi run; application output was not used as truth.",
+  "airports": {
+    "SIN": {
+      "primaryPhoneE164": "+6565956868",
+      "acceptablePhoneE164": ["+6565956868"],
+      "phoneRole": "Changi Experience Ambassador/general airport enquiries",
+      "contactUrls": ["https://www.changiairport.com/en/help/contact-us.html"],
+      "mapUrls": ["https://www.changiairport.com/en/at-changi/map.html"],
+      "mapFallbackAllowed": false,
+      "sources": [
+        {"kind":"CONTACT","title":"Changi Airport Contact Information","url":"https://www.changiairport.com/en/help/contact-us.html","evidence":"Official passenger contact page says to call +65 6595 6868 to speak to a Changi Experience Ambassador."},
+        {"kind":"MAP","title":"Changi Airport Map: All Terminals & Jewel","url":"https://www.changiairport.com/en/at-changi/map.html","evidence":"Official interactive passenger map lets users select and zoom airport terminals and Jewel."}
+      ]
+    },
+    "ICN": {
+      "primaryPhoneE164": "+82215772600",
+      "acceptablePhoneE164": ["+82215772600", "+8215772600"],
+      "phoneRole": "Incheon International Airport Customer Service/help desk",
+      "contactUrls": ["https://www.airport.kr/ap_en/1543/subview.do"],
+      "mapUrls": ["https://airport.kr/geomap/ap_en/view.do?alertType=0&tmnlId=P01&type=2"],
+      "mapFallbackAllowed": false,
+      "sources": [
+        {"kind":"CONTACT","title":"Emergency Contacts | Incheon International Airport","url":"https://www.airport.kr/ap_en/1543/subview.do","evidence":"Official airport help-desk table gives 1577-2600 and 82-2-1577-2600 for international use, 07:00–22:00."},
+        {"kind":"MAP","title":"Incheon International Airport Map","url":"https://airport.kr/geomap/ap_en/view.do?alertType=0&tmnlId=P01&type=2","evidence":"The official Airport Map navigation opens the airport.kr interactive geomap with terminal query parameters."}
+      ]
+    },
+    "HEL": {
+      "primaryPhoneE164": "+35820014636",
+      "acceptablePhoneE164": ["+35820014636", "+35820708000"],
+      "phoneRole": "Helsinki Airport Information & Parking/general airport matters; Finavia exchange is acceptable switchboard fallback",
+      "contactUrls": ["https://www.finavia.fi/en/airports/helsinki-airport/contacts", "https://www.finavia.fi/en/contacts"],
+      "mapUrls": ["https://www.finavia.fi/en/airports/helsinki-airport/airport/map"],
+      "mapFallbackAllowed": false,
+      "sources": [
+        {"kind":"CONTACT","title":"Helsinki Airport's information and parking","url":"https://customerservice.finavia.fi/en/support/solutions/articles/79000119627-helsinki-airport-s-information-and-parking","evidence":"Official Finavia customer-service page gives +358 200 14636 for 24-hour airport information and parking service."},
+        {"kind":"CONTACT","title":"Contact details of Finavia Corporation","url":"https://www.finavia.fi/en/contacts","evidence":"Official operator page gives the Finavia exchange +358 20 708 000."},
+        {"kind":"MAP","title":"Helsinki Airport map","url":"https://www.finavia.fi/en/airports/helsinki-airport/airport/map","evidence":"Official page opens the interactive terminal layout and service-location map."}
+      ]
+    },
+    "FCO": {
+      "primaryPhoneE164": "+390665951",
+      "acceptablePhoneE164": ["+390665951"],
+      "phoneRole": "ADR airport operator and flight-information call center",
+      "contactUrls": ["https://prod74.adr.it/web/aeroporti-di-roma-en/pax-fco-useful-numbers", "https://www.adr.it/web/aeroporti-di-roma-en/suggestions-and-complaints3"],
+      "mapUrls": ["https://prod74.adr.it/web/aeroporti-di-roma-en/pax-fco-airport-map"],
+      "mapFallbackAllowed": false,
+      "sources": [
+        {"kind":"CONTACT","title":"Useful numbers | ADR","url":"https://prod74.adr.it/web/aeroporti-di-roma-en/pax-fco-useful-numbers","evidence":"Official airport operator page lists 06 6595 1 for the airport operator and flight information, 24 hours."},
+        {"kind":"MAP","title":"Rome Fiumicino Airport Maps | ADR","url":"https://prod74.adr.it/web/aeroporti-di-roma-en/pax-fco-airport-map","evidence":"Official passenger map entry covers Fiumicino terminals, floors, boarding areas and pedestrian routes."}
+      ]
+    },
+    "SYD": {
+      "primaryPhoneE164": "+61296679111",
+      "acceptablePhoneE164": ["+61296679111", "+61296676111"],
+      "phoneRole": "Sydney Airport general enquiries and feedback",
+      "contactUrls": ["https://www.sydneyairport.com.au/contact-us", "https://www.sydneyairport.com.au/info-sheet/contact-us-faq"],
+      "mapUrls": ["https://www.sydneyairport.com.au/info-sheet/maps", "https://maps.sydneyairport.com.au/"],
+      "mapFallbackAllowed": false,
+      "sources": [
+        {"kind":"CONTACT","title":"Contact Us | Sydney Airport","url":"https://www.sydneyairport.com.au/contact-us","evidence":"Current official contact page's primary call block gives 133 SYD domestically and +61 2 9667 9111 outside Australia; a legacy error message/FAQ still exposes +61 2 9667 6111, recorded as an observed official discrepancy."},
+        {"kind":"MAP","title":"Sydney Airport Maps","url":"https://www.sydneyairport.com.au/info-sheet/maps","evidence":"Official page lists downloadable T1, T2 and T3 terminal maps and links the airport's interactive map."}
+      ]
+    },
+    "GRU": {
+      "primaryPhoneE164": "+551124452252",
+      "acceptablePhoneE164": ["+551124452252", "+551124452945"],
+      "phoneRole": "Passenger Customer Assistance Center; GRU Airport Information switchboard is acceptable",
+      "contactUrls": ["https://www.gru.com.br/en/passenger/talk-to-us/"],
+      "mapUrls": ["https://www.gru.com.br/pt/passageiro/descubra-gru/mapa-do-aeroporto"],
+      "mapFallbackAllowed": false,
+      "sources": [
+        {"kind":"CONTACT","title":"Contact Us | GRU Airport","url":"https://www.gru.com.br/en/passenger/talk-to-us/","evidence":"Official page lists the Passenger Terminal Customer Assistance Center at +55 11 2445-2252 and GRU Airport Information at +55 11 2445-2945, both 24/7."},
+        {"kind":"MAP","title":"Mapa do Aeroporto | GRU Airport","url":"https://www.gru.com.br/pt/passageiro/descubra-gru/mapa-do-aeroporto","evidence":"Official passenger page shows airport terminal layout and airline placement for Terminals 1, 2 and 3."}
+      ]
+    },
+    "IST": {
+      "primaryPhoneE164": "+904441442",
+      "acceptablePhoneE164": ["+904441442"],
+      "phoneRole": "iGA Istanbul Airport customer care/switchboard",
+      "contactUrls": ["https://www.istairport.com/en/contact/", "https://www.igapass.com/en/contact?locale=en"],
+      "mapUrls": [],
+      "mapFallbackAllowed": true,
+      "sources": [
+        {"kind":"CONTACT","title":"iGA customer care","url":"https://safeist.igairport.aero/Uploads/SmsMediaFiles/3/Hava%20Taraf%C4%B1%20Kurallar%C4%B1%20Fark%C4%B1ndal%C4%B1k%20Kitap%C3%A7%C4%B1%C4%9F%C4%B1%20Rev.02%2025.12.2024.pdf","evidence":"Current official iGA material labels 444 1 442 as the customer-care number; official iGA web properties repeat the same number."},
+        {"kind":"MAP","title":"Official passenger map not independently resolved","url":"https://www.istairport.com/en/","evidence":"The current official passenger site could not be independently fetched to a stable map URL during golden verification, so only the exact Google Maps IST airport location is an allowed map degradation."}
+      ]
+    }
+  }
+}

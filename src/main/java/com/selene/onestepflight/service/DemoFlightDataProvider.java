@@ -38,6 +38,7 @@ public class DemoFlightDataProvider implements FlightDataProvider {
 				null,
 				OffsetDateTime.of(DEMO_DEPARTURE_DATE.atTime(9, 45), ZoneId.of("Europe/London").getRules().getOffset(DEMO_DEPARTURE_DATE.atTime(9, 45))),
 				"Terminal 5",
+				"Terminal 8",
 				"B32",
 				"Zone D, counters 20-24",
 				"BOARDING",

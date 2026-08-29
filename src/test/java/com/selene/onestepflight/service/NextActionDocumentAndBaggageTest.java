@@ -81,7 +81,7 @@ class NextActionDocumentAndBaggageTest {
 				"BA117", "BA117", LocalDate.of(2026, 8, 24), "MANUAL_ENTRY", false,
 				"LHR", "London Heathrow", "JFK", "New York JFK",
 				null, null, null, null, null, null, null, null, null,
-				null, null, "5", "B42", null, "D", "D", dedicatedBagDropDesk,
+				null, null, "5", "8", "B42", null, "D", "D", dedicatedBagDropDesk,
 				arrivalBaggageBelt, "EXPECTED", 0, 0,
 				timestamp, timestamp, timestamp, timestamp,
 				null, "AERODATABOX", null, null, true, false, null,

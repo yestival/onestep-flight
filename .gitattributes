@@ -1,2 +1,4 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
+/src/test/resources/fixtures/airport-resources-architecture-live-20260829/*.json -text whitespace=cr-at-eol
+/src/test/resources/fixtures/airport-resources-live-20260829/*.json -text whitespace=cr-at-eol

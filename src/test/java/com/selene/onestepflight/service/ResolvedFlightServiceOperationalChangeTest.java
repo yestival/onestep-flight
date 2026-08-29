@@ -61,7 +61,8 @@ class ResolvedFlightServiceOperationalChangeTest {
 		FlightResponse flight = new FlightResponse("BA117", DATE, "LHR", "London Heathrow",
 				"CDG", "Paris Charles de Gaulle", DEPARTURE, DEPARTURE.plusMinutes(20), null,
 				ARRIVAL, ARRIVAL.plusMinutes(15), null, DEPARTURE.minusMinutes(40),
-				missingLocations ? null : "Terminal 2", missingLocations ? null : "C18",
+				missingLocations ? null : "Terminal 2", missingLocations ? null : "Terminal 1",
+				missingLocations ? null : "C18",
 				missingLocations ? null : "B counters 3-4", "BOARDING", 20, 15,
 				DETECTED_AT, DETECTED_AT, "TEST", null, null, true, false, false);
 		return new MultiSourceFlightSnapshot(flight, missingLocations ? null : "B counter 6",
@@ -75,7 +76,7 @@ class ResolvedFlightServiceOperationalChangeTest {
 		return new ResolvedFlightContext("BA117", "BA117", DATE, "MANUAL_ENTRY", false,
 				"LHR", "London Heathrow", "CDG", "Paris Charles de Gaulle", null, null,
 				DEPARTURE, null, null, DEPARTURE, ARRIVAL, ARRIVAL, null,
-				null, null, "T1", "B32", null, "A counters 1-2", null,
+				null, null, "T1", "T8", "B32", null, "A counters 1-2", null,
 				"A counter 5", "Belt 5", "EXPECTED", 5, 0, DETECTED_AT, DETECTED_AT,
 				DETECTED_AT, DETECTED_AT, null, "TEST", null, null, true, false, null,
 				false, false, Map.of(), Map.of(), Map.of(), List.of(), false, List.of(), timeContext);

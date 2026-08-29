@@ -28,6 +28,7 @@ public record ResolvedFlightContext(
 		String documentTerminal,
 		String documentGate,
 		String terminal,
+		String arrivalTerminal,
 		String gate,
 		String seat,
 		String checkInCounter,

@@ -19,6 +19,7 @@ public record FlightResponse(
 		OffsetDateTime actualArrival,
 		OffsetDateTime boardingTime,
 		String terminal,
+		String arrivalTerminal,
 		String gate,
 		String checkInCounter,
 		String status,

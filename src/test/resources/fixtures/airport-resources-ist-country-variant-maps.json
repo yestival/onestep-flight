@@ -1,0 +1,18 @@
+{
+  "search_metadata": {
+    "status": "Success"
+  },
+  "place_results": {
+    "title": "Istanbul Airport",
+    "types": ["International airport", "Airport"],
+    "address": "Terminal Caddesi, Istanbul, Türkiye",
+    "country": "Türkiye",
+    "gps_coordinates": {
+      "latitude": 41.2761476,
+      "longitude": 28.7287349
+    },
+    "website": "https://airport.example/",
+    "phone": "+90 4441442",
+    "place_id": "redacted-ist-airport-place"
+  }
+}

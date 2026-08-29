@@ -56,6 +56,7 @@ public class DemoScenarioFlightDataProvider {
 		OffsetDateTime estimatedArrival = null;
 		OffsetDateTime actualArrival = null;
 		String terminal = "5";
+		String arrivalTerminal = "8";
 		String gate = "B32";
 		String checkInCounter = "Zone A, counters 1-4";
 		String bagDropDesk = "Counter 5";
@@ -113,7 +114,7 @@ public class DemoScenarioFlightDataProvider {
 				"JFK", "New York JFK",
 				scheduledDeparture, estimatedDeparture, actualDeparture,
 				scheduledArrival, estimatedArrival, actualArrival,
-				boardingTime, terminal, gate, checkInCounter, status,
+				boardingTime, terminal, arrivalTerminal, gate, checkInCounter, status,
 				departureDelay, arrivalDelay, sourceUpdatedAt, retrievedAt,
 				"ONESTEP_SIMULATED_SCENARIO_" + scenario, null, null,
 				false, false, true);

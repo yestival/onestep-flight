@@ -51,8 +51,8 @@ class SerpApiFlightDataProviderTest {
 				      "flight_designator":"BA 117",
 				      "date":"2026-08-25",
 				      "metadata":{"origin":"CDG","destination":"XMN","status":"SCHEDULED_STATUS"},
-				      "departure_airport":{"id":"CDG","city":"Paris","scheduled_time":"2026-08-25T10:00:00+02:00"},
-				      "arrival_airport":{"id":"XMN","city":"Xiamen","scheduled_time":"2026-08-25T22:00:00+08:00"}
+				      "departure_airport":{"id":"CDG","city":"Paris","terminal":"2","scheduled_time":"2026-08-25T10:00:00+02:00"},
+				      "arrival_airport":{"id":"XMN","city":"Xiamen","terminal":"4","scheduled_time":"2026-08-25T22:00:00+08:00"}
 				    }]
 				  }
 				}
@@ -63,6 +63,8 @@ class SerpApiFlightDataProviderTest {
 		assertThat(result.successful()).isTrue();
 		assertThat(result.departureAirport()).isEqualTo("CDG");
 		assertThat(result.arrivalAirport()).isEqualTo("XMN");
+		assertThat(result.terminal()).isEqualTo("Terminal 2");
+		assertThat(result.arrivalTerminal()).isEqualTo("Terminal 4");
 		fixture.server().verify();
 	}
 
@@ -178,8 +180,8 @@ class SerpApiFlightDataProviderTest {
 				  "search_metadata":{"status":"Success","google_flights_url":"https://example.invalid/result"},
 				  "selected_flights":[{"flights":[{
 				    "flight_number":"BA 117",
-				    "departure_airport":{"id":"LHR","name":"London Heathrow","time":"2026-08-25 10:00"},
-				    "arrival_airport":{"id":"JFK","name":"John F. Kennedy","time":"2026-08-25 13:00"}
+				    "departure_airport":{"id":"LHR","name":"London Heathrow","terminal":"5","time":"2026-08-25 10:00"},
+				    "arrival_airport":{"id":"JFK","name":"John F. Kennedy","terminal":"8","time":"2026-08-25 13:00"}
 				  }]}]
 				}
 				""", MediaType.APPLICATION_JSON));
@@ -190,6 +192,7 @@ class SerpApiFlightDataProviderTest {
 		assertThat(result.quality()).isEqualTo("SCHEDULE");
 		assertThat(result.departureAirport()).isEqualTo("LHR");
 		assertThat(result.arrivalAirport()).isEqualTo("JFK");
+		assertThat(result.arrivalTerminal()).isEqualTo("Terminal 8");
 		fixture.server().verify();
 	}
 

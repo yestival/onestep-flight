@@ -23,6 +23,7 @@ public record ProviderFlightResult(
 		OffsetDateTime actualArrival,
 		OffsetDateTime boardingTime,
 		String terminal,
+		String arrivalTerminal,
 		String gate,
 		String checkInDeskOrZone,
 		String dedicatedBagDropDesk,
@@ -70,7 +71,7 @@ public record ProviderFlightResult(
 				null, null,
 				null, null, null, null,
 				null, null, null, null, null, null, null,
-				null, null, null, null, null,
+				null, null, null, null, null, null,
 				null, null, null, null,
 				null, retrievedAt, null, null,
 				false, false);
@@ -85,7 +86,7 @@ public record ProviderFlightResult(
 				provider, outcome, errorCode, actualFlightNumber, actualDepartureDate,
 				null, null, null, null,
 				null, null, null, null, null, null, null,
-				null, null, null, null, null,
+				null, null, null, null, null, null,
 				null, null, null, null,
 				null, retrievedAt, null, null,
 				false, false);

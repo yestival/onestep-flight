@@ -1,0 +1,1577 @@
+{
+  "schemaVersion" : 1,
+  "completed" : true,
+  "airportCode" : "CDG",
+  "startedAt" : "2026-08-29T00:17:34.644381400Z",
+  "completedAt" : "2026-08-29T00:17:55.732284600Z",
+  "elapsedMs" : 21087,
+  "request" : {
+    "airportCode" : "CDG",
+    "airportName" : null,
+    "terminal" : null,
+    "forceRefresh" : true,
+    "refreshTarget" : "BOTH"
+  },
+  "response" : {
+    "airportCode" : "CDG",
+    "airportName" : "CDG",
+    "terminal" : null,
+    "localAirportName" : "Aéroport de Paris-Charles de Gaulle",
+    "countryOrRegion" : "France",
+    "map" : {
+      "status" : "FOUND",
+      "url" : "https://www.parisaeroport.fr/en/passengers/at-the-airport/terminals-map/cdg",
+      "sourceUrl" : "https://www.parisaeroport.fr/en/passengers/at-the-airport/terminals-map/cdg",
+      "sourceTitle" : "Terminal maps at Paris-CDG Airport",
+      "resultType" : "OFFICIAL_MAP_LANDING_PAGE",
+      "sourceLanguage" : "und",
+      "mapScope" : "AIRPORT",
+      "verificationReason" : "Official-domain URL/title/link has direct map evidence",
+      "rejectedCandidateTypes" : [ "UNVERIFIED_OR_THIRD_PARTY_DOMAIN", "OFFICIAL_MAP_LANDING_PAGE", "TRANSPORT_PARKING_OR_FACILITY_PAGE", "NO_DIRECT_MAP_EVIDENCE", "GOOGLE_MAPS_AIRPORT_LOCATION" ],
+      "fromCache" : false
+    },
+    "contact" : {
+      "status" : "PHONE_FOUND",
+      "phoneDisplay" : "+33 1 70 36 39 50",
+      "telUri" : "tel:+33170363950",
+      "contactUrl" : "https://www.parisaeroport.fr/groupe/strategie/hub-one/contact",
+      "sourceUrl" : "https://www.parisaeroport.fr/roissy-charles-de-gaulle",
+      "sourceTitle" : "Aéroport de Paris-Charles de Gaulle",
+      "sourceLanguage" : "French",
+      "sourceType" : "GOOGLE_MAPS",
+      "phoneRole" : null,
+      "evidenceTier" : "GOOGLE_MAPS_STRUCTURED",
+      "airportIdentityConfirmed" : true,
+      "aiDedicatedPhoneField" : true,
+      "mapsStructuredPhonePresent" : true,
+      "phoneConflict" : false,
+      "fromCache" : false
+    },
+    "serpApiRequestCount" : 5,
+    "rejectionReasons" : [ "AIRPORT_IDENTITY_MISMATCH", "NO_BOUND_OFFICIAL_SOURCE", "OBVIOUS_NON_PHONE_NUMBER" ],
+    "retrievedAt" : "2026-08-29T00:17:34.644381400Z",
+    "fromCache" : false
+  },
+  "stages" : [ {
+    "sequence" : 1,
+    "stage" : "IDENTITY_OFFICIAL_DOMAIN",
+    "engine" : "google",
+    "query" : "CDG CDG official airport website",
+    "type" : null,
+    "hl" : "en",
+    "noCache" : "true",
+    "requestUrl" : "https://serpapi.com/search?engine=google&q=CDG%20CDG%20official%20airport%20website&hl=en&no_cache=true",
+    "httpStatus" : 200,
+    "httpStatusText" : "OK",
+    "serpApiStatus" : "Success",
+    "serpApiError" : null,
+    "candidates" : [ {
+      "jsonPath" : "$.organic_results[0]",
+      "title" : "Welcome to Paris-Charles de Gaulle airport (CDG)",
+      "url" : "https://www.parisaeroport.fr/en/passengers/charles-de-gaulle-airport",
+      "displayedLink" : "https://www.parisaeroport.fr › passengers › charles-de-ga...",
+      "phone" : null,
+      "snippet" : "Find all the information you need about Roissy-Charles de Gaulle airport (Paris-CDG) Terminal 1, 2, 3. Flight times, Maps, Transport access, Car parks, ..."
+    }, {
+      "jsonPath" : "$.organic_results[1]",
+      "title" : "Paris Aéroport : Official Website of Paris Airports",
+      "url" : "https://www.parisaeroport.fr/en",
+      "displayedLink" : "https://www.parisaeroport.fr › ...",
+      "phone" : null,
+      "snippet" : "Search a flight ... Welcome to the official Paris Aéroport website, home to all the information you need about Paris-Charles de Gaulle and Paris-Orly."
+    }, {
+      "jsonPath" : "$.organic_results[2]",
+      "title" : "Paris International Airport (CDG)",
+      "url" : "https://paris-airport-cdg.com/",
+      "displayedLink" : "https://paris-airport-cdg.com",
+      "phone" : null,
+      "snippet" : "Paris Charles de Gaulle Airport. Essential info on CDG Airport: terminals, transit options, layout, services, amenities, and nearby hotels."
+    }, {
+      "jsonPath" : "$.organic_results[3]",
+      "title" : "Charles de Gaulle Airport",
+      "url" : "https://en.wikipedia.org/wiki/Charles_de_Gaulle_Airport",
+      "displayedLink" : "https://en.wikipedia.org › wiki › Charles_de_Gaulle_Ai...",
+      "phone" : null,
+      "snippet" : "Paris Charles de Gaulle Airport (IATA: CDG, ICAO: LFPG), also known as Roissy Airport, is the primary international airport serving Paris, the capital of France ..."
+    }, {
+      "jsonPath" : "$.organic_results[4]",
+      "title" : "Paris Charles de Gaulle, France (CDG)",
+      "url" : "https://www.aa.com/web/i18n/travelInformation/destinationInformation/cdg-airport.html",
+      "displayedLink" : "https://www.aa.com › Home › Airport information",
+      "phone" : null,
+      "snippet" : "This page has information on Paris Charles de Gaulle International Airport (CDG), Paris, France."
+    }, {
+      "jsonPath" : "$.organic_results[5]",
+      "title" : "Welcome to Paris-Charles de Gaulle airport (CDG)",
+      "url" : "https://www.parisaeroport.fr/en/charles-de-gaulle-airport/",
+      "displayedLink" : "https://www.parisaeroport.fr › charles-de-gaulle-airport",
+      "phone" : null,
+      "snippet" : "Official website of Paris Charles de Gaulle: flights arrival and departure times in real-time, ground transportation to the airport (Bus, trains, shuttles…)"
+    }, {
+      "jsonPath" : "$.organic_results[6]",
+      "title" : "Paris Charles de Gaulle Airport (CDG/LFPG)",
+      "url" : "https://www.flightradar24.com/data/airports/cdg",
+      "displayedLink" : "https://www.flightradar24.com › ... › Airports › France",
+      "phone" : null,
+      "snippet" : "Paris Charles de Gaulle Airport, (CDG/LFPG), France - View live flight arrival and departure information, live flight delays and cancelations, ..."
+    }, {
+      "jsonPath" : "$.organic_results[7]",
+      "title" : "Charles de Gaulle Airport (CDG): access, transport & fares",
+      "url" : "https://parisjetaime.com/eng/article/from-paris-charles-de-gaulle-airport-a078",
+      "displayedLink" : "https://parisjetaime.com › eng › article › from-paris-cha...",
+      "phone" : null,
+      "snippet" : "Plan your arrival or departure from France's leading hub with complete peace of mind. From the new single airport ticket and the ..."
+    }, {
+      "jsonPath" : "$.organic_results[8]",
+      "title" : "Paris Charles de Gaulle (CDG) Airport Map & Lounges",
+      "url" : "https://www.delta.com/us/en/airports/europe/paris-sky-club-airport-map",
+      "displayedLink" : "https://www.delta.com › airports › europe › paris-sky-clu...",
+      "phone" : null,
+      "snippet" : "Navigate your way around Paris Charles de Gaulle (CDG) airport and find unique offerings plus Delta Sky Club® and partner lounge information."
+    } ],
+    "sanitizedResponse" : {
+      "search_metadata" : {
+        "id" : "6a92251e079a2b55e0c9223b",
+        "status" : "Success",
+        "json_endpoint" : "https://serpapi.com/searches/eP6Dv6uJ2HIPOQv6jvMFm6A5ftMI7cVpt4I9gQz99w8/6a92251e079a2b55e0c9223b.json",
+        "markdown_endpoint" : "https://serpapi.com/searches/eP6Dv6uJ2HIPOQv6jvMFm6A5ftMI7cVpt4I9gQz99w8/6a92251e079a2b55e0c9223b.md",
+        "pixel_position_endpoint" : "https://serpapi.com/searches/eP6Dv6uJ2HIPOQv6jvMFm6A5ftMI7cVpt4I9gQz99w8/6a92251e079a2b55e0c9223b.json_with_pixel_position",
+        "created_at" : "2026-08-29 00:17:34 UTC",
+        "processed_at" : "2026-08-29 00:17:34 UTC",
+        "google_url" : "https://www.google.com/search?q=CDG+CDG+official+airport+website&oq=CDG+CDG+official+airport+website&hl=en&sourceid=chrome&ie=UTF-8",
+        "raw_html_file" : "https://serpapi.com/searches/eP6Dv6uJ2HIPOQv6jvMFm6A5ftMI7cVpt4I9gQz99w8/6a92251e079a2b55e0c9223b.html",
+        "total_time_taken" : 0.71
+      },
+      "search_parameters" : {
+        "engine" : "google",
+        "q" : "CDG CDG official airport website",
+        "google_domain" : "google.com",
+        "hl" : "en",
+        "device" : "desktop"
+      },
+      "search_information" : {
+        "query_displayed" : "CDG CDG official airport website",
+        "total_results" : 109,
+        "time_taken_displayed" : 0.23,
+        "organic_results_state" : "Results for exact spelling"
+      },
+      "related_questions" : [ {
+        "question" : "How can I contact Charles de Gaulle Airport?",
+        "type" : "featured_snippet",
+        "snippet" : "CDG Airport Lost and Found Contact Details",
+        "table" : [ [ "Phone Number", "France helpline- 3950, Monday to Sunday- 8:00 am to 8:00 pm Abroad line- +33 1 70 36 39 50" ], [ "Mailing Address", "Paris Aéroports de Paris – Service Relation Clients – 1 rue de France – BP81007 – 95931 Roissy Charles de Gaulle Cedex – FRANCE" ] ],
+        "formatted" : [ {
+          "phone_number" : "Mailing Address",
+          "france_helpline_3950_monday_to_sunday_8_00_am_to_8_00_pm_abroad_line_33_1_70_36_39_50" : "Paris Aéroports de Paris – Service Relation Clients – 1 rue de France – BP81007 – 95931 Roissy Charles de Gaulle Cedex – FRANCE"
+        } ],
+        "title" : "Charles De Gaulle Airport (CDG) Lost and Found Info - AirlineAirport",
+        "link" : "https://www.google.com/goto?url=CAEScgHrOzAVOe8zWcEoWCkgkrzuL9wVwvMoWlKrPegPdXwIEYS9CZA5qyp_e4ccD8wGKOGnnmhgI8Orj5OlvUklXPucKpsE5K5cFu897zYOlP9lPhtd3wC7x5HutGY6tIVCsLIlRJ1wR4QWsr20q-pEekJhNg",
+        "displayed_link" : "https://www.airlineairport.com › cdg-airport › lost-and-f...",
+        "source_logo" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8_9hAAAA4UlEQVR4AWNwL_ChCOOVVNVv4wFhsg1Q0W9bCcL41OCzXRqo-T8Ig9jkGFCHZMBVcr3wH8kQT3IC0RPZEOTAlTDs0cRqgIJ-ew5QwWeghnegAAQ5H8QG0tZIXnsHU4_X2SBbQLYhXIMZHiiaPzAwLHDXrv4INWAlLDZAmpDCYiJWA94xcci_ZOL4D6KhNkuDDIFpQgtQaQwDXjBz3QAZAMLp6gXpUH8HE4pWmOZQmOY3DAyvQAGJLQWCAxdhSDDcAJBGGH7PwOAI9UIwMdEK9jvQBdkwjKYJazTDMMgiirMzAH_xNUM-Dx8EAAAAAElFTkSuQmCC.png",
+        "next_page_token" : "eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS2NXMDRhMVZ0VnpscFMyMW1URGxtZFZBMVluWmhTWEpQZURSRGNVeHlWbEZTT0ZvMGRtSklaM2MxU2tsS09HSXlSMEYzU0RkNGFrUmZaMlpuTW1kNWFYZEJUVFpXZGtGelNqQkdkRVY1UVVkcE9FVmZjRUowVXpsa1FSSVhTR2xYVTJGd2JVVkhjMjVqY25WRlVEUlphbG8wVVc4YUlrRkVjM0k1WmxOUFpTMVZiMnBIVDJWamNWWkliMmRVUzJRNWVGbGhjV1IyUVhjIiwiZmN2IjoiMyIsImVpIjoiSGlXU2FwbUVHc25jcnVFUDRZalo0UW8iLCJxYyI6ImMtTlNTRTVKQi1QOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaGxxWkJWbjJBQSIsInF1ZXN0aW9uIjoiSG93IGNhbiBJIGNvbnRhY3QgQ2hhcmxlcyBkZSBHYXVsbGUgQWlycG9ydD8iLCJsayI6IkdpSmphR0Z5YkdWeklHUmxJR2RoZFd4c1pTQmhhWEp3YjNKMElHTnZiblJoWTNSeiIsImJzIjoiYzVXUHNXckRNQkNHeWFxcG96R2hfSVFTTW1UeTFnUmlURXJTYnQwOEg3SWlpU2k2SU10NDZkWVg2RFAyUVVybHVDRjA2TkRsMEtIdl8tNU8xR0w1ekQwa2VieEFzbzhrSTdhR2dsTXRHb1U5ZGM0cFZEYWNPY1F5ZS0tS2gzd21iNEFlQVJxQnE2SVZiMkkxaUIxN2pZWVRheU1pSFJVaVE2djBOb0U3YlNDN052SXBmWHU4VXJBdHRrXzdNdnRDc2M0ZnpUOEY1NHRBTmxwVVlsb2Jpa2d0RFVZY25OVW1oYXc4cW5UR3g2UzR6NmY5RDVJU1Ffd1hJMnF4cUVLYVp0UlFlNzZlZUZ0MWlWMGdMMVdaZlc2S1JUNm5QX0Z4c2NPRnZwdDhBdyIsImlkIjoiZmNfSGlXU2FwbUVHc25jcnVFUDRZalo0UW9fMSJ9",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google_related_questions&google_domain=google.com&next_page_token=eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS2NXMDRhMVZ0VnpscFMyMW1URGxtZFZBMVluWmhTWEpQZURSRGNVeHlWbEZTT0ZvMGRtSklaM2MxU2tsS09HSXlSMEYzU0RkNGFrUmZaMlpuTW1kNWFYZEJUVFpXZGtGelNqQkdkRVY1UVVkcE9FVmZjRUowVXpsa1FSSVhTR2xYVTJGd2JVVkhjMjVqY25WRlVEUlphbG8wVVc4YUlrRkVjM0k1WmxOUFpTMVZiMnBIVDJWamNWWkliMmRVUzJRNWVGbGhjV1IyUVhjIiwiZmN2IjoiMyIsImVpIjoiSGlXU2FwbUVHc25jcnVFUDRZalo0UW8iLCJxYyI6ImMtTlNTRTVKQi1QOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaGxxWkJWbjJBQSIsInF1ZXN0aW9uIjoiSG93IGNhbiBJIGNvbnRhY3QgQ2hhcmxlcyBkZSBHYXVsbGUgQWlycG9ydD8iLCJsayI6IkdpSmphR0Z5YkdWeklHUmxJR2RoZFd4c1pTQmhhWEp3YjNKMElHTnZiblJoWTNSeiIsImJzIjoiYzVXUHNXckRNQkNHeWFxcG96R2hfSVFTTW1UeTFnUmlURXJTYnQwOEg3SWlpU2k2SU10NDZkWVg2RFAyUVVybHVDRjA2TkRsMEtIdl8tNU8xR0w1ekQwa2VieEFzbzhrSTdhR2dsTXRHb1U5ZGM0cFZEYWNPY1F5ZS0tS2gzd21iNEFlQVJxQnE2SVZiMkkxaUIxN2pZWVRheU1pSFJVaVE2djBOb0U3YlNDN052SXBmWHU4VXJBdHRrXzdNdnRDc2M0ZnpUOEY1NHRBTmxwVVlsb2Jpa2d0RFVZY25OVW1oYXc4cW5UR3g2UzR6NmY5RDVJU1Ffd1hJMnF4cUVLYVp0UlFlNzZlZUZ0MWlWMGdMMVdaZlc2S1JUNm5QX0Z4c2NPRnZwdDhBdyIsImlkIjoiZmNfSGlXU2FwbUVHc25jcnVFUDRZalo0UW9fMSJ9"
+      }, {
+        "question" : "How long does it take to get through customs in Paris CDG?",
+        "type" : "featured_snippet",
+        "snippet" : "If you leave the aircraft in the first group of passengers you should expect to get through immigration fairly quickly but allow yourself anything from 10 mins to 1hour. Then it's on to baggage reclamation, you can expect to wait around half an hour at the carousel, there's a lot of bags going through here!",
+        "title" : "Charles de Gaulle Airport (cdg) ​Paris - about-paris.com",
+        "link" : "https://www.google.com/goto?url=CAESwQEB6zswFX86csA5WrSFsddOnLKjjIGSX3mOAWeGCGtdvBn0vz7l8VKie7ROCqiZkrWNvJD_A7a2_Hn4HgGSV2ndRWmnlBP22VhDolDv2UdBs8YoO-GvkM8O1xho-ZJ9wcbIiM3and3AG17VLq2LLvVR7M-gQgLIvWZVkgzI_BpeqRYgwAX8ONGkkjtdab2FVIyrHrnOC3dZ9XEaLtYcJMsYC0XAK6aGklPFERqVTruvxr--zfbKmAycKA5xsqBODK_P",
+        "displayed_link" : "https://www.about-paris.com › charles-de-gaulle-airport",
+        "source_logo" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAAAAAA6mKC9AAAAZklEQVR4AX3NIRKAIBQA0b2MB7HYvYSX8Q6cwkK0GejMUGkkZiy0LxThG9z4yiKfGoTL1Xx5wc4AsDWiaYEoeWEaIIhEcApuOBVYSB0Ob2CXDsDmRF1a-vIHGfwIBmAdIKda7KB7AGpxypFP5d9vAAAAAElFTkSuQmCC.png",
+        "next_page_token" : "eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS2NXMDRhMVZ0VnpscFMyMW1URGxtZFZBMVluWmhTWEpQZURSRGNVeHlWbEZTT0ZvMGRtSklaM2MxU2tsS09HSXlSMEYzU0RkNGFrUmZaMlpuTW1kNWFYZEJUVFpXZGtGelNqQkdkRVY1UVVkcE9FVmZjRUowVXpsa1FSSVhTR2xYVTJGd2JVVkhjMjVqY25WRlVEUlphbG8wVVc4YUlrRkVjM0k1WmxOUFpTMVZiMnBIVDJWamNWWkliMmRVUzJRNWVGbGhjV1IyUVhjIiwiZmN2IjoiMyIsImVpIjoiSGlXU2FwbUVHc25jcnVFUDRZalo0UW8iLCJxYyI6ImMtTlNTRTVKQi1QOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaGxxWkJWbjJBQSIsInF1ZXN0aW9uIjoiSG93IGxvbmcgZG9lcyBpdCB0YWtlIHRvIGdldCB0aHJvdWdoIGN1c3RvbXMgaW4gUGFyaXMgQ0RHPyIsImxrIjoiYzVPeXpNZ3ZWOGpKejB0WFNNbFBMVmJJTEZFb1NjeE9WU2pKVjBoUEJiSXppdkpMMHpNVWtrdUxTX0p6Z2RKNUNnV0pSWm5GQ3NrcDZRQSIsImJzIjoiYzVXUHNXckRNQkNHeWFxcG96R2hfSVFTTW1UeTFnUmlURXJTYnQwOEg3SWlpU2k2SU10NDZkWVg2RFAyUVVybHVDRjA2TkRsMEtIdl8tNU8xR0w1ekQwa2VieEFzbzhrSTdhR2dsTXRHb1U5ZGM0cFZEYWNPY1F5ZS0tS2gzd21iNEFlQVJxQnE2SVZiMkkxaUIxN2pZWVRheU1pSFJVaVE2djBOb0U3YlNDN052SXBmWHU4VXJBdHRrXzdNdnRDc2M0ZnpUOEY1NHRBTmxwVVlsb2Jpa2d0RFVZY25OVW1oYXc4cW5UR3g2UzR6NmY5RDVJU1Ffd1hJMnF4cUVLYVp0UlFlNzZlZUZ0MWlWMGdMMVdaZlc2S1JUNm5QX0Z4c2NPRnZwdDhBdyIsImlkIjoiZmNfSGlXU2FwbUVHc25jcnVFUDRZalo0UW9fMSJ9",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google_related_questions&google_domain=google.com&next_page_token=eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS2NXMDRhMVZ0VnpscFMyMW1URGxtZFZBMVluWmhTWEpQZURSRGNVeHlWbEZTT0ZvMGRtSklaM2MxU2tsS09HSXlSMEYzU0RkNGFrUmZaMlpuTW1kNWFYZEJUVFpXZGtGelNqQkdkRVY1UVVkcE9FVmZjRUowVXpsa1FSSVhTR2xYVTJGd2JVVkhjMjVqY25WRlVEUlphbG8wVVc4YUlrRkVjM0k1WmxOUFpTMVZiMnBIVDJWamNWWkliMmRVUzJRNWVGbGhjV1IyUVhjIiwiZmN2IjoiMyIsImVpIjoiSGlXU2FwbUVHc25jcnVFUDRZalo0UW8iLCJxYyI6ImMtTlNTRTVKQi1QOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaGxxWkJWbjJBQSIsInF1ZXN0aW9uIjoiSG93IGxvbmcgZG9lcyBpdCB0YWtlIHRvIGdldCB0aHJvdWdoIGN1c3RvbXMgaW4gUGFyaXMgQ0RHPyIsImxrIjoiYzVPeXpNZ3ZWOGpKejB0WFNNbFBMVmJJTEZFb1NjeE9WU2pKVjBoUEJiSXppdkpMMHpNVWtrdUxTX0p6Z2RKNUNnV0pSWm5GQ3NrcDZRQSIsImJzIjoiYzVXUHNXckRNQkNHeWFxcG96R2hfSVFTTW1UeTFnUmlURXJTYnQwOEg3SWlpU2k2SU10NDZkWVg2RFAyUVVybHVDRjA2TkRsMEtIdl8tNU8xR0w1ekQwa2VieEFzbzhrSTdhR2dsTXRHb1U5ZGM0cFZEYWNPY1F5ZS0tS2gzd21iNEFlQVJxQnE2SVZiMkkxaUIxN2pZWVRheU1pSFJVaVE2djBOb0U3YlNDN052SXBmWHU4VXJBdHRrXzdNdnRDc2M0ZnpUOEY1NHRBTmxwVVlsb2Jpa2d0RFVZY25OVW1oYXc4cW5UR3g2UzR6NmY5RDVJU1Ffd1hJMnF4cUVLYVp0UlFlNzZlZUZ0MWlWMGdMMVdaZlc2S1JUNm5QX0Z4c2NPRnZwdDhBdyIsImlkIjoiZmNfSGlXU2FwbUVHc25jcnVFUDRZalo0UW9fMSJ9"
+      }, {
+        "question" : "What is a CDG flight ticket?",
+        "type" : "featured_snippet",
+        "snippet" : "This is the latest accepted revision, reviewed on 26 August 2026. Paris Charles de Gaulle Airport (IATA: CDG, ICAO: LFPG), also known as Roissy Airport, is the primary international airport serving Paris, the capital of France.",
+        "title" : "Charles de Gaulle Airport - Wikipedia",
+        "link" : "https://www.google.com/goto?url=CAESxAEB6zswFZHzLzhEpREtT0kl6yc_M1Rrt1wCuBKSey3bsZiTBMPKQfw2_cYfzLsHjvrVT6e-18x5qavsbS5CK582oDLkC3XsPwdx8B9w6L4KyCbc8fxBY6dXjvvu3-N10ViBpQ9PqSNpP5FT3lEkymON5IZlt-GPJlsKgHQBdaXYQJAiI1OhDLNlDOkUQH5F-ByGyNajvcWjwwh3_ote_gv7_gI1p_9UNesNhsmwQaHUSygDcjQSNKk2WlUjo24m2cR8RUnl",
+        "displayed_link" : "https://en.wikipedia.org › wiki › Charles_de_Gaulle_Ai...",
+        "next_page_token" : "eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS2NXMDRhMVZ0VnpscFMyMW1URGxtZFZBMVluWmhTWEpQZURSRGNVeHlWbEZTT0ZvMGRtSklaM2MxU2tsS09HSXlSMEYzU0RkNGFrUmZaMlpuTW1kNWFYZEJUVFpXZGtGelNqQkdkRVY1UVVkcE9FVmZjRUowVXpsa1FSSVhTR2xYVTJGd2JVVkhjMjVqY25WRlVEUlphbG8wVVc4YUlrRkVjM0k1WmxOUFpTMVZiMnBIVDJWamNWWkliMmRVUzJRNWVGbGhjV1IyUVhjIiwiZmN2IjoiMyIsImVpIjoiSGlXU2FwbUVHc25jcnVFUDRZalo0UW8iLCJxYyI6ImMtTlNTRTVKQi1QOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaGxxWkJWbjJBQSIsInF1ZXN0aW9uIjoiV2hhdCBpcyBhIENERyBmbGlnaHQgdGlja2V0PyIsImxrIjoiR2h4M2FHRjBJR2x6SUdOa1p5QnBiaUJtYkdsbmFIUWdkR2xqYTJWMCIsImJzIjoiYzVXUHNXckRNQkNHeWFxcG96R2hfSVFTTW1UeTFnUmlURXJTYnQwOEg3SWlpU2k2SU10NDZkWVg2RFAyUVVybHVDRjA2TkRsMEtIdl8tNU8xR0w1ekQwa2VieEFzbzhrSTdhR2dsTXRHb1U5ZGM0cFZEYWNPY1F5ZS0tS2gzd21iNEFlQVJxQnE2SVZiMkkxaUIxN2pZWVRheU1pSFJVaVE2djBOb0U3YlNDN052SXBmWHU4VXJBdHRrXzdNdnRDc2M0ZnpUOEY1NHRBTmxwVVlsb2Jpa2d0RFVZY25OVW1oYXc4cW5UR3g2UzR6NmY5RDVJU1Ffd1hJMnF4cUVLYVp0UlFlNzZlZUZ0MWlWMGdMMVdaZlc2S1JUNm5QX0Z4c2NPRnZwdDhBdyIsImlkIjoiZmNfSGlXU2FwbUVHc25jcnVFUDRZalo0UW9fMSJ9",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google_related_questions&google_domain=google.com&next_page_token=eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS2NXMDRhMVZ0VnpscFMyMW1URGxtZFZBMVluWmhTWEpQZURSRGNVeHlWbEZTT0ZvMGRtSklaM2MxU2tsS09HSXlSMEYzU0RkNGFrUmZaMlpuTW1kNWFYZEJUVFpXZGtGelNqQkdkRVY1UVVkcE9FVmZjRUowVXpsa1FSSVhTR2xYVTJGd2JVVkhjMjVqY25WRlVEUlphbG8wVVc4YUlrRkVjM0k1WmxOUFpTMVZiMnBIVDJWamNWWkliMmRVUzJRNWVGbGhjV1IyUVhjIiwiZmN2IjoiMyIsImVpIjoiSGlXU2FwbUVHc25jcnVFUDRZalo0UW8iLCJxYyI6ImMtTlNTRTVKQi1QOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaGxxWkJWbjJBQSIsInF1ZXN0aW9uIjoiV2hhdCBpcyBhIENERyBmbGlnaHQgdGlja2V0PyIsImxrIjoiR2h4M2FHRjBJR2x6SUdOa1p5QnBiaUJtYkdsbmFIUWdkR2xqYTJWMCIsImJzIjoiYzVXUHNXckRNQkNHeWFxcG96R2hfSVFTTW1UeTFnUmlURXJTYnQwOEg3SWlpU2k2SU10NDZkWVg2RFAyUVVybHVDRjA2TkRsMEtIdl8tNU8xR0w1ekQwa2VieEFzbzhrSTdhR2dsTXRHb1U5ZGM0cFZEYWNPY1F5ZS0tS2gzd21iNEFlQVJxQnE2SVZiMkkxaUIxN2pZWVRheU1pSFJVaVE2djBOb0U3YlNDN052SXBmWHU4VXJBdHRrXzdNdnRDc2M0ZnpUOEY1NHRBTmxwVVlsb2Jpa2d0RFVZY25OVW1oYXc4cW5UR3g2UzR6NmY5RDVJU1Ffd1hJMnF4cUVLYVp0UlFlNzZlZUZ0MWlWMGdMMVdaZlc2S1JUNm5QX0Z4c2NPRnZwdDhBdyIsImlkIjoiZmNfSGlXU2FwbUVHc25jcnVFUDRZalo0UW9fMSJ9"
+      }, {
+        "question" : "Are there two airports in Paris, France?",
+        "type" : "featured_snippet",
+        "snippet" : "Airports serving Paris, France: Charles de Gaulle Airport – Paris's main international airport. Orly Airport – Paris's second international airport.",
+        "title" : "Paris Airport - Wikipedia",
+        "link" : "https://www.google.com/goto?url=CAES1wEB6zswFQcymcsxu0xFkeC_JBUFCp4pfvumpUmWaflWrxu09ORyzxu4LzloODKe1YTu0eMLqn0evYmIHZCGdSCq9WqJA5ioOojtpDPa9rieSiRmGp8XS9VH7r5mWzh5IbJ1h857SQ89HwX6HY88NQDMu2YRShtylTlZoZ6USt6wflyccCBCTu34iIZnOflwJSeDM3Ex4ttAlYgkOdmKQl4sqYEuWul6kTl530KvQL8Mg4ExU9uj9MFShgOw2oHYG8vh7UHznfyzp6-qDsCntiMEyx8OoC-g1g",
+        "displayed_link" : "https://en.wikipedia.org › wiki › Paris_Airport",
+        "source_logo" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAM1BMVEUAAAD-_v7MzMw7OzsAAACVlZVJSUnm5uampqYXFxfZ2dkBAQGzs7MnJyeGhoZpaWl5eXkOJSOoAAAAAXRSTlMAQObYZgAAAGpJREFUeAFtz7UBxEAQBMHtgwXpKP9kn_k13pTXIsLH5OfD74d_SLlUtFTL2Tx0E2xvWL-gQQYBzeDRBni9QSoJegeUG6AKMyCtB7R9Q8OZ9gD6anV0mzzBd8X2nF5AVJjKGzYAO4yRv_wzhDIC9UYsU1MAAAAASUVORK5CYII.png",
+        "next_page_token" : "eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS2NXMDRhMVZ0VnpscFMyMW1URGxtZFZBMVluWmhTWEpQZURSRGNVeHlWbEZTT0ZvMGRtSklaM2MxU2tsS09HSXlSMEYzU0RkNGFrUmZaMlpuTW1kNWFYZEJUVFpXZGtGelNqQkdkRVY1UVVkcE9FVmZjRUowVXpsa1FSSVhTR2xYVTJGd2JVVkhjMjVqY25WRlVEUlphbG8wVVc4YUlrRkVjM0k1WmxOUFpTMVZiMnBIVDJWamNWWkliMmRVUzJRNWVGbGhjV1IyUVhjIiwiZmN2IjoiMyIsImVpIjoiSGlXU2FwbUVHc25jcnVFUDRZalo0UW8iLCJxYyI6ImMtTlNTRTVKQi1QOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaGxxWkJWbjJBQSIsInF1ZXN0aW9uIjoiQXJlIHRoZXJlIHR3byBhaXJwb3J0cyBpbiBQYXJpcywgRnJhbmNlPyIsImxrIjoiYzVOU1N5eEtWU2pKU0FXUjVma0tpWmxGQmZsRkpjVUttWGtLQllsRm1jVUthVVdKZWNtcEFBIiwiYnMiOiJjNVdQc1dyRE1CQ0d5YXFwb3pHaF9JUVNNbVR5MWdSaVRFclNidDA4SDdJaWlTaTZJTXQ0NmRZWDZEUDJRVXJsdUNGMDZORGwwS0h2Xy01TzFHTDV6RDBrZWJ4QXNvOGtJN2FHZ2xNdEdvVTlkYzRwVkRhY09jUXllLS1LaDN3bWI0QWVBUnFCcTZJVmIySTFpQjE3allZVGF5TWlIUlVpUTZ2ME5vRTdiU0M3TnZJcGZYdThVckF0dGtfN012dENzYzRmelQ4RjU0dEFObHBVWWxvYmlrZ3REVVljbk5VbWhhdzhxblRHeDZTNHo2ZjlENUlTUV93WEkycXhxRUthWnRSUWU3NmVlRnQxaVYwZ0wxV1pmVzZLUlQ2blBfRnhzY09GdnB0OEF3IiwiaWQiOiJmY19IaVdTYXBtRUdzbmNydUVQNFlqWjRRb18xIn0=",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google_related_questions&google_domain=google.com&next_page_token=eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS2NXMDRhMVZ0VnpscFMyMW1URGxtZFZBMVluWmhTWEpQZURSRGNVeHlWbEZTT0ZvMGRtSklaM2MxU2tsS09HSXlSMEYzU0RkNGFrUmZaMlpuTW1kNWFYZEJUVFpXZGtGelNqQkdkRVY1UVVkcE9FVmZjRUowVXpsa1FSSVhTR2xYVTJGd2JVVkhjMjVqY25WRlVEUlphbG8wVVc4YUlrRkVjM0k1WmxOUFpTMVZiMnBIVDJWamNWWkliMmRVUzJRNWVGbGhjV1IyUVhjIiwiZmN2IjoiMyIsImVpIjoiSGlXU2FwbUVHc25jcnVFUDRZalo0UW8iLCJxYyI6ImMtTlNTRTVKQi1QOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaGxxWkJWbjJBQSIsInF1ZXN0aW9uIjoiQXJlIHRoZXJlIHR3byBhaXJwb3J0cyBpbiBQYXJpcywgRnJhbmNlPyIsImxrIjoiYzVOU1N5eEtWU2pKU0FXUjVma0tpWmxGQmZsRkpjVUttWGtLQllsRm1jVUthVVdKZWNtcEFBIiwiYnMiOiJjNVdQc1dyRE1CQ0d5YXFwb3pHaF9JUVNNbVR5MWdSaVRFclNidDA4SDdJaWlTaTZJTXQ0NmRZWDZEUDJRVXJsdUNGMDZORGwwS0h2Xy01TzFHTDV6RDBrZWJ4QXNvOGtJN2FHZ2xNdEdvVTlkYzRwVkRhY09jUXllLS1LaDN3bWI0QWVBUnFCcTZJVmIySTFpQjE3allZVGF5TWlIUlVpUTZ2ME5vRTdiU0M3TnZJcGZYdThVckF0dGtfN012dENzYzRmelQ4RjU0dEFObHBVWWxvYmlrZ3REVVljbk5VbWhhdzhxblRHeDZTNHo2ZjlENUlTUV93WEkycXhxRUthWnRSUWU3NmVlRnQxaVYwZ0wxV1pmVzZLUlQ2blBfRnhzY09GdnB0OEF3IiwiaWQiOiJmY19IaVdTYXBtRUdzbmNydUVQNFlqWjRRb18xIn0%3D"
+      } ],
+      "ai_overview" : {
+        "page_token" : "0hCyF3iczVXbcqpIFP2A-Y7hJYngJUdNFXWqG1HRoKcVY_CFwgZabmJojZe3-Zf5qvmaaVAIJpqccx6mpgtoGhZ77957L9Zffwfu0v_nj9VivV7RB57fbrclEkUksEs4CnmT7peYd6KAxnjxfRGI9pKj0SbGtmuJeBFHoc2RQNxQbv8qVjlMRYGzXbHrTsfmKpQ7dInjjfyjpnuzGoq41JxozE1qe8zbzqO8wbOL_2e1xRYlWrKXpZq2HU1W-75WwaWKUG6WhrwZMgD4r4YCgQTYISFAkjW8iGIQ-StLJMX4CTazfTRZtKkmOCVBKolZcjUsGaBkdlO37KJKzkHDALRQBulejQQqZ6HD5BP5lFJfOob6UwNm-8j2JF2FXjeaftPPVmrhjfIBm9vanq9HAHgNILE8oA9h9PKMpPEioKf3LR90SQMoWLme5dTcZAt3rFLKF0mBijyrnRy3QJlIgLcI61SBn8dsKvMuXuD0JqZJA0taU4i6qCM8Gk3nvu29qqY2hLsp1st3L479hHg8Z7ggMi3bMhaG8D1dlyvle6FZrTduU-ZgmlOHFqmzf6w_7oRxrzpRS48lWM54I-VZfdfIElvDiz28OEE_dn7nre-THOunEpNCQ7D0nd4TAbFrsaREVn4czZzGEECWl-6bo1Plko_kC7w5mclnJfMGlKgQcXFXCkAI5A1ReNO6UF6YOc-dyDlMQef5IO9aX2G7Y_YzDzA3n-Ag7LMgJJYmuQvbx-f4vGul9_VJvDPSk7wOGeI4qagAlv2kbGx4Y3bpgWgMZOaP7YIct5SVYYTOSi5dIHDyf4C6AtCHNz8zPuNWPlBGkXcdX2RK-_lFsHeBL6jNznQjeO5o2K9r3zQ8g9vLzIjC-S-oCv4fcSfXnEn6FMFr3JG_4g5JhOITzUnv1Zw7qeZEV7kjH7nzUXPyv_Gb5rznDvs9vnFnDD_VnF_jjvQJd0j-2QXu9C9xR7nKnaPmnHHnXHMKMZw05407v6M50m9pTkok-zidC9DGI1eFqOPf62F3oCoDVwqMLpjok8kTbhzGrQH4UoiccP0QmlZwa7jWA6z01nvr1mAPogfb4l5EqdW5Sc7IcVzsmsGN6carKF7fbO05ddc2FwZxJApmffq6PyzmQZM6z-XGIPJn2FNpvL2raL4dC0LgV839dOcsN7Nq3anMnqLu7nBXf71zSbNTnYBDW1vfr-7Uhh3jMdjZoNYetAez5mzaWh1qHeP-eVTx9bpXkw1lry0boDkbBgf9SdVeRgc86OqrF9fa-cOB3l9JvTQqKoYenTYpMXuEcmxL1BbLXBhjkWW9RsAAgSlJ2k8HiJUUSRE7t-z8BpAMOYpNw6avYgVXsPMN25ZpCXUs1LmQrPcrsVbl6DIWy_8C1ZU_Dw",
+        "serpapi_link" : "https://serpapi.com/search.json?engine=google_ai_overview&page_token=0hCyF3iczVXbcqpIFP2A-Y7hJYngJUdNFXWqG1HRoKcVY_CFwgZabmJojZe3-Zf5qvmaaVAIJpqccx6mpgtoGhZ77957L9Zffwfu0v_nj9VivV7RB57fbrclEkUksEs4CnmT7peYd6KAxnjxfRGI9pKj0SbGtmuJeBFHoc2RQNxQbv8qVjlMRYGzXbHrTsfmKpQ7dInjjfyjpnuzGoq41JxozE1qe8zbzqO8wbOL_2e1xRYlWrKXpZq2HU1W-75WwaWKUG6WhrwZMgD4r4YCgQTYISFAkjW8iGIQ-StLJMX4CTazfTRZtKkmOCVBKolZcjUsGaBkdlO37KJKzkHDALRQBulejQQqZ6HD5BP5lFJfOob6UwNm-8j2JF2FXjeaftPPVmrhjfIBm9vanq9HAHgNILE8oA9h9PKMpPEioKf3LR90SQMoWLme5dTcZAt3rFLKF0mBijyrnRy3QJlIgLcI61SBn8dsKvMuXuD0JqZJA0taU4i6qCM8Gk3nvu29qqY2hLsp1st3L479hHg8Z7ggMi3bMhaG8D1dlyvle6FZrTduU-ZgmlOHFqmzf6w_7oRxrzpRS48lWM54I-VZfdfIElvDiz28OEE_dn7nre-THOunEpNCQ7D0nd4TAbFrsaREVn4czZzGEECWl-6bo1Plko_kC7w5mclnJfMGlKgQcXFXCkAI5A1ReNO6UF6YOc-dyDlMQef5IO9aX2G7Y_YzDzA3n-Ag7LMgJJYmuQvbx-f4vGul9_VJvDPSk7wOGeI4qagAlv2kbGx4Y3bpgWgMZOaP7YIct5SVYYTOSi5dIHDyf4C6AtCHNz8zPuNWPlBGkXcdX2RK-_lFsHeBL6jNznQjeO5o2K9r3zQ8g9vLzIjC-S-oCv4fcSfXnEn6FMFr3JG_4g5JhOITzUnv1Zw7qeZEV7kjH7nzUXPyv_Gb5rznDvs9vnFnDD_VnF_jjvQJd0j-2QXu9C9xR7nKnaPmnHHnXHMKMZw05407v6M50m9pTkok-zidC9DGI1eFqOPf62F3oCoDVwqMLpjok8kTbhzGrQH4UoiccP0QmlZwa7jWA6z01nvr1mAPogfb4l5EqdW5Sc7IcVzsmsGN6carKF7fbO05ddc2FwZxJApmffq6PyzmQZM6z-XGIPJn2FNpvL2raL4dC0LgV839dOcsN7Nq3anMnqLu7nBXf71zSbNTnYBDW1vfr-7Uhh3jMdjZoNYetAez5mzaWh1qHeP-eVTx9bpXkw1lry0boDkbBgf9SdVeRgc86OqrF9fa-cOB3l9JvTQqKoYenTYpMXuEcmxL1BbLXBhjkWW9RsAAgSlJ2k8HiJUUSRE7t-z8BpAMOYpNw6avYgVXsPMN25ZpCXUs1LmQrPcrsVbl6DIWy_8C1ZU_Dw"
+      },
+      "organic_results" : [ {
+        "position" : 1,
+        "title" : "Welcome to Paris-Charles de Gaulle airport (CDG)",
+        "link" : "https://www.parisaeroport.fr/en/passengers/charles-de-gaulle-airport",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESfAHrOzAVr0y6Y3f2Vnx5qkaiqiVBwX8TZRfxWvJPsHnnqPZ2zzG4yTwZPYIipYjXDLowdiKeolUEzR8Iw_2-AmhdPt-50-rAUHMz_tbmytTuuLMNMSGzcqzHHmoRkiApf2SRxQaChCwGflIe5n1xw8zXdnFByJDH9UuP3gA&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQFnoECBkQAQ&uoh=1",
+        "displayed_link" : "https://www.parisaeroport.fr › passengers › charles-de-ga...",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png",
+        "snippet" : "Find all the information you need about Roissy-Charles de Gaulle airport (Paris-CDG) Terminal 1, 2, 3. Flight times, Maps, Transport access, Car parks, ...",
+        "snippet_highlighted_words" : [ "Roissy-Charles de Gaulle airport (Paris-CDG" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Find all the information you need about Roissy-Charles de Gaulle airport (Paris-CDG) Terminal 1, 2, 3. Flight times, Maps, Transport access, Car parks, ...",
+            "source_info_link" : "https://www.parisaeroport.fr/en/passengers/charles-de-gaulle-airport",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.parisaeroport.fr/en/passengers/charles-de-gaulle-airport:>Welcome&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.parisaeroport.fr%2Fen%2Fpassengers%2Fcharles-de-gaulle-airport%3A%3EWelcome",
+        "source" : "Aéroports de Paris"
+      }, {
+        "position" : 2,
+        "title" : "Paris Aéroport : Official Website of Paris Airports",
+        "link" : "https://www.parisaeroport.fr/en",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESVwHrOzAVNIB_oZB15qu5aJMnMYSUx4rDbkwZczXWlXcqFf3zi80NxMeeOKBrH_WZmrmLUPOyogLWOsa1zAZFk8QT7ntsL8Wt9xh3U6RKVpyrlCPDRPKgbQ&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQFnoECBsQAQ&uoh=1",
+        "displayed_link" : "https://www.parisaeroport.fr › ...",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png",
+        "snippet" : "Search a flight ... Welcome to the official Paris Aéroport website, home to all the information you need about Paris-Charles de Gaulle and Paris-Orly.",
+        "snippet_highlighted_words" : [ "Welcome to the official Paris Aéroport website" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Search a flight ... Welcome to the official Paris Aéroport website, home to all the information you need about Paris-Charles de Gaulle and Paris-Orly.",
+            "source_info_link" : "https://www.parisaeroport.fr/en",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.parisaeroport.fr/en:;Paris&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.parisaeroport.fr%2Fen%3A%3BParis",
+        "source" : "Aéroports de Paris",
+        "read_more_link" : "https://www.google.com/goto?url=CAES0wEB6zswFSB5iiQT0hUCzoFFnTl_XYm1_TEs2uLh6s6IXVSVlHXZNjqa7sJcTIc5LGX9WSIiwdEbstH-YHCQtoBApjHhMGSgoro03Tsn-cbZ_4TShNWzdjqNfD-vxR_vZ4ldN-3zMVxtjFNZu4jKqZZkhc-UK-sRrN8qgvuxMI4Wb5tzQMigywLuqJ8h65fGVQgN3qTxzFwK3BcJlS1c--hNBd8HCQwBe7htWGn8x6kGYm2XvAHYe0J-QNcSPHPAhg-b5IY-XmB4HKCsLTaEE3AaRlwF"
+      }, {
+        "position" : 3,
+        "title" : "Paris International Airport (CDG)",
+        "link" : "https://paris-airport-cdg.com/",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESVgHrOzAVpn16i0f_VdjqhXCAnxIUSreurNaidy2a91ssqogeYDMxaFcUzO5UpyotSIBs8P8QGuunvVVurdHOq3Dqe8CuaiP3PclyGX4fFS3FX3iLOrRs&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQFnoECBoQAQ&uoh=1",
+        "displayed_link" : "https://paris-airport-cdg.com",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAS1BMVEVHcEwAVKMAVaMAVaQAVaQAVaQAVaQAU6IAVaQAVKMAU6MASZ8AQp0AT6LD0OP3-vxnir3d5e____-qvdjt8fczaq0SW6ZNebSTq87lG5GEAAAACnRSTlMAP5PP9_9wIuxO6NhHUwAAAR1JREFUeAFdk9EWRDAMRItm2aSpKvD_X7qmrVrmBe4Rd5wwNU3bWSLbtY1552Opxn4eqB_okaG_2ZeYXvne7B1xWmjPrI8nWfwYNE8emIITrUx1inGWIXkyLedFkMIVl-PKBGcrc0RGn57XbYxxISWyZ3ci2ZeYc_L1PEySHBrTYpI74l8ml_1a02X3zVfmC6PO2KLvwpjZWBheWsuplNlbLQ1Y4goMWqGtDI2QQ-pYCKmIOBit6OQv2KGK7pM_EkuTF1dgaxrirWiuyoITLkbnSljiXBKfTObbyOLDo-SOfii03UZpWbAi0Em3xF9Gg0F6-K4F6n4Z9feaiF81151iVH4t0bUKGiBU2XM1WYM8VvO51ArPmvo7AP3_Dj-EThjCfhVAKAAAAABJRU5ErkJggg.png",
+        "snippet" : "Paris Charles de Gaulle Airport. Essential info on CDG Airport: terminals, transit options, layout, services, amenities, and nearby hotels.",
+        "snippet_highlighted_words" : [ "Paris Charles de Gaulle Airport" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Paris Charles de Gaulle Airport. Essential info on CDG Airport: terminals, transit options, layout, services, amenities, and nearby hotels.",
+            "source_info_link" : "https://paris-airport-cdg.com/",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAS1BMVEVHcEwAVKMAVaMAVaQAVaQAVaQAVaQAU6IAVaQAVKMAU6MASZ8AQp0AT6LD0OP3-vxnir3d5e____-qvdjt8fczaq0SW6ZNebSTq87lG5GEAAAACnRSTlMAP5PP9_9wIuxO6NhHUwAAAR1JREFUeAFdk9EWRDAMRItm2aSpKvD_X7qmrVrmBe4Rd5wwNU3bWSLbtY1552Opxn4eqB_okaG_2ZeYXvne7B1xWmjPrI8nWfwYNE8emIITrUx1inGWIXkyLedFkMIVl-PKBGcrc0RGn57XbYxxISWyZ3ci2ZeYc_L1PEySHBrTYpI74l8ml_1a02X3zVfmC6PO2KLvwpjZWBheWsuplNlbLQ1Y4goMWqGtDI2QQ-pYCKmIOBit6OQv2KGK7pM_EkuTF1dgaxrirWiuyoITLkbnSljiXBKfTObbyOLDo-SOfii03UZpWbAi0Em3xF9Gg0F6-K4F6n4Z9feaiF81151iVH4t0bUKGiBU2XM1WYM8VvO51ArPmvo7AP3_Dj-EThjCfhVAKAAAAABJRU5ErkJggg.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://paris-airport-cdg.com/:/Paris&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fparis-airport-cdg.com%2F%3A%2FParis",
+        "source" : "paris-airport-cdg.com"
+      }, {
+        "position" : 4,
+        "title" : "Charles de Gaulle Airport",
+        "link" : "https://en.wikipedia.org/wiki/Charles_de_Gaulle_Airport",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESbwHrOzAVG9GWeKAY86-yiHdCl1rZeacTBTUt7mBj8ePCfAKwuHBmnBeVLdwQjqUjQ8X8pDykFcQcKnZ2VlH9lXehF3idyuvpQORWWl3YBTi1jIToMtaEKza_0icowgedYLoyx2mC4X741IMxbTj_Qw&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQFnoECBwQAQ&uoh=1",
+        "displayed_link" : "https://en.wikipedia.org › wiki › Charles_de_Gaulle_Ai...",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAAAAABXZoBIAAAAnklEQVR4AeTNIQiDQABG4b-u17X1aF6PK3YEO9iMJqPVau82y4FgMezS0oVLhqsHtrcqeqzDXv3CEz_6L4yTtZM3dnHmPTtjzXZAXKYVo4agkU2GI2Lloc6JDez1-flswMu1EQZ3xlE7lK8eKDkjtwE-crBMV-wesKmCiisGGepZIfQJpMj9SNb2MYWrChjVkULuCyCfRvsdmBieyQQAsoDk_9ryhFMAAAAASUVORK5CYII.png",
+        "snippet" : "Paris Charles de Gaulle Airport (IATA: CDG, ICAO: LFPG), also known as Roissy Airport, is the primary international airport serving Paris, the capital of France ...",
+        "snippet_highlighted_words" : [ "Paris Charles de Gaulle Airport" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Paris Charles de Gaulle Airport (IATA: CDG, ICAO: LFPG), also known as Roissy Airport, is the primary international airport serving Paris, the capital of France ...",
+            "source_info_link" : "https://en.wikipedia.org/wiki/Charles_de_Gaulle_Airport",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAAAAABXZoBIAAAAnklEQVR4AeTNIQiDQABG4b-u17X1aF6PK3YEO9iMJqPVau82y4FgMezS0oVLhqsHtrcqeqzDXv3CEz_6L4yTtZM3dnHmPTtjzXZAXKYVo4agkU2GI2Lloc6JDez1-flswMu1EQZ3xlE7lK8eKDkjtwE-crBMV-wesKmCiisGGepZIfQJpMj9SNb2MYWrChjVkULuCyCfRvsdmBieyQQAsoDk_9ryhFMAAAAASUVORK5CYII.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://en.wikipedia.org/wiki/Charles_de_Gaulle_Airport:,<b>Charles&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FCharles_de_Gaulle_Airport%3A%2C%3Cb%3ECharles",
+        "source" : "Wikipedia",
+        "read_more_link" : "https://www.google.com/goto?url=CAESyAEB6zswFdP2Unua40PgkJVt6V7MwG0pLLVCbvugFdHDVjEs_-4GaJH9ubW46TO5OYm2cO8yKZi1tqgfZ2pZikoC_sO6r1ftCd-W_RuH8TY36wKCl4hCGWt4IlKh24KNcz2iQJwH2e1DqwdISa7OkBaz_ACRGgjJ_O0hkNA0iquRThWiyQOvIAfbPOmJwPxaIY6PICahFmEq6nQZlIhT9Pu9oj05r35E7JEqJXulSuEbQPAes2Sj4kve5aKoo9ioCuvdMkBpaQM3HA"
+      }, {
+        "position" : 5,
+        "title" : "Paris Charles de Gaulle, France (CDG)",
+        "link" : "https://www.aa.com/web/i18n/travelInformation/destinationInformation/cdg-airport.html",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESjQEB6zswFcvV9UJG5xMihig4kh9ZU8XZBo0NQX-Aj27OoYm0CO6g0OuIaOOBjABqe4mIjzSO_eFrQeKOAulR_cz84eSLrFJ4ltlf037s_cm2vY5YFw6t1il3kXt9AMHnEw5sG79N68EqZ56QLtyMFZtuQ_3fHtYbDY_PH1axAEro1GUTxZXufFKuIYKjveM&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQFnoECEcQAQ&uoh=1",
+        "displayed_link" : "https://www.aa.com › Home › Airport information",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAA9lBMVEX___-tFw6nFw2hFg3n6-7LHBPFGxK_GhK5GRCzGBCbFQzKiInRHRQGfL0IcrUNYKQPV5wSTZMAl9YCjs4EhMUKaawVRIvXHRQAqucAoN5_1fTT3Ony9PWwvcWXLB368PGP2_af4Pjv-v3P7_tCuOcPpuDg8vqDxuc0o9gmk81lsdvC3u-jzuZZns3R5fGWutg8fbZrlcKnvNZgfrBQc6jZ3-LI0deotr-YqLLN1dvGqazQn5_q7e_BiYmlLh-0MR_jfXieT0iJKRzULyT61NWiX1x7JxttJRneRUXZurvicHDljI3QREXpqKnvxcbDJyLMbWy9UE9F5So_AAAA-klEQVQ4jXXPWUOCQBSGYc1JLQuXFlwGt9T2shTEILRcylzQ__9nghkdbs733PJyzplYvRxoNGNQoyjc4KJVCrVx0SkIJbzl9kK4g0Hz_lJ4gMXjufQEi2dNeoF3aleCxlHxmpW6cEk3J72hoJLLS--w6PWvhQrcEuKcmaY5NMGxwdehZRnGYGBbVMJZ8LssbNsgApcxMeLDcV3O6AnBiM-qNxqDE8MRX9_VUWoyBQVjs7mX1HV9UkPP-Inrwi8oFomzvT86cI6VJV2sksqaDDYpxaefsk0rPnlozT9RVmSxjke25JLdUSRDLvESkQVZ7E4Vj37K1MkcOP9gmCNEMikokgAAAABJRU5ErkJggg.png",
+        "snippet" : "This page has information on Paris Charles de Gaulle International Airport (CDG), Paris, France.",
+        "snippet_highlighted_words" : [ "Charles de Gaulle International Airport", "CDG" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "This page has information on Paris Charles de Gaulle International Airport (\nCDG), Paris, France.",
+            "source_info_link" : "https://www.aa.com/web/i18n/travelInformation/destinationInformation/cdg-airport.html",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAA9lBMVEX___-tFw6nFw2hFg3n6-7LHBPFGxK_GhK5GRCzGBCbFQzKiInRHRQGfL0IcrUNYKQPV5wSTZMAl9YCjs4EhMUKaawVRIvXHRQAqucAoN5_1fTT3Ony9PWwvcWXLB368PGP2_af4Pjv-v3P7_tCuOcPpuDg8vqDxuc0o9gmk81lsdvC3u-jzuZZns3R5fGWutg8fbZrlcKnvNZgfrBQc6jZ3-LI0deotr-YqLLN1dvGqazQn5_q7e_BiYmlLh-0MR_jfXieT0iJKRzULyT61NWiX1x7JxttJRneRUXZurvicHDljI3QREXpqKnvxcbDJyLMbWy9UE9F5So_AAAA-klEQVQ4jXXPWUOCQBSGYc1JLQuXFlwGt9T2shTEILRcylzQ__9nghkdbs733PJyzplYvRxoNGNQoyjc4KJVCrVx0SkIJbzl9kK4g0Hz_lJ4gMXjufQEi2dNeoF3aleCxlHxmpW6cEk3J72hoJLLS--w6PWvhQrcEuKcmaY5NMGxwdehZRnGYGBbVMJZ8LssbNsgApcxMeLDcV3O6AnBiM-qNxqDE8MRX9_VUWoyBQVjs7mX1HV9UkPP-Inrwi8oFomzvT86cI6VJV2sksqaDDYpxaefsk0rPnlozT9RVmSxjke25JLdUSRDLvESkQVZ7E4Vj37K1MkcOP9gmCNEMikokgAAAABJRU5ErkJggg.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.aa.com/web/i18n/travelInformation/destinationInformation/cdg-airport.html:GParis&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.aa.com%2Fweb%2Fi18n%2FtravelInformation%2FdestinationInformation%2Fcdg-airport.html%3AGParis",
+        "source" : "American Airlines"
+      }, {
+        "position" : 6,
+        "title" : "Welcome to Paris-Charles de Gaulle airport (CDG)",
+        "link" : "https://www.parisaeroport.fr/en/charles-de-gaulle-airport/",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAEScgHrOzAV5GX7Tr9VlObkgEM2TJbCVX2PmIRvtcHpjR_IOtdlt6Lm-b9DNAyN5BKTySNd17n95hcE_mRkGHPi4M1IO19mgobcPyXramb5hF-pwuM1pETzEZoUC0PMYlDsk-PMcseQuDOQGVpN2Ze42Uj4yA&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQFnoECD0QAQ&uoh=1",
+        "displayed_link" : "https://www.parisaeroport.fr › charles-de-gaulle-airport",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png",
+        "snippet" : "Official website of Paris Charles de Gaulle: flights arrival and departure times in real-time, ground transportation to the airport (Bus, trains, shuttles…)",
+        "snippet_highlighted_words" : [ "Official website of Paris Charles de Gaulle" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Official website of Paris Charles de Gaulle: flights arrival and departure times in real-time, ground transportation to the airport (Bus, trains, shuttles…)",
+            "source_info_link" : "https://www.parisaeroport.fr/en/charles-de-gaulle-airport/",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.parisaeroport.fr/en/charles-de-gaulle-airport/:>Welcome&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.parisaeroport.fr%2Fen%2Fcharles-de-gaulle-airport%2F%3A%3EWelcome",
+        "source" : "Aéroports de Paris"
+      }, {
+        "position" : 7,
+        "title" : "Paris Charles de Gaulle Airport (CDG/LFPG)",
+        "link" : "https://www.flightradar24.com/data/airports/cdg",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESZwHrOzAVEgapTeajcF33eGGFISdyd6kzHAZpE_NvPIHvAjCEOdKb7ZDex14SinhNBBhQBofUBiVmHC0OB9UajUtwFWTxmAzbYCHOBWWQl3BBZ_Jc8KvwzcsYftTGkxjxkdykxOJVmfg&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQFnoECD4QAQ&uoh=1",
+        "displayed_link" : "https://www.flightradar24.com › ... › Airports › France",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAXVBMVEVHcEwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9PT2IiIiysrLCwsKCgoLk5OT___9NTU3r6-v4-PiTk5Nvb29bW1vPz8_Y2NgXFxelpaXJycktLS1kZGS7u7t0dHR3L2A0AAAACHRSTlMABnjb_P4f6aoFBfgAAAFdSURBVHgBfZMFYsQwDAR9vIZwYrzc_59ZSXbK7YYzAoOklDqdL9fbN10v55Mi3R-o0sY6Z41G1eNOfo11_dDUd42e1BmscRpIc9_P_JxGsM7qIm7ssOganEOI80XdGjNoWmEavSqOSQE1Dm2ApuAjcGNI-Zhp60lWQ-hUoalBFr-Jozc1USewH3pmFk12ARCGnqEWx9EBMbmcIpC1uGqCFLUALi0xU9xniBgtUGj8BC3nho9Io-Qk4mWUlqAbAhB3gM6igQy4yEndN9iRc3hhJ-gFWhmsA2zUHiiusDN6CWuGORIp0Pu0I3qNsgNxHkydygpsiSMF6zRgN2CVqXAADyCtS9uMLoEN-2P5npx14NUur8TsyYZt4SckPRO0KXs2jPxLIG9ZXyZicymAsLZlbbNFfdvR6djsCz7oDk6XP8rkc4FNzoX5c4EdpWk-StMcpfl_UUs73PBNN2mHNw-BI5o0tXRHAAAAAElFTkSuQmCC.png",
+        "snippet" : "Paris Charles de Gaulle Airport, (CDG/LFPG), France - View live flight arrival and departure information, live flight delays and cancelations, ...",
+        "snippet_highlighted_words" : [ "Paris Charles de Gaulle Airport" ],
+        "rich_snippet" : {
+          "top" : {
+            "detected_extensions" : {
+              "rating" : 76,
+              "reviews" : 17391
+            },
+            "extensions" : [ "76%(17,391)" ]
+          }
+        },
+        "about_this_result" : {
+          "source" : {
+            "description" : "Paris Charles de Gaulle Airport, (CDG/LFPG), France - View live flight arrival and departure information, live flight delays and cancelations, ...",
+            "source_info_link" : "https://www.flightradar24.com/data/airports/cdg",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAXVBMVEVHcEwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9PT2IiIiysrLCwsKCgoLk5OT___9NTU3r6-v4-PiTk5Nvb29bW1vPz8_Y2NgXFxelpaXJycktLS1kZGS7u7t0dHR3L2A0AAAACHRSTlMABnjb_P4f6aoFBfgAAAFdSURBVHgBfZMFYsQwDAR9vIZwYrzc_59ZSXbK7YYzAoOklDqdL9fbN10v55Mi3R-o0sY6Z41G1eNOfo11_dDUd42e1BmscRpIc9_P_JxGsM7qIm7ssOganEOI80XdGjNoWmEavSqOSQE1Dm2ApuAjcGNI-Zhp60lWQ-hUoalBFr-Jozc1USewH3pmFk12ARCGnqEWx9EBMbmcIpC1uGqCFLUALi0xU9xniBgtUGj8BC3nho9Io-Qk4mWUlqAbAhB3gM6igQy4yEndN9iRc3hhJ-gFWhmsA2zUHiiusDN6CWuGORIp0Pu0I3qNsgNxHkydygpsiSMF6zRgN2CVqXAADyCtS9uMLoEN-2P5npx14NUur8TsyYZt4SckPRO0KXs2jPxLIG9ZXyZicymAsLZlbbNFfdvR6djsCz7oDk6XP8rkc4FNzoX5c4EdpWk-StMcpfl_UUs73PBNN2mHNw-BI5o0tXRHAAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.flightradar24.com/data/airports/cdg:HParis&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.flightradar24.com%2Fdata%2Fairports%2Fcdg%3AHParis",
+        "source" : "Flightradar24"
+      }, {
+        "position" : 8,
+        "title" : "Charles de Gaulle Airport (CDG): access, transport & fares",
+        "link" : "https://parisjetaime.com/eng/article/from-paris-charles-de-gaulle-airport-a078",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAEShgEB6zswFTsbvnj66dTtNULOVuIzYiW8P6nxya_tKZCVcPiABMpNiuKU2JnZbJK4kUjGyvBmnoXcDyt19O4rFb0UaPD1tq8soCuuIX6avYf_PCnyfLewoJbAezmWLiQltgIeuF7asZGi5hD4H7ONQS3BUFp5s8O_ExFOTeneDIJDpKY4jQKpvQ&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQFnoECEAQAQ&uoh=1",
+        "displayed_link" : "https://parisjetaime.com › eng › article › from-paris-cha...",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAWlBMVEVHcEwkVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0dUycUUCAITBhhf2WhsaNuiXIARATl6uaInYu2wrhSdVgzYDt_loOTppZEakrP2ND7_PvDzsVmaXO_AAAAC3RSTlMA_N_CMWCG7D4WwRK0kS8AAAEgSURBVCiRfZPploMgDIXdqrUk7Jto3_81B6J2mXGIPwC_Q5KbhKY5bRj7qW2nfhya33ab2Mum2xeaO_Zl3fxmd_bH7hX2ovMVY2z33F3DjvK8ZoyVnN8aYF_SqShrLytyzvSWADiCcAic6NCMhUXjeNgsF85mAsqFAsemL1DaVUX31Is0HlFvSpQQPYVEaQw4b7Q1BtWqlQlAQVuCUmtjtnxz0xk6JzH_bglCdoNS2yBE9ClyJSnxdlcC-YDlA4S8Bzy09LtEFQLj6AFKKofgB0lhjKtVoJNysSJgEjsdjyLYp1V80TauT7M6exahBIW4eJ_AY8z3OBeL9EDlo8InhRQKyB9gOVHhqWXwT8vqza6OSX3A6qNZH-qP5_D4eA4_ZcQfZRdNjbgAAAAASUVORK5CYII.png",
+        "date" : "Jun 15, 2026",
+        "snippet" : "Plan your arrival or departure from France's leading hub with complete peace of mind. From the new single airport ticket and the ...",
+        "snippet_highlighted_words" : [ "airport" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Plan your arrival or departure from France's leading hub with complete peace of mind. From the new single airport ticket and the ...",
+            "source_info_link" : "https://parisjetaime.com/eng/article/from-paris-charles-de-gaulle-airport-a078",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAWlBMVEVHcEwkVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0dUycUUCAITBhhf2WhsaNuiXIARATl6uaInYu2wrhSdVgzYDt_loOTppZEakrP2ND7_PvDzsVmaXO_AAAAC3RSTlMA_N_CMWCG7D4WwRK0kS8AAAEgSURBVCiRfZPploMgDIXdqrUk7Jto3_81B6J2mXGIPwC_Q5KbhKY5bRj7qW2nfhya33ab2Mum2xeaO_Zl3fxmd_bH7hX2ovMVY2z33F3DjvK8ZoyVnN8aYF_SqShrLytyzvSWADiCcAic6NCMhUXjeNgsF85mAsqFAsemL1DaVUX31Is0HlFvSpQQPYVEaQw4b7Q1BtWqlQlAQVuCUmtjtnxz0xk6JzH_bglCdoNS2yBE9ClyJSnxdlcC-YDlA4S8Bzy09LtEFQLj6AFKKofgB0lhjKtVoJNysSJgEjsdjyLYp1V80TauT7M6exahBIW4eJ_AY8z3OBeL9EDlo8InhRQKyB9gOVHhqWXwT8vqza6OSX3A6qNZH-qP5_D4eA4_ZcQfZRdNjbgAAAAASUVORK5CYII.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://parisjetaime.com/eng/article/from-paris-charles-de-gaulle-airport-a078:L<b>Charles&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fparisjetaime.com%2Feng%2Farticle%2Ffrom-paris-charles-de-gaulle-airport-a078%3AL%3Cb%3ECharles",
+        "source" : "Paris Je t'aime - Office de Tourisme",
+        "read_more_link" : "https://www.google.com/goto?url=CAES3gEB6zswFc60UqVqbuXQQzCF-0Kfnkq0nhXe-NNOtK88ksI-yN4o_h8XOZoTol3RyTTUmjboIbdR063TO8UQHssY2JeqdO88ttpbH95TGUCCT6LVa8tIG89TYYRWxFY6O46qrY8U2nWOJp8Us4gPtY32P-QZ_lMpl4pJmkUc5XIIg3AtDKHcRPMgv7DZg6AppkNjGSP43jjKlIHFORESCiFv_i23Gi5Pd7TfIgvnl_xI-koYLS-7FUmPO0A-6p6CSaQeWbdRBkNr989gHbUAmSp8WrlzfWMpc8GcxGvIblw"
+      }, {
+        "position" : 9,
+        "title" : "Paris Charles de Gaulle (CDG) Airport Map & Lounges",
+        "link" : "https://www.delta.com/us/en/airports/europe/paris-sky-club-airport-map",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESfgHrOzAVl91BTcEO-owhP_dJimLsrjfnqKfv9cgqIWuFhNe1H_VnXFyAH89rpAIhvR9zUBHY5LU8Yd6Uor4D1mXO1gNBAFhrH9fyTiZSngZJKuHBq1v8xAGVlzu2H1zAEdl1bPgVNtjQghe-hTTpQtZ8aXCH4BaYSOsxPfUf6Q&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQFnoECDwQAQ&uoh=1",
+        "displayed_link" : "https://www.delta.com › airports › europe › paris-sky-clu...",
+        "favicon" : "https://serpapi.com/searches/6a92251e079a2b55e0c9223b/images/GX6h_iZ_96_KXyCwkFtAaFEl-H11qGrU2Q-JciDbfFQ.png",
+        "snippet" : "Navigate your way around Paris Charles de Gaulle (CDG) airport and find unique offerings plus Delta Sky Club® and partner lounge information.",
+        "snippet_highlighted_words" : [ "Paris Charles de Gaulle (CDG) airport" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Navigate your way around Paris Charles de Gaulle (CDG) airport and find unique offerings plus Delta Sky Club® and partner lounge information.",
+            "source_info_link" : "https://www.delta.com/us/en/airports/europe/paris-sky-club-airport-map",
+            "icon" : "https://serpapi.com/searches/6a92251e079a2b55e0c9223b/images/GX6h_iZ_96_KXyCwkFtAaBy1gsodvyeA6PWh4Wj34xEUt7dm2rpkgA0EKyB8JtJs.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.delta.com/us/en/airports/europe/paris-sky-club-airport-map:TParis&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.delta.com%2Fus%2Fen%2Fairports%2Feurope%2Fparis-sky-club-airport-map%3ATParis",
+        "source" : "Delta"
+      } ],
+      "related_searches" : [ {
+        "block_position" : 1,
+        "query" : "Cdg cdg official airport website terminal 2",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&gl=us&q=Cdg+cdg+official+airport+website+terminal+2&sa=X&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ1QJ6BAg0EAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=Cdg+cdg+official+airport+website+terminal+2"
+      }, {
+        "block_position" : 1,
+        "query" : "Cdg cdg official airport website departures",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&gl=us&q=Cdg+cdg+official+airport+website+departures&sa=X&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ1QJ6BAg7EAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=Cdg+cdg+official+airport+website+departures"
+      }, {
+        "block_position" : 1,
+        "query" : "Cdg cdg official airport website map",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&gl=us&q=Cdg+cdg+official+airport+website+map&sa=X&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ1QJ6BAg4EAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=Cdg+cdg+official+airport+website+map"
+      }, {
+        "block_position" : 1,
+        "query" : "Charles de Gaulle airport online tablo",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&gl=us&q=Charles+de+Gaulle+airport+online+tablo&sa=X&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ1QJ6BAg5EAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=Charles+de+Gaulle+airport+online+tablo"
+      }, {
+        "block_position" : 1,
+        "query" : "Cdg cdg official airport website parking",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&gl=us&q=Cdg+cdg+official+airport+website+parking&sa=X&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ1QJ6BAg6EAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=Cdg+cdg+official+airport+website+parking"
+      }, {
+        "block_position" : 1,
+        "query" : "Charles de Gaulle airport website",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&gl=us&q=Charles+de+Gaulle+airport+website&sa=X&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ1QJ6BAg3EAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=Charles+de+Gaulle+airport+website"
+      }, {
+        "block_position" : 1,
+        "query" : "Charles de Gaulle airport online tablo arrivals",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&gl=us&q=Charles+de+Gaulle+airport+online+tablo+arrivals&sa=X&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ1QJ6BAg2EAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=Charles+de+Gaulle+airport+online+tablo+arrivals"
+      }, {
+        "block_position" : 1,
+        "query" : "Charles de Gaulle Airport Terminal 2",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&gl=us&q=Charles+de+Gaulle+Airport+Terminal+2&sa=X&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ1QJ6BAg1EAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=Charles+de+Gaulle+Airport+Terminal+2"
+      } ],
+      "pagination" : {
+        "current" : 1,
+        "next" : "https://www.google.com/search?q=CDG+CDG+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=HiWSapmEGsncruEP4YjZ4Qo&start=10&sa=N&sstk=AS6-VmKJ14zrw0-dAbdlay0Gri8veRnQzz2bou2wnsh5AP5Rib7fY2vJY8S6nmPpH-EcJPpBCqyyQw1fT0pCSvC70cvPk1P0sBUedA&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ8NMDegQIMhAW",
+        "other_pages" : {
+          "2" : "https://www.google.com/search?q=CDG+CDG+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=HiWSapmEGsncruEP4YjZ4Qo&start=10&sa=N&sstk=AS6-VmKJ14zrw0-dAbdlay0Gri8veRnQzz2bou2wnsh5AP5Rib7fY2vJY8S6nmPpH-EcJPpBCqyyQw1fT0pCSvC70cvPk1P0sBUedA&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ8tMDegQIMhAE",
+          "3" : "https://www.google.com/search?q=CDG+CDG+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=HiWSapmEGsncruEP4YjZ4Qo&start=20&sa=N&sstk=AS6-VmKJ14zrw0-dAbdlay0Gri8veRnQzz2bou2wnsh5AP5Rib7fY2vJY8S6nmPpH-EcJPpBCqyyQw1fT0pCSvC70cvPk1P0sBUedA&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ8tMDegQIMhAG",
+          "4" : "https://www.google.com/search?q=CDG+CDG+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=HiWSapmEGsncruEP4YjZ4Qo&start=30&sa=N&sstk=AS6-VmKJ14zrw0-dAbdlay0Gri8veRnQzz2bou2wnsh5AP5Rib7fY2vJY8S6nmPpH-EcJPpBCqyyQw1fT0pCSvC70cvPk1P0sBUedA&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ8tMDegQIMhAI",
+          "5" : "https://www.google.com/search?q=CDG+CDG+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=HiWSapmEGsncruEP4YjZ4Qo&start=40&sa=N&sstk=AS6-VmKJ14zrw0-dAbdlay0Gri8veRnQzz2bou2wnsh5AP5Rib7fY2vJY8S6nmPpH-EcJPpBCqyyQw1fT0pCSvC70cvPk1P0sBUedA&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ8tMDegQIMhAK",
+          "6" : "https://www.google.com/search?q=CDG+CDG+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=HiWSapmEGsncruEP4YjZ4Qo&start=50&sa=N&sstk=AS6-VmKJ14zrw0-dAbdlay0Gri8veRnQzz2bou2wnsh5AP5Rib7fY2vJY8S6nmPpH-EcJPpBCqyyQw1fT0pCSvC70cvPk1P0sBUedA&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ8tMDegQIMhAM",
+          "7" : "https://www.google.com/search?q=CDG+CDG+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=HiWSapmEGsncruEP4YjZ4Qo&start=60&sa=N&sstk=AS6-VmKJ14zrw0-dAbdlay0Gri8veRnQzz2bou2wnsh5AP5Rib7fY2vJY8S6nmPpH-EcJPpBCqyyQw1fT0pCSvC70cvPk1P0sBUedA&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ8tMDegQIMhAO",
+          "8" : "https://www.google.com/search?q=CDG+CDG+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=HiWSapmEGsncruEP4YjZ4Qo&start=70&sa=N&sstk=AS6-VmKJ14zrw0-dAbdlay0Gri8veRnQzz2bou2wnsh5AP5Rib7fY2vJY8S6nmPpH-EcJPpBCqyyQw1fT0pCSvC70cvPk1P0sBUedA&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ8tMDegQIMhAQ",
+          "9" : "https://www.google.com/search?q=CDG+CDG+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=HiWSapmEGsncruEP4YjZ4Qo&start=80&sa=N&sstk=AS6-VmKJ14zrw0-dAbdlay0Gri8veRnQzz2bou2wnsh5AP5Rib7fY2vJY8S6nmPpH-EcJPpBCqyyQw1fT0pCSvC70cvPk1P0sBUedA&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ8tMDegQIMhAS",
+          "10" : "https://www.google.com/search?q=CDG+CDG+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=HiWSapmEGsncruEP4YjZ4Qo&start=90&sa=N&sstk=AS6-VmKJ14zrw0-dAbdlay0Gri8veRnQzz2bou2wnsh5AP5Rib7fY2vJY8S6nmPpH-EcJPpBCqyyQw1fT0pCSvC70cvPk1P0sBUedA&ved=2ahUKEwiZi473x8SWAxVJrisGHWFENqwQ8tMDegQIMhAU"
+        }
+      },
+      "serpapi_pagination" : {
+        "current" : 1,
+        "next_link" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=CDG+CDG+official+airport+website&start=10",
+        "next" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=CDG+CDG+official+airport+website&start=10",
+        "other_pages" : {
+          "2" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=CDG+CDG+official+airport+website&start=10",
+          "3" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=CDG+CDG+official+airport+website&start=20",
+          "4" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=CDG+CDG+official+airport+website&start=30",
+          "5" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=CDG+CDG+official+airport+website&start=40",
+          "6" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=CDG+CDG+official+airport+website&start=50",
+          "7" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=CDG+CDG+official+airport+website&start=60",
+          "8" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=CDG+CDG+official+airport+website&start=70",
+          "9" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=CDG+CDG+official+airport+website&start=80",
+          "10" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=CDG+CDG+official+airport+website&start=90"
+        }
+      }
+    },
+    "elapsedMs" : 1089
+  }, {
+    "sequence" : 2,
+    "stage" : "IDENTITY_GOOGLE_MAPS",
+    "engine" : "google_maps",
+    "query" : "CDG CDG",
+    "type" : "search",
+    "hl" : "en",
+    "noCache" : "true",
+    "requestUrl" : "https://serpapi.com/search?engine=google_maps&type=search&q=CDG%20CDG&hl=en&no_cache=true",
+    "httpStatus" : 200,
+    "httpStatusText" : "OK",
+    "serpApiStatus" : "Success",
+    "serpApiError" : null,
+    "candidates" : [ {
+      "jsonPath" : "$.local_results[0]",
+      "title" : "Aéroport de Paris-Charles de Gaulle",
+      "url" : "https://www.parisaeroport.fr/roissy-charles-de-gaulle",
+      "displayedLink" : null,
+      "phone" : "+33 1 70 36 39 50",
+      "snippet" : "Global flights to & from Paris. Massive hub serving Paris for intercontinental flights, plus train links to the city centre."
+    }, {
+      "jsonPath" : "$.local_results[1]",
+      "title" : "CDG Builders, Inc",
+      "url" : "https://www.cdgbuilders.com/",
+      "displayedLink" : null,
+      "phone" : "(949) 892-3510",
+      "snippet" : null
+    }, {
+      "jsonPath" : "$.local_results[2]",
+      "title" : "cdg paris cab",
+      "url" : "http://www.cdgpariscab.com/",
+      "displayedLink" : null,
+      "phone" : "+33 6 52 03 99 15",
+      "snippet" : null
+    }, {
+      "jsonPath" : "$.local_results[3]",
+      "title" : "CDG Architects",
+      "url" : "http://www.cdg-architects.com/",
+      "displayedLink" : null,
+      "phone" : "(520) 629-9752",
+      "snippet" : null
+    }, {
+      "jsonPath" : "$.local_results[4]",
+      "title" : "CDG Real Estate LLC",
+      "url" : "https://www.cdgrealestatebuyers.com/",
+      "displayedLink" : null,
+      "phone" : "(217) 250-2508",
+      "snippet" : null
+    }, {
+      "jsonPath" : "$.local_results[5]",
+      "title" : "CDG Homes",
+      "url" : "https://www.cdg-homes.com/contact",
+      "displayedLink" : null,
+      "phone" : "(832) 870-4134",
+      "snippet" : null
+    } ],
+    "sanitizedResponse" : {
+      "search_metadata" : {
+        "id" : "6a92251ff30d13159f705147",
+        "status" : "Success",
+        "json_endpoint" : "https://serpapi.com/searches/tQ7quM_GJX-4j3Z_inDJQ82MGflkPSaZXFTHby0-Xzs/6a92251ff30d13159f705147.json",
+        "markdown_endpoint" : "https://serpapi.com/searches/tQ7quM_GJX-4j3Z_inDJQ82MGflkPSaZXFTHby0-Xzs/6a92251ff30d13159f705147.md",
+        "created_at" : "2026-08-29 00:17:35 UTC",
+        "processed_at" : "2026-08-29 00:17:35 UTC",
+        "google_maps_url" : "https://www.google.com/maps/search/CDG+CDG//data=!3m1!4b1!4m2!2m1!6e5?hl=en",
+        "raw_html_file" : "https://serpapi.com/searches/tQ7quM_GJX-4j3Z_inDJQ82MGflkPSaZXFTHby0-Xzs/6a92251ff30d13159f705147.html",
+        "prettify_html_file" : "https://serpapi.com/searches/tQ7quM_GJX-4j3Z_inDJQ82MGflkPSaZXFTHby0-Xzs/6a92251ff30d13159f705147.prettify",
+        "total_time_taken" : 5.97
+      },
+      "search_parameters" : {
+        "engine" : "google_maps",
+        "type" : "search",
+        "q" : "CDG CDG",
+        "google_domain" : "google.com",
+        "hl" : "en"
+      },
+      "search_information" : {
+        "local_results_state" : "Results for exact spelling",
+        "query_displayed" : "CDG CDG"
+      },
+      "local_results" : [ {
+        "position" : 1,
+        "title" : "Aéroport de Paris-Charles de Gaulle",
+        "place_id" : "ChIJW89MjgM-5kcRLKZbL5jgKwQ",
+        "data_id" : "0x47e63e038e4ccf5b:0x42be0982f5ba62c",
+        "data_cid" : "300580744384456236",
+        "reviews_link" : "https://serpapi.com/search.json?data_id=0x47e63e038e4ccf5b%3A0x42be0982f5ba62c&engine=google_maps_reviews&hl=en",
+        "photos_link" : "https://serpapi.com/search.json?data_id=0x47e63e038e4ccf5b%3A0x42be0982f5ba62c&engine=google_maps_photos&hl=en",
+        "gps_coordinates" : {
+          "latitude" : 49.007882699999996,
+          "longitude" : 2.5507855
+        },
+        "place_id_search" : "https://serpapi.com/search.json?engine=google_maps&google_domain=google.com&hl=en&place_id=ChIJW89MjgM-5kcRLKZbL5jgKwQ",
+        "provider_id" : "/m/0qk79",
+        "rating" : 3.7,
+        "reviews" : 94592,
+        "type" : "International airport",
+        "types" : [ "International airport", "Airport" ],
+        "type_id" : "international_airport",
+        "type_ids" : [ "international_airport", "airport" ],
+        "address" : "95700 Roissy-en-France, France",
+        "country" : "France",
+        "phone" : "+33 1 70 36 39 50",
+        "website" : "https://www.parisaeroport.fr/roissy-charles-de-gaulle",
+        "description" : "Global flights to & from Paris. Massive hub serving Paris for intercontinental flights, plus train links to the city centre.",
+        "extensions" : [ {
+          "service_options" : [ "Onsite services" ]
+        }, {
+          "accessibility" : [ "Wheelchair accessible entrance", "Wheelchair accessible parking lot", "Wheelchair accessible restroom", "Wheelchair accessible seating" ]
+        }, {
+          "amenities" : [ "Baggage storage", "Restroom", "Wi-Fi", "Free Wi-Fi" ]
+        }, {
+          "children" : [ "Has changing table(s)" ]
+        }, {
+          "parking" : [ "Free parking lot", "Paid parking lot", "Paid street parking" ]
+        } ],
+        "service_options" : {
+          "onsite_services" : true
+        },
+        "user_review" : "\"Getting around CDG is relatively easy considering how large it is.\"",
+        "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmfzGNAkxQKG0NTWdht5WD_AXgIAX084v67rIh2lBgqcrd5jSu3voCdwsCAjfdoBT734AueFOCddNclgi0BYtwGHoFf0ydYIt5qlBsavaTq-W_Av8gnL38XFfjUHLPZyQr05hSDYA=w1000-h1000-c-n",
+        "serpapi_thumbnail" : "https://serpapi.com/images/url/RihO0XicHcRdDoIgAADgE6GUma6tB9T5s5pZ2dReWgOFjEQFtbphR-g2bX0P3_fDlGrlStc5MzQqBOXlIMsei0aVjdKweOi0lQBLIHUUHpI0e1TvIEb3534TwDjNCFNm5l1QTiOUQ3sxLq0-YnPu0A73xKyPgzEKl0zSRXVFhJNaxgINpb9zCYkxpzfoFGoKQuFX8EWKSJkdd-R1vKYdyC5otGmzNezcr-pTuE3Or30PTXb0CrSeZhBCwP5j0PwA7FxFRw"
+      }, {
+        "position" : 2,
+        "title" : "CDG Builders, Inc",
+        "place_id" : "ChIJ_ShNdQjC3IARVxUtWbDhbLc",
+        "data_id" : "0x80dcc208754d28fd:0xb76ce1b0592d1557",
+        "data_cid" : "13217187153952183639",
+        "reviews_link" : "https://serpapi.com/search.json?data_id=0x80dcc208754d28fd%3A0xb76ce1b0592d1557&engine=google_maps_reviews&hl=en",
+        "photos_link" : "https://serpapi.com/search.json?data_id=0x80dcc208754d28fd%3A0xb76ce1b0592d1557&engine=google_maps_photos&hl=en",
+        "gps_coordinates" : {
+          "latitude" : 33.6851999,
+          "longitude" : -117.8581713
+        },
+        "place_id_search" : "https://serpapi.com/search.json?engine=google_maps&google_domain=google.com&hl=en&place_id=ChIJ_ShNdQjC3IARVxUtWbDhbLc",
+        "provider_id" : "/g/11bx1y7czy",
+        "rating" : 3.4,
+        "reviews" : 5,
+        "type" : "Contractor",
+        "types" : [ "Contractor" ],
+        "type_id" : "contractor",
+        "type_ids" : [ "contractor" ],
+        "address" : "20 Executive Park Ste 155, Irvine, CA 92614",
+        "country" : "United States",
+        "phone" : "(949) 892-3510",
+        "website" : "https://www.cdgbuilders.com/",
+        "extensions" : [ {
+          "accessibility" : [ "Wheelchair accessible entrance", "Wheelchair accessible parking lot" ]
+        }, {
+          "parking" : [ "On-site parking" ]
+        } ],
+        "thumbnail" : "https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=_Y0jDHLoRN8nocSmd1s3-Q&cb_client=search.gws-prod.gps&w=80&h=92&yaw=192.71251&pitch=0&thumbfov=100",
+        "serpapi_thumbnail" : "https://serpapi.com/images/url/xuN_3HicHc09DsIgGADQ27CVnxpja0JcOjgYE3Vyaij9BAzlIwWL3sZreRuNF3jv87Y5x7RlLOUZIC8OSnRP8KmKihpE40FFl6jGiS2CZfuYhqCc30UV0I2yv_J7tz_g-dgE1JdpFGlVnYgeeu0dhCwTqFlbaspPnHGkJiZSZMOJlW1NXqpI0dZ0I-q1INFlbSUn_-WGixScfwFdWDku"
+      }, {
+        "position" : 3,
+        "title" : "cdg paris cab",
+        "place_id" : "ChIJtbeupMlt5kcRSHu52Vn8qks",
+        "data_id" : "0x47e66dc9a4aeb7b5:0x4baafc59d9b97b48",
+        "data_cid" : "5452447761720507208",
+        "reviews_link" : "https://serpapi.com/search.json?data_id=0x47e66dc9a4aeb7b5%3A0x4baafc59d9b97b48&engine=google_maps_reviews&hl=en",
+        "photos_link" : "https://serpapi.com/search.json?data_id=0x47e66dc9a4aeb7b5%3A0x4baafc59d9b97b48&engine=google_maps_photos&hl=en",
+        "gps_coordinates" : {
+          "latitude" : 48.886955199999996,
+          "longitude" : 2.3868978
+        },
+        "place_id_search" : "https://serpapi.com/search.json?engine=google_maps&google_domain=google.com&hl=en&place_id=ChIJtbeupMlt5kcRSHu52Vn8qks",
+        "provider_id" : "/g/11j1c_czy_",
+        "rating" : 5,
+        "reviews" : 155,
+        "unclaimed_listing" : true,
+        "type" : "Limousine service",
+        "types" : [ "Limousine service" ],
+        "type_id" : "limousine_service",
+        "type_ids" : [ "limousine_service" ],
+        "address" : "146 Av. Jean Jaurès, 93500 Paris, France",
+        "country" : "France",
+        "open_state" : "Open 24 hours",
+        "hours" : "Open 24 hours",
+        "operating_hours" : {
+          "saturday" : "Open 24 hours",
+          "sunday" : "Open 24 hours",
+          "monday" : "Open 24 hours",
+          "tuesday" : "Open 24 hours",
+          "wednesday" : "Open 24 hours",
+          "thursday" : "Open 24 hours",
+          "friday" : "Open 24 hours"
+        },
+        "phone" : "+33 6 52 03 99 15",
+        "website" : "http://www.cdgpariscab.com/",
+        "extensions" : [ {
+          "payments" : [ "Credit cards", "Debit cards" ]
+        } ],
+        "user_review" : "\"Competitive prices and excellent value - but a true five star experience!\"",
+        "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlvUFY9zHDfOBURvuyE_lJiuVu102qnTaS8QEZV_msH8aUShPWepmvyZRWQZrRTcc1d4HRwGNUNx9qW6uq3DTaz5G6cShjAmk_MXxUxHPOzNFcEKYYuwVihV-sCaBUvPQ4UIcwq=w1000-h1000-c-n",
+        "serpapi_thumbnail" : "https://serpapi.com/images/url/lb_DinicHcRJDoIwFADQE1XAgaiJCwekakQoFIQNIV-kKqOlTBf0DN7GxLd43w-r65IvJSllk1FSFEkaCx6_ocjrOK9HUGRSUnIEHHFpjYnpeGlD9_5iwLv7ZUNJI3otTI8P4QpFHle5E9lzSwvcMON4HlGbmV5cZk0fEM8K3sQBUG5TTFrdoEa3qDxVVJOdEw0zXQWbPdfZKzxfO9ph8zIYe9BOvi9a98FcxLfRhjamNaUHaKtVq8iyjNh_QPkP0jlF_Q"
+      }, {
+        "position" : 4,
+        "title" : "CDG Architects",
+        "place_id" : "ChIJrS-0r8Bx1oYRSn79NzJIi2U",
+        "data_id" : "0x86d671c0afb42fad:0x658b483237fd7e4a",
+        "data_cid" : "7317021400118427210",
+        "reviews_link" : "https://serpapi.com/search.json?data_id=0x86d671c0afb42fad%3A0x658b483237fd7e4a&engine=google_maps_reviews&hl=en",
+        "photos_link" : "https://serpapi.com/search.json?data_id=0x86d671c0afb42fad%3A0x658b483237fd7e4a&engine=google_maps_photos&hl=en",
+        "gps_coordinates" : {
+          "latitude" : 32.2474367,
+          "longitude" : -110.9260542
+        },
+        "place_id_search" : "https://serpapi.com/search.json?engine=google_maps&google_domain=google.com&hl=en&place_id=ChIJrS-0r8Bx1oYRSn79NzJIi2U",
+        "provider_id" : "/g/11bbwwsz9j",
+        "rating" : 5,
+        "reviews" : 1,
+        "unclaimed_listing" : true,
+        "type" : "Architect",
+        "types" : [ "Architect" ],
+        "type_id" : "architect",
+        "type_ids" : [ "architect" ],
+        "address" : "2102 N Country Club Rd #9, Tucson, AZ 85716",
+        "country" : "United States",
+        "phone" : "(520) 629-9752",
+        "website" : "http://www.cdg-architects.com/",
+        "extensions" : [ {
+          "accessibility" : [ "Wheelchair accessible parking lot" ]
+        } ],
+        "thumbnail" : "https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=WKyhXo8Hfu_PN22hfJCeKA&cb_client=search.gws-prod.gps&w=80&h=92&yaw=214.17465&pitch=0&thumbfov=100",
+        "serpapi_thumbnail" : "https://serpapi.com/images/url/1Dw_G3icHc1fCsIgHADg2_iW_1i1AhnRSzSI3uptOPebCm7KdLPdpmt1m6ILfN_nbVIK8UhITBNAWizkYF_g4iZIrL3XDmSwESs_kIWRZOahHaV1VZCjt5141Kt5-vLSz839xrnpr2eoT0i1jXIWxiQiyEkZrPNPnHyHdYgoi5IiIw4crTILzgrM9sVui4JNygiK_kvvF8Eo_QJtPzlY"
+      }, {
+        "position" : 5,
+        "title" : "CDG Real Estate LLC",
+        "place_id" : "ChIJAz6cAgzaDIgRMQiRGe4f_40",
+        "data_id" : "0x880cda0c029c3e03:0x8dff1fee19910831",
+        "data_cid" : "10231931985900668977",
+        "reviews_link" : "https://serpapi.com/search.json?data_id=0x880cda0c029c3e03%3A0x8dff1fee19910831&engine=google_maps_reviews&hl=en",
+        "photos_link" : "https://serpapi.com/search.json?data_id=0x880cda0c029c3e03%3A0x8dff1fee19910831&engine=google_maps_photos&hl=en",
+        "gps_coordinates" : {
+          "latitude" : 40.137749899999996,
+          "longitude" : -88.26074729999999
+        },
+        "place_id_search" : "https://serpapi.com/search.json?engine=google_maps&google_domain=google.com&hl=en&place_id=ChIJAz6cAgzaDIgRMQiRGe4f_40",
+        "provider_id" : "/g/11dxbrsbpm",
+        "rating" : 5,
+        "reviews" : 20,
+        "type" : "Real estate agent",
+        "types" : [ "Real estate agent" ],
+        "type_id" : "real_estate_agents",
+        "type_ids" : [ "real_estate_agents" ],
+        "address" : "907 W Marketview Dr #10, Champaign, IL 61822",
+        "country" : "United States",
+        "open_state" : "Closed · Opens 8 AM Mon",
+        "hours" : "Closed · Opens 8 AM Mon",
+        "operating_hours" : {
+          "friday" : "8 AM–5 PM",
+          "saturday" : "Closed",
+          "sunday" : "Closed",
+          "monday" : "8 AM–5 PM",
+          "tuesday" : "8 AM–5 PM",
+          "wednesday" : "8 AM–5 PM",
+          "thursday" : "8 AM–5 PM"
+        },
+        "phone" : "(217) 250-2508",
+        "website" : "https://www.cdgrealestatebuyers.com/",
+        "extensions" : [ {
+          "accessibility" : [ "Wheelchair accessible entrance", "Wheelchair accessible parking lot" ]
+        } ],
+        "user_review" : "\"CDG is a goid rental company to work with.\"",
+        "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmv1NscN8DkcABhmHwPNffHxRKXsrN5oKmE8AMXqLFczVcW4vyrBPcDLmDu0zkZPJmT6RUsTlR9-ye9u4BDZtHjyrY4Yfn-K-F1HKUEwEnxrYG3YGxZbYNV5a-TUv-zp_zv5jRA=w1000-h1000-c-n",
+        "serpapi_thumbnail" : "https://serpapi.com/images/url/dPSNC3icHcTbboIwGADgJ_oFIhhdsgsIaCOuIQ2o5cZsfzhEacvacnzBPcPeZsm-i-_3p7W2N2-O07XbTaNU01WDqTQqaStpN6iE0_QG0IBxQsKy_CZGjxqk-_iFYdQKMmW0rsnM0rvRNFCpSPbhx_37csT1ijd_XHSUYXwR8eCurzI7i3zHCpN37ABLdRj8KC4teS6a-7yWkMLRI2mRTImcNT9t-Wkuvzi9Bp-QFyOs_WMdgycL3yfPdV1o_0eQf4_PRPw"
+      }, {
+        "position" : 6,
+        "title" : "CDG Homes",
+        "place_id" : "ChIJVVWBbHe4QIYRDDJHormELFs",
+        "data_id" : "0x8640b8776c815555:0x5b2c84b9a247320c",
+        "data_cid" : "6569771889253102092",
+        "reviews_link" : "https://serpapi.com/search.json?data_id=0x8640b8776c815555%3A0x5b2c84b9a247320c&engine=google_maps_reviews&hl=en",
+        "photos_link" : "https://serpapi.com/search.json?data_id=0x8640b8776c815555%3A0x5b2c84b9a247320c&engine=google_maps_photos&hl=en",
+        "gps_coordinates" : {
+          "latitude" : 29.8309447,
+          "longitude" : -95.3903462
+        },
+        "place_id_search" : "https://serpapi.com/search.json?engine=google_maps&google_domain=google.com&hl=en&place_id=ChIJVVWBbHe4QIYRDDJHormELFs",
+        "provider_id" : "/g/11rghppkkq",
+        "unclaimed_listing" : true,
+        "type" : "Contractor",
+        "types" : [ "Contractor" ],
+        "type_id" : "contractor",
+        "type_ids" : [ "contractor" ],
+        "address" : "711 E Whitney St, Houston, TX 77022",
+        "country" : "United States",
+        "phone" : "(832) 870-4134",
+        "website" : "https://www.cdg-homes.com/contact",
+        "extensions" : [ {
+          "accessibility" : [ "Wheelchair accessible entrance", "Wheelchair accessible parking lot" ]
+        } ],
+        "thumbnail" : "https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=jkNtbFA9uTR1Q6g0n8jMxg&cb_client=search.gws-prod.gps&w=80&h=92&yaw=359.50116&pitch=0&thumbfov=100",
+        "serpapi_thumbnail" : "https://serpapi.com/images/url/X6rLJnicHc1LDsIgFADA27CTj6ZNa0KMG3eaaNwbigivUiDltdTbeC1vo_ECM5-3Q0x5y1jG0RicwZQEi_F5lRS1MVpvVIJMdRzYLBi6aeiCAr9LKkS4y_55wu6wb6frRZxry0PTHxdLdHfTHkxAmY0ataO2_MQx3qlNmRTZcOJkuyYvVeSmamnFhahJAtROcvJfHnGWgvMvbvQ5ZQ"
+      } ]
+    },
+    "elapsedMs" : 6302
+  }, {
+    "sequence" : 3,
+    "stage" : "CONTACT_AI_MODE",
+    "engine" : "google_ai_mode",
+    "query" : "Find the main general passenger phone for this exact airport.\nIATA: CDG\nOfficial English name: CDG\nGoogle Maps local name: Aéroport de Paris-Charles de Gaulle\nCountry or region: France\nVerified official airport/operator domains: paris-airport-cdg.com, parisaeroport.fr\nTerminal context only (never choose an airline, shop, or terminal tenant): none\n\nActively search the airport or responsible operator's official website and read its original-language pages, not English pages only. Understand the local-language meaning of airport information, passenger enquiries, customer service, contact centre, or airport switchboard, and choose the one main number an ordinary passenger should call.\nDo not collect all numbers from a page. Never return a copyright year, date, opening hours, postal code, registration number, airline, lost property, parking, cargo, hotel, police, medical, immigration, VIP, lounge, baggage, or other specialist department phone. Keep the official display format and do not invent a country code.\nReturn exactly one main number and these fixed fields, one per line:\nAIRPORT_CONFIRMED:\nGENERAL_PASSENGER_PHONE:\nPHONE_ROLE:\nOFFICIAL_CONTACT_URL:\nSOURCE_LANGUAGE:\nLOCAL_CONTACT_SEARCH_QUERY:\nWrite MISSING when GENERAL_PASSENGER_PHONE is unavailable. PHONE_ROLE must be a very short English description of the general passenger role. LOCAL_CONTACT_SEARCH_QUERY must be a short query in the official website's local language. GENERAL_PASSENGER_PHONE, PHONE_ROLE, and OFFICIAL_CONTACT_URL must each carry the same direct official airport/operator source citation.\n",
+    "type" : null,
+    "hl" : "en",
+    "noCache" : "true",
+    "requestUrl" : "https://serpapi.com/search?engine=google_ai_mode&q=Find%20the%20main%20general%20passenger%20phone%20for%20this%20exact%20airport.%0AIATA:%20CDG%0AOfficial%20English%20name:%20CDG%0AGoogle%20Maps%20local%20name:%20A%C3%A9roport%20de%20Paris-Charles%20de%20Gaulle%0ACountry%20or%20region:%20France%0AVerified%20official%20airport/operator%20domains:%20paris-airport-cdg.com,%20parisaeroport.fr%0ATerminal%20context%20only%20(never%20choose%20an%20airline,%20shop,%20or%20terminal%20tenant):%20none%0A%0AActively%20search%20the%20airport%20or%20responsible%20operator's%20official%20website%20and%20read%20its%20original-language%20pages,%20not%20English%20pages%20only.%20Understand%20the%20local-language%20meaning%20of%20airport%20information,%20passenger%20enquiries,%20customer%20service,%20contact%20centre,%20or%20airport%20switchboard,%20and%20choose%20the%20one%20main%20number%20an%20ordinary%20passenger%20should%20call.%0ADo%20not%20collect%20all%20numbers%20from%20a%20page.%20Never%20return%20a%20copyright%20year,%20date,%20opening%20hours,%20postal%20code,%20registration%20number,%20airline,%20lost%20property,%20parking,%20cargo,%20hotel,%20police,%20medical,%20immigration,%20VIP,%20lounge,%20baggage,%20or%20other%20specialist%20department%20phone.%20Keep%20the%20official%20display%20format%20and%20do%20not%20invent%20a%20country%20code.%0AReturn%20exactly%20one%20main%20number%20and%20these%20fixed%20fields,%20one%20per%20line:%0AAIRPORT_CONFIRMED:%0AGENERAL_PASSENGER_PHONE:%0APHONE_ROLE:%0AOFFICIAL_CONTACT_URL:%0ASOURCE_LANGUAGE:%0ALOCAL_CONTACT_SEARCH_QUERY:%0AWrite%20MISSING%20when%20GENERAL_PASSENGER_PHONE%20is%20unavailable.%20PHONE_ROLE%20must%20be%20a%20very%20short%20English%20description%20of%20the%20general%20passenger%20role.%20LOCAL_CONTACT_SEARCH_QUERY%20must%20be%20a%20short%20query%20in%20the%20official%20website's%20local%20language.%20GENERAL_PASSENGER_PHONE,%20PHONE_ROLE,%20and%20OFFICIAL_CONTACT_URL%20must%20each%20carry%20the%20same%20direct%20official%20airport/operator%20source%20citation.%0A&hl=en&continuable=false&no_cache=true",
+    "httpStatus" : 200,
+    "httpStatusText" : "OK",
+    "serpApiStatus" : "Success",
+    "serpApiError" : null,
+    "candidates" : [ {
+      "jsonPath" : "$.text_blocks[0].snippet_links[0]",
+      "title" : null,
+      "url" : "https://www.parisaeroport.fr",
+      "displayedLink" : null,
+      "phone" : null,
+      "snippet" : null
+    }, {
+      "jsonPath" : "$.references[0]",
+      "title" : "Contact - Aéroports de Paris",
+      "url" : "https://www.parisaeroport.fr",
+      "displayedLink" : null,
+      "phone" : null,
+      "snippet" : "Read more. Contact Us. 3950 *€0.35 incl. tax/min. from 8a.m to 8p.m. from landlines in mainland France. Additional fees may be charged by your local telephone oper..."
+    } ],
+    "sanitizedResponse" : {
+      "search_metadata" : {
+        "id" : "6a9225255e34941586101648",
+        "status" : "Success",
+        "json_endpoint" : "https://serpapi.com/searches/9co38Kv68FSyKWXsQ7GMS3ByFoFMgZkXIs7MaA4SF_k/6a9225255e34941586101648.json",
+        "markdown_endpoint" : "https://serpapi.com/searches/9co38Kv68FSyKWXsQ7GMS3ByFoFMgZkXIs7MaA4SF_k/6a9225255e34941586101648.md",
+        "created_at" : "2026-08-29 00:17:41 UTC",
+        "processed_at" : "2026-08-29 00:17:41 UTC",
+        "google_ai_mode_url" : "https://www.google.com/search?q=Find+the+main+general+passenger+phone+for+this+exact+airport.%0AIATA%3A+CDG%0AOfficial+English+name%3A+CDG%0AGoogle+Maps+local+name%3A+A%C3%A9roport+de+Paris-Charles+de+Gaulle%0ACountry+or+region%3A+France%0AVerified+official+airport%2Foperator+domains%3A+paris-airport-cdg.com%2C+parisaeroport.fr%0ATerminal+context+only+%28never+choose+an+airline%2C+shop%2C+or+terminal+tenant%29%3A+none%0A%0AActively+search+the+airport+or+responsible+operator%27s+official+website+and+read+its+original-language+pages%2C+not+English+pages+only.+Understand+the+local-language+meaning+of+airport+information%2C+passenger+enquiries%2C+customer+service%2C+contact+centre%2C+or+airport+switchboard%2C+and+choose+the+one+main+number+an+ordinary+passenger+should+call.%0ADo+not+collect+all+numbers+from+a+page.+Never+return+a+copyright+year%2C+date%2C+opening+hours%2C+postal+code%2C+registration+number%2C+airline%2C+lost+property%2C+parking%2C+cargo%2C+hotel%2C+police%2C+medical%2C+immigration%2C+VIP%2C+lounge%2C+baggage%2C+or+other+specialist+department+phone.+Keep+the+official+display+format+and+do+not+invent+a+country+code.%0AReturn+exactly+one+main+number+and+these+fixed+fields%2C+one+per+line%3A%0AAIRPORT_CONFIRMED%3A%0AGENERAL_PASSENGER_PHONE%3A%0APHONE_ROLE%3A%0AOFFICIAL_CONTACT_URL%3A%0ASOURCE_LANGUAGE%3A%0ALOCAL_CONTACT_SEARCH_QUERY%3A%0AWrite+MISSING+when+GENERAL_PASSENGER_PHONE+is+unavailable.+PHONE_ROLE+must+be+a+very+short+English+description+of+the+general+passenger+role.+LOCAL_CONTACT_SEARCH_QUERY+must+be+a+short+query+in+the+official+website%27s+local+language.+GENERAL_PASSENGER_PHONE%2C+PHONE_ROLE%2C+and+OFFICIAL_CONTACT_URL+must+each+carry+the+same+direct+official+airport%2Foperator+source+citation.%0A&udm=50&hl=en",
+        "raw_html_file" : "https://serpapi.com/searches/9co38Kv68FSyKWXsQ7GMS3ByFoFMgZkXIs7MaA4SF_k/6a9225255e34941586101648.html",
+        "prettify_html_file" : "https://serpapi.com/searches/9co38Kv68FSyKWXsQ7GMS3ByFoFMgZkXIs7MaA4SF_k/6a9225255e34941586101648.prettify",
+        "total_time_taken" : 6.42
+      },
+      "search_parameters" : {
+        "engine" : "google_ai_mode",
+        "q" : "Find the main general passenger phone for this exact airport.\nIATA: CDG\nOfficial English name: CDG\nGoogle Maps local name: Aéroport de Paris-Charles de Gaulle\nCountry or region: France\nVerified official airport/operator domains: paris-airport-cdg.com, parisaeroport.fr\nTerminal context only (never choose an airline, shop, or terminal tenant): none\n\nActively search the airport or responsible operator's official website and read its original-language pages, not English pages only. Understand the local-language meaning of airport information, passenger enquiries, customer service, contact centre, or airport switchboard, and choose the one main number an ordinary passenger should call.\nDo not collect all numbers from a page. Never return a copyright year, date, opening hours, postal code, registration number, airline, lost property, parking, cargo, hotel, police, medical, immigration, VIP, lounge, baggage, or other specialist department phone. Keep the official display format and do not invent a country code.\nReturn exactly one main number and these fixed fields, one per line:\nAIRPORT_CONFIRMED:\nGENERAL_PASSENGER_PHONE:\nPHONE_ROLE:\nOFFICIAL_CONTACT_URL:\nSOURCE_LANGUAGE:\nLOCAL_CONTACT_SEARCH_QUERY:\nWrite MISSING when GENERAL_PASSENGER_PHONE is unavailable. PHONE_ROLE must be a very short English description of the general passenger role. LOCAL_CONTACT_SEARCH_QUERY must be a short query in the official website's local language. GENERAL_PASSENGER_PHONE, PHONE_ROLE, and OFFICIAL_CONTACT_URL must each carry the same direct official airport/operator source citation.\n",
+        "hl" : "en",
+        "device" : "desktop"
+      },
+      "text_blocks" : [ {
+        "type" : "paragraph",
+        "snippet" : "AIRPORT_CONFIRMED: CDG\nGENERAL_PASSENGER_PHONE: 3950\nPHONE_ROLE: Airport information customer service\nOFFICIAL_CONTACT_URL: https://www.parisaeroport.fr/en/homepage?MUC\nSOURCE_LANGUAGE: French\nLOCAL_CONTACT_SEARCH_QUERY: numéro de téléphone service client",
+        "snippet_links" : [ {
+          "link" : "https://www.parisaeroport.fr"
+        } ]
+      }, {
+        "type" : "paragraph",
+        "snippet" : "If you need additional assistance, I can help you find information regarding terminal navigation, available ground transportation options, or instructions on how to call the general helpline from outside France."
+      } ],
+      "references" : [ {
+        "title" : "Contact - Aéroports de Paris",
+        "link" : "https://www.parisaeroport.fr",
+        "snippet" : "Read more. Contact Us. 3950 *€0.35 incl. tax/min. from 8a.m to 8p.m. from landlines in mainland France. Additional fees may be charged by your local telephone oper...",
+        "source" : "Aéroports de Paris",
+        "thumbnail" : "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTE9pXgEKT1TbWwGLQKzBjq2WyPsKOWe3XzbIRG23BebOj1TM-pGAe5riV0be4imn4zh3XWaA",
+        "source_icon" : "https://encrypted-tbn1.gstatic.com/faviconV2?url=https://www.parisaeroport.fr&client=AIM&size=128&type=FAVICON&fallback_opts=TYPE,SIZE,URL",
+        "index" : 0
+      } ],
+      "reconstructed_markdown" : "AIRPORT\\_CONFIRMED: CDG\nGENERAL\\_PASSENGER\\_PHONE: 3950\nPHONE\\_ROLE: Airport information customer service\nOFFICIAL\\_CONTACT\\_URL: https://www.parisaeroport.fr/en/homepage?MUC\nSOURCE\\_LANGUAGE: French\nLOCAL\\_CONTACT\\_SEARCH\\_QUERY: numéro de téléphone service client \\(https://www.parisaeroport.fr/\\)\n\nIf you need additional assistance, I can help you find information regarding terminal navigation, available ground transportation options, or instructions on how to call the general helpline from outside France.\n\n\n### References\n\n[0] [Contact \\- Aéroports de Paris](https://www.parisaeroport.fr/) — Read more. Contact Us. 3950 \\*€0.35 incl. tax/min. from 8a.m to 8p.m. from landlines in mainland France. Additional fees may be charged by your local telephone oper...\n"
+    },
+    "elapsedMs" : 6766
+  }, {
+    "sequence" : 4,
+    "stage" : "CONTACT_SUPPLEMENTAL_SEARCH",
+    "engine" : "google",
+    "query" : "numéro de téléphone service client Aéroport de Paris-Charles de Gaulle CDG (site:paris-airport-cdg.com OR site:parisaeroport.fr)",
+    "type" : null,
+    "hl" : "en",
+    "noCache" : "true",
+    "requestUrl" : "https://serpapi.com/search?engine=google&q=num%C3%A9ro%20de%20t%C3%A9l%C3%A9phone%20service%20client%20A%C3%A9roport%20de%20Paris-Charles%20de%20Gaulle%20CDG%20(site:paris-airport-cdg.com%20OR%20site:parisaeroport.fr)&hl=en&num=10&no_cache=true",
+    "httpStatus" : 200,
+    "httpStatusText" : "OK",
+    "serpApiStatus" : "Success",
+    "serpApiError" : null,
+    "candidates" : [ {
+      "jsonPath" : "$.organic_results[0]",
+      "title" : "Aéroport Paris-Charles de Gaulle (Roissy CDG)",
+      "url" : "https://www.parisaeroport.fr/fr/passagers/roissy-charles-de-gaulle",
+      "displayedLink" : "https://www.parisaeroport.fr › roiss...",
+      "phone" : null,
+      "snippet" : "Retrouvez toutes les informations sur l'aéroport Roissy-Charles de Gaulle (Paris-CDG) Terminal 1, 2, 3. Horaires des vols, Plans, Accès Transports, ..."
+    }, {
+      "jsonPath" : "$.organic_results[1]",
+      "title" : "Contacts utiles Aéroport Charles de Gaulle",
+      "url" : "https://cdgfacile.com/contacts-utiles-aeroport-roissy-cdg/",
+      "displayedLink" : "https://cdgfacile.com › contacts-uti...",
+      "phone" : null,
+      "snippet" : "Téléphone. Appelez le 3950 (€0,35/min.). Depuis l'étranger, composez le +33 1 70 36 39 50. Adresse. Paris Aéroport, Service relations clients 3 Place de ..."
+    }, {
+      "jsonPath" : "$.organic_results[2]",
+      "title" : "Contacter Hub One",
+      "url" : "https://www.parisaeroport.fr/groupe/strategie/hub-one/contact",
+      "displayedLink" : "https://www.parisaeroport.fr › contact",
+      "phone" : null,
+      "snippet" : "Remplissez ce formulaire si vous souhaitez contacter, Hub One, la filiale informatique et telecom du Groupe ADP. Civilité. Monsieur. Madame. Nom ..."
+    }, {
+      "jsonPath" : "$.organic_results[3]",
+      "title" : "Services pratiques aux Aéroports de Paris",
+      "url" : "https://www.parisaeroport.fr/fr/passagers/a-l-aeroport/services-pratiques",
+      "displayedLink" : "https://www.parisaeroport.fr › servi...",
+      "phone" : null,
+      "snippet" : "Nous contacter 3950 * (+33) 1 70 36 39 50. Nous suivre Application Paris Aéroport Paris. CDG Charles De Gaulle"
+    }, {
+      "jsonPath" : "$.organic_results[4]",
+      "title" : "CDG Contacts - Paris Airport",
+      "url" : "https://www.paris-airport.info/cdg-contact-details.html",
+      "displayedLink" : "https://www.paris-airport.info › cdg-contact-details",
+      "phone" : null,
+      "snippet" : ", France Telephone (01) 4862 2280 or 7036 3950 or 3950 Paris-Charles de Gaulle Medical centre: +33 1 48 62 28 00 (24/7) Police: +33 1 48 62 31 22 (24/7) ..."
+    }, {
+      "jsonPath" : "$.organic_results[5]",
+      "title" : "Paris Aéroport – Site Officiel des Aéroports de Paris",
+      "url" : "https://www.parisaeroport.fr/",
+      "displayedLink" : "https://www.parisaeroport.fr",
+      "phone" : null,
+      "snippet" : "Paris-Charles de Gaulle ou Paris-Orly. Nous contacter 3950 * (+33) 1 70 36 39 50."
+    }, {
+      "jsonPath" : "$.organic_results[6]",
+      "title" : "Charles de Gaulle Airport (CDG): access, transport & fares",
+      "url" : "https://parisjetaime.com/eng/article/from-paris-charles-de-gaulle-airport-a078",
+      "displayedLink" : "https://parisjetaime.com › eng › article › from-paris-cha...",
+      "phone" : null,
+      "snippet" : "+33 1 70 36 39 50 from abroad Customs (24 hours a day): +33 (0) 1 48 62 35 43 Police (24 hours a day): +33 (0) 1 48 62 31 22"
+    }, {
+      "jsonPath" : "$.organic_results[7]",
+      "title" : "Aéroport de Paris Roissy Charles de Gaulle ADP",
+      "url" : "https://www.pagesjaunes.fr/pros/05668393",
+      "displayedLink" : "https://www.pagesjaunes.fr › pros",
+      "phone" : null,
+      "snippet" : "Numéro de Téléphone 39 50 Service gratuit ou surtaxé, avenue Charles de Gaulle 95700 Roissy en France"
+    }, {
+      "jsonPath" : "$.organic_results[8]",
+      "title" : "AF AIR FRANCE Paris-CDG Terminal 2E",
+      "url" : "https://www.parisaeroport.fr/fr/passagers/vols/compagnies-aeriennes/compagnie?airline=AF",
+      "displayedLink" : "https://www.parisaeroport.fr › vols",
+      "phone" : null,
+      "snippet" : "Réservations : +33 09 69 39 36 54 · Service client : +33 09 69 39 36 54 · AIR FRANCE SERVICE CLIENTS TSA 60001 60035 BEAUVAIS CEDEX."
+    }, {
+      "jsonPath" : "$.organic_results[9]",
+      "title" : "Transports et Parking depuis/vers Paris-CDG",
+      "url" : "https://www.parisaeroport.fr/fr/passagers/transports-parking/cdg",
+      "displayedLink" : "https://www.parisaeroport.fr › cdg",
+      "phone" : null,
+      "snippet" : "Découvrez toutes les solutions parking et de transport proposé par l'Aéroport Paris Charles de Gaulle. Facilitez votre arrivée et stationnement à CDG."
+    } ],
+    "sanitizedResponse" : {
+      "search_metadata" : {
+        "id" : "6a92252cb2c613fe1b94e79c",
+        "status" : "Success",
+        "json_endpoint" : "https://serpapi.com/searches/D99gZUXXoIEj0ZcvG3JyJGXhwBeq8TX8W1WaWNtwZW4/6a92252cb2c613fe1b94e79c.json",
+        "markdown_endpoint" : "https://serpapi.com/searches/D99gZUXXoIEj0ZcvG3JyJGXhwBeq8TX8W1WaWNtwZW4/6a92252cb2c613fe1b94e79c.md",
+        "pixel_position_endpoint" : "https://serpapi.com/searches/D99gZUXXoIEj0ZcvG3JyJGXhwBeq8TX8W1WaWNtwZW4/6a92252cb2c613fe1b94e79c.json_with_pixel_position",
+        "created_at" : "2026-08-29 00:17:48 UTC",
+        "processed_at" : "2026-08-29 00:17:48 UTC",
+        "google_url" : "https://www.google.com/search?q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&oq=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&hl=en&sourceid=chrome&ie=UTF-8",
+        "raw_html_file" : "https://serpapi.com/searches/D99gZUXXoIEj0ZcvG3JyJGXhwBeq8TX8W1WaWNtwZW4/6a92252cb2c613fe1b94e79c.html",
+        "total_time_taken" : 0.88
+      },
+      "search_parameters" : {
+        "engine" : "google",
+        "q" : "numéro de téléphone service client Aéroport de Paris-Charles de Gaulle CDG (site:paris-airport-cdg.com OR site:parisaeroport.fr)",
+        "google_domain" : "google.com",
+        "hl" : "en",
+        "device" : "desktop"
+      },
+      "search_information" : {
+        "query_displayed" : "numéro de téléphone service client Aéroport de Paris-Charles de Gaulle CDG (site:paris-airport-cdg.com OR site:parisaeroport.fr)",
+        "total_results" : 778,
+        "time_taken_displayed" : 0.35,
+        "organic_results_state" : "Results for exact spelling"
+      },
+      "organic_results" : [ {
+        "position" : 1,
+        "title" : "Aéroport Paris-Charles de Gaulle (Roissy CDG)",
+        "link" : "https://www.parisaeroport.fr/fr/passagers/roissy-charles-de-gaulle",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://www.parisaeroport.fr/fr/passagers/roissy-charles-de-gaulle&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQFnoECCMQAQ",
+        "displayed_link" : "https://www.parisaeroport.fr › roiss...",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png",
+        "snippet" : "Retrouvez toutes les informations sur l'aéroport Roissy-Charles de Gaulle (Paris-CDG) Terminal 1, 2, 3. Horaires des vols, Plans, Accès Transports, ...",
+        "snippet_highlighted_words" : [ "aéroport", "Charles", "Gaulle", "Paris", "CDG" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Retrouvez toutes les informations sur l'aéroport Roissy-Charles de Gaulle (\nParis-CDG) Terminal 1, 2, 3. Horaires des vols, Plans, Accès Transports, ...",
+            "source_info_link" : "https://www.parisaeroport.fr/fr/passagers/roissy-charles-de-gaulle",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.parisaeroport.fr/fr/passagers/roissy-charles-de-gaulle&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.parisaeroport.fr%2Ffr%2Fpassagers%2Froissy-charles-de-gaulle",
+        "source" : "Aéroports de Paris"
+      }, {
+        "position" : 2,
+        "title" : "Contacts utiles Aéroport Charles de Gaulle",
+        "link" : "https://cdgfacile.com/contacts-utiles-aeroport-roissy-cdg/",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://cdgfacile.com/contacts-utiles-aeroport-roissy-cdg/&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQFnoECBwQAQ",
+        "displayed_link" : "https://cdgfacile.com › contacts-uti...",
+        "favicon" : "https://serpapi.com/images/i/_9j_4AAQSkZJRgABAQAAAQABAAD_2wCEAAkGBwgHBgkIBwgKCgkLDRYPDQwMDRsUFRAWIB0iIiAdHx8kKDQsJCYxJx8fLT0tMTU3Ojo6Iys_RD84QzQ5OjcBCgoKDQwNGg8PGjclHyU3Nzc3Nzg3NzgwNys3Nzc2Nzc3NS81Ky01Ny04NSs3Nzc1Ky0tKzMrNTU1Nys1KzctN__AABEIABwAHAMBEQACEQEDEQH_xAAbAAABBAMAAAAAAAAAAAAAAAAHAQQFBgACA__EACkQAAIBBAECAwkAAAAAAAAAAAECAwAEBRExBhITIWEiQVFSgZGhwdH_xAAaAQABBQEAAAAAAAAAAAAAAAAFAAECAwQG_8QAIxEAAgEDBAIDAQAAAAAAAAAAAQIAAwQREiExUSJBEzJhBf_aAAwDAQACEQMRAD8AZ4LDrmkngt7lUyCDuhgfyWYDkA_NXYXFw1BgzDx9nqAUQMP2Rs0E0EzxTQyJIh0yspBBq4VaZ8tQkSjdTDDMF7jDJ2jzJ7Dqn-VDsDFobqc6nIZjzDLI-YsEhZld7mNVZToglgKouCDQYt0ZZT-4h2yWRS0DQ26Rz35iMkVqXCtKBzo1yNNCxydh3DTsFHG8FuZ6_wA1dGS3RIrNfNXTs2w9Dv8AlH7f-bRGGJzBlW6Y7cSoE7JJ5NFs6dpkxJjo3wj1TjfGdURZu8sx0NgEj8gVkvyfgYAepbSOKimbdR5-fJdRyZO1laPwn1bMDoqo4P1_dQt7ZKdvoYZllSszVcy19UZrEWkMQbH2d9lJYEeaRk9k7HOx7-PvQ-zt6rsTqKqJfVqIBxkwckgk6GvT4UeGwmA7mZT4BJjHYRaSgGRJ4ikk8ndLAkolNFP_2Q.jpeg",
+        "snippet" : "Téléphone. Appelez le 3950 (€0,35/min.). Depuis l'étranger, composez le +33 1 70 36 39 50. Adresse. Paris Aéroport, Service relations clients 3 Place de ...",
+        "snippet_highlighted_words" : [ "3950" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Téléphone. Appelez le 3950 (€0,35/min.). Depuis l'étranger, composez le +33 1 70 36 39 50. Adresse. Paris Aéroport, Service relations clients 3 Place de ...",
+            "source_info_link" : "https://cdgfacile.com/contacts-utiles-aeroport-roissy-cdg/",
+            "icon" : "https://serpapi.com/images/i/_9j_4AAQSkZJRgABAQAAAQABAAD_2wCEAAkGBwgHBgkIBwgKCgkLDRYPDQwMDRsUFRAWIB0iIiAdHx8kKDQsJCYxJx8fLT0tMTU3Ojo6Iys_RD84QzQ5OjcBCgoKDQwNGg8PGjclHyU3Nzc3Nzg3NzgwNys3Nzc2Nzc3NS81Ky01Ny04NSs3Nzc1Ky0tKzMrNTU1Nys1KzctN__AABEIABwAHAMBEQACEQEDEQH_xAAbAAABBAMAAAAAAAAAAAAAAAAHAQQFBgACA__EACkQAAIBBAECAwkAAAAAAAAAAAECAwAEBRExBhITIWEiQVFSgZGhwdH_xAAaAQABBQEAAAAAAAAAAAAAAAAFAAECAwQG_8QAIxEAAgEDBAIDAQAAAAAAAAAAAQIAAwQREiExUSJBEzJhBf_aAAwDAQACEQMRAD8AZ4LDrmkngt7lUyCDuhgfyWYDkA_NXYXFw1BgzDx9nqAUQMP2Rs0E0EzxTQyJIh0yspBBq4VaZ8tQkSjdTDDMF7jDJ2jzJ7Dqn-VDsDFobqc6nIZjzDLI-YsEhZld7mNVZToglgKouCDQYt0ZZT-4h2yWRS0DQ26Rz35iMkVqXCtKBzo1yNNCxydh3DTsFHG8FuZ6_wA1dGS3RIrNfNXTs2w9Dv8AlH7f-bRGGJzBlW6Y7cSoE7JJ5NFs6dpkxJjo3wj1TjfGdURZu8sx0NgEj8gVkvyfgYAepbSOKimbdR5-fJdRyZO1laPwn1bMDoqo4P1_dQt7ZKdvoYZllSszVcy19UZrEWkMQbH2d9lJYEeaRk9k7HOx7-PvQ-zt6rsTqKqJfVqIBxkwckgk6GvT4UeGwmA7mZT4BJjHYRaSgGRJ4ikk8ndLAkolNFP_2Q.jpeg"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://cdgfacile.com/contacts-utiles-aeroport-roissy-cdg/&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fcdgfacile.com%2Fcontacts-utiles-aeroport-roissy-cdg%2F",
+        "source" : "CDG Facile",
+        "read_more_link" : "https://cdgfacile.com/contacts-utiles-aeroport-roissy-cdg/#:~:text=T%C3%A9l%C3%A9phone,3%20Place%20de%20Londres"
+      }, {
+        "position" : 3,
+        "title" : "Contacter Hub One",
+        "link" : "https://www.parisaeroport.fr/groupe/strategie/hub-one/contact",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://www.parisaeroport.fr/groupe/strategie/hub-one/contact&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQFnoECCIQAQ",
+        "displayed_link" : "https://www.parisaeroport.fr › contact",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png",
+        "snippet" : "Remplissez ce formulaire si vous souhaitez contacter, Hub One, la filiale informatique et telecom du Groupe ADP. Civilité. Monsieur. Madame. Nom ...",
+        "snippet_highlighted_words" : [ "ADP" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Remplissez ce formulaire si vous souhaitez contacter, Hub One, la filiale informatique et telecom du Groupe ADP. Civilité. Monsieur. Madame. Nom ...",
+            "source_info_link" : "https://www.parisaeroport.fr/groupe/strategie/hub-one/contact",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.parisaeroport.fr/groupe/strategie/hub-one/contact&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.parisaeroport.fr%2Fgroupe%2Fstrategie%2Fhub-one%2Fcontact",
+        "source" : "Aéroports de Paris",
+        "read_more_link" : "https://www.parisaeroport.fr/groupe/strategie/hub-one/contact#:~:text=Remplissez%20ce%20formulaire%20si%20vous,Nom%20*"
+      }, {
+        "position" : 4,
+        "title" : "Services pratiques aux Aéroports de Paris",
+        "link" : "https://www.parisaeroport.fr/fr/passagers/a-l-aeroport/services-pratiques",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://www.parisaeroport.fr/fr/passagers/a-l-aeroport/services-pratiques&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQFnoECB0QAQ",
+        "displayed_link" : "https://www.parisaeroport.fr › servi...",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png",
+        "snippet" : "Nous contacter 3950 * (+33) 1 70 36 39 50. Nous suivre Application Paris Aéroport Paris. CDG Charles De Gaulle",
+        "snippet_highlighted_words" : [ "3950 * (+33) 1 70 36 39 50" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Nous contacter 3950 * (+33) 1 70 36 39 50. Nous suivre Application Paris Aéroport Paris. CDG Charles De Gaulle",
+            "source_info_link" : "https://www.parisaeroport.fr/fr/passagers/a-l-aeroport/services-pratiques",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.parisaeroport.fr/fr/passagers/a-l-aeroport/services-pratiques&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.parisaeroport.fr%2Ffr%2Fpassagers%2Fa-l-aeroport%2Fservices-pratiques",
+        "source" : "Aéroports de Paris"
+      }, {
+        "position" : 5,
+        "title" : "CDG Contacts - Paris Airport",
+        "link" : "https://www.paris-airport.info/cdg-contact-details.html",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://www.paris-airport.info/cdg-contact-details.html&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQFnoECCEQAQ",
+        "displayed_link" : "https://www.paris-airport.info › cdg-contact-details",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAfCAMAAACxiD--AAAAUVBMVEVHcEz5_P7____________________9_v_____-_______9_f7q9_za8foxq90BndYXo9lnwOW14fP1_P4AmdUAlNN8yOjH6fZQtuGO0Oua1e6p8u4pAAAAFHRSTlMAJo_U__q_aVo4w1b__________P8Iq4QAAADZSURBVHgBvZMFEoNAEASRJUHOHf7_0Axx3StN40zX-TWg7Xr6wnA4IgTjQL_oW-QTMcwQeuI4NtNAfBELsQzNSDz_FoSUvKC0sc4zggshRJ0yHC9zSuJdIGeCDkErW5SGm3bhiNtqr3ULixjRzk3ocLNRO5J5LRrxTogopmz-VoJAycXgb7gIQbksXhq5ojzE2kDbhfzeCxejsslJ4SGEuNKbIFS4_pMagqIPYbuV6QKMzMzFFjQ6xwg2hEKM4E0sghNoc_RGfU1WV3V1X_A7y1f25jw11d19AkRDGWiLNPtDAAAAAElFTkSuQmCC.png",
+        "snippet" : ", France Telephone (01) 4862 2280 or 7036 3950 or 3950 Paris-Charles de Gaulle Medical centre: +33 1 48 62 28 00 (24/7) Police: +33 1 48 62 31 22 (24/7) ...",
+        "snippet_highlighted_words" : [ "01) 4862 2280 or 7036 3950 or 3950" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : ", France Telephone (01) 4862 2280 or 7036 3950 or 3950 Paris-Charles de Gaulle Medical centre: +33 1 48 62 28 00 (24/7) Police: +33 1 48 62 31 22 (24/7) ...",
+            "source_info_link" : "https://www.paris-airport.info/cdg-contact-details.html",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAfCAMAAACxiD--AAAAUVBMVEVHcEz5_P7____________________9_v_____-_______9_f7q9_za8foxq90BndYXo9lnwOW14fP1_P4AmdUAlNN8yOjH6fZQtuGO0Oua1e6p8u4pAAAAFHRSTlMAJo_U__q_aVo4w1b__________P8Iq4QAAADZSURBVHgBvZMFEoNAEASRJUHOHf7_0Axx3StN40zX-TWg7Xr6wnA4IgTjQL_oW-QTMcwQeuI4NtNAfBELsQzNSDz_FoSUvKC0sc4zggshRJ0yHC9zSuJdIGeCDkErW5SGm3bhiNtqr3ULixjRzk3ocLNRO5J5LRrxTogopmz-VoJAycXgb7gIQbksXhq5ojzE2kDbhfzeCxejsslJ4SGEuNKbIFS4_pMagqIPYbuV6QKMzMzFFjQ6xwg2hEKM4E0sghNoc_RGfU1WV3V1X_A7y1f25jw11d19AkRDGWiLNPtDAAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.paris-airport.info/cdg-contact-details.html&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.paris-airport.info%2Fcdg-contact-details.html",
+        "source" : "paris-airport.info"
+      }, {
+        "position" : 6,
+        "title" : "Paris Aéroport – Site Officiel des Aéroports de Paris",
+        "link" : "https://www.parisaeroport.fr/",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://www.parisaeroport.fr/&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQFnoECBsQAQ",
+        "displayed_link" : "https://www.parisaeroport.fr",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png",
+        "snippet" : "Paris-Charles de Gaulle ou Paris-Orly. Nous contacter 3950 * (+33) 1 70 36 39 50.",
+        "snippet_highlighted_words" : [ "3950 * (+33) 1 70 36 39 50" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Paris-Charles de Gaulle ou Paris-Orly. Nous contacter 3950 * (+33) 1 70 36 39 50.",
+            "source_info_link" : "https://www.parisaeroport.fr/",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.parisaeroport.fr/&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.parisaeroport.fr%2F",
+        "source" : "Aéroports de Paris"
+      }, {
+        "position" : 7,
+        "title" : "Charles de Gaulle Airport (CDG): access, transport & fares",
+        "link" : "https://parisjetaime.com/eng/article/from-paris-charles-de-gaulle-airport-a078",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://parisjetaime.com/eng/article/from-paris-charles-de-gaulle-airport-a078&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQFnoECCYQAQ",
+        "displayed_link" : "https://parisjetaime.com › eng › article › from-paris-cha...",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAWlBMVEVHcEwkVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0dUycUUCAITBhhf2WhsaNuiXIARATl6uaInYu2wrhSdVgzYDt_loOTppZEakrP2ND7_PvDzsVmaXO_AAAAC3RSTlMA_N_CMWCG7D4WwRK0kS8AAAEgSURBVCiRfZPploMgDIXdqrUk7Jto3_81B6J2mXGIPwC_Q5KbhKY5bRj7qW2nfhya33ab2Mum2xeaO_Zl3fxmd_bH7hX2ovMVY2z33F3DjvK8ZoyVnN8aYF_SqShrLytyzvSWADiCcAic6NCMhUXjeNgsF85mAsqFAsemL1DaVUX31Is0HlFvSpQQPYVEaQw4b7Q1BtWqlQlAQVuCUmtjtnxz0xk6JzH_bglCdoNS2yBE9ClyJSnxdlcC-YDlA4S8Bzy09LtEFQLj6AFKKofgB0lhjKtVoJNysSJgEjsdjyLYp1V80TauT7M6exahBIW4eJ_AY8z3OBeL9EDlo8InhRQKyB9gOVHhqWXwT8vqza6OSX3A6qNZH-qP5_D4eA4_ZcQfZRdNjbgAAAAASUVORK5CYII.png",
+        "date" : "Jun 15, 2026",
+        "snippet" : "+33 1 70 36 39 50 from abroad Customs (24 hours a day): +33 (0) 1 48 62 35 43 Police (24 hours a day): +33 (0) 1 48 62 31 22",
+        "snippet_highlighted_words" : [ "33 1 70 36 39 50" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "+33 1 70 36 39 50 from abroad Customs (24 hours a day): +33 (0) 1 48 62 35 43 Police (24 hours a day): +33 (0) 1 48 62 31 22",
+            "source_info_link" : "https://parisjetaime.com/eng/article/from-paris-charles-de-gaulle-airport-a078",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAWlBMVEVHcEwkVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0kVy0dUycUUCAITBhhf2WhsaNuiXIARATl6uaInYu2wrhSdVgzYDt_loOTppZEakrP2ND7_PvDzsVmaXO_AAAAC3RSTlMA_N_CMWCG7D4WwRK0kS8AAAEgSURBVCiRfZPploMgDIXdqrUk7Jto3_81B6J2mXGIPwC_Q5KbhKY5bRj7qW2nfhya33ab2Mum2xeaO_Zl3fxmd_bH7hX2ovMVY2z33F3DjvK8ZoyVnN8aYF_SqShrLytyzvSWADiCcAic6NCMhUXjeNgsF85mAsqFAsemL1DaVUX31Is0HlFvSpQQPYVEaQw4b7Q1BtWqlQlAQVuCUmtjtnxz0xk6JzH_bglCdoNS2yBE9ClyJSnxdlcC-YDlA4S8Bzy09LtEFQLj6AFKKofgB0lhjKtVoJNysSJgEjsdjyLYp1V80TauT7M6exahBIW4eJ_AY8z3OBeL9EDlo8InhRQKyB9gOVHhqWXwT8vqza6OSX3A6qNZH-qP5_D4eA4_ZcQfZRdNjbgAAAAASUVORK5CYII.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://parisjetaime.com/eng/article/from-paris-charles-de-gaulle-airport-a078&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fparisjetaime.com%2Feng%2Farticle%2Ffrom-paris-charles-de-gaulle-airport-a078",
+        "source" : "Paris Je t'aime - Office de Tourisme"
+      }, {
+        "position" : 8,
+        "title" : "Aéroport de Paris Roissy Charles de Gaulle ADP",
+        "link" : "https://www.pagesjaunes.fr/pros/05668393",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://www.pagesjaunes.fr/pros/05668393&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQFnoECD4QAQ",
+        "displayed_link" : "https://www.pagesjaunes.fr › pros",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcBAMAAACAI8KnAAAAMFBMVEX_3Qb-3Qf_3gf_4Af_5Ae8pAWHdgPlxwbUuAXz1AYAAABeUgKZhQR5aQMzLAFCOQF48eyIAAAAAnRSTlNL-09xcGIAAACbSURBVHgBY2BUQgICDELIXEUGJRRAKdfECMRSNoZwlcOKQVyL0ElgruaqLSCu26piKDcFxPWBcpUrlJC5SsaoXCVUrosThDsJwr19GcT1XiUE5qpkLQVKK3etNoKYXLVuipKS568VEK6SzaqnKs79q67AvLBr1ev9q1ZPhnKVdVYBwU0jmKxy2a_1GUYI_5ooCjmTHjhowY4WKQDKS1EECUBAgAAAAABJRU5ErkJggg.png",
+        "snippet" : "Numéro de Téléphone 39 50 Service gratuit ou surtaxé, avenue Charles de Gaulle 95700 Roissy en France",
+        "snippet_highlighted_words" : [ "39 50" ],
+        "rich_snippet" : {
+          "top" : {
+            "detected_extensions" : {
+              "rating" : 2.0,
+              "reviews" : 21
+            },
+            "extensions" : [ "2.0(21)" ]
+          }
+        },
+        "about_this_result" : {
+          "source" : {
+            "description" : "Numéro de Téléphone 39 50 Service gratuit ou surtaxé, avenue Charles de Gaulle 95700 Roissy en France",
+            "source_info_link" : "https://www.pagesjaunes.fr/pros/05668393",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcBAMAAACAI8KnAAAAMFBMVEX_3Qb-3Qf_3gf_4Af_5Ae8pAWHdgPlxwbUuAXz1AYAAABeUgKZhQR5aQMzLAFCOQF48eyIAAAAAnRSTlNL-09xcGIAAACbSURBVHgBY2BUQgICDELIXEUGJRRAKdfECMRSNoZwlcOKQVyL0ElgruaqLSCu26piKDcFxPWBcpUrlJC5SsaoXCVUrosThDsJwr19GcT1XiUE5qpkLQVKK3etNoKYXLVuipKS568VEK6SzaqnKs79q67AvLBr1ev9q1ZPhnKVdVYBwU0jmKxy2a_1GUYI_5ooCjmTHjhowY4WKQDKS1EECUBAgAAAAABJRU5ErkJggg.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.pagesjaunes.fr/pros/05668393&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.pagesjaunes.fr%2Fpros%2F05668393",
+        "source" : "Pages Jaunes"
+      }, {
+        "position" : 9,
+        "title" : "AF AIR FRANCE Paris-CDG Terminal 2E",
+        "link" : "https://www.parisaeroport.fr/fr/passagers/vols/compagnies-aeriennes/compagnie?airline=AF",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://www.parisaeroport.fr/fr/passagers/vols/compagnies-aeriennes/compagnie%3Fairline%3DAF&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQFnoECD0QAQ",
+        "displayed_link" : "https://www.parisaeroport.fr › vols",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png",
+        "snippet" : "Réservations : +33 09 69 39 36 54 · Service client : +33 09 69 39 36 54 · AIR FRANCE SERVICE CLIENTS TSA 60001 60035 BEAUVAIS CEDEX.",
+        "snippet_highlighted_words" : [ "33 09 69 39 36 54" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Réservations : +33 09 69 39 36 54 · Service client : +33 09 69 39 36 54 · AIR FRANCE SERVICE CLIENTS TSA 60001 60035 BEAUVAIS CEDEX.",
+            "source_info_link" : "https://www.parisaeroport.fr/fr/passagers/vols/compagnies-aeriennes/compagnie?airline=AF",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.parisaeroport.fr/fr/passagers/vols/compagnies-aeriennes/compagnie?airline=AF&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.parisaeroport.fr%2Ffr%2Fpassagers%2Fvols%2Fcompagnies-aeriennes%2Fcompagnie%3Fairline%3DAF",
+        "source" : "Aéroports de Paris",
+        "read_more_link" : "https://www.parisaeroport.fr/fr/passagers/vols/compagnies-aeriennes/compagnie?airline=AF#:~:text=R%C3%A9servations%20%3A,09%2069%2039%2036%2054&text=Service%20client%20%3A,09%2069%2039%2036%2054&text=AIR%20FRANCE%20SERVICE%20CLIENTS%20TSA,60001%2060035%20BEAUVAIS%20CEDEX"
+      }, {
+        "position" : 10,
+        "title" : "Transports et Parking depuis/vers Paris-CDG",
+        "link" : "https://www.parisaeroport.fr/fr/passagers/transports-parking/cdg",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://www.parisaeroport.fr/fr/passagers/transports-parking/cdg&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQFnoECD8QAQ",
+        "displayed_link" : "https://www.parisaeroport.fr › cdg",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png",
+        "snippet" : "Découvrez toutes les solutions parking et de transport proposé par l'Aéroport Paris Charles de Gaulle. Facilitez votre arrivée et stationnement à CDG.",
+        "snippet_highlighted_words" : [ "Aéroport Paris Charles", "Gaulle", "CDG" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Découvrez toutes les solutions parking et de transport proposé par l'Aéroport Paris Charles de Gaulle. Facilitez votre arrivée et stationnement à CDG.",
+            "source_info_link" : "https://www.parisaeroport.fr/fr/passagers/transports-parking/cdg",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.parisaeroport.fr/fr/passagers/transports-parking/cdg&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.parisaeroport.fr%2Ffr%2Fpassagers%2Ftransports-parking%2Fcdg",
+        "source" : "Aéroports de Paris"
+      } ],
+      "pagination" : {
+        "current" : 1,
+        "next" : "https://www.google.com/search?q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=LCWSau3sH_qawbkP6tDLmAc&start=10&sa=N&sstk=AS6-VmKS614O-9FPbtV4i5vcWwp365str5Y6GKEYJbGI_VXjLQjZVAID2lMCNm1oD3aWJOxmTnD0CCz9RoGmB_ib5crtckuASU06SQ&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQ8NMDegQIPBAW",
+        "other_pages" : {
+          "2" : "https://www.google.com/search?q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=LCWSau3sH_qawbkP6tDLmAc&start=10&sa=N&sstk=AS6-VmKS614O-9FPbtV4i5vcWwp365str5Y6GKEYJbGI_VXjLQjZVAID2lMCNm1oD3aWJOxmTnD0CCz9RoGmB_ib5crtckuASU06SQ&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQ8tMDegQIPBAE",
+          "3" : "https://www.google.com/search?q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=LCWSau3sH_qawbkP6tDLmAc&start=20&sa=N&sstk=AS6-VmKS614O-9FPbtV4i5vcWwp365str5Y6GKEYJbGI_VXjLQjZVAID2lMCNm1oD3aWJOxmTnD0CCz9RoGmB_ib5crtckuASU06SQ&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQ8tMDegQIPBAG",
+          "4" : "https://www.google.com/search?q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=LCWSau3sH_qawbkP6tDLmAc&start=30&sa=N&sstk=AS6-VmKS614O-9FPbtV4i5vcWwp365str5Y6GKEYJbGI_VXjLQjZVAID2lMCNm1oD3aWJOxmTnD0CCz9RoGmB_ib5crtckuASU06SQ&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQ8tMDegQIPBAI",
+          "5" : "https://www.google.com/search?q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=LCWSau3sH_qawbkP6tDLmAc&start=40&sa=N&sstk=AS6-VmKS614O-9FPbtV4i5vcWwp365str5Y6GKEYJbGI_VXjLQjZVAID2lMCNm1oD3aWJOxmTnD0CCz9RoGmB_ib5crtckuASU06SQ&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQ8tMDegQIPBAK",
+          "6" : "https://www.google.com/search?q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=LCWSau3sH_qawbkP6tDLmAc&start=50&sa=N&sstk=AS6-VmKS614O-9FPbtV4i5vcWwp365str5Y6GKEYJbGI_VXjLQjZVAID2lMCNm1oD3aWJOxmTnD0CCz9RoGmB_ib5crtckuASU06SQ&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQ8tMDegQIPBAM",
+          "7" : "https://www.google.com/search?q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=LCWSau3sH_qawbkP6tDLmAc&start=60&sa=N&sstk=AS6-VmKS614O-9FPbtV4i5vcWwp365str5Y6GKEYJbGI_VXjLQjZVAID2lMCNm1oD3aWJOxmTnD0CCz9RoGmB_ib5crtckuASU06SQ&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQ8tMDegQIPBAO",
+          "8" : "https://www.google.com/search?q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=LCWSau3sH_qawbkP6tDLmAc&start=70&sa=N&sstk=AS6-VmKS614O-9FPbtV4i5vcWwp365str5Y6GKEYJbGI_VXjLQjZVAID2lMCNm1oD3aWJOxmTnD0CCz9RoGmB_ib5crtckuASU06SQ&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQ8tMDegQIPBAQ",
+          "9" : "https://www.google.com/search?q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=LCWSau3sH_qawbkP6tDLmAc&start=80&sa=N&sstk=AS6-VmKS614O-9FPbtV4i5vcWwp365str5Y6GKEYJbGI_VXjLQjZVAID2lMCNm1oD3aWJOxmTnD0CCz9RoGmB_ib5crtckuASU06SQ&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQ8tMDegQIPBAS",
+          "10" : "https://www.google.com/search?q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&gl=us&ei=LCWSau3sH_qawbkP6tDLmAc&start=90&sa=N&sstk=AS6-VmKS614O-9FPbtV4i5vcWwp365str5Y6GKEYJbGI_VXjLQjZVAID2lMCNm1oD3aWJOxmTnD0CCz9RoGmB_ib5crtckuASU06SQ&ved=2ahUKEwjtsur9x8SWAxV6TTABHWroEnMQ8tMDegQIPBAU"
+        }
+      },
+      "serpapi_pagination" : {
+        "current" : 1,
+        "next_link" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=10",
+        "next" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=10",
+        "other_pages" : {
+          "2" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=10",
+          "3" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=20",
+          "4" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=30",
+          "5" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=40",
+          "6" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=50",
+          "7" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=60",
+          "8" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=70",
+          "9" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=80",
+          "10" : "https://serpapi.com/search.json?device=desktop&engine=google&gl=us&google_domain=google.com&hl=en&q=num%C3%A9ro+de+t%C3%A9l%C3%A9phone+service+client+A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=90"
+        }
+      }
+    },
+    "elapsedMs" : 1245
+  }, {
+    "sequence" : 5,
+    "stage" : "MAP_OFFICIAL_SEARCH",
+    "engine" : "google",
+    "query" : "Aéroport de Paris-Charles de Gaulle CDG (airport map OR terminal map OR floor plan OR interactive map OR mapa aeropuerto OR plan aeroport OR Flughafenplan OR 机场地图 OR 空港マップ) (site:paris-airport-cdg.com OR site:parisaeroport.fr)",
+    "type" : null,
+    "hl" : "en",
+    "noCache" : "true",
+    "requestUrl" : "https://serpapi.com/search?engine=google&q=A%C3%A9roport%20de%20Paris-Charles%20de%20Gaulle%20CDG%20(airport%20map%20OR%20terminal%20map%20OR%20floor%20plan%20OR%20interactive%20map%20OR%20mapa%20aeropuerto%20OR%20plan%20aeroport%20OR%20Flughafenplan%20OR%20%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE%20OR%20%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97)%20(site:paris-airport-cdg.com%20OR%20site:parisaeroport.fr)&hl=en&num=10&no_cache=true",
+    "httpStatus" : 200,
+    "httpStatusText" : "OK",
+    "serpApiStatus" : "Success",
+    "serpApiError" : null,
+    "candidates" : [ {
+      "jsonPath" : "$.organic_results[0]",
+      "title" : "Terminal maps at Paris-CDG Airport",
+      "url" : "https://www.parisaeroport.fr/en/passengers/at-the-airport/terminals-map/cdg",
+      "displayedLink" : "https://www.parisaeroport.fr › passengers › terminals-map",
+      "phone" : null,
+      "snippet" : "Paris-Charles de Gaulle Airport has several terminals (1, 2A, 2B, 2C, 2D, 2E, 2F, 2G and 3), each with specific areas for departures, arrivals and connections."
+    }, {
+      "jsonPath" : "$.organic_results[1]",
+      "title" : "Charles de Gaulle International Airport",
+      "url" : "https://cdg.maps.airfrance.com/",
+      "displayedLink" : "https://cdg.maps.airfrance.com",
+      "phone" : null,
+      "snippet" : "Charles de Gaulle International Airport Zoom to explore the map Charles de Gaulle International Airport"
+    }, {
+      "jsonPath" : "$.organic_results[2]",
+      "title" : "Map of Paris Charles de Gaulle Airport",
+      "url" : "https://www.parisaeroport.fr/en/passengers/at-the-airport/services/services-map/cdg",
+      "displayedLink" : "https://www.parisaeroport.fr › services-map › cdg",
+      "phone" : null,
+      "snippet" : "This page gives you access to interactive maps of Paris-Charles de Gaulle Airport, so you can easily find all the services available in your terminal"
+    }, {
+      "jsonPath" : "$.organic_results[3]",
+      "title" : "Paris Charles de Gaulle (CDG) Airport Map & Lounges",
+      "url" : "https://www.delta.com/us/en/airports/europe/paris-sky-club-airport-map",
+      "displayedLink" : "https://www.delta.com › airports › europe › paris-sky-clu...",
+      "phone" : null,
+      "snippet" : "Navigate your way around Paris Charles de Gaulle (CDG) airport and find unique offerings plus Delta Sky Club® and partner lounge information."
+    }, {
+      "jsonPath" : "$.organic_results[4]",
+      "title" : "Terminals of Charles de Gaulle Airport",
+      "url" : "https://www.grand-roissy-tourisme.com/en/my-stay/paris-charles-de-gaulle-airport/the-terminals/",
+      "displayedLink" : "https://www.grand-roissy-tourisme.com › the-terminals",
+      "phone" : null,
+      "snippet" : "View the detailed map of Terminal 1 at Paris-CDG airport. For more information, please visit the dedicated Terminal 1 page on the Paris Airport website. ..."
+    }, {
+      "jsonPath" : "$.organic_results[5]",
+      "title" : "Maps & Terminals at Paris Airports",
+      "url" : "https://www.parisaeroport.fr/en/passengers/at-the-airport/terminals-map",
+      "displayedLink" : "https://www.parisaeroport.fr › passengers › terminals-map",
+      "phone" : null,
+      "snippet" : "Easily find your way with detailed maps and plans of Paris Charles de Gaulle or Orly terminals. Simplify your journey at Paris Airports."
+    }, {
+      "jsonPath" : "$.organic_results[6]",
+      "title" : "To/From Paris-CDG by public transport",
+      "url" : "https://www.parisaeroport.fr/en/passengers/transport-parking/public-transport-paris/cdg",
+      "displayedLink" : "https://www.parisaeroport.fr › transport-parking › cdg",
+      "phone" : null,
+      "snippet" : "Discover the easiest way to travel to and from Paris-Charles de Gaulle Airport! This simplified map shows you the main stations with direct connections—no ..."
+    }, {
+      "jsonPath" : "$.organic_results[7]",
+      "title" : "Welcome to Paris-Charles de Gaulle airport (CDG)",
+      "url" : "https://www.parisaeroport.fr/en/charles-de-gaulle-airport/",
+      "displayedLink" : "https://www.parisaeroport.fr › charles-de-gaulle-airport",
+      "phone" : null,
+      "snippet" : "Find your way around the airport easily with our advice: terminal maps, hotels at the airport, free shuttles to get around."
+    }, {
+      "jsonPath" : "$.organic_results[8]",
+      "title" : "Paris Charles de Gaulle Airport in Le Mesnil-Amelot, France",
+      "url" : "https://maps.apple.com/place?place-id\\u003dI7869BD9922D683AA",
+      "displayedLink" : "https://maps.apple.com › place",
+      "phone" : null,
+      "snippet" : "View details about Paris Charles de Gaulle Airport in Le Mesnil-Amelot, France on Apple Maps. Address, driving directions, images, nearby attractions and ..."
+    }, {
+      "jsonPath" : "$.organic_results[9]",
+      "title" : "Charles De Gaulle Airport Map Terminal 1",
+      "url" : "https://www.pinterest.com/ideas/charles-de-gaulle-airport-map-terminal-1/944148107951/",
+      "displayedLink" : "https://www.pinterest.com › Explore",
+      "phone" : null,
+      "snippet" : "Map of Paris - Charles de Gaulle International Airport | Cdg airport terminal layout, Navigating · Cdg Gate Map · Map Of Cdg · Map Of Cdg Terminal 2 · T2 Cdg ..."
+    } ],
+    "sanitizedResponse" : {
+      "search_metadata" : {
+        "id" : "6a92252d97c19f8dc375bfd7",
+        "status" : "Success",
+        "json_endpoint" : "https://serpapi.com/searches/AENu9Qs-JVO5oW6xTtnPoPJH0m2O3WO_Qr3NgHg84Y4/6a92252d97c19f8dc375bfd7.json",
+        "markdown_endpoint" : "https://serpapi.com/searches/AENu9Qs-JVO5oW6xTtnPoPJH0m2O3WO_Qr3NgHg84Y4/6a92252d97c19f8dc375bfd7.md",
+        "pixel_position_endpoint" : "https://serpapi.com/searches/AENu9Qs-JVO5oW6xTtnPoPJH0m2O3WO_Qr3NgHg84Y4/6a92252d97c19f8dc375bfd7.json_with_pixel_position",
+        "created_at" : "2026-08-29 00:17:49 UTC",
+        "processed_at" : "2026-08-29 00:17:49 UTC",
+        "google_url" : "https://www.google.com/search?q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97%29+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&oq=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97%29+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&hl=en&sourceid=chrome&ie=UTF-8",
+        "raw_html_file" : "https://serpapi.com/searches/AENu9Qs-JVO5oW6xTtnPoPJH0m2O3WO_Qr3NgHg84Y4/6a92252d97c19f8dc375bfd7.html",
+        "total_time_taken" : 5.3
+      },
+      "search_parameters" : {
+        "engine" : "google",
+        "q" : "Aéroport de Paris-Charles de Gaulle CDG (airport map OR terminal map OR floor plan OR interactive map OR mapa aeropuerto OR plan aeroport OR Flughafenplan OR 机场地图 OR 空港マップ) (site:paris-airport-cdg.com OR site:parisaeroport.fr)",
+        "google_domain" : "google.com",
+        "hl" : "en",
+        "device" : "desktop"
+      },
+      "search_information" : {
+        "query_displayed" : "Aéroport de Paris-Charles de Gaulle CDG (airport map OR terminal map OR floor plan OR interactive map OR mapa aeropuerto OR plan aeroport OR Flughafenplan OR 机场地图 OR 空港マップ) (site:paris-airport-cdg.com OR site:parisaeroport.fr)",
+        "total_results" : 352,
+        "time_taken_displayed" : 0.33,
+        "organic_results_state" : "Results for exact spelling"
+      },
+      "organic_results" : [ {
+        "position" : 1,
+        "title" : "Terminal maps at Paris-CDG Airport",
+        "link" : "https://www.parisaeroport.fr/en/passengers/at-the-airport/terminals-map/cdg",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESgwEB6zswFdWFzPzF0A3iFLMM5WFT8U-LICDNuyWR7VPxwmVxch29h5Sw-aN1FwAV5ojHSZ9OoTLKKrIxnSUookAfHE9WMkoSe8jRHjzyRrXJduBrCymS8uc2fRBrjb9qQKmbM9N9urgQSqhkSzS9gMsMgIccA7qbCLeej0IXikUjIyfTmw&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQFnoECB4QAQ&uoh=1",
+        "displayed_link" : "https://www.parisaeroport.fr › passengers › terminals-map",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png",
+        "snippet" : "Paris-Charles de Gaulle Airport has several terminals (1, 2A, 2B, 2C, 2D, 2E, 2F, 2G and 3), each with specific areas for departures, arrivals and connections.",
+        "snippet_highlighted_words" : [ "Paris-Charles de Gaulle Airport has several terminals" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Paris-Charles de Gaulle Airport has several terminals (1, 2A, 2B, 2C, 2D, 2E, 2F, 2G and 3), each with specific areas for departures, arrivals and connections.",
+            "source_info_link" : "https://www.parisaeroport.fr/en/passengers/at-the-airport/terminals-map/cdg",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.parisaeroport.fr/en/passengers/at-the-airport/terminals-map/cdg:7<b>Terminal</b>&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.parisaeroport.fr%2Fen%2Fpassengers%2Fat-the-airport%2Fterminals-map%2Fcdg%3A7%3Cb%3ETerminal%3C%2Fb%3E",
+        "source" : "Aéroports de Paris",
+        "read_more_link" : "https://www.google.com/goto?url=CAES9AEB6zswFSD6M3-8e1ThqGXy1lIVgjysMtXgcUjbtE8j17whIrMe-3EgOrQENjZii34-OMuZ5keMeKstd5RWBLMEF1M3H7-glaHm0y5mDgZ5dzZn4ZWSbvY2xwpGV1FZ1XUpEHHfAY5okSebVF7MvCJZEYofRXwSrjdQmQYveqsH4hXaWxrnerxtl69hlEUDF5L6ZZHxokyyGlSFDg4VIc0zITTy2Fw3MYdHAoURNzs37b-B1y0N8DIDg07_rJLShF-9W2E5srAuTimH3XM4120jYR1LzxO31piCmEB_3qR3opkJh4YYWjRd7eBTWRW-yvsY4ym1"
+      }, {
+        "position" : 2,
+        "title" : "Charles de Gaulle International Airport",
+        "link" : "https://cdg.maps.airfrance.com/",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESVwHrOzAVzHYTWgU-Y2LN4QRp3eBIrzv78zXuEKlC1DQtItDSoP7Ux9mhq7Hb9JPUSGrjQZLCKz3cPlYc3_Sk_SrWa2zsVl0-SdcBVWxI4FPwodQCHkoLTg&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQFnoECBoQAQ&uoh=1",
+        "displayed_link" : "https://cdg.maps.airfrance.com",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAYFBMVEX____4xsf5ycr1pajpAADqABD3vL785ufrISvqDh3wcHTsNz7rHijyjZDqABX61db4wcP-9vfrFiPuUVfuWF3qAAn1q6397u7wbXHsPUTzk5b62NnyiYzqCBntSlD5zs_oKOqHAAAAiklEQVR4Ac2SwRJFMAxFvScFAkoB-P-_tGpirhlb7vZMTqa3Cb6Q31-DLCTjQxGwmBKfNMPBnD1jRlaUMkgVsEqlZYGDrNIcWZaqNAZWq9SEwBojzLYo7axA1wDrnbBbNcOlmhGlk0jZIpsfqlku1ay4cGNZuGOlwtjAC4-RnP_eDZqJaj2MJXg_J2qRCRv7GadRAAAAAElFTkSuQmCC.png",
+        "snippet" : "Charles de Gaulle International Airport Zoom to explore the map Charles de Gaulle International Airport",
+        "snippet_highlighted_words" : [ "Charles de Gaulle International Airport" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Charles de Gaulle International Airport Zoom to explore the map Charles de Gaulle International Airport",
+            "source_info_link" : "https://cdg.maps.airfrance.com/",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAYFBMVEX____4xsf5ycr1pajpAADqABD3vL785ufrISvqDh3wcHTsNz7rHijyjZDqABX61db4wcP-9vfrFiPuUVfuWF3qAAn1q6397u7wbXHsPUTzk5b62NnyiYzqCBntSlD5zs_oKOqHAAAAiklEQVR4Ac2SwRJFMAxFvScFAkoB-P-_tGpirhlb7vZMTqa3Cb6Q31-DLCTjQxGwmBKfNMPBnD1jRlaUMkgVsEqlZYGDrNIcWZaqNAZWq9SEwBojzLYo7axA1wDrnbBbNcOlmhGlk0jZIpsfqlku1ay4cGNZuGOlwtjAC4-RnP_eDZqJaj2MJXg_J2qRCRv7GadRAAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://cdg.maps.airfrance.com/:5<b>Charles&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fcdg.maps.airfrance.com%2F%3A5%3Cb%3ECharles",
+        "source" : "Air France France"
+      }, {
+        "position" : 3,
+        "title" : "Map of Paris Charles de Gaulle Airport",
+        "link" : "https://www.parisaeroport.fr/en/passengers/at-the-airport/services/services-map/cdg",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESiwEB6zswFY6lbilv1dWXXDycbHbiGZKb5q-8UEMkHSOA8XCS3CEaJPTVLFgpm1aukVa6tFgZDsYcw91WMv--5qiL0DqhcBC_b5EmnWMsHwFNRtFiuRsBzPT__vHr1m6E1XLlYB9yJh4qkt1Q81uw7y5QWpZnbEFBcoyuzhrwrCFKL8h0oE6mSAR9OicA&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQFnoECBkQAQ&uoh=1",
+        "displayed_link" : "https://www.parisaeroport.fr › services-map › cdg",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png",
+        "snippet" : "This page gives you access to interactive maps of Paris-Charles de Gaulle Airport, so you can easily find all the services available in your terminal",
+        "snippet_highlighted_words" : [ "interactive maps of Paris-Charles de Gaulle Airport" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "This page gives you access to interactive maps of Paris-Charles de Gaulle Airport, so you can easily find all the services available in your terminal",
+            "source_info_link" : "https://www.parisaeroport.fr/en/passengers/at-the-airport/services/services-map/cdg",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.parisaeroport.fr/en/passengers/at-the-airport/services/services-map/cdg:4<b>Map</b>&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.parisaeroport.fr%2Fen%2Fpassengers%2Fat-the-airport%2Fservices%2Fservices-map%2Fcdg%3A4%3Cb%3EMap%3C%2Fb%3E",
+        "source" : "Aéroports de Paris"
+      }, {
+        "position" : 4,
+        "title" : "Paris Charles de Gaulle (CDG) Airport Map & Lounges",
+        "link" : "https://www.delta.com/us/en/airports/europe/paris-sky-club-airport-map",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESfgHrOzAVQ957r7WYvDXas_YiAGUmy00eiEIoT9TNid86hTeyk_KaGpcOfD5elEMGQY1rV-2MCSJfLJHHck4GHvJw9pPPZFzEoLhW9TzIqkPzirW39SGm6JmeSMqyu7xw0S61nadXBZYBVR9rI8r2YWDBeZORZVL4NkbBcQ7yvg&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQFnoECBwQAQ&uoh=1",
+        "displayed_link" : "https://www.delta.com › airports › europe › paris-sky-clu...",
+        "favicon" : "https://serpapi.com/searches/6a92252d97c19f8dc375bfd7/images/JKEDqSevl-8RcmmBUUAlShAJlIynIvTxSqF_pZIpx3k.png",
+        "snippet" : "Navigate your way around Paris Charles de Gaulle (CDG) airport and find unique offerings plus Delta Sky Club® and partner lounge information.",
+        "snippet_highlighted_words" : [ "way around Paris Charles de Gaulle (CDG) airport" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Navigate your way around Paris Charles de Gaulle (CDG) airport and find unique offerings plus Delta Sky Club® and partner lounge information.",
+            "source_info_link" : "https://www.delta.com/us/en/airports/europe/paris-sky-club-airport-map",
+            "icon" : "https://serpapi.com/searches/6a92252d97c19f8dc375bfd7/images/JKEDqSevl-8RcmmBUUAlSiQmnR0GefBlEUvpwAVqHDPZr5U5R2EU8XObphAWzaZT.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.delta.com/us/en/airports/europe/paris-sky-club-airport-map:T<b>Paris&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.delta.com%2Fus%2Fen%2Fairports%2Feurope%2Fparis-sky-club-airport-map%3AT%3Cb%3EParis",
+        "source" : "Delta"
+      }, {
+        "position" : 5,
+        "title" : "Terminals of Charles de Gaulle Airport",
+        "link" : "https://www.grand-roissy-tourisme.com/en/my-stay/paris-charles-de-gaulle-airport/the-terminals/",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESlwEB6zswFQVtDebdOM-t2iobLitrsn3Asg0Er08c9-Vv9azLTcubkg5PqupNPmLbS7Myd0HRRiY-zNG5tkNhTAlK9hWEJdQhUZYwoylGRHqUwTVnVnTBtINA_Xriqb19j1B0N6aIoWx-vdLJ0b5HH15nVx-oUc6q2as7Jpd4Bv-5WM4zndGTsBYe2zm4_co0GehQ27Pzv7Ku&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQFnoECDsQAQ&uoh=1",
+        "displayed_link" : "https://www.grand-roissy-tourisme.com › the-terminals",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAw1BMVEVHcExNiayDvsKDvsKAwMWFuKyDvsIfoaAcnaGDvsKFv8PNzJocnaEVm6KDvsLAyqGDvsL01IGDvsL01IH01IH01IH01IHRlkr01IH81393xsv0q2_01IH01IHVb2f3OiLuSzrxh0j01IHxSjfvSTjuSzrvTTvuvSPsvCruvScAMpz1gF30gF0vP5MvP5P0gF30gF0vP5P2gVy6nnYqPpSJWYFydbZxdLcqPpT0gF1zdbX0gF1zdbU-SppzdbVzdbVzdbWGmMsnAAAAQXRSTlMAD__irYIbf3GcoUb_ac0LN59v_5nAlgHjlGwgj4iOcX0Jf5f__0ta_2-Sq___lp7Zk3eA_4qYrGfo_0fFSzLmf6jGXswAAAD8SURBVHgBZc4FFoMwEEXRX3d3d3f3lv2vqhMyRA4P50ISqAKggqFwJAp_sbjAYDCRDKV8GE9nADIkgsFszoekZIRUHlyqIJE0CcYiW65UKjOmIVEZKqVSqWqhslqKjNREMq5ecmtkPAw3lbXaHbd2xMNury8bYFgBF5c4Gk9kU7EcU8mYhNGUptqGUklozQ0xw8SzaDbnFktwqzUFaqEMm62nu_V6bxs2m4PWlWWEph4xWMxkJ0g8X1ZcC17XG-Pmfly7PbQ9rwoh9aXNRFf32mwUOlDG-P5IJFWDfhnfT3wYVbVa4C2QTiBVqPjzu5IR4uPHGr7O7SeQbr3-rMc0vo622iYAAAAASUVORK5CYII.png",
+        "snippet" : "View the detailed map of Terminal 1 at Paris-CDG airport. For more information, please visit the dedicated Terminal 1 page on the Paris Airport website. ...",
+        "snippet_highlighted_words" : [ "View the detailed map of Terminal 1 at Paris-CDG airport" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "View the detailed map of Terminal 1 at Paris-CDG airport. For more information, please visit the dedicated Terminal 1 page on the Paris Airport website. ...",
+            "source_info_link" : "https://www.grand-roissy-tourisme.com/en/my-stay/paris-charles-de-gaulle-airport/the-terminals/",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAw1BMVEVHcExNiayDvsKDvsKAwMWFuKyDvsIfoaAcnaGDvsKFv8PNzJocnaEVm6KDvsLAyqGDvsL01IGDvsL01IH01IH01IH01IHRlkr01IH81393xsv0q2_01IH01IHVb2f3OiLuSzrxh0j01IHxSjfvSTjuSzrvTTvuvSPsvCruvScAMpz1gF30gF0vP5MvP5P0gF30gF0vP5P2gVy6nnYqPpSJWYFydbZxdLcqPpT0gF1zdbX0gF1zdbU-SppzdbVzdbVzdbWGmMsnAAAAQXRSTlMAD__irYIbf3GcoUb_ac0LN59v_5nAlgHjlGwgj4iOcX0Jf5f__0ta_2-Sq___lp7Zk3eA_4qYrGfo_0fFSzLmf6jGXswAAAD8SURBVHgBZc4FFoMwEEXRX3d3d3f3lv2vqhMyRA4P50ISqAKggqFwJAp_sbjAYDCRDKV8GE9nADIkgsFszoekZIRUHlyqIJE0CcYiW65UKjOmIVEZKqVSqWqhslqKjNREMq5ecmtkPAw3lbXaHbd2xMNury8bYFgBF5c4Gk9kU7EcU8mYhNGUptqGUklozQ0xw8SzaDbnFktwqzUFaqEMm62nu_V6bxs2m4PWlWWEph4xWMxkJ0g8X1ZcC17XG-Pmfly7PbQ9rwoh9aXNRFf32mwUOlDG-P5IJFWDfhnfT3wYVbVa4C2QTiBVqPjzu5IR4uPHGr7O7SeQbr3-rMc0vo622iYAAAAASUVORK5CYII.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.grand-roissy-tourisme.com/en/my-stay/paris-charles-de-gaulle-airport/the-terminals/:DTerminals&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.grand-roissy-tourisme.com%2Fen%2Fmy-stay%2Fparis-charles-de-gaulle-airport%2Fthe-terminals%2F%3ADTerminals",
+        "source" : "Grand Roissy Tourisme"
+      }, {
+        "position" : 6,
+        "title" : "Maps & Terminals at Paris Airports",
+        "link" : "https://www.parisaeroport.fr/en/passengers/at-the-airport/terminals-map",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESfwHrOzAVj-D8AO_pW7u7pG9CKgJMeWylpiRELmfLo46D7bc-jtxFo43uiKbi_P7Kw50Ao3Q9Hv8Eqhp9A7_eP9zuVDBBHnV2zoeWuE26cOgvaNmapAUK4htgatvVmWL1jngFfzKiJKJCj_Va4j1D5nPXtZIjHF3RlWUTJZnw3Bo&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQFnoECDgQAQ&uoh=1",
+        "displayed_link" : "https://www.parisaeroport.fr › passengers › terminals-map",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png",
+        "snippet" : "Easily find your way with detailed maps and plans of Paris Charles de Gaulle or Orly terminals. Simplify your journey at Paris Airports.",
+        "snippet_highlighted_words" : [ "detailed maps and plans of Paris Charles de Gaulle or Orly terminals" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Easily find your way with detailed maps and plans of Paris Charles de Gaulle or Orly terminals. Simplify your journey at Paris Airports.",
+            "source_info_link" : "https://www.parisaeroport.fr/en/passengers/at-the-airport/terminals-map",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.parisaeroport.fr/en/passengers/at-the-airport/terminals-map:-Maps&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.parisaeroport.fr%2Fen%2Fpassengers%2Fat-the-airport%2Fterminals-map%3A-Maps",
+        "source" : "Aéroports de Paris"
+      }, {
+        "position" : 7,
+        "title" : "To/From Paris-CDG by public transport",
+        "link" : "https://www.parisaeroport.fr/en/passengers/transport-parking/public-transport-paris/cdg",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESjwEB6zswFRv579dze1KUI_duG9dd2ISd1UGrge-zniPGeO-zL8cRMpbSRq-yyVHrOMJAq2IhBMQh7G13vwl-JT0IvGhaJSjv_prRoDPowGiQ5jNjMm0ajxi9OVpeRqwC-03yMntweq-P8P-QR0UvpQ_udJa1Z6El2XKPrL5-u5cupuFXijL6KQt7-av-7ugdcw&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQFnoECDcQAQ&uoh=1",
+        "displayed_link" : "https://www.parisaeroport.fr › transport-parking › cdg",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png",
+        "snippet" : "Discover the easiest way to travel to and from Paris-Charles de Gaulle Airport! This simplified map shows you the main stations with direct connections—no ...",
+        "snippet_highlighted_words" : [ "main stations with direct connections" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Discover the easiest way to travel to and from Paris-Charles de Gaulle Airport! This simplified map shows you the main stations with direct connections—no ...",
+            "source_info_link" : "https://www.parisaeroport.fr/en/passengers/transport-parking/public-transport-paris/cdg",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.parisaeroport.fr/en/passengers/transport-parking/public-transport-paris/cdg:BTo/From&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.parisaeroport.fr%2Fen%2Fpassengers%2Ftransport-parking%2Fpublic-transport-paris%2Fcdg%3ABTo%2FFrom",
+        "source" : "Aéroports de Paris",
+        "read_more_link" : "https://www.google.com/goto?url=CAES-QEB6zswFWpdSaH6GGmpC_MOGTVXYgMV3MOWl4FIRVBhm3wIdPTYEB715ATnshSS5SMFD4xhuiBb_qfHc1_cUDeSN4OCiIQwYDRMlA-ZtoGAA_pJmGtfaqbVQuRJx3gMycbAdFjiV0vJXNp37ACT6ZZm5I7l7sCJMVzhEB2V7t20NONvIRKdxc-sq-64dXw6zjQme3a4SPqc-Fimsdl8TfFhyv3kFsBBt5NBbYjsdtF_LyEr8Umon8kbINKAAGlqTkRoWF4pwlI3A0fCYsT9umY2xE7vvK70hWcZKRVg6K4PrMAOFTpJwEqNcFWnm8-m1HieSXnKal-InFk"
+      }, {
+        "position" : 8,
+        "title" : "Welcome to Paris-Charles de Gaulle airport (CDG)",
+        "link" : "https://www.parisaeroport.fr/en/charles-de-gaulle-airport/",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAEScgHrOzAV8V2PGpEusqvo3Jw33ZM6yHHRwhhoQ7C490xAD_7J-NR7b-2M0_noJ7TX8mywMu6EjLHDW2zdpmnUJY8D8eFndH70vng83MTo5lIJ8E9xSYqsv2VExJM_Um0cyQv_4-rD9uXS3MV91jTeSZBQGA&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQFnoECC0QAQ&uoh=1",
+        "displayed_link" : "https://www.parisaeroport.fr › charles-de-gaulle-airport",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png",
+        "snippet" : "Find your way around the airport easily with our advice: terminal maps, hotels at the airport, free shuttles to get around.",
+        "snippet_highlighted_words" : [ "terminal maps" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Find your way around the airport easily with our advice: terminal maps, hotels at the airport, free shuttles to get around.",
+            "source_info_link" : "https://www.parisaeroport.fr/en/charles-de-gaulle-airport/",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACIklEQVR4Ae1UA3tdQRScblLb7b27t_xQ224_1LZtLGrrQ203-a05EyfPiDNP582ZmZ1HlIRJfitvKAG9Bbpggd4CvQV6Cxh_GjhQkVKAHHdtDaXdU4yxE1MKCMdd2xdI7EVENxakFBCOO7Q5zK2d0HZLSgFy3LVDgSUVxp1pXYAcd2hzRFeNSvyD1gXIIfIGbY8D_eSwLykFhOMO7QFl3K-UAuTaFDpsgb41t-4w_zO1QD1HDbVlhwlLYPzZnO8ANdSWHZNPD1CJ_5TrHaCGWpQV2sV14eFX_WHvMPbqkMYCMpNr1DR6ygOG_qs_-Dv_8-XRQ7vpjQVkJscdNY2e8hVwT_kbV5PcdSRuFrQ7iujm6sYCMpPjjhpq6UHJGHlvuISewkS3GMZdlsNWIgknENuNctvfWIAzOe6ooZYeeplRCuQVVQPooxL_F-NvD1YmvMeEGzOVdtcbCnAmxx3GnxhMLT30lvLFW4fYb4LmQXahMv4bwF-C_43hV0bK89eNBTiT444a0dJDLzOYhYJg7kbA-kplQjUSCeYr034f_2Dqfm7PlXA_GgtwJsedaKilh15mMKuwX4VxhyVoL7Q9DxPW8gCMvzxOTQofkfhLiG9ofu5I7FTeOJPjjhpq6aGXGcxiZoH_974KURjDRwneJLcD0LeWIQeooZaeFhkFY_ztKSoJbxGHi5yB55XIE9TSQy8zOKMoGOfk2z0WxYJeZmRBDb161QOhNUo_AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.parisaeroport.fr/en/charles-de-gaulle-airport/:EWelcome&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.parisaeroport.fr%2Fen%2Fcharles-de-gaulle-airport%2F%3AEWelcome",
+        "source" : "Aéroports de Paris"
+      }, {
+        "position" : 9,
+        "title" : "Paris Charles de Gaulle Airport in Le Mesnil-Amelot, France",
+        "link" : "https://maps.apple.com/place?place-id\\u003dI7869BD9922D683AA",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESbwHrOzAVRlqXe9za41NSVTOL5dyvbEVZyiLIX8OZL7Z2-Do965wSZQDWpjcXpBf29dkQG0uV4yu8KzmpoIOEdx_BBhTtHnTjmBoOz2E_To9esDgK78rxsRRuuvLfbC_IDpIP84DgknYkImBdDxSb1A&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQFnoECC4QAQ&uoh=1",
+        "displayed_link" : "https://maps.apple.com › place",
+        "favicon" : "https://serpapi.com/searches/6a92252d97c19f8dc375bfd7/images/JKEDqSevl-8RcmmBUUAlStfE9aa37duDcsIVKGNBiw0.png",
+        "snippet" : "View details about Paris Charles de Gaulle Airport in Le Mesnil-Amelot, France on Apple Maps. Address, driving directions, images, nearby attractions and ...",
+        "snippet_highlighted_words" : [ "Paris Charles de Gaulle Airport" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "View details about Paris Charles de Gaulle Airport in Le Mesnil-Amelot, France on Apple Maps. Address, driving directions, images, nearby attractions and ...",
+            "source_info_link" : "https://maps.apple.com/place?place-id=I7869BD9922D683AA",
+            "icon" : "https://serpapi.com/searches/6a92252d97c19f8dc375bfd7/images/JKEDqSevl-8RcmmBUUAlShb-4yimHdFwZALss1UB6SN0MHLwEQPGO6PqC_BqbYVH.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://maps.apple.com/place?place-id=I7869BD9922D683AA:3<b>Paris&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fmaps.apple.com%2Fplace%3Fplace-id%3DI7869BD9922D683AA%3A3%3Cb%3EParis",
+        "source" : "Apple Maps"
+      }, {
+        "position" : 10,
+        "title" : "Charles De Gaulle Airport Map Terminal 1",
+        "link" : "https://www.pinterest.com/ideas/charles-de-gaulle-airport-map-terminal-1/944148107951/",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESjgEB6zswFTg8zUqKUqoz-3Cr9ZqzVXNxlutBZTLQXW2mt9ZQcXjTBhFzzw3IJFQkHZfMf57aWrWC1R0z8OkzQPAa0b5w7QuxENcOGIMKTTkGMxuYV3xPhU3Vc3apIRW8sSA1sBvG7od_tG99YuDazE7ZSlDkKIi7AGPNq1ac3BJ4Trnjn6CtLFMqjoGIk8-z&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQFnoECDMQAQ&uoh=1",
+        "displayed_link" : "https://www.pinterest.com › Explore",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAKlBMVEVHcEzmACPmACPmACPmACLmACPmACPmACPmACPmACPlACPmACPmACPmACNXoEKOAAAADXRSTlMAeg3EBduLpk9lJS7p902OrQAAALtJREFUKJG9UksWxCAIQ0XwU-9_3QHss1rH3bxhpYTEAAL8Ibw_AOhik4gOd8y1Ee6NhTZF-IYxEe-oaeZ-Ti9l1HuRPFESy3rDhZihmmJE4z5U7UHpHPp7l9QMUL0InSzdPKirMRc5k2RK16j2jJ9AFrCahtTQBFpKbGTIdrKuF0MMLRmFTOkxdM8VwUd1FZZWsHcI3lqndQidyvJkTvnaFqNKCfi8lgoHTJVLOi1bRoHh-E16wemD_TQ-ta8LyZ7XxUgAAAAASUVORK5CYII.png",
+        "snippet" : "Map of Paris - Charles de Gaulle International Airport | Cdg airport terminal layout, Navigating · Cdg Gate Map · Map Of Cdg · Map Of Cdg Terminal 2 · T2 Cdg ...",
+        "snippet_highlighted_words" : [ "Cdg airport terminal layout" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Map of Paris - Charles de Gaulle International Airport | Cdg airport terminal layout, Navigating · Cdg Gate Map · Map Of Cdg · Map Of Cdg Terminal 2 · T2 Cdg ...",
+            "source_info_link" : "https://www.pinterest.com/ideas/charles-de-gaulle-airport-map-terminal-1/944148107951/",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAKlBMVEVHcEzmACPmACPmACPmACLmACPmACPmACPmACPmACPlACPmACPmACPmACNXoEKOAAAADXRSTlMAeg3EBduLpk9lJS7p902OrQAAALtJREFUKJG9UksWxCAIQ0XwU-9_3QHss1rH3bxhpYTEAAL8Ibw_AOhik4gOd8y1Ee6NhTZF-IYxEe-oaeZ-Ti9l1HuRPFESy3rDhZihmmJE4z5U7UHpHPp7l9QMUL0InSzdPKirMRc5k2RK16j2jJ9AFrCahtTQBFpKbGTIdrKuF0MMLRmFTOkxdM8VwUd1FZZWsHcI3lqndQidyvJkTvnaFqNKCfi8lgoHTJVLOi1bRoHh-E16wemD_TQ-ta8LyZ7XxUgAAAAASUVORK5CYII.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.pinterest.com/ideas/charles-de-gaulle-airport-map-terminal-1/944148107951/:;<b>Charles&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.pinterest.com%2Fideas%2Fcharles-de-gaulle-airport-map-terminal-1%2F944148107951%2F%3A%3B%3Cb%3ECharles",
+        "source" : "Pinterest",
+        "read_more_link" : "https://www.google.com/goto?url=CAEStgEB6zswFRrlApGn7IdRX9HVk3K81Ep6Zxw8CtlvvxIb8ETVSYxuMIaq8GE3LIgRjw3Z8sejA3mOk1g5SpH0C4ntbVSp1z1FxlgdP5gxjfMPDgc5lMQS0k2O1uSaSJjaTDFCq73sJeEsRv-oxxzsRnLWlkFHeGrvCkuZDOHH9cEX--vp76hPMQZG1tmj0ngLbgFrSYUfhdD5sCWNU1-FsQgscOpbo461M_j4sAsqncnSu0_LuBGiBw"
+      } ],
+      "pagination" : {
+        "current" : 1,
+        "next" : "https://www.google.com/search?q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97)+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&ei=MiWSatKFBoi15NoPwZjN2Qs&start=10&sa=N&sstk=AS6-VmK-0ozn3cEL_AkReOzQDaDJGrFLUjp0lGISyvk2YUrz7BZLmGoUPNuuCA030ER9y4nfa9dAAiJrj56NMPaeP_BbwmQkg01PYQ&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQ8NMDegQIJRAW",
+        "other_pages" : {
+          "2" : "https://www.google.com/search?q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97)+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&ei=MiWSatKFBoi15NoPwZjN2Qs&start=10&sa=N&sstk=AS6-VmK-0ozn3cEL_AkReOzQDaDJGrFLUjp0lGISyvk2YUrz7BZLmGoUPNuuCA030ER9y4nfa9dAAiJrj56NMPaeP_BbwmQkg01PYQ&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQ8tMDegQIJRAE",
+          "3" : "https://www.google.com/search?q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97)+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&ei=MiWSatKFBoi15NoPwZjN2Qs&start=20&sa=N&sstk=AS6-VmK-0ozn3cEL_AkReOzQDaDJGrFLUjp0lGISyvk2YUrz7BZLmGoUPNuuCA030ER9y4nfa9dAAiJrj56NMPaeP_BbwmQkg01PYQ&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQ8tMDegQIJRAG",
+          "4" : "https://www.google.com/search?q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97)+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&ei=MiWSatKFBoi15NoPwZjN2Qs&start=30&sa=N&sstk=AS6-VmK-0ozn3cEL_AkReOzQDaDJGrFLUjp0lGISyvk2YUrz7BZLmGoUPNuuCA030ER9y4nfa9dAAiJrj56NMPaeP_BbwmQkg01PYQ&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQ8tMDegQIJRAI",
+          "5" : "https://www.google.com/search?q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97)+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&ei=MiWSatKFBoi15NoPwZjN2Qs&start=40&sa=N&sstk=AS6-VmK-0ozn3cEL_AkReOzQDaDJGrFLUjp0lGISyvk2YUrz7BZLmGoUPNuuCA030ER9y4nfa9dAAiJrj56NMPaeP_BbwmQkg01PYQ&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQ8tMDegQIJRAK",
+          "6" : "https://www.google.com/search?q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97)+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&ei=MiWSatKFBoi15NoPwZjN2Qs&start=50&sa=N&sstk=AS6-VmK-0ozn3cEL_AkReOzQDaDJGrFLUjp0lGISyvk2YUrz7BZLmGoUPNuuCA030ER9y4nfa9dAAiJrj56NMPaeP_BbwmQkg01PYQ&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQ8tMDegQIJRAM",
+          "7" : "https://www.google.com/search?q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97)+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&ei=MiWSatKFBoi15NoPwZjN2Qs&start=60&sa=N&sstk=AS6-VmK-0ozn3cEL_AkReOzQDaDJGrFLUjp0lGISyvk2YUrz7BZLmGoUPNuuCA030ER9y4nfa9dAAiJrj56NMPaeP_BbwmQkg01PYQ&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQ8tMDegQIJRAO",
+          "8" : "https://www.google.com/search?q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97)+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&ei=MiWSatKFBoi15NoPwZjN2Qs&start=70&sa=N&sstk=AS6-VmK-0ozn3cEL_AkReOzQDaDJGrFLUjp0lGISyvk2YUrz7BZLmGoUPNuuCA030ER9y4nfa9dAAiJrj56NMPaeP_BbwmQkg01PYQ&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQ8tMDegQIJRAQ",
+          "9" : "https://www.google.com/search?q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97)+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&ei=MiWSatKFBoi15NoPwZjN2Qs&start=80&sa=N&sstk=AS6-VmK-0ozn3cEL_AkReOzQDaDJGrFLUjp0lGISyvk2YUrz7BZLmGoUPNuuCA030ER9y4nfa9dAAiJrj56NMPaeP_BbwmQkg01PYQ&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQ8tMDegQIJRAS",
+          "10" : "https://www.google.com/search?q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+(airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97)+(site:paris-airport-cdg.com+OR+site:parisaeroport.fr)&sca_esv=2c2cf6cedad07c07&hl=en&ei=MiWSatKFBoi15NoPwZjN2Qs&start=90&sa=N&sstk=AS6-VmK-0ozn3cEL_AkReOzQDaDJGrFLUjp0lGISyvk2YUrz7BZLmGoUPNuuCA030ER9y4nfa9dAAiJrj56NMPaeP_BbwmQkg01PYQ&ved=2ahUKEwjS5r6AyMSWAxWIGlkFHUFMM7sQ8tMDegQIJRAU"
+        }
+      },
+      "serpapi_pagination" : {
+        "current" : 1,
+        "next_link" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97%29+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=10",
+        "next" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97%29+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=10",
+        "other_pages" : {
+          "2" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97%29+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=10",
+          "3" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97%29+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=20",
+          "4" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97%29+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=30",
+          "5" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97%29+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=40",
+          "6" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97%29+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=50",
+          "7" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97%29+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=60",
+          "8" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97%29+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=70",
+          "9" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97%29+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=80",
+          "10" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=A%C3%A9roport+de+Paris-Charles+de+Gaulle+CDG+%28airport+map+OR+terminal+map+OR+floor+plan+OR+interactive+map+OR+mapa+aeropuerto+OR+plan+aeroport+OR+Flughafenplan+OR+%E6%9C%BA%E5%9C%BA%E5%9C%B0%E5%9B%BE+OR+%E7%A9%BA%E6%B8%AF%E3%83%9E%E3%83%83%E3%83%97%29+%28site%3Aparis-airport-cdg.com+OR+site%3Aparisaeroport.fr%29&start=90"
+        }
+      }
+    },
+    "elapsedMs" : 5673
+  } ],
+  "observedHttpRequestCount" : 5,
+  "error" : null
+}

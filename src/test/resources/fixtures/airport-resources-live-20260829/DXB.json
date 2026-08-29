@@ -1,0 +1,2636 @@
+{
+  "schemaVersion" : 1,
+  "completed" : true,
+  "airportCode" : "DXB",
+  "startedAt" : "2026-08-29T00:18:44.185764200Z",
+  "completedAt" : "2026-08-29T00:18:48.002509900Z",
+  "elapsedMs" : 3816,
+  "request" : {
+    "airportCode" : "DXB",
+    "airportName" : null,
+    "terminal" : null,
+    "forceRefresh" : true,
+    "refreshTarget" : "BOTH"
+  },
+  "response" : {
+    "airportCode" : "DXB",
+    "airportName" : "DXB",
+    "terminal" : null,
+    "localAirportName" : null,
+    "countryOrRegion" : null,
+    "map" : {
+      "status" : "NOT_FOUND",
+      "url" : null,
+      "sourceUrl" : null,
+      "sourceTitle" : null,
+      "resultType" : "NOT_FOUND",
+      "sourceLanguage" : null,
+      "mapScope" : null,
+      "verificationReason" : null,
+      "rejectedCandidateTypes" : [ ],
+      "fromCache" : false
+    },
+    "contact" : {
+      "status" : "NOT_FOUND",
+      "phoneDisplay" : null,
+      "telUri" : null,
+      "contactUrl" : null,
+      "sourceUrl" : null,
+      "sourceTitle" : null,
+      "sourceLanguage" : null,
+      "sourceType" : null,
+      "phoneRole" : null,
+      "evidenceTier" : null,
+      "airportIdentityConfirmed" : false,
+      "aiDedicatedPhoneField" : false,
+      "mapsStructuredPhonePresent" : false,
+      "phoneConflict" : false,
+      "fromCache" : false
+    },
+    "serpApiRequestCount" : 2,
+    "rejectionReasons" : [ "AIRPORT_IDENTITY_MISMATCH" ],
+    "retrievedAt" : "2026-08-29T00:18:44.185764200Z",
+    "fromCache" : false
+  },
+  "stages" : [ {
+    "sequence" : 1,
+    "stage" : "IDENTITY_OFFICIAL_DOMAIN",
+    "engine" : "google",
+    "query" : "DXB DXB official airport website",
+    "type" : null,
+    "hl" : "en",
+    "noCache" : "true",
+    "requestUrl" : "https://serpapi.com/search?engine=google&q=DXB%20DXB%20official%20airport%20website&hl=en&no_cache=true",
+    "httpStatus" : 200,
+    "httpStatusText" : "OK",
+    "serpApiStatus" : "Success",
+    "serpApiError" : null,
+    "candidates" : [ {
+      "jsonPath" : "$.organic_results[0]",
+      "title" : "Dubai International (DXB)",
+      "url" : "https://dubaiairports.ae/",
+      "displayedLink" : "https://dubaiairports.ae",
+      "phone" : null,
+      "snippet" : "Family reunion at DXB airport. Couple heading towards DXB airport. Fascinating ... Continue to website arrow right. Remain on Dubai Airports arrow right. ×. × ..."
+    }, {
+      "jsonPath" : "$.organic_results[0].sitelinks.expanded[0]",
+      "title" : "Find your flight status",
+      "url" : "https://www.google.com/goto?url=CAESXgHrOzAVYKgaRZAZ79XWBcsQQR6nJQ3FRSCUPcu1-sdOOyZkOJejwcWlMKUunK5s_hvCxgLcCpGkPRFlQJ50KV-ISDcmdWBK8Fy3Pd783k-DV9gTNFBHtbeAs75DnfI",
+      "displayedLink" : null,
+      "phone" : null,
+      "snippet" : "Get real-time flight information for DXB. Check arrivals, departures ..."
+    }, {
+      "jsonPath" : "$.organic_results[0].sitelinks.expanded[1]",
+      "title" : "Services",
+      "url" : "https://www.google.com/goto?url=CAESZQHrOzAVk-mByEu424uqX1HwURf1asBmQWNsZk6SWBGt17qmhsspRiMKNRYXIiPRMRcFTiJFLGeVjuThaYvSrB03aYTo_c4SwGwyjt_1LCihvnompwan-6nl_Ve75LxXjW1QSmVy",
+      "displayedLink" : null,
+      "phone" : null,
+      "snippet" : "Find travel services across Dubai Airport. Filter by terminal ..."
+    }, {
+      "jsonPath" : "$.organic_results[0].sitelinks.expanded[2]",
+      "title" : "Lost & found",
+      "url" : "https://www.google.com/goto?url=CAESXwHrOzAViZkZax-PF8moXNMNlXGKeZ3pLdlubmgLXX_otwXveMK2Xwlij-Dl5wmDFJ2qLErQvI1kVBVIQiZpXG3pFcoYTJupVIyjKv_qhupz5IT4s2yQPaj-2T-mPJcg",
+      "displayedLink" : null,
+      "phone" : null,
+      "snippet" : "If you lost an item on board or within the airport, complete the ..."
+    }, {
+      "jsonPath" : "$.organic_results[0].sitelinks.expanded[3]",
+      "title" : "Contact information",
+      "url" : "https://www.google.com/goto?url=CAESZAHrOzAVk0jXj5J9fO7nFL8JWfLs2smrBcZiuQg5xjFjd_vzmHph-JNBRXTZe8hT6DOQfuP21UJMXpyg3sxfOoDyNDxr82Zr8MU-FRMDSqsNJ0MpWs8RI9X8r41uWYHn_MOupHA",
+      "displayedLink" : null,
+      "phone" : null,
+      "snippet" : "Open WhatsApp arrow. Airport locations. Dubai World Central ..."
+    }, {
+      "jsonPath" : "$.organic_results[0].sitelinks.expanded[4]",
+      "title" : "Corporate",
+      "url" : "https://www.google.com/goto?url=CAESWgHrOzAVM9iAAhB3ip-SEstIvVCghz9PX9D5db-C72B4xvW2FaWJ5mz9PKDmGisolyfVF0V2pjM7jahcETvXEo5f7YHrwcO8qr3_SHkQXnBBleUyTkNTv2risw",
+      "displayedLink" : null,
+      "phone" : null,
+      "snippet" : "We manage DXB, the world's busiest airport, and Dubai World ..."
+    }, {
+      "jsonPath" : "$.organic_results[1]",
+      "title" : "Dubai International | Before You Fly",
+      "url" : "https://www.emirates.com/us/english/before-you-fly/dubai-international-airport/",
+      "displayedLink" : "https://www.emirates.com › english › dubai-internation...",
+      "phone" : null,
+      "snippet" : "Discover DXB Dubai International (DXB) is our home hub. Your Emirates flight will arrive at and depart from gates A, B or C at our own Emirates Terminal 3."
+    }, {
+      "jsonPath" : "$.organic_results[2]",
+      "title" : "Dubai International Airport (DXB/OMDB)",
+      "url" : "https://www.flightradar24.com/data/airports/DXB",
+      "displayedLink" : "https://www.flightradar24.com › data › airports › DXB",
+      "phone" : null,
+      "snippet" : "Dubai International Airport, (DXB/OMDB), United Arab Emirates - View live flight arrival and departure information, live flight delays and cancelations, ..."
+    }, {
+      "jsonPath" : "$.organic_results[3]",
+      "title" : "Dubai International",
+      "url" : "https://www.facebook.com/dxb/",
+      "displayedLink" : "2.4M+ followers",
+      "phone" : null,
+      "snippet" : "Welcome to DXB, the #Dubai way From Arrivals to Transfers, we've been welcoming guests with smiles, live music, treats, mascots, personalised signs and a ..."
+    }, {
+      "jsonPath" : "$.organic_results[4]",
+      "title" : "Dubai International Airport",
+      "url" : "https://en.wikipedia.org/wiki/Dubai_International_Airport",
+      "displayedLink" : "https://en.wikipedia.org › wiki › Dubai_International_A...",
+      "phone" : null,
+      "snippet" : "IATA: DXB, ICAO: OMDB) is the primary international airport serving Dubai, United Arab Emirates, and is the world's busiest airport. Al Garhoud, Dubai, UAE. ..."
+    }, {
+      "jsonPath" : "$.organic_results[5]",
+      "title" : "DXB Dubai International Airport (@dxb)",
+      "url" : "https://www.instagram.com/dxb/?hl\\u003den",
+      "displayedLink" : "625K+ followers",
+      "phone" : null,
+      "snippet" : "Welcome to #DXB – where the world connects ✈️ ・ the world's busiest international airport runway ・ airport into Dubai's most unexpected walking track"
+    } ],
+    "sanitizedResponse" : {
+      "search_metadata" : {
+        "id" : "6a92256397012181996746f2",
+        "status" : "Success",
+        "json_endpoint" : "https://serpapi.com/searches/mjO3X1jHVlFPY-mNC_57miASDluINjFLKlZdYcf0PbU/6a92256397012181996746f2.json",
+        "markdown_endpoint" : "https://serpapi.com/searches/mjO3X1jHVlFPY-mNC_57miASDluINjFLKlZdYcf0PbU/6a92256397012181996746f2.md",
+        "pixel_position_endpoint" : "https://serpapi.com/searches/mjO3X1jHVlFPY-mNC_57miASDluINjFLKlZdYcf0PbU/6a92256397012181996746f2.json_with_pixel_position",
+        "created_at" : "2026-08-29 00:18:43 UTC",
+        "processed_at" : "2026-08-29 00:18:43 UTC",
+        "google_url" : "https://www.google.com/search?q=DXB+DXB+official+airport+website&oq=DXB+DXB+official+airport+website&hl=en&sourceid=chrome&ie=UTF-8",
+        "raw_html_file" : "https://serpapi.com/searches/mjO3X1jHVlFPY-mNC_57miASDluINjFLKlZdYcf0PbU/6a92256397012181996746f2.html",
+        "total_time_taken" : 1.73
+      },
+      "search_parameters" : {
+        "engine" : "google",
+        "q" : "DXB DXB official airport website",
+        "google_domain" : "google.com",
+        "hl" : "en",
+        "device" : "desktop"
+      },
+      "search_information" : {
+        "query_displayed" : "DXB DXB official airport website",
+        "total_results" : 110,
+        "time_taken_displayed" : 0.26,
+        "organic_results_state" : "Results for exact spelling"
+      },
+      "related_questions" : [ {
+        "question" : "Are there any flights to Dubai cancelled?",
+        "type" : "ai_overview",
+        "page_token" : "M6YzKHicHdBRcqIwGADg2cv0sZJQu6szTme1oLCKm5_kD-SlA0kVTRCqWIpve5eeqqfpzH5H-P59usPJfv14r7quvUxHo77v7_dNs3ev97qpR8VlOOmRLpwrC22njz8fydNOz4JrNF-8RXMm2hafwUuJG2-WVctsHOdHuAKqkAv7YermQfvxKrEm2rh2a0TgJ7YTSmJqTg0tSeUpbFNYEGYIhiDUklMs1ll8k24CWrpArRRlx0Skp990g7AyAyG51-b85qKt-Djgc-Qzq6JUJmMemL8gsVM-orBhVVL8wwOySLm5KKHeJIezDGF4DeCsaRfrLBhgide8Zh73ICq9uOBWzYPKFIwYnmcYaTHxNHe9CUNWSqwS6eYAzYEJuOmjq4VIKLdxuuXIcppcjXcZNuTXWGcxXeO-Z5kC09_t9PvMv_v_OXvZ1d20PTf7b5GyglQ",
+        "serpapi_ai_overview_link" : "https://serpapi.com/search.json?engine=google_ai_overview&page_token=M6YzKHicHdBRcqIwGADg2cv0sZJQu6szTme1oLCKm5_kD-SlA0kVTRCqWIpve5eeqqfpzH5H-P59usPJfv14r7quvUxHo77v7_dNs3ev97qpR8VlOOmRLpwrC22njz8fydNOz4JrNF-8RXMm2hafwUuJG2-WVctsHOdHuAKqkAv7YermQfvxKrEm2rh2a0TgJ7YTSmJqTg0tSeUpbFNYEGYIhiDUklMs1ll8k24CWrpArRRlx0Skp990g7AyAyG51-b85qKt-Djgc-Qzq6JUJmMemL8gsVM-orBhVVL8wwOySLm5KKHeJIezDGF4DeCsaRfrLBhgide8Zh73ICq9uOBWzYPKFIwYnmcYaTHxNHe9CUNWSqwS6eYAzYEJuOmjq4VIKLdxuuXIcppcjXcZNuTXWGcxXeO-Z5kC09_t9PvMv_v_OXvZ1d20PTf7b5GyglQ",
+        "next_page_token" : "eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS1N6QkNZalp6VkdWSlN6UkRZalk0WjBoMlNHdFBiVloxUlVSelZGSlVaVk5xU1ZoRmVrOVpVek5KVEhGemR5MWxZVmxyYzFWWlZGZG5VVk5SY2sxSmRrRXhiMnhxUkd4RFgwZE1MVVZ1V0RaWlRsUlpXall6VkhOTVVSSVhXa05YVTJGMVNIRlBkSEU1Y0hSUlVHMWxZVFZwUVVVYUlrRkVjM0k1WmxKUGFGWkNRV2hCTm5CQ1V6RktXQzFTWkRKc2FqbFhWR0pHZUZFIiwiZmN2IjoiMyIsImVpIjoiWkNXU2F1SHFPdHE5cHRRUG1lYTVpQUUiLCJxYyI6ImMtTlNTS2xJQXVQOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaHRvUGhUYjJBQSIsInF1ZXN0aW9uIjoiQXJlIHRoZXJlIGFueSBmbGlnaHRzIHRvIER1YmFpIGNhbmNlbGxlZD8iLCJsayI6IkdocG1iR2xuYUhSeklIUnZJR1IxWW1GcElHTmhibU5sYkd4bFpBIiwiYnMiOiJjM1dQUFF2Q01CQ0djYzNrYXBSeW9BNDZkcGNTVUxDZ296X2dUTTQyRUpLU3BFTF92WTFXX01MbGx1ZTU5NzFqSlZzSlR4QnI2aWZhRGk1R1YzVU1FQjFzMnpOcWtHZ2xHVU9xeUdlY3YySDFpZG1CcmNzd0xBbnRHLWNqeU5aN3N0RjA0QnF5NER4STQwTEt5dmpzRVlCUDlRNlNrbFIyWkF2eGRaSWh2R3BiRFJYUktleUtmTW5uLU1kVEw0OXRXTGJIa1A2RWs5aWwwdENnSlBDVTJ0SkJVejZwZTZORi1xWGowUTAiLCJpZCI6ImZjX1pDV1NhdUhxT3RxOXB0UVBtZWE1aUFFXzUifQ==",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google_related_questions&google_domain=google.com&next_page_token=eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS1N6QkNZalp6VkdWSlN6UkRZalk0WjBoMlNHdFBiVloxUlVSelZGSlVaVk5xU1ZoRmVrOVpVek5KVEhGemR5MWxZVmxyYzFWWlZGZG5VVk5SY2sxSmRrRXhiMnhxUkd4RFgwZE1MVVZ1V0RaWlRsUlpXall6VkhOTVVSSVhXa05YVTJGMVNIRlBkSEU1Y0hSUlVHMWxZVFZwUVVVYUlrRkVjM0k1WmxKUGFGWkNRV2hCTm5CQ1V6RktXQzFTWkRKc2FqbFhWR0pHZUZFIiwiZmN2IjoiMyIsImVpIjoiWkNXU2F1SHFPdHE5cHRRUG1lYTVpQUUiLCJxYyI6ImMtTlNTS2xJQXVQOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaHRvUGhUYjJBQSIsInF1ZXN0aW9uIjoiQXJlIHRoZXJlIGFueSBmbGlnaHRzIHRvIER1YmFpIGNhbmNlbGxlZD8iLCJsayI6IkdocG1iR2xuYUhSeklIUnZJR1IxWW1GcElHTmhibU5sYkd4bFpBIiwiYnMiOiJjM1dQUFF2Q01CQ0djYzNrYXBSeW9BNDZkcGNTVUxDZ296X2dUTTQyRUpLU3BFTF92WTFXX01MbGx1ZTU5NzFqSlZzSlR4QnI2aWZhRGk1R1YzVU1FQjFzMnpOcWtHZ2xHVU9xeUdlY3YySDFpZG1CcmNzd0xBbnRHLWNqeU5aN3N0RjA0QnF5NER4STQwTEt5dmpzRVlCUDlRNlNrbFIyWkF2eGRaSWh2R3BiRFJYUktleUtmTW5uLU1kVEw0OXRXTGJIa1A2RWs5aWwwdENnSlBDVTJ0SkJVejZwZTZORi1xWGowUTAiLCJpZCI6ImZjX1pDV1NhdUhxT3RxOXB0UVBtZWE1aUFFXzUifQ%3D%3D"
+      }, {
+        "question" : "Is Dubai Airport currently open or closed?",
+        "type" : "ai_overview",
+        "page_token" : "Z9yacHicHdBdboIwAADg7DI-TgFx0cQs6WzRRhqp_QFfltKqoKXUiZL5trvsVDvNst3gy_f1bWt3_nm6V13nr7PhsO_752PbHu3-WbfNUF0_nR5qZW2p9Hk2eZkErwc9h7cVeLusQMa9Fws6YkvPxEJgkrfRmlFcIpKInITMorV6YGCWdsntjhZO4BR2tX7gmsDYEekvBaeJCelFSbTcOhuLsxWiMaPCoXgb2pDLGCmLVkXk6925Ekwex-mp6rYR6lkA8B6ZUwpjT5vpQSXTK3E4M4m4aYcJd1lIoI9T6Ne7baAUAySPiNjLaZ3KblNGuCkDs9lB1KZSKCloZASgsDIqCwwrcrHSfDrSzPYGoayUoiLSAkrbOuP0oU-24bkBxcnExlWYwGpMbfrnG6XS3GmDE5KDhmeDg77Po8H_5_z90HQz_9EefwGXvoJ7",
+        "serpapi_ai_overview_link" : "https://serpapi.com/search.json?engine=google_ai_overview&page_token=Z9yacHicHdBdboIwAADg7DI-TgFx0cQs6WzRRhqp_QFfltKqoKXUiZL5trvsVDvNst3gy_f1bWt3_nm6V13nr7PhsO_752PbHu3-WbfNUF0_nR5qZW2p9Hk2eZkErwc9h7cVeLusQMa9Fws6YkvPxEJgkrfRmlFcIpKInITMorV6YGCWdsntjhZO4BR2tX7gmsDYEekvBaeJCelFSbTcOhuLsxWiMaPCoXgb2pDLGCmLVkXk6925Ekwex-mp6rYR6lkA8B6ZUwpjT5vpQSXTK3E4M4m4aYcJd1lIoI9T6Ne7baAUAySPiNjLaZ3KblNGuCkDs9lB1KZSKCloZASgsDIqCwwrcrHSfDrSzPYGoayUoiLSAkrbOuP0oU-24bkBxcnExlWYwGpMbfrnG6XS3GmDE5KDhmeDg77Po8H_5_z90HQz_9EefwGXvoJ7",
+        "next_page_token" : "eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS1N6QkNZalp6VkdWSlN6UkRZalk0WjBoMlNHdFBiVloxUlVSelZGSlVaVk5xU1ZoRmVrOVpVek5KVEhGemR5MWxZVmxyYzFWWlZGZG5VVk5SY2sxSmRrRXhiMnhxUkd4RFgwZE1MVVZ1V0RaWlRsUlpXall6VkhOTVVSSVhXa05YVTJGMVNIRlBkSEU1Y0hSUlVHMWxZVFZwUVVVYUlrRkVjM0k1WmxKUGFGWkNRV2hCTm5CQ1V6RktXQzFTWkRKc2FqbFhWR0pHZUZFIiwiZmN2IjoiMyIsImVpIjoiWkNXU2F1SHFPdHE5cHRRUG1lYTVpQUUiLCJxYyI6ImMtTlNTS2xJQXVQOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaHRvUGhUYjJBQSIsInF1ZXN0aW9uIjoiSXMgRHViYWkgQWlycG9ydCBjdXJyZW50bHkgb3BlbiBvciBjbG9zZWQ/IiwibGsiOiJHaHhrZFdKaGFTQmhhWEp3YjNKMElHTnNiM05sWkNCdmNpQnZjR1Z1IiwiYnMiOiJjM1dQUFF2Q01CQ0djYzNrYXBSeW9BNDZkcGNTVUxDZ296X2dUTTQyRUpLU3BFTF92WTFXX01MbGx1ZTU5NzFqSlZzSlR4QnI2aWZhRGk1R1YzVU1FQjFzMnpOcWtHZ2xHVU9xeUdlY3YySDFpZG1CcmNzd0xBbnRHLWNqeU5aN3N0RjA0QnF5NER4STQwTEt5dmpzRVlCUDlRNlNrbFIyWkF2eGRaSWh2R3BiRFJYUktleUtmTW5uLU1kVEw0OXRXTGJIa1A2RWs5aWwwdENnSlBDVTJ0SkJVejZwZTZORi1xWGowUTAiLCJpZCI6ImZjX1pDV1NhdUhxT3RxOXB0UVBtZWE1aUFFXzUifQ==",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google_related_questions&google_domain=google.com&next_page_token=eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS1N6QkNZalp6VkdWSlN6UkRZalk0WjBoMlNHdFBiVloxUlVSelZGSlVaVk5xU1ZoRmVrOVpVek5KVEhGemR5MWxZVmxyYzFWWlZGZG5VVk5SY2sxSmRrRXhiMnhxUkd4RFgwZE1MVVZ1V0RaWlRsUlpXall6VkhOTVVSSVhXa05YVTJGMVNIRlBkSEU1Y0hSUlVHMWxZVFZwUVVVYUlrRkVjM0k1WmxKUGFGWkNRV2hCTm5CQ1V6RktXQzFTWkRKc2FqbFhWR0pHZUZFIiwiZmN2IjoiMyIsImVpIjoiWkNXU2F1SHFPdHE5cHRRUG1lYTVpQUUiLCJxYyI6ImMtTlNTS2xJQXVQOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaHRvUGhUYjJBQSIsInF1ZXN0aW9uIjoiSXMgRHViYWkgQWlycG9ydCBjdXJyZW50bHkgb3BlbiBvciBjbG9zZWQ%2FIiwibGsiOiJHaHhrZFdKaGFTQmhhWEp3YjNKMElHTnNiM05sWkNCdmNpQnZjR1Z1IiwiYnMiOiJjM1dQUFF2Q01CQ0djYzNrYXBSeW9BNDZkcGNTVUxDZ296X2dUTTQyRUpLU3BFTF92WTFXX01MbGx1ZTU5NzFqSlZzSlR4QnI2aWZhRGk1R1YzVU1FQjFzMnpOcWtHZ2xHVU9xeUdlY3YySDFpZG1CcmNzd0xBbnRHLWNqeU5aN3N0RjA0QnF5NER4STQwTEt5dmpzRVlCUDlRNlNrbFIyWkF2eGRaSWh2R3BiRFJYUktleUtmTW5uLU1kVEw0OXRXTGJIa1A2RWs5aWwwdENnSlBDVTJ0SkJVejZwZTZORi1xWGowUTAiLCJpZCI6ImZjX1pDV1NhdUhxT3RxOXB0UVBtZWE1aUFFXzUifQ%3D%3D"
+      }, {
+        "question" : "Are any flights leaving Dubai today?",
+        "type" : "ai_overview",
+        "page_token" : "lrzxNXicHdBfboIwHADg7DI-KsXhoolZhsLUCY7af_RlwV-n1RZhiqC87S471U4zsxt8-b5_7P5ofh9qXVXledTrNU3T3RXFzn52och72fl2hB5k1m4yMKPB0wA9b2EcXOb-5GvuJ7Qs2RQ7a6NCQPEe06DFjqepYVspqBMdmF0Hnk8cXWM3vQL1liCgVe1CMPRSAW_azOIldpAnrblRLmeEIoHRMMIWx5ziBRi75BN0hYOdRLyqI8O8hMjTZrrz1swvo5nWZFZcU85M7FbOZopZJmQIlmkeqPOKmBtxF2hJq_66lfPU4Eq0-AwsfgSnuAEJC5WjJOszLtySSqSOgVZZghRJBZsDHTpAbKPCMNlwpmNufYyLfUJxezfld3OYuN5b_Mouii5KaOUqzaXgxvJVwN6zvtY06WyhHvc7_5_jj21ejcpTsfsDokmEVQ",
+        "serpapi_ai_overview_link" : "https://serpapi.com/search.json?engine=google_ai_overview&page_token=lrzxNXicHdBfboIwHADg7DI-KsXhoolZhsLUCY7af_RlwV-n1RZhiqC87S471U4zsxt8-b5_7P5ofh9qXVXledTrNU3T3RXFzn52och72fl2hB5k1m4yMKPB0wA9b2EcXOb-5GvuJ7Qs2RQ7a6NCQPEe06DFjqepYVspqBMdmF0Hnk8cXWM3vQL1liCgVe1CMPRSAW_azOIldpAnrblRLmeEIoHRMMIWx5ziBRi75BN0hYOdRLyqI8O8hMjTZrrz1swvo5nWZFZcU85M7FbOZopZJmQIlmkeqPOKmBtxF2hJq_66lfPU4Eq0-AwsfgSnuAEJC5WjJOszLtySSqSOgVZZghRJBZsDHTpAbKPCMNlwpmNufYyLfUJxezfld3OYuN5b_Mouii5KaOUqzaXgxvJVwN6zvtY06WyhHvc7_5_jj21ejcpTsfsDokmEVQ",
+        "next_page_token" : "eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS1N6QkNZalp6VkdWSlN6UkRZalk0WjBoMlNHdFBiVloxUlVSelZGSlVaVk5xU1ZoRmVrOVpVek5KVEhGemR5MWxZVmxyYzFWWlZGZG5VVk5SY2sxSmRrRXhiMnhxUkd4RFgwZE1MVVZ1V0RaWlRsUlpXall6VkhOTVVSSVhXa05YVTJGMVNIRlBkSEU1Y0hSUlVHMWxZVFZwUVVVYUlrRkVjM0k1WmxKUGFGWkNRV2hCTm5CQ1V6RktXQzFTWkRKc2FqbFhWR0pHZUZFIiwiZmN2IjoiMyIsImVpIjoiWkNXU2F1SHFPdHE5cHRRUG1lYTVpQUUiLCJxYyI6ImMtTlNTS2xJQXVQOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaHRvUGhUYjJBQSIsInF1ZXN0aW9uIjoiQXJlIGFueSBmbGlnaHRzIGxlYXZpbmcgRHViYWkgdG9kYXk/IiwibGsiOiJHaU5oY21VZ1lXNTVJR1pzYVdkb2RITWdiR1ZoZG1sdVp5QmtkV0poYVNCMGIyUmhlUSIsImJzIjoiYzNXUFBRdkNNQkNHY2Mza2FwUnlvQTQ2ZHBjU1VMQ2dvel9nVE00MkVKS1NwRUxfdlkxV19NTGxsdWU1OTcxakpWc0pUeEJyNmlmYURpNUdWM1VNRUIxczJ6TnFrR2dsR1VPcXlHZWN2MkgxaWRtQnJjc3dMQW50Ry1janlOWjdzdEYwNEJxeTREeEk0MExLeXZqc0VZQlA5UTZTa2xSMlpBdnhkWklodkdwYkRSWFJLZXlLZk1ubi1NZFRMNDl0V0xiSGtQNkVrOWlsMHRDZ0pQQ1UydEpCVXo2cGU2TkYtcVhqMFEwIiwiaWQiOiJmY19aQ1dTYXVIcU90cTlwdFFQbWVhNWlBRV81In0=",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google_related_questions&google_domain=google.com&next_page_token=eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS1N6QkNZalp6VkdWSlN6UkRZalk0WjBoMlNHdFBiVloxUlVSelZGSlVaVk5xU1ZoRmVrOVpVek5KVEhGemR5MWxZVmxyYzFWWlZGZG5VVk5SY2sxSmRrRXhiMnhxUkd4RFgwZE1MVVZ1V0RaWlRsUlpXall6VkhOTVVSSVhXa05YVTJGMVNIRlBkSEU1Y0hSUlVHMWxZVFZwUVVVYUlrRkVjM0k1WmxKUGFGWkNRV2hCTm5CQ1V6RktXQzFTWkRKc2FqbFhWR0pHZUZFIiwiZmN2IjoiMyIsImVpIjoiWkNXU2F1SHFPdHE5cHRRUG1lYTVpQUUiLCJxYyI6ImMtTlNTS2xJQXVQOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaHRvUGhUYjJBQSIsInF1ZXN0aW9uIjoiQXJlIGFueSBmbGlnaHRzIGxlYXZpbmcgRHViYWkgdG9kYXk%2FIiwibGsiOiJHaU5oY21VZ1lXNTVJR1pzYVdkb2RITWdiR1ZoZG1sdVp5QmtkV0poYVNCMGIyUmhlUSIsImJzIjoiYzNXUFBRdkNNQkNHY2Mza2FwUnlvQTQ2ZHBjU1VMQ2dvel9nVE00MkVKS1NwRUxfdlkxV19NTGxsdWU1OTcxakpWc0pUeEJyNmlmYURpNUdWM1VNRUIxczJ6TnFrR2dsR1VPcXlHZWN2MkgxaWRtQnJjc3dMQW50Ry1janlOWjdzdEYwNEJxeTREeEk0MExLeXZqc0VZQlA5UTZTa2xSMlpBdnhkWklodkdwYkRSWFJLZXlLZk1ubi1NZFRMNDl0V0xiSGtQNkVrOWlsMHRDZ0pQQ1UydEpCVXo2cGU2TkYtcVhqMFEwIiwiaWQiOiJmY19aQ1dTYXVIcU90cTlwdFFQbWVhNWlBRV81In0%3D"
+      }, {
+        "question" : "Has the UAE airspace reopened?",
+        "type" : "ai_overview",
+        "page_token" : "06rufHicHdDBbtowGABg7WV6LHbCOgUJVQrEFLq4shM7ji-TYwMp-U284ZHCbe-yp9rTbNr9O32_fsP7efjz6drHGC6L2WyapsfjOB5h_2hHPzOX29nOrAHojB0WT1-e8PPBLouf23z1fZszEYJcc1T5OGgf53ZtbxKV93oNSp70XfvsWiqavIk4VTgPGmXzfZG90o2ejN8BJ8Wk0HGqEE2rBL6aIc4pyi7dC3mhzedVicDwof0QQLcM65zKIq1OIjbqn8ekcHXu3wRW3Q0HV4RXt5knGjg10COZ7pRWvNeQG5m6i0MsaYcgylOLbMNFR0J0CaD2LFdGkkrdwSjcpvXmIy16Zxh2davk1ooM2RomRwjrGtnTBnLOx3cm-N2ewAtM0V7uKklaXJIwCiyZbZxmCS8qL25WAhLs4WCvy_Th_-fy28HHRfgxHv8CU-yBwg",
+        "serpapi_ai_overview_link" : "https://serpapi.com/search.json?engine=google_ai_overview&page_token=06rufHicHdDBbtowGABg7WV6LHbCOgUJVQrEFLq4shM7ji-TYwMp-U284ZHCbe-yp9rTbNr9O32_fsP7efjz6drHGC6L2WyapsfjOB5h_2hHPzOX29nOrAHojB0WT1-e8PPBLouf23z1fZszEYJcc1T5OGgf53ZtbxKV93oNSp70XfvsWiqavIk4VTgPGmXzfZG90o2ejN8BJ8Wk0HGqEE2rBL6aIc4pyi7dC3mhzedVicDwof0QQLcM65zKIq1OIjbqn8ekcHXu3wRW3Q0HV4RXt5knGjg10COZ7pRWvNeQG5m6i0MsaYcgylOLbMNFR0J0CaD2LFdGkkrdwSjcpvXmIy16Zxh2davk1ooM2RomRwjrGtnTBnLOx3cm-N2ewAtM0V7uKklaXJIwCiyZbZxmCS8qL25WAhLs4WCvy_Th_-fy28HHRfgxHv8CU-yBwg",
+        "next_page_token" : "eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS1N6QkNZalp6VkdWSlN6UkRZalk0WjBoMlNHdFBiVloxUlVSelZGSlVaVk5xU1ZoRmVrOVpVek5KVEhGemR5MWxZVmxyYzFWWlZGZG5VVk5SY2sxSmRrRXhiMnhxUkd4RFgwZE1MVVZ1V0RaWlRsUlpXall6VkhOTVVSSVhXa05YVTJGMVNIRlBkSEU1Y0hSUlVHMWxZVFZwUVVVYUlrRkVjM0k1WmxKUGFGWkNRV2hCTm5CQ1V6RktXQzFTWkRKc2FqbFhWR0pHZUZFIiwiZmN2IjoiMyIsImVpIjoiWkNXU2F1SHFPdHE5cHRRUG1lYTVpQUUiLCJxYyI6ImMtTlNTS2xJQXVQOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaHRvUGhUYjJBQSIsInF1ZXN0aW9uIjoiSGFzIHRoZSBVQUUgYWlyc3BhY2UgcmVvcGVuZWQ/IiwibGsiOiJHaGxvWVhNZ2RXRmxJR0ZwY25Od1lXTmxJSEpsYjNCbGJtVmsiLCJicyI6ImMzV1BQUXZDTUJDR2NjM2thcFJ5b0E0NmRwY1NVTENnb3pfZ1RNNDJFSktTcEVMX3ZZMVdfTUxsbHVlNTk3MWpKVnNKVHhCcjZpZmFEaTVHVjNVTUVCMXMyek5xa0dnbEdVT3F5R2VjdjJIMWlkbUJyY3N3TEFudEctY2p5Tlo3c3RGMDRCcXk0RHhJNDBMS3l2anNFWUJQOVE2U2tsUjJaQXZ4ZFpJaHZHcGJEUlhSS2V5S2ZNbm4tTWRUTDQ5dFdMYkhrUDZFazlpbDB0Q2dKUENVMnRKQlV6NnBlNk5GLXFYajBRMCIsImlkIjoiZmNfWkNXU2F1SHFPdHE5cHRRUG1lYTVpQUVfNSJ9",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google_related_questions&google_domain=google.com&next_page_token=eyJvbnMiOiIxMDA0MSIsImZjIjoiRXFFQkNtSkJTbWxVTkhSS1N6QkNZalp6VkdWSlN6UkRZalk0WjBoMlNHdFBiVloxUlVSelZGSlVaVk5xU1ZoRmVrOVpVek5KVEhGemR5MWxZVmxyYzFWWlZGZG5VVk5SY2sxSmRrRXhiMnhxUkd4RFgwZE1MVVZ1V0RaWlRsUlpXall6VkhOTVVSSVhXa05YVTJGMVNIRlBkSEU1Y0hSUlVHMWxZVFZwUVVVYUlrRkVjM0k1WmxKUGFGWkNRV2hCTm5CQ1V6RktXQzFTWkRKc2FqbFhWR0pHZUZFIiwiZmN2IjoiMyIsImVpIjoiWkNXU2F1SHFPdHE5cHRRUG1lYTVpQUUiLCJxYyI6ImMtTlNTS2xJQXVQOHRMVE01TXpFSElYRXpLS0NfS0lTaGZMVXBPTE1rbFFCaHRvUGhUYjJBQSIsInF1ZXN0aW9uIjoiSGFzIHRoZSBVQUUgYWlyc3BhY2UgcmVvcGVuZWQ%2FIiwibGsiOiJHaGxvWVhNZ2RXRmxJR0ZwY25Od1lXTmxJSEpsYjNCbGJtVmsiLCJicyI6ImMzV1BQUXZDTUJDR2NjM2thcFJ5b0E0NmRwY1NVTENnb3pfZ1RNNDJFSktTcEVMX3ZZMVdfTUxsbHVlNTk3MWpKVnNKVHhCcjZpZmFEaTVHVjNVTUVCMXMyek5xa0dnbEdVT3F5R2VjdjJIMWlkbUJyY3N3TEFudEctY2p5Tlo3c3RGMDRCcXk0RHhJNDBMS3l2anNFWUJQOVE2U2tsUjJaQXZ4ZFpJaHZHcGJEUlhSS2V5S2ZNbm4tTWRUTDQ5dFdMYkhrUDZFazlpbDB0Q2dKUENVMnRKQlV6NnBlNk5GLXFYajBRMCIsImlkIjoiZmNfWkNXU2F1SHFPdHE5cHRRUG1lYTVpQUVfNSJ9"
+      } ],
+      "ai_overview" : {
+        "page_token" : "2yTbbHiczVXRcqpIEP2A_Y7lJVcBCdGkiro1MxIdlWvGRKO-WDjgiAoooEbf9l_2q_ZrdkAhGDW59z5s7RQw9Myhu6e7D_3X3wvHm__zx3AaRcvwQRS3222R-T5b2EXqu6IZ7jwqTvxFGNDp99BfB9R2LI1OA9-1helCsz1ht9EUgYaaJNiONkSvz-a6vmpHq_tlRJ5c21QdoAuJIm00NkN7xu28zUJxJPLH_E-lyoViWLS9YnMyXvUWyh4jXCxJJaXYFk2XA8B_NTAECPALEcBiGV5EcYj-lSaWYOYxNtV9UJnXacQ4HCNxrJZddUsHJJ6dxCx_GGiyf6EAVEkKqV_1BOIT12H8iX4M6RwdXP2pAdNzpGdCV6HXlSbfNFPJyO3gM2yma3sqdwCYVQDicSBnbjSyiCT-EjBI3qtzUGcVgCm-HuVEXXcL33im8BdBgVgf3h4NV4HMEBAtxitVEscBn2TRoVOavARhXMDo5V7ya_be2oN2-7U9ra93g2HtEfaG3kh9cxpApGOOW_imZVuj6Uj6nshySVale6Vc-ZYwh4YZdcI8dXatcutNem4oXaPYKkI55Q3KovqhkBGX4cUanh6h55Wvv9d9HOPBMcUsVxA8fMd9JhH-zKeU6fgpnmvpQhtAHpdc3R4zh1NbIJXzuWDZjFNrAPs5j_OnwoAQkBVEbqd6Ib0wNZ4NPYNhko-HDtiH0sf8dHw5tQAz9TEOwiZ3AvEw6XX4eFinp1WLPuYntsJJz7I8pPCDbJAcWJ_HaeNj9swfDeAjoHN7PETscKT0UB1yknJ0gcDx_wEOMCBnOz8zPuNWNkhKkQ8Vf8KUWa0yluvtXbgfSUvWmVa9O9XYeIpbB5eZ4bvjX-gq9H_EnazndJNVAq9xR_-KOyxuFJ_0nOTdyLiT9Bz_Knf0A3fOe072N363_5E7_Pf4zp1nmOs5-lnP-TXuoE-4w7LPLnCneYk7-Cp3Dj3nhDunPSfnw7HnvHPnd3oO-q2ekxDJPkynDWg9Y1cbUb1SKIRKv9W675QGXuexj9TupmAAqvbIl41o4kYPrmktvo0c6wGWGtHO-jbiC_6DbQkrrdqHN_HtTyYOdczFjekESz-Ibrb2OHQiW3AXga9JZnlQVZfmvdGJXuXQ8Nd6mSg7X-1Wh8uCvKpOOvJtY7jZ_FCavVYl2kau1JjTR9rc4kbFWalqX7UHjYKL-ju1sixRb-r0hvJmQ-q0VnAVj_VlotIngoBZivagPngp9NbBpLkfzUs1NRpM5NuVNNsk3oRaYDRsRu5e5t2K4AZU41G-ZeAHAa8sLrcBIDyFBPn83vL7DhAdCiE1R3a40Uq0RCd31LZMSypTqSy4LNottVtFCL1Ak_8F8Wc0yA",
+        "serpapi_link" : "https://serpapi.com/search.json?engine=google_ai_overview&page_token=2yTbbHiczVXRcqpIEP2A_Y7lJVcBCdGkiro1MxIdlWvGRKO-WDjgiAoooEbf9l_2q_ZrdkAhGDW59z5s7RQw9Myhu6e7D_3X3wvHm__zx3AaRcvwQRS3222R-T5b2EXqu6IZ7jwqTvxFGNDp99BfB9R2LI1OA9-1helCsz1ht9EUgYaaJNiONkSvz-a6vmpHq_tlRJ5c21QdoAuJIm00NkN7xu28zUJxJPLH_E-lyoViWLS9YnMyXvUWyh4jXCxJJaXYFk2XA8B_NTAECPALEcBiGV5EcYj-lSaWYOYxNtV9UJnXacQ4HCNxrJZddUsHJJ6dxCx_GGiyf6EAVEkKqV_1BOIT12H8iX4M6RwdXP2pAdNzpGdCV6HXlSbfNFPJyO3gM2yma3sqdwCYVQDicSBnbjSyiCT-EjBI3qtzUGcVgCm-HuVEXXcL33im8BdBgVgf3h4NV4HMEBAtxitVEscBn2TRoVOavARhXMDo5V7ya_be2oN2-7U9ra93g2HtEfaG3kh9cxpApGOOW_imZVuj6Uj6nshySVale6Vc-ZYwh4YZdcI8dXatcutNem4oXaPYKkI55Q3KovqhkBGX4cUanh6h55Wvv9d9HOPBMcUsVxA8fMd9JhH-zKeU6fgpnmvpQhtAHpdc3R4zh1NbIJXzuWDZjFNrAPs5j_OnwoAQkBVEbqd6Ib0wNZ4NPYNhko-HDtiH0sf8dHw5tQAz9TEOwiZ3AvEw6XX4eFinp1WLPuYntsJJz7I8pPCDbJAcWJ_HaeNj9swfDeAjoHN7PETscKT0UB1yknJ0gcDx_wEOMCBnOz8zPuNWNkhKkQ8Vf8KUWa0yluvtXbgfSUvWmVa9O9XYeIpbB5eZ4bvjX-gq9H_EnazndJNVAq9xR_-KOyxuFJ_0nOTdyLiT9Bz_Knf0A3fOe072N363_5E7_Pf4zp1nmOs5-lnP-TXuoE-4w7LPLnCneYk7-Cp3Dj3nhDunPSfnw7HnvHPnd3oO-q2ekxDJPkynDWg9Y1cbUb1SKIRKv9W675QGXuexj9TupmAAqvbIl41o4kYPrmktvo0c6wGWGtHO-jbiC_6DbQkrrdqHN_HtTyYOdczFjekESz-Ibrb2OHQiW3AXga9JZnlQVZfmvdGJXuXQ8Nd6mSg7X-1Wh8uCvKpOOvJtY7jZ_FCavVYl2kau1JjTR9rc4kbFWalqX7UHjYKL-ju1sixRb-r0hvJmQ-q0VnAVj_VlotIngoBZivagPngp9NbBpLkfzUs1NRpM5NuVNNsk3oRaYDRsRu5e5t2K4AZU41G-ZeAHAa8sLrcBIDyFBPn83vL7DhAdCiE1R3a40Uq0RCd31LZMSypTqSy4LNottVtFCL1Ak_8F8Wc0yA"
+      },
+      "organic_results" : [ {
+        "position" : 1,
+        "title" : "Dubai International (DXB)",
+        "link" : "https://dubaiairports.ae/",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESUQHrOzAVKxy2AnVv8mJbk3ktqZn1Bs8eqEgCryjXetf0BCU6g1vl6FNFgar1N_EvY6SzTuQX5S87bCwrCulezwV2CHWCbrJRQ32XmC1WJAyftg&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQFnoECBkQAQ&uoh=1",
+        "displayed_link" : "https://dubaiairports.ae",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAdVBMVEVHcEw0NGwpLWNRVIogKFkqLWQjKVoqLWQpLWQpLWUpLWMqLWQqLGQqLGRpbZ8oLGFpbqBpbp9pbp9pb59pbp9qb6FpbqBpbp9pbqAQITppbp9pbp9pbqBobp9RW4NpbZ9pbp8sLWY5RWhpbp8_QnZqbqAqLWSTnLNcAAAAJ3RSTlMACA0Ed-batUuE__U7Xw6cKpuVXJ-I_7r1_uzFOIH_n9cl9OQXTsVymPGIAAAA4UlEQVR4Ad2QhYHEIBAAlxDFiSxc3Psv8WPvHdzgDLrwTpDggFwd8tfRMIqiOEmDo5MEf2XGeMQZy6iImQQgilKl1JdMpNSMS8hYRI3NTVGWZVWoW2oKJGGJkBHTFTpl8cBX6pYEID0OP05_-boAi03b-dr8kCevHkuAHAcwo38kBTiOpVPM8MEjlvexiUiT60GvGdEviz-qGt16yROegYhYOKLbNofOFCMWh5T7vidaEpC7hg3HFvJDbs0pYZ0OAgC6TitQhyW16Mca6xb-0o5j2y3LMlYthX-oK3xHDW_FB_J7EcRykUPkAAAAAElFTkSuQmCC.png",
+        "snippet" : "Family reunion at DXB airport. Couple heading towards DXB airport. Fascinating ... Continue to website arrow right. Remain on Dubai Airports arrow right. ×. × ...",
+        "snippet_highlighted_words" : [ "DXB airport", "DXB airport", "website", "Dubai" ],
+        "sitelinks" : {
+          "expanded" : [ {
+            "title" : "Find your flight status",
+            "link" : "https://www.google.com/goto?url=CAESXgHrOzAVYKgaRZAZ79XWBcsQQR6nJQ3FRSCUPcu1-sdOOyZkOJejwcWlMKUunK5s_hvCxgLcCpGkPRFlQJ50KV-ISDcmdWBK8Fy3Pd783k-DV9gTNFBHtbeAs75DnfI",
+            "snippet" : "Get real-time flight information for DXB. Check arrivals, departures ..."
+          }, {
+            "title" : "Services",
+            "link" : "https://www.google.com/goto?url=CAESZQHrOzAVk-mByEu424uqX1HwURf1asBmQWNsZk6SWBGt17qmhsspRiMKNRYXIiPRMRcFTiJFLGeVjuThaYvSrB03aYTo_c4SwGwyjt_1LCihvnompwan-6nl_Ve75LxXjW1QSmVy",
+            "snippet" : "Find travel services across Dubai Airport. Filter by terminal ..."
+          }, {
+            "title" : "Lost & found",
+            "link" : "https://www.google.com/goto?url=CAESXwHrOzAViZkZax-PF8moXNMNlXGKeZ3pLdlubmgLXX_otwXveMK2Xwlij-Dl5wmDFJ2qLErQvI1kVBVIQiZpXG3pFcoYTJupVIyjKv_qhupz5IT4s2yQPaj-2T-mPJcg",
+            "snippet" : "If you lost an item on board or within the airport, complete the ..."
+          }, {
+            "title" : "Contact information",
+            "link" : "https://www.google.com/goto?url=CAESZAHrOzAVk0jXj5J9fO7nFL8JWfLs2smrBcZiuQg5xjFjd_vzmHph-JNBRXTZe8hT6DOQfuP21UJMXpyg3sxfOoDyNDxr82Zr8MU-FRMDSqsNJ0MpWs8RI9X8r41uWYHn_MOupHA",
+            "snippet" : "Open WhatsApp arrow. Airport locations. Dubai World Central ..."
+          }, {
+            "title" : "Corporate",
+            "link" : "https://www.google.com/goto?url=CAESWgHrOzAVM9iAAhB3ip-SEstIvVCghz9PX9D5db-C72B4xvW2FaWJ5mz9PKDmGisolyfVF0V2pjM7jahcETvXEo5f7YHrwcO8qr3_SHkQXnBBleUyTkNTv2risw",
+            "snippet" : "We manage DXB, the world's busiest airport, and Dubai World ..."
+          } ]
+        },
+        "about_this_result" : {
+          "source" : {
+            "description" : "Family reunion at DXB airport. Couple heading towards DXB airport. Fascinating ... Continue to website arrow right. Remain on Dubai Airports arrow right. ×. × ...",
+            "source_info_link" : "https://dubaiairports.ae/",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAdVBMVEVHcEw0NGwpLWNRVIogKFkqLWQjKVoqLWQpLWQpLWUpLWMqLWQqLGQqLGRpbZ8oLGFpbqBpbp9pbp9pb59pbp9qb6FpbqBpbp9pbqAQITppbp9pbp9pbqBobp9RW4NpbZ9pbp8sLWY5RWhpbp8_QnZqbqAqLWSTnLNcAAAAJ3RSTlMACA0Ed-batUuE__U7Xw6cKpuVXJ-I_7r1_uzFOIH_n9cl9OQXTsVymPGIAAAA4UlEQVR4Ad2QhYHEIBAAlxDFiSxc3Psv8WPvHdzgDLrwTpDggFwd8tfRMIqiOEmDo5MEf2XGeMQZy6iImQQgilKl1JdMpNSMS8hYRI3NTVGWZVWoW2oKJGGJkBHTFTpl8cBX6pYEID0OP05_-boAi03b-dr8kCevHkuAHAcwo38kBTiOpVPM8MEjlvexiUiT60GvGdEviz-qGt16yROegYhYOKLbNofOFCMWh5T7vidaEpC7hg3HFvJDbs0pYZ0OAgC6TitQhyW16Mca6xb-0o5j2y3LMlYthX-oK3xHDW_FB_J7EcRykUPkAAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://dubaiairports.ae/:'<b>Dubai&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fdubaiairports.ae%2F%3A%27%3Cb%3EDubai",
+        "source" : "Dubai Airports"
+      }, {
+        "position" : 2,
+        "title" : "Dubai International | Before You Fly",
+        "link" : "https://www.emirates.com/us/english/before-you-fly/dubai-international-airport/",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAEShwEB6zswFY4ZSJqMP1XWGpqFPx2nwjbkXMwUYgszYC2QrVRwrlrEH3toT6wcP4bOZhbV_fhpIz5bPu-pdLp2aqsR4_s8izXVd1TsMv2_yc0-TeEDt6CRYaXTyfl1VIpcDgrgY3xcj3yPQurKmhQjh2LRNa3LHc-kDJ0X8l9wdq0IeMCyFTwndjU&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQFnoECDYQAQ&uoh=1",
+        "displayed_link" : "https://www.emirates.com › english › dubai-internation...",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAgVBMVEXWGB_VCBPUAAvVDBXWFx7UAAbjcnXpkpTfXF_dRkvWEhrXIyndVFfcQEXni431zM3VBRHtoqTgZGf_-Pn30tPZLjPrn6HwtLbxu7zgUlfogIPhaWzuqqzsoqTlhIb42tvkeHvXKC7cSk776-zzxMXZNDnUAADwt7jqlpn75OXmg4aCjEbdAAAA8ElEQVR4AdQPhWGEMPCjOBwpH8MpXPjuv1_dmwV67nL5x0Aou_B4iguZpFkezeVFWdUNiXdCq-6qjkWTeXnNKt0AY5Eky0xjnb-W_d8sv_TDqKfZNwv8Ta7bokd932cQ-aPImn2pm17FdpJhW1dnDpf_DMPLc2zrZqv6rsr59zPVIgsqCKLEwZYIeU4ZkLckhnGr_Nmfx6mkkqkMh0-l4m_JcS_zmzdBNlMo-qbWtg9zSt6Sw4RsTtvxOXnW9T4lXY3H7Xg9jE57W-5b-yBtf3odpHam9_r9LorInpECgni2QTAEik9jIRT5LHgAjdIbAKyfE2NfagY8AAAAAElFTkSuQmCC.png",
+        "snippet" : "Discover DXB Dubai International (DXB) is our home hub. Your Emirates flight will arrive at and depart from gates A, B or C at our own Emirates Terminal 3.",
+        "snippet_highlighted_words" : [ "DXB Dubai International (DXB" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Discover DXB Dubai International (DXB) is our home hub. Your Emirates flight will arrive at and depart from gates A, B or C at our own Emirates Terminal 3.",
+            "source_info_link" : "https://www.emirates.com/us/english/before-you-fly/dubai-international-airport/",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAgVBMVEXWGB_VCBPUAAvVDBXWFx7UAAbjcnXpkpTfXF_dRkvWEhrXIyndVFfcQEXni431zM3VBRHtoqTgZGf_-Pn30tPZLjPrn6HwtLbxu7zgUlfogIPhaWzuqqzsoqTlhIb42tvkeHvXKC7cSk776-zzxMXZNDnUAADwt7jqlpn75OXmg4aCjEbdAAAA8ElEQVR4AdQPhWGEMPCjOBwpH8MpXPjuv1_dmwV67nL5x0Aou_B4iguZpFkezeVFWdUNiXdCq-6qjkWTeXnNKt0AY5Eky0xjnb-W_d8sv_TDqKfZNwv8Ta7bokd932cQ-aPImn2pm17FdpJhW1dnDpf_DMPLc2zrZqv6rsr59zPVIgsqCKLEwZYIeU4ZkLckhnGr_Nmfx6mkkqkMh0-l4m_JcS_zmzdBNlMo-qbWtg9zSt6Sw4RsTtvxOXnW9T4lXY3H7Xg9jE57W-5b-yBtf3odpHam9_r9LorInpECgni2QTAEik9jIRT5LHgAjdIbAKyfE2NfagY8AAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.emirates.com/us/english/before-you-fly/dubai-international-airport/:6<b>Dubai&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.emirates.com%2Fus%2Fenglish%2Fbefore-you-fly%2Fdubai-international-airport%2F%3A6%3Cb%3EDubai",
+        "source" : "Emirates"
+      }, {
+        "position" : 3,
+        "title" : "Dubai International Airport (DXB/OMDB)",
+        "link" : "https://www.flightradar24.com/data/airports/DXB",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESZwHrOzAV2zOFRueaOa_RM0q4Nbekxttrwn6NAg7W2UoK_QSiRyU_EjXHYJOHRCD72anRIS3trcZR-E7Ii7Msidd5Sw0UoxsmEB0edZLeUiCQd0WmbwfirolJWiJ4iXTnjD5N3j89kGY&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQFnoECDIQAQ&uoh=1",
+        "displayed_link" : "https://www.flightradar24.com › data › airports › DXB",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAXVBMVEVHcEwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9PT2IiIiysrLCwsKCgoLk5OT___9NTU3r6-v4-PiTk5Nvb29bW1vPz8_Y2NgXFxelpaXJycktLS1kZGS7u7t0dHR3L2A0AAAACHRSTlMABnjb_P4f6aoFBfgAAAFdSURBVHgBfZMFYsQwDAR9vIZwYrzc_59ZSXbK7YYzAoOklDqdL9fbN10v55Mi3R-o0sY6Z41G1eNOfo11_dDUd42e1BmscRpIc9_P_JxGsM7qIm7ssOganEOI80XdGjNoWmEavSqOSQE1Dm2ApuAjcGNI-Zhp60lWQ-hUoalBFr-Jozc1USewH3pmFk12ARCGnqEWx9EBMbmcIpC1uGqCFLUALi0xU9xniBgtUGj8BC3nho9Io-Qk4mWUlqAbAhB3gM6igQy4yEndN9iRc3hhJ-gFWhmsA2zUHiiusDN6CWuGORIp0Pu0I3qNsgNxHkydygpsiSMF6zRgN2CVqXAADyCtS9uMLoEN-2P5npx14NUur8TsyYZt4SckPRO0KXs2jPxLIG9ZXyZicymAsLZlbbNFfdvR6djsCz7oDk6XP8rkc4FNzoX5c4EdpWk-StMcpfl_UUs73PBNN2mHNw-BI5o0tXRHAAAAAElFTkSuQmCC.png",
+        "snippet" : "Dubai International Airport, (DXB/OMDB), United Arab Emirates - View live flight arrival and departure information, live flight delays and cancelations, ...",
+        "snippet_highlighted_words" : [ "Dubai International Airport" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Dubai International Airport, (DXB/OMDB), United Arab Emirates - View live flight arrival and departure information, live flight delays and cancelations, ...",
+            "source_info_link" : "https://www.flightradar24.com/data/airports/DXB",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAXVBMVEVHcEwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9PT2IiIiysrLCwsKCgoLk5OT___9NTU3r6-v4-PiTk5Nvb29bW1vPz8_Y2NgXFxelpaXJycktLS1kZGS7u7t0dHR3L2A0AAAACHRSTlMABnjb_P4f6aoFBfgAAAFdSURBVHgBfZMFYsQwDAR9vIZwYrzc_59ZSXbK7YYzAoOklDqdL9fbN10v55Mi3R-o0sY6Z41G1eNOfo11_dDUd42e1BmscRpIc9_P_JxGsM7qIm7ssOganEOI80XdGjNoWmEavSqOSQE1Dm2ApuAjcGNI-Zhp60lWQ-hUoalBFr-Jozc1USewH3pmFk12ARCGnqEWx9EBMbmcIpC1uGqCFLUALi0xU9xniBgtUGj8BC3nho9Io-Qk4mWUlqAbAhB3gM6igQy4yEndN9iRc3hhJ-gFWhmsA2zUHiiusDN6CWuGORIp0Pu0I3qNsgNxHkydygpsiSMF6zRgN2CVqXAADyCtS9uMLoEN-2P5npx14NUur8TsyYZt4SckPRO0KXs2jPxLIG9ZXyZicymAsLZlbbNFfdvR6djsCz7oDk6XP8rkc4FNzoX5c4EdpWk-StMcpfl_UUs73PBNN2mHNw-BI5o0tXRHAAAAAElFTkSuQmCC.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.flightradar24.com/data/airports/DXB:D<b>Dubai&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.flightradar24.com%2Fdata%2Fairports%2FDXB%3AD%3Cb%3EDubai",
+        "source" : "Flightradar24"
+      }, {
+        "position" : 4,
+        "title" : "Dubai International",
+        "link" : "https://www.facebook.com/dxb/",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESVQHrOzAVPayz8KbqihNWazfO8CgZDlTjYocSoR0KtdzG1JjW1AbGwaFOPjgiaExjT1m6QyrLRHHyjj08uO6FxwQk941qI8Te8qbqHxFNf--hIVPG_K8&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQFnoECDQQAQ&uoh=1",
+        "displayed_link" : "2.4M+ followers",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAXVBMVEVHcEwHZv8HaP8IZ_8IZ_8IZv8IaP8IZ_8HZv8Haf8IZ_8IaP8IZ_8AXv8AV_8AYv-SqP_P1__m6__e5f9wlP____-tvP9jiv82c_8IZ_8Iaf-fsf________8AW_-wrobhAAAAH3RSTlMAM4bC6v1h7v8Z3UL_______7_________wRiFwenBhp_Z0gAAAOhJREFUeAFtk0UWwzAMBWWHFHOZe_9bBn9Nr7Mdg5AiQjZt17WNFFTTDxwZ-kKNigvUmJw2XGF0dByx1jlnPTPDjiYqDofj8XQ4L9bsL6vozpedq13_3eJk4G-XXPIac8zBHUs5EIl48Q4Tws3ziiAZ5f7j3Vq7O5b0iOGE1Z0cRxpqS3mwSbbU4VHndukW8GwHiQ_BzUO2KceIw7MIqJBHyIZk_WwKSv6KcD_frlsqt_P5joBELJ-3iNZD8YDC_82zz1pWS5U1u5bmmY1JLdMQmVoaOIxmIdVYDXWUxVAD8Xp_FvnN1mEG0f0e5ixC4ikAAAAASUVORK5CYII.png",
+        "snippet" : "Welcome to DXB, the #Dubai way From Arrivals to Transfers, we've been welcoming guests with smiles, live music, treats, mascots, personalised signs and a ...",
+        "snippet_highlighted_words" : [ "DXB" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Welcome to DXB, the #Dubai way From Arrivals to Transfers, we've been welcoming guests with smiles, live music, treats, mascots, personalised signs and a ...",
+            "source_info_link" : "https://www.facebook.com/dxb/",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y-mAAAAXVBMVEVHcEwHZv8HaP8IZ_8IZ_8IZv8IaP8IZ_8HZv8Haf8IZ_8IaP8IZ_8AXv8AV_8AYv-SqP_P1__m6__e5f9wlP____-tvP9jiv82c_8IZ_8Iaf-fsf________8AW_-wrobhAAAAH3RSTlMAM4bC6v1h7v8Z3UL_______7_________wRiFwenBhp_Z0gAAAOhJREFUeAFtk0UWwzAMBWWHFHOZe_9bBn9Nr7Mdg5AiQjZt17WNFFTTDxwZ-kKNigvUmJw2XGF0dByx1jlnPTPDjiYqDofj8XQ4L9bsL6vozpedq13_3eJk4G-XXPIac8zBHUs5EIl48Q4Tws3ziiAZ5f7j3Vq7O5b0iOGE1Z0cRxpqS3mwSbbU4VHndukW8GwHiQ_BzUO2KceIw7MIqJBHyIZk_WwKSv6KcD_frlsqt_P5joBELJ-3iNZD8YDC_82zz1pWS5U1u5bmmY1JLdMQmVoaOIxmIdVYDXWUxVAD8Xp_FvnN1mEG0f0e5ixC4ikAAAAASUVORK5CYII.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.facebook.com/dxb/:%<b>Dubai&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.facebook.com%2Fdxb%2F%3A%25%3Cb%3EDubai",
+        "source" : "Facebook · Dubai International",
+        "read_more_link" : "https://www.google.com/goto?url=CAESsAEB6zswFVLtQH7bC7rRMY5rGmh4ljkFjmHwEx6-qccvrB3-Hgab4zCQfIArwCMuPpoxaDDoZNWBStjBMyhUVPGF-WjncLWZ2lJaIZr9k_mOElIae0T0fTOW-J2_J6MZWVubX7zi8SlZ2hG4G9kLDhsF3cG2pm6OLeIPwMdlgG_EF3ribRkVXeQPa9Z7xV6rRRz7w02-FTpsBw4TjOcGPhYLR-WuMCSexDk6MAvOSfi6KQ"
+      }, {
+        "position" : 5,
+        "title" : "Dubai International Airport",
+        "link" : "https://en.wikipedia.org/wiki/Dubai_International_Airport",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAEScQHrOzAVBvUJa4FXkD3GSxsArzGfrnFb2EpQUwlZdtgGz8qN_4sKtw6dc1HoRRrNIRSl6RX2uFNa8aYquNX0JoZA2C_i6FMsdBMhm-1MW42im2PVplYZcPMiJYjyQhd8k3Q2eZch6-KXU5hz_acDz7ps&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQFnoECDUQAQ&uoh=1",
+        "displayed_link" : "https://en.wikipedia.org › wiki › Dubai_International_A...",
+        "favicon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAAAAABXZoBIAAAAnklEQVR4AeTNIQiDQABG4b-u17X1aF6PK3YEO9iMJqPVau82y4FgMezS0oVLhqsHtrcqeqzDXv3CEz_6L4yTtZM3dnHmPTtjzXZAXKYVo4agkU2GI2Lloc6JDez1-flswMu1EQZ3xlE7lK8eKDkjtwE-crBMV-wesKmCiisGGepZIfQJpMj9SNb2MYWrChjVkULuCyCfRvsdmBieyQQAsoDk_9ryhFMAAAAASUVORK5CYII.png",
+        "snippet" : "IATA: DXB, ICAO: OMDB) is the primary international airport serving Dubai, United Arab Emirates, and is the world's busiest airport. Al Garhoud, Dubai, UAE. ...",
+        "snippet_highlighted_words" : [ "is the primary international airport serving Dubai" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "IATA: DXB, ICAO: OMDB) is the primary international airport serving Dubai, United Arab Emirates, and is the world's busiest airport. Al Garhoud, Dubai, UAE.  ...",
+            "source_info_link" : "https://en.wikipedia.org/wiki/Dubai_International_Airport",
+            "icon" : "https://serpapi.com/images/i/iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAAAAABXZoBIAAAAnklEQVR4AeTNIQiDQABG4b-u17X1aF6PK3YEO9iMJqPVau82y4FgMezS0oVLhqsHtrcqeqzDXv3CEz_6L4yTtZM3dnHmPTtjzXZAXKYVo4agkU2GI2Lloc6JDez1-flswMu1EQZ3xlE7lK8eKDkjtwE-crBMV-wesKmCiisGGepZIfQJpMj9SNb2MYWrChjVkULuCyCfRvsdmBieyQQAsoDk_9ryhFMAAAAASUVORK5CYII.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://en.wikipedia.org/wiki/Dubai_International_Airport:.<b>Dubai&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FDubai_International_Airport%3A.%3Cb%3EDubai",
+        "source" : "Wikipedia"
+      }, {
+        "position" : 6,
+        "title" : "DXB Dubai International Airport (@dxb)",
+        "link" : "https://www.instagram.com/dxb/?hl\\u003den",
+        "redirect_link" : "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=CAESXAHrOzAVTwh4P04HO-3Vf_OtS_tBmDaeX9ojNe_H1dBOoSvZZqPDeavoSPlNP0YJnjnJ_YfQAR5AJZK0eiP1EXSwC0nZiDWloSq6rEKCdM65YVa-A3zBUOGISBih&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQFnoECDcQAQ&uoh=1",
+        "displayed_link" : "625K+ followers",
+        "favicon" : "https://serpapi.com/searches/6a92256397012181996746f2/images/FR1liq4w19Pj07dlSskbtY_ackcACZXJouJeMfRu_Wg.png",
+        "snippet" : "Welcome to #DXB – where the world connects ✈️ ・ the world's busiest international airport runway ・ airport into Dubai's most unexpected walking track",
+        "snippet_highlighted_words" : [ "the world's busiest international airport runway" ],
+        "about_this_result" : {
+          "source" : {
+            "description" : "Welcome to #DXB – where the world connects ✈️ ・ the world's busiest international airport runway ・ airport into Dubai's most unexpected walking track",
+            "source_info_link" : "https://www.instagram.com/dxb/?hl=en",
+            "icon" : "https://serpapi.com/searches/6a92256397012181996746f2/images/FR1liq4w19Pj07dlSskbtRGnYrCLqaDgFHh_G4uy8pZeXo2GcncZjwb2-wflYskS.png"
+          },
+          "languages" : [ "en" ],
+          "regions" : [ "US" ]
+        },
+        "about_page_link" : "https://www.google.com/search?q=About+https://www.instagram.com/dxb/?hl=en:@<b>DXB&tbm=ilp",
+        "about_page_serpapi_link" : "https://serpapi.com/search.json?engine=google_about_this_result&google_domain=google.com&q=About+https%3A%2F%2Fwww.instagram.com%2Fdxb%2F%3Fhl%3Den%3A%40%3Cb%3EDXB",
+        "source" : "Instagram · dxb"
+      } ],
+      "related_searches" : [ {
+        "block_position" : 1,
+        "query" : "Dxb dxb official airport website terminal 3",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&q=Dxb+dxb+official+airport+website+terminal+3&sa=X&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ1QJ6BAgoEAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=Dxb+dxb+official+airport+website+terminal+3"
+      }, {
+        "block_position" : 1,
+        "query" : "Dubai Airport online tablo",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&q=Dubai+Airport+online+tablo&sa=X&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ1QJ6BAg6EAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=Dubai+Airport+online+tablo"
+      }, {
+        "block_position" : 1,
+        "query" : "Dxb dxb official airport website terminal 2",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&q=Dxb+dxb+official+airport+website+terminal+2&sa=X&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ1QJ6BAg5EAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=Dxb+dxb+official+airport+website+terminal+2"
+      }, {
+        "block_position" : 1,
+        "query" : "Dxb dxb official airport website departures",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&q=Dxb+dxb+official+airport+website+departures&sa=X&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ1QJ6BAg4EAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=Dxb+dxb+official+airport+website+departures"
+      }, {
+        "block_position" : 1,
+        "query" : "Dubai Airport flight status today",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&q=Dubai+Airport+flight+status+today&sa=X&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ1QJ6BAgxEAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=Dubai+Airport+flight+status+today"
+      }, {
+        "block_position" : 1,
+        "query" : "Dubai Airport departures",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&q=Dubai+Airport+departures&sa=X&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ1QJ6BAguEAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=Dubai+Airport+departures"
+      }, {
+        "block_position" : 1,
+        "query" : "Dubai airport website",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&q=Dubai+airport+website&sa=X&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ1QJ6BAgtEAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=Dubai+airport+website"
+      }, {
+        "block_position" : 1,
+        "query" : "Dubai airport breaking news today",
+        "link" : "https://www.google.com/search?sca_esv=2c2cf6cedad07c07&hl=en&q=Dubai+airport+breaking+news+today&sa=X&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ1QJ6BAgrEAE",
+        "serpapi_link" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=Dubai+airport+breaking+news+today"
+      } ],
+      "pagination" : {
+        "current" : 1,
+        "next" : "https://www.google.com/search?q=DXB+DXB+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&ei=ZCWSauHqOtq9ptQPmea5iAE&start=10&sa=N&sstk=AS6-VmIA-rA8qxMbOxPPKdHLz8hIzom6SufOQ-wqsTJhrh4KHFoe66T3z6u5jfpBXCL-jI8tkhJyasAwvI3Ere6ItsQPck5PQZJP1A&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ8NMDegQIIxAQ",
+        "other_pages" : {
+          "2" : "https://www.google.com/search?q=DXB+DXB+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&ei=ZCWSauHqOtq9ptQPmea5iAE&start=10&sa=N&sstk=AS6-VmIA-rA8qxMbOxPPKdHLz8hIzom6SufOQ-wqsTJhrh4KHFoe66T3z6u5jfpBXCL-jI8tkhJyasAwvI3Ere6ItsQPck5PQZJP1A&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ8tMDegQIIxAE",
+          "3" : "https://www.google.com/search?q=DXB+DXB+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&ei=ZCWSauHqOtq9ptQPmea5iAE&start=20&sa=N&sstk=AS6-VmIA-rA8qxMbOxPPKdHLz8hIzom6SufOQ-wqsTJhrh4KHFoe66T3z6u5jfpBXCL-jI8tkhJyasAwvI3Ere6ItsQPck5PQZJP1A&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ8tMDegQIIxAG",
+          "4" : "https://www.google.com/search?q=DXB+DXB+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&ei=ZCWSauHqOtq9ptQPmea5iAE&start=30&sa=N&sstk=AS6-VmIA-rA8qxMbOxPPKdHLz8hIzom6SufOQ-wqsTJhrh4KHFoe66T3z6u5jfpBXCL-jI8tkhJyasAwvI3Ere6ItsQPck5PQZJP1A&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ8tMDegQIIxAI",
+          "5" : "https://www.google.com/search?q=DXB+DXB+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&ei=ZCWSauHqOtq9ptQPmea5iAE&start=40&sa=N&sstk=AS6-VmIA-rA8qxMbOxPPKdHLz8hIzom6SufOQ-wqsTJhrh4KHFoe66T3z6u5jfpBXCL-jI8tkhJyasAwvI3Ere6ItsQPck5PQZJP1A&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ8tMDegQIIxAK",
+          "6" : "https://www.google.com/search?q=DXB+DXB+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&ei=ZCWSauHqOtq9ptQPmea5iAE&start=50&sa=N&sstk=AS6-VmIA-rA8qxMbOxPPKdHLz8hIzom6SufOQ-wqsTJhrh4KHFoe66T3z6u5jfpBXCL-jI8tkhJyasAwvI3Ere6ItsQPck5PQZJP1A&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ8tMDegQIIxAM",
+          "7" : "https://www.google.com/search?q=DXB+DXB+official+airport+website&sca_esv=2c2cf6cedad07c07&hl=en&ei=ZCWSauHqOtq9ptQPmea5iAE&start=60&sa=N&sstk=AS6-VmIA-rA8qxMbOxPPKdHLz8hIzom6SufOQ-wqsTJhrh4KHFoe66T3z6u5jfpBXCL-jI8tkhJyasAwvI3Ere6ItsQPck5PQZJP1A&ved=2ahUKEwjhrN-YyMSWAxXanokEHRlzDhEQ8tMDegQIIxAO"
+        }
+      },
+      "serpapi_pagination" : {
+        "current" : 1,
+        "next_link" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=DXB+DXB+official+airport+website&start=10",
+        "next" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=DXB+DXB+official+airport+website&start=10",
+        "other_pages" : {
+          "2" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=DXB+DXB+official+airport+website&start=10",
+          "3" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=DXB+DXB+official+airport+website&start=20",
+          "4" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=DXB+DXB+official+airport+website&start=30",
+          "5" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=DXB+DXB+official+airport+website&start=40",
+          "6" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=DXB+DXB+official+airport+website&start=50",
+          "7" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&hl=en&q=DXB+DXB+official+airport+website&start=60"
+        }
+      }
+    },
+    "elapsedMs" : 2110
+  }, {
+    "sequence" : 2,
+    "stage" : "IDENTITY_GOOGLE_MAPS",
+    "engine" : "google_maps",
+    "query" : "DXB DXB",
+    "type" : "search",
+    "hl" : "en",
+    "noCache" : "true",
+    "requestUrl" : "https://serpapi.com/search?engine=google_maps&type=search&q=DXB%20DXB&hl=en&no_cache=true",
+    "httpStatus" : 200,
+    "httpStatusText" : "OK",
+    "serpApiStatus" : "Success",
+    "serpApiError" : null,
+    "candidates" : [ ],
+    "sanitizedResponse" : {
+      "search_metadata" : {
+        "id" : "6a922565acb3e4de3cb5e207",
+        "status" : "Success",
+        "json_endpoint" : "https://serpapi.com/searches/HOFdXx0pRPMLzyvrqu-Y8-9q7k3dYkSjdFhrjnWu5wc/6a922565acb3e4de3cb5e207.json",
+        "markdown_endpoint" : "https://serpapi.com/searches/HOFdXx0pRPMLzyvrqu-Y8-9q7k3dYkSjdFhrjnWu5wc/6a922565acb3e4de3cb5e207.md",
+        "created_at" : "2026-08-29 00:18:45 UTC",
+        "processed_at" : "2026-08-29 00:18:45 UTC",
+        "google_maps_url" : "https://www.google.com/maps/search/DXB+DXB//data=!3m1!4b1!4m2!2m1!6e5?hl=en",
+        "raw_html_file" : "https://serpapi.com/searches/HOFdXx0pRPMLzyvrqu-Y8-9q7k3dYkSjdFhrjnWu5wc/6a922565acb3e4de3cb5e207.html",
+        "prettify_html_file" : "https://serpapi.com/searches/HOFdXx0pRPMLzyvrqu-Y8-9q7k3dYkSjdFhrjnWu5wc/6a922565acb3e4de3cb5e207.prettify",
+        "total_time_taken" : 1.24
+      },
+      "search_parameters" : {
+        "engine" : "google_maps",
+        "type" : "search",
+        "q" : "DXB DXB",
+        "google_domain" : "google.com",
+        "hl" : "en"
+      },
+      "search_information" : {
+        "local_results_state" : "Showing results for type: \"place\" instead of type: \"search\"",
+        "query_displayed" : "DXB DXB"
+      },
+      "place_results" : {
+        "title" : "Dubai International Airport",
+        "place_id" : "ChIJaQ4mkwZdXz4R6e5IegDUleY",
+        "data_id" : "0x3e5f5d0693260e69:0xe695d4007a48eee9",
+        "data_cid" : "16615419498770001641",
+        "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d0693260e69%3A0xe695d4007a48eee9&engine=google_maps_reviews&hl=en",
+        "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d0693260e69%3A0xe695d4007a48eee9&engine=google_maps_photos&hl=en",
+        "gps_coordinates" : {
+          "latitude" : 25.2515401,
+          "longitude" : 55.3683066
+        },
+        "place_id_search" : "https://serpapi.com/search.json?engine=google_maps&google_domain=google.com&hl=en&place_id=ChIJaQ4mkwZdXz4R6e5IegDUleY",
+        "provider_id" : "/m/0147lg",
+        "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnRhzkAMjtx7PWI249fJR4WrIydaAIyea2Lz2MbpdyV7FO27fHSinIC72S6x6WvK4yAE1opSyc2rs8tEKiyBzSQPCl-fn7S6FHY_mCbqGtcyaO64T_XGz7t-Colv02tGFymFg0=w1000-h1000-c-n",
+        "serpapi_thumbnail" : "https://serpapi.com/images/url/7v5P5XicHcRJDoIwFADQE1VqJVRNXCCRwSEiNaIrA2VSoUX6HcoBvYO3MfEt3vdTAbRqahh1NRqUUpZ1_lB5x6WAXMCAy8YoW4W4Qsqw_SjcxyKq-pu9ucKbhnFAzEmxjMy4C3SW2IHOE7LuySZtM32g7pbQwmcXETiUMOttxc-Vqe3FULZMc9KpMSxWFz3v2S50alQIyizXP50bJ717wHWytcz9-ej1FJAj6ycm4Lm6cUs8ew0xxqj6z5H4AfViQ80",
+        "rating_summary" : [ {
+          "stars" : 1,
+          "amount" : 3738
+        }, {
+          "stars" : 2,
+          "amount" : 1551
+        }, {
+          "stars" : 3,
+          "amount" : 4259
+        }, {
+          "stars" : 4,
+          "amount" : 14941
+        }, {
+          "stars" : 5,
+          "amount" : 83586
+        } ],
+        "rating" : 4.6,
+        "reviews" : 108075,
+        "unclaimed_listing" : true,
+        "type" : [ "International airport", "Airport" ],
+        "type_ids" : [ "international_airport", "airport" ],
+        "description" : "Intercontinental hub for the UAE with purpose-built, jet airliner facility concourse.",
+        "extensions" : [ {
+          "service_options" : [ "Onsite services" ]
+        }, {
+          "accessibility" : [ "Wheelchair accessible entrance", "Wheelchair accessible parking lot", "Wheelchair accessible restroom", "Wheelchair accessible seating" ]
+        }, {
+          "amenities" : [ "Baggage storage", "Gender-neutral restroom", "Restroom", "Wi-Fi", "Free Wi-Fi" ]
+        }, {
+          "children" : [ "Has changing table(s)", "Nursing room" ]
+        }, {
+          "parking" : [ "Paid parking lot", "Paid street parking" ]
+        } ],
+        "service_options" : {
+          "onsite_services" : true
+        },
+        "address" : "Airport Rd - Al Garhoud - Dubai - United Arab Emirates",
+        "country" : "United Arab Emirates",
+        "website" : "https://www.dubaiairports.ae/",
+        "phone" : "+971 4 224 5555",
+        "plus_code" : "7929+J8 Dubai - United Arab Emirates",
+        "images" : [ {
+          "title" : "All",
+          "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnRhzkAMjtx7PWI249fJR4WrIydaAIyea2Lz2MbpdyV7FO27fHSinIC72S6x6WvK4yAE1opSyc2rs8tEKiyBzSQPCl-fn7S6FHY_mCbqGtcyaO64T_XGz7t-Colv02tGFymFg0=w1000-h1000-c-n",
+          "serpapi_thumbnail" : "https://serpapi.com/images/url/7v5P5XicHcRJDoIwFADQE1VqJVRNXCCRwSEiNaIrA2VSoUX6HcoBvYO3MfEt3vdTAbRqahh1NRqUUpZ1_lB5x6WAXMCAy8YoW4W4Qsqw_SjcxyKq-pu9ucKbhnFAzEmxjMy4C3SW2IHOE7LuySZtM32g7pbQwmcXETiUMOttxc-Vqe3FULZMc9KpMSxWFz3v2S50alQIyizXP50bJ717wHWytcz9-ej1FJAj6ycm4Lm6cUs8ew0xxqj6z5H4AfViQ80"
+        }, {
+          "title" : "Latest",
+          "last_updated" : "17 days ago",
+          "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnh7bQCmJt-prmcWU7AhPksYuDreqCgH0CJM85yOGc_MeuK-l7pp8iF3agvGMch_agp8OwpDKcdGFfPNFXk25Oy16u3TCYYaxtpgfMc7rg9UCvrPyENEwlSZDAtP_Ob7WssCv_v5j5LiXQ4=w1000-h1000-c-n",
+          "serpapi_thumbnail" : "https://serpapi.com/images/url/fo60GHicHcRNjoIwGADQE1VQxKKJC1IEo4NUR4O4IfhZW0d-altATul6bjPJvMX7_QhjpF5YVimcEW8aXrJWMwVNbVhtRtBUFpcagUba8tcHekxrga97Um0MkqqC9IR9QZ86awPFXoSvbbKJPXdIIshj1m5RiaX0HqFT8C6KQeQFl17Sy2ALtyi80114fk7cZBjPWudIsqx4G8nvMWDF5yfSKTqsdqu-_L4EvqF5csWp1qTLO_fH_Xqc99NlP7ZtG4n_AdV_4KdICQ"
+        }, {
+          "title" : "Videos",
+          "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnNJQbreJKRyGY0vuTE3Y3vWXNP6G4D-NiiyV3XniZg2guWzupomHRWc70DtKow0qcALR4h6rvBrEK2efe7iSFLK19p001lXl2xZZzMoCGdBKzeJZHAikiOnA1lS8yyQevldARv8Q=w1000-h1000-c-n",
+          "serpapi_thumbnail" : "https://serpapi.com/images/url/BYxhs3icHcRdkoIgAADgE5GoTX8zPdBqOtJaUpPm4xIhE4ErSKs33CN0m2b6Hr7Xf2Nta1aeJ5twwrXmkvWGdVQry5SdUP3weGsANcB4KCWHU6nyrPjpWIbJkFyg609xeAldWeWHWTKNQC7EcA4rJWoe8L4c-1Y_UlLSOYws1k_4S9GOTJtZ5zZdjAN2Y3Nx3O6wv2wh9GUlg7-6Hr_1V3Ld4JFldYrEXewV8uVxMQwFc_KKiFsU66cPIQTNZwrUG96GRUg"
+        }, {
+          "title" : "Fixed-wing aircraft",
+          "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlw3QpoZMdYEUnyOBtJM_SCT_2LIIuvle9HAqPBPyvFCbx2v-jFU_ZXctTn0qkLf1xnqu77apY2Krr5bcm83HkcQuujjei_K2LClYMHYooamBul6EBv4Wh-PwHirWbOtlKRn7hNNg=w1000-h1000-c-n",
+          "serpapi_thumbnail" : "https://serpapi.com/images/url/o83nIHicHcThEoEwAADgJ5pSCHd-qMuNilCX_Olqpsnaqm3FI3oEb-PO9-P7foiUjVhqGiXmqOS8pFgJ3CHOJGZyhHitlY0ASAChreEpjBI6mMeGX4Nb6sbsfbDlLsjOTpQZ_nareooXcN2GdvjuN07xMnpQbeLsekEyYnr79O_jF2uVZeVNanhdNy1QPTfhEx2Vqir8yDzDd2gawJTzvLYVnbl2P0kICAf46JLiIKl3YhbZ78vVMNZ1HZD_CLAfYkdGvA"
+        }, {
+          "title" : "Street View & 360°",
+          "thumbnail" : "https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=lVyyk5Aj8ZshuFhLVy-JrQ&cb_client=maps_sv.tactile.gps&w=224&h=298&yaw=119.88746&pitch=-0.11254019&thumbfov=100",
+          "serpapi_thumbnail" : "https://serpapi.com/images/url/WvS4FnicHc09DsIgGADQ27CVv7RKTYhxcTAuLh1cGkQsKC2kfKVyJy_kbUx8F3jfjwWIaUdIgtkYyM6s0b2NT1VUeAhh8EZFl7AOI8mMgF3G26Sc30c1BXeXvivl1Rye4prscrTnrlSn-YL0rdfemQnkqGLqU8agNDhv8BATWiXnNbKStwIVtUrGWizEtt6g6EBbWVHMGG9qylr0Hx8hS0bpD2LLPJQ"
+        } ],
+        "at_this_place" : {
+          "type" : [ {
+            "title" : "Food & Drink",
+            "places" : 18
+          }, {
+            "title" : "Airlines",
+            "places" : 2
+          }, {
+            "title" : "Lounges",
+            "places" : 5
+          }, {
+            "title" : "Shopping",
+            "places" : 22
+          }, {
+            "title" : "Services",
+            "places" : 1
+          }, {
+            "title" : "Health & Beauty",
+            "places" : 13
+          }, {
+            "title" : "Transport",
+            "places" : 1
+          }, {
+            "title" : "Other",
+            "places" : 11
+          } ],
+          "places" : [ {
+            "position" : 1,
+            "title" : "Flour + Stone",
+            "data_id" : "0x3e5f5d61cc0f0fa3:0x61566f73c8eef801",
+            "data_cid" : "7013916012759152641",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d61cc0f0fa3%3A0x61566f73c8eef801&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d61cc0f0fa3%3A0x61566f73c8eef801&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.244121200000002,
+              "longitude" : 55.3705681
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5d61cc0f0fa3%3A0x61566f73c8eef801%218m2%213d25.244121200000002%214d55.3705681&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "rating" : 4.8,
+            "reviews" : 1135,
+            "type" : "Restaurant",
+            "type_id" : "restaurant",
+            "address" : "Concourse A, 124923 DXB - Gates A - Departures - Dubai Int'l Airport - Dubai - United Arab Emirates",
+            "open_state" : "Open 24 hours",
+            "hours" : [ {
+              "saturday" : "Open 24 hours"
+            }, {
+              "sunday" : "Open 24 hours"
+            }, {
+              "monday" : "Open 24 hours"
+            }, {
+              "tuesday" : "Open 24 hours"
+            }, {
+              "wednesday" : "Open 24 hours"
+            }, {
+              "thursday" : "Open 24 hours"
+            }, {
+              "friday" : "Open 24 hours"
+            } ],
+            "thumbanil" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnKSfRn4NW7QcgF9qojaf1VbDDPMQK0ndnXSy7ISphaHNO9wroAN7N339FUJVyd2Lj-KYT4H-3uXGOJkPmzM3tI1Tg3xkNE6HZlDIN3TfWi0ZYfS3fFpb8Zb6MQmFR95o4aTtG84Q=w86-h86-n-k-no",
+            "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnKSfRn4NW7QcgF9qojaf1VbDDPMQK0ndnXSy7ISphaHNO9wroAN7N339FUJVyd2Lj-KYT4H-3uXGOJkPmzM3tI1Tg3xkNE6HZlDIN3TfWi0ZYfS3fFpb8Zb6MQmFR95o4aTtG84Q=w86-h86-n-k-no"
+          }, {
+            "position" : 2,
+            "title" : "Treehouse Juicery",
+            "data_id" : "0x3e5f5d64ff5efeb3:0xb07873bc6cd3281b",
+            "data_cid" : "12716040800997419035",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d64ff5efeb3%3A0xb07873bc6cd3281b&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d64ff5efeb3%3A0xb07873bc6cd3281b&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2489426,
+              "longitude" : 55.360396599999994
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5d64ff5efeb3%3A0xb07873bc6cd3281b%218m2%213d25.2489426%214d55.360396599999994&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "rating" : 4.6,
+            "reviews" : 667,
+            "type" : "Health food restaurant",
+            "type_id" : "health_food_restaurant",
+            "address" : "Terminal 3 - Dubai Airport - Dubai - United Arab Emirates",
+            "open_state" : "Open 24 hours",
+            "hours" : [ {
+              "saturday" : "Open 24 hours"
+            }, {
+              "sunday" : "Open 24 hours"
+            }, {
+              "monday" : "Open 24 hours"
+            }, {
+              "tuesday" : "Open 24 hours"
+            }, {
+              "wednesday" : "Open 24 hours"
+            }, {
+              "thursday" : "Open 24 hours"
+            }, {
+              "friday" : "Open 24 hours"
+            } ],
+            "thumbanil" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlnWr1unswwAYGL7YaJkdikqifGZJqW6rOabQsCEuR5fAJ_jipmTri2YnAI7NVhUfATYsa3trCzOxfkEahp2p1sWVRV52BkgZhhiYsJpG0fZKExjurdAPa9jOjPoa6Zb1y-Sk7EkQ=w86-h86-n-k-no",
+            "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlnWr1unswwAYGL7YaJkdikqifGZJqW6rOabQsCEuR5fAJ_jipmTri2YnAI7NVhUfATYsa3trCzOxfkEahp2p1sWVRV52BkgZhhiYsJpG0fZKExjurdAPa9jOjPoa6Zb1y-Sk7EkQ=w86-h86-n-k-no"
+          }, {
+            "position" : 3,
+            "title" : "British Airways Lounge",
+            "data_id" : "0x3e5f5daf6ad4f847:0x21670d24df7bede8",
+            "data_cid" : "2406906977872244200",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5daf6ad4f847%3A0x21670d24df7bede8&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5daf6ad4f847%3A0x21670d24df7bede8&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2580133,
+              "longitude" : 55.3436277
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5daf6ad4f847%3A0x21670d24df7bede8%218m2%213d25.2580133%214d55.3436277&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "rating" : 3.7,
+            "reviews" : 131,
+            "type" : "Lounge bar",
+            "type_id" : "lounge",
+            "address" : "785V+6F2 Dubai International Airport - Dubai - United Arab Emirates",
+            "open_state" : "Open 24 hours",
+            "hours" : [ {
+              "saturday" : "Open 24 hours"
+            }, {
+              "sunday" : "Open 24 hours"
+            }, {
+              "monday" : "Open 24 hours"
+            }, {
+              "tuesday" : "Open 24 hours"
+            }, {
+              "wednesday" : "Open 24 hours"
+            }, {
+              "thursday" : "Open 24 hours"
+            }, {
+              "friday" : "Open 24 hours"
+            } ],
+            "thumbanil" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWl8CTLqbHXUaCKftyoErk8f3foFwOh_j-noEGFVpjFxobdv9fgu9VNUdTwv46DrF7J4RnD8vyT2yVcntXj0ky5cq2NueDQHBhMElZXq30iPMr4KpatKj2TzHBXFERct-Y1tWPwTLZbLPRNS=w86-h86-n-k-no",
+            "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWl8CTLqbHXUaCKftyoErk8f3foFwOh_j-noEGFVpjFxobdv9fgu9VNUdTwv46DrF7J4RnD8vyT2yVcntXj0ky5cq2NueDQHBhMElZXq30iPMr4KpatKj2TzHBXFERct-Y1tWPwTLZbLPRNS=w86-h86-n-k-no"
+          }, {
+            "position" : 4,
+            "title" : "Giraffe Stop",
+            "data_id" : "0x3e5f5da656561531:0xf380babb83d8a96b",
+            "data_cid" : "17546229462769117547",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da656561531%3A0xf380babb83d8a96b&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da656561531%3A0xf380babb83d8a96b&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.247091599999997,
+              "longitude" : 55.363971500000005
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da656561531%3A0xf380babb83d8a96b%218m2%213d25.247091599999997%214d55.363971500000005&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "rating" : 4.3,
+            "reviews" : 116,
+            "type" : "Cafe",
+            "type_id" : "cafe",
+            "address" : "مطار دبي الدولي, Concourse B، Terminal 2 - Dubai - United Arab Emirates",
+            "open_state" : "Open 24 hours",
+            "hours" : [ {
+              "saturday" : "Open 24 hours"
+            }, {
+              "sunday" : "Open 24 hours"
+            }, {
+              "monday" : "Open 24 hours"
+            }, {
+              "tuesday" : "Open 24 hours"
+            }, {
+              "wednesday" : "Open 24 hours"
+            }, {
+              "thursday" : "Open 24 hours"
+            }, {
+              "friday" : "Open 24 hours"
+            } ],
+            "thumbanil" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmUr421JCEPzS8GHIjrq_OLgiTdkOV_FZ4m-gjtAeQtDqToFP_pxejzU_IbdL1y6XmoTJWWLy4qOntHuL8dZyqEOk6LBYHrJinruS-ZauCku5vijsrtF0d3WX1LUhXJHbDmTiE=w86-h86-n-k-no",
+            "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmUr421JCEPzS8GHIjrq_OLgiTdkOV_FZ4m-gjtAeQtDqToFP_pxejzU_IbdL1y6XmoTJWWLy4qOntHuL8dZyqEOk6LBYHrJinruS-ZauCku5vijsrtF0d3WX1LUhXJHbDmTiE=w86-h86-n-k-no"
+          }, {
+            "position" : 5,
+            "title" : "Le Clos - Concourse A Main",
+            "data_id" : "0x3e5f5df59eca8b53:0x368efac47fb7fa10",
+            "data_cid" : "3931355246604319248",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5df59eca8b53%3A0x368efac47fb7fa10&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5df59eca8b53%3A0x368efac47fb7fa10&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.243498499999998,
+              "longitude" : 55.3723222
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5df59eca8b53%3A0x368efac47fb7fa10%218m2%213d25.243498499999998%214d55.3723222&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "rating" : 4.9,
+            "reviews" : 116,
+            "type" : "Liquor store",
+            "type_id" : "liquor_store",
+            "address" : "Dubai International Airport, DXB Concourse A - Terminal 3 Airport Rd - near Gate A1 - Dubai - United Arab Emirates",
+            "open_state" : "Open 24 hours",
+            "hours" : [ {
+              "saturday" : "Open 24 hours"
+            }, {
+              "sunday" : "Open 24 hours"
+            }, {
+              "monday" : "Open 24 hours"
+            }, {
+              "tuesday" : "Open 24 hours"
+            }, {
+              "wednesday" : "Open 24 hours"
+            }, {
+              "thursday" : "Open 24 hours"
+            }, {
+              "friday" : "Open 24 hours"
+            } ],
+            "thumbanil" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnlaXtcCv_F76vh5t7APNO6cDJKtXvn0vtlaiEZEHbFKFtpKniEuliBrJPP-GwtxvDohmc8E0SQI6puxZk7MdwD2N6pK--PjFpKZyYK811vjY-BvrDUoJpCxSS5RHWl7PsNV1kP=w86-h86-n-k-no",
+            "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnlaXtcCv_F76vh5t7APNO6cDJKtXvn0vtlaiEZEHbFKFtpKniEuliBrJPP-GwtxvDohmc8E0SQI6puxZk7MdwD2N6pK--PjFpKZyYK811vjY-BvrDUoJpCxSS5RHWl7PsNV1kP=w86-h86-n-k-no"
+          }, {
+            "position" : 6,
+            "title" : "Fortnum & Mason",
+            "data_id" : "0x3e5f5dcb281c618d:0x11644e82a10cb83b",
+            "data_cid" : "1253212919270520891",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dcb281c618d%3A0x11644e82a10cb83b&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dcb281c618d%3A0x11644e82a10cb83b&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.247514499999998,
+              "longitude" : 55.3633509
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5dcb281c618d%3A0x11644e82a10cb83b%218m2%213d25.247514499999998%214d55.3633509&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Tea store",
+            "type_id" : "tea_store"
+          }, {
+            "position" : 7,
+            "title" : "The Macallan Boutique by Le Clos",
+            "data_id" : "0x3e5f5ddd15832851:0x648688daae537127",
+            "data_cid" : "7243627523480973607",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5ddd15832851%3A0x648688daae537127&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5ddd15832851%3A0x648688daae537127&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.249355899999998,
+              "longitude" : 55.3597074
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5ddd15832851%3A0x648688daae537127%218m2%213d25.249355899999998%214d55.3597074&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Liquor store",
+            "type_id" : "liquor_store"
+          }, {
+            "position" : 8,
+            "title" : "Starbucks",
+            "data_id" : "0x3e5f5d42372c3add:0x36491287f4c8c625",
+            "data_cid" : "3911678126484669989",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d42372c3add%3A0x36491287f4c8c625&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d42372c3add%3A0x36491287f4c8c625&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.247652000000002,
+              "longitude" : 55.363155
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5d42372c3add%3A0x36491287f4c8c625%218m2%213d25.247652000000002%214d55.363155&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Coffee shop",
+            "type_id" : "coffee_shop"
+          }, {
+            "position" : 9,
+            "title" : "O’Briens Handcrafted Sandwiches & Coffee",
+            "data_id" : "0x3e5f5d7b18a36095:0x8a01ddc378a69955",
+            "data_cid" : "9944473283823311189",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d7b18a36095%3A0x8a01ddc378a69955&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d7b18a36095%3A0x8a01ddc378a69955&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.248676,
+              "longitude" : 55.3603178
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5d7b18a36095%3A0x8a01ddc378a69955%218m2%213d25.248676%214d55.3603178&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Fast food restaurant",
+            "type_id" : "fast_food_restaurant"
+          }, {
+            "position" : 10,
+            "title" : "T2-Taxi",
+            "data_id" : "0x3e5f5c55e9080505:0x900d1bd05c499bcf",
+            "data_cid" : "10379983297874336719",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5c55e9080505%3A0x900d1bd05c499bcf&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5c55e9080505%3A0x900d1bd05c499bcf&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2650042,
+              "longitude" : 55.3597434
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5c55e9080505%3A0x900d1bd05c499bcf%218m2%213d25.2650042%214d55.3597434&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Rideshare pickup location",
+            "type_id" : "rideshare_pickup_location"
+          }, {
+            "position" : 11,
+            "title" : "Pangaia",
+            "data_id" : "0x3e5f5d5bbf60822f:0xc938ebb7580c4424",
+            "data_cid" : "14499598173008053284",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d5bbf60822f%3A0xc938ebb7580c4424&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d5bbf60822f%3A0xc938ebb7580c4424&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.249239499999998,
+              "longitude" : 55.360268600000005
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5d5bbf60822f%3A0xc938ebb7580c4424%218m2%213d25.249239499999998%214d55.360268600000005&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Clothing store",
+            "type_id" : "clothing_store"
+          }, {
+            "position" : 12,
+            "title" : "Project Chaiwala",
+            "data_id" : "0x3e5f5d007efffcdd:0x7f64c9730c61a1bc",
+            "data_cid" : "9179683436454060476",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d007efffcdd%3A0x7f64c9730c61a1bc&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d007efffcdd%3A0x7f64c9730c61a1bc&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2436048,
+              "longitude" : 55.370862100000004
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5d007efffcdd%3A0x7f64c9730c61a1bc%218m2%213d25.2436048%214d55.370862100000004&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Coffee shop",
+            "type_id" : "coffee_shop"
+          }, {
+            "position" : 13,
+            "title" : "Pharmacy",
+            "data_id" : "0x3e5f5ddaeee22791:0x44f0ea2309d2638b",
+            "data_cid" : "4967727825199195019",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5ddaeee22791%3A0x44f0ea2309d2638b&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5ddaeee22791%3A0x44f0ea2309d2638b&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2436994,
+              "longitude" : 55.3709293
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5ddaeee22791%3A0x44f0ea2309d2638b%218m2%213d25.2436994%214d55.3709293&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Pharmacy",
+            "type_id" : "pharmacy"
+          }, {
+            "position" : 14,
+            "title" : "O'Briens",
+            "data_id" : "0x3e5f5d138f1fb599:0x945e5b17dca7608f",
+            "data_cid" : "10691082723468468367",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d138f1fb599%3A0x945e5b17dca7608f&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d138f1fb599%3A0x945e5b17dca7608f&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2485078,
+              "longitude" : 55.3623638
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5d138f1fb599%3A0x945e5b17dca7608f%218m2%213d25.2485078%214d55.3623638&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Cafe",
+            "type_id" : "cafe"
+          }, {
+            "position" : 15,
+            "title" : "DDF entertainment",
+            "data_id" : "0x3e5f5da7c1d85fa9:0x74f9febee191b015",
+            "data_cid" : "8429048273382256661",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7c1d85fa9%3A0x74f9febee191b015&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7c1d85fa9%3A0x74f9febee191b015&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2492926,
+              "longitude" : 55.3599864
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da7c1d85fa9%3A0x74f9febee191b015%218m2%213d25.2492926%214d55.3599864&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Book store",
+            "type_id" : "book_store"
+          }, {
+            "position" : 16,
+            "title" : "DDF - Liquor & Tobacco",
+            "data_id" : "0x3e5f5da7eac17341:0x5e00386e31e6ea41",
+            "data_cid" : "6773475885500000833",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7eac17341%3A0x5e00386e31e6ea41&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7eac17341%3A0x5e00386e31e6ea41&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2489504,
+              "longitude" : 55.360873399999996
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da7eac17341%3A0x5e00386e31e6ea41%218m2%213d25.2489504%214d55.360873399999996&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Liquor store",
+            "type_id" : "liquor_store"
+          }, {
+            "position" : 17,
+            "title" : "NIKE",
+            "data_id" : "0x3e5f5da403d3566b:0xb4037fd8e5393bfe",
+            "data_cid" : "12971351921292557310",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da403d3566b%3A0xb4037fd8e5393bfe&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da403d3566b%3A0xb4037fd8e5393bfe&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2466941,
+              "longitude" : 55.364304399999995
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da403d3566b%3A0xb4037fd8e5393bfe%218m2%213d25.2466941%214d55.364304399999995&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Sportswear store",
+            "type_id" : "sportswear_store"
+          }, {
+            "position" : 18,
+            "title" : "Ahlan First Class Lounge (Course D)",
+            "data_id" : "0x3e5f5d006127709d:0xce2107cb21c87689",
+            "data_cid" : "14853161615071147657",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d006127709d%3A0xce2107cb21c87689&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d006127709d%3A0xce2107cb21c87689&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2435601,
+              "longitude" : 55.371723499999995
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5d006127709d%3A0xce2107cb21c87689%218m2%213d25.2435601%214d55.371723499999995&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Travel lounge",
+            "type_id" : "travel_lounge"
+          }, {
+            "position" : 19,
+            "title" : "Sleepover",
+            "data_id" : "0x3e5f5da7aa4b04e1:0xaa10de7ab2f18a34",
+            "data_cid" : "12254539204644670004",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7aa4b04e1%3A0xaa10de7ab2f18a34&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7aa4b04e1%3A0xaa10de7ab2f18a34&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2482421,
+              "longitude" : 55.3611169
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da7aa4b04e1%3A0xaa10de7ab2f18a34%218m2%213d25.2482421%214d55.3611169&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Hotel",
+            "type_id" : "hotel"
+          }, {
+            "position" : 20,
+            "title" : "Cartier",
+            "data_id" : "0x3e5f5da6f0e36b17:0xecd58d16392d4948",
+            "data_cid" : "17065701489578428744",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6f0e36b17%3A0xecd58d16392d4948&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6f0e36b17%3A0xecd58d16392d4948&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2479411,
+              "longitude" : 55.3622114
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da6f0e36b17%3A0xecd58d16392d4948%218m2%213d25.2479411%214d55.3622114&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Jewelry store",
+            "type_id" : "jewelry_store"
+          }, {
+            "position" : 21,
+            "title" : "T1-Taxi",
+            "data_id" : "0x3e5f5d05f960de65:0x7926d833dcab52e9",
+            "data_cid" : "8729902644961432297",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d05f960de65%3A0x7926d833dcab52e9&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d05f960de65%3A0x7926d833dcab52e9&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2487195,
+              "longitude" : 55.3526231
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5d05f960de65%3A0x7926d833dcab52e9%218m2%213d25.2487195%214d55.3526231&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Rideshare pickup location",
+            "type_id" : "rideshare_pickup_location"
+          }, {
+            "position" : 22,
+            "title" : "T3-Taxi",
+            "data_id" : "0x3e5f5da732e01ef3:0x9ce3e1c5d94f469f",
+            "data_cid" : "11305127729500735135",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da732e01ef3%3A0x9ce3e1c5d94f469f&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da732e01ef3%3A0x9ce3e1c5d94f469f&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2454211,
+              "longitude" : 55.3604998
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da732e01ef3%3A0x9ce3e1c5d94f469f%218m2%213d25.2454211%214d55.3604998&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Rideshare pickup location",
+            "type_id" : "rideshare_pickup_location"
+          }, {
+            "position" : 23,
+            "title" : "DDF - Watches",
+            "data_id" : "0x3e5f5da6f1533bdb:0x1bef8b04446d6a31",
+            "data_cid" : "2012980408902052401",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6f1533bdb%3A0x1bef8b04446d6a31&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6f1533bdb%3A0x1bef8b04446d6a31&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.248096099999998,
+              "longitude" : 55.3623724
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da6f1533bdb%3A0x1bef8b04446d6a31%218m2%213d25.248096099999998%214d55.3623724&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Jewelry store",
+            "type_id" : "jewelry_store"
+          }, {
+            "position" : 24,
+            "title" : "M&ms",
+            "data_id" : "0x3e5f5d8cd9ca70d9:0x22af5ca22574c753",
+            "data_cid" : "2499318169696782163",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d8cd9ca70d9%3A0x22af5ca22574c753&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d8cd9ca70d9%3A0x22af5ca22574c753&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.247103499999998,
+              "longitude" : 55.3647004
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5d8cd9ca70d9%3A0x22af5ca22574c753%218m2%213d25.247103499999998%214d55.3647004&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Candy store",
+            "type_id" : "candy_store"
+          }, {
+            "position" : 25,
+            "title" : "Currency Exchange",
+            "data_id" : "0x3e5f5da697c858c7:0x49afd3df34e82d7",
+            "data_cid" : "331855965081993943",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da697c858c7%3A0x49afd3df34e82d7&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da697c858c7%3A0x49afd3df34e82d7&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2474478,
+              "longitude" : 55.3633016
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da697c858c7%3A0x49afd3df34e82d7%218m2%213d25.2474478%214d55.3633016&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Currency exchange service",
+            "type_id" : "currency_exchange_service"
+          }, {
+            "position" : 26,
+            "title" : "DDF - Confectionery",
+            "data_id" : "0x3e5f5da6bd3eb2e5:0x68cfb932a197be18",
+            "data_cid" : "7552458727234190872",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6bd3eb2e5%3A0x68cfb932a197be18&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6bd3eb2e5%3A0x68cfb932a197be18&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2472976,
+              "longitude" : 55.363372899999995
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da6bd3eb2e5%3A0x68cfb932a197be18%218m2%213d25.2472976%214d55.363372899999995&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Candy store",
+            "type_id" : "candy_store"
+          }, {
+            "position" : 27,
+            "title" : "Plaza Premium",
+            "data_id" : "0x3e5f5dbd47497049:0x79fbb2adf572458d",
+            "data_cid" : "8789815557960648077",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd47497049%3A0x79fbb2adf572458d&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd47497049%3A0x79fbb2adf572458d&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.244097099999998,
+              "longitude" : 55.370675399999996
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5dbd47497049%3A0x79fbb2adf572458d%218m2%213d25.244097099999998%214d55.370675399999996&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Travel lounge",
+            "type_id" : "travel_lounge"
+          }, {
+            "position" : 28,
+            "title" : "Game On",
+            "data_id" : "0x3e5f5da405dac447:0x956b111603f0977",
+            "data_cid" : "672919882525772151",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da405dac447%3A0x956b111603f0977&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da405dac447%3A0x956b111603f0977&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2468157,
+              "longitude" : 55.3646989
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da405dac447%3A0x956b111603f0977%218m2%213d25.2468157%214d55.3646989&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Clothing store",
+            "type_id" : "clothing_store"
+          }, {
+            "position" : 29,
+            "title" : "Louis Vuitton",
+            "data_id" : "0x3e5f5da6f9ea76a9:0xf616740844e8938",
+            "data_cid" : "1108280510105159992",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6f9ea76a9%3A0xf616740844e8938&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6f9ea76a9%3A0xf616740844e8938&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2480755,
+              "longitude" : 55.3619834
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da6f9ea76a9%3A0xf616740844e8938%218m2%213d25.2480755%214d55.3619834&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Clothing store",
+            "type_id" : "clothing_store"
+          }, {
+            "position" : 30,
+            "title" : "Self Service Center",
+            "data_id" : "0x3e5f5da6ffcf4651:0xb54db07de8f5476c",
+            "data_cid" : "13064292148897466220",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6ffcf4651%3A0xb54db07de8f5476c&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6ffcf4651%3A0xb54db07de8f5476c&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2480448,
+              "longitude" : 55.3614251
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da6ffcf4651%3A0xb54db07de8f5476c%218m2%213d25.2480448%214d55.3614251&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Business service",
+            "type_id" : "business_service"
+          }, {
+            "position" : 31,
+            "title" : "Travelex",
+            "data_id" : "0x3e5f5da7b1033e8b:0x24259e38e4d1352d",
+            "data_cid" : "2604661926697973037",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7b1033e8b%3A0x24259e38e4d1352d&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7b1033e8b%3A0x24259e38e4d1352d&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.248864500000003,
+              "longitude" : 55.360859999999995
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da7b1033e8b%3A0x24259e38e4d1352d%218m2%213d25.248864500000003%214d55.360859999999995&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Currency exchange service",
+            "type_id" : "currency_exchange_service"
+          }, {
+            "position" : 32,
+            "title" : "Nursing Station",
+            "data_id" : "0x3e5f5da7ef89b6cf:0x8507a14414c004ce",
+            "data_cid" : "9585807645659366606",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7ef89b6cf%3A0x8507a14414c004ce&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7ef89b6cf%3A0x8507a14414c004ce&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2495668,
+              "longitude" : 55.3594058
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da7ef89b6cf%3A0x8507a14414c004ce%218m2%213d25.2495668%214d55.3594058&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Medical clinic",
+            "type_id" : "medical_clinic"
+          }, {
+            "position" : 33,
+            "title" : "Assisted Passenger Lounge",
+            "data_id" : "0x3e5f5da7fd38baa3:0xc101e14808eea03c",
+            "data_cid" : "13907644823800553532",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7fd38baa3%3A0xc101e14808eea03c&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7fd38baa3%3A0xc101e14808eea03c&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2500848,
+              "longitude" : 55.359212799999995
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da7fd38baa3%3A0xc101e14808eea03c%218m2%213d25.2500848%214d55.359212799999995&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Travel lounge",
+            "type_id" : "travel_lounge"
+          }, {
+            "position" : 34,
+            "title" : "Sleepover (1)",
+            "data_id" : "0x3e5f5dbd652d998d:0xc4e99fbb1426dbf3",
+            "data_cid" : "14189047726853250035",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd652d998d%3A0xc4e99fbb1426dbf3&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd652d998d%3A0xc4e99fbb1426dbf3&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.243672999999998,
+              "longitude" : 55.3717246
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5dbd652d998d%3A0xc4e99fbb1426dbf3%218m2%213d25.243672999999998%214d55.3717246&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Travel lounge",
+            "type_id" : "travel_lounge"
+          }, {
+            "position" : 35,
+            "title" : "Jones Express",
+            "data_id" : "0x3e5f5dbd39fac683:0x40619dee21d03dd5",
+            "data_cid" : "4639162737263394261",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd39fac683%3A0x40619dee21d03dd5&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd39fac683%3A0x40619dee21d03dd5&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2443763,
+              "longitude" : 55.370391
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5dbd39fac683%3A0x40619dee21d03dd5%218m2%213d25.2443763%214d55.370391&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Restaurant",
+            "type_id" : "restaurant"
+          }, {
+            "position" : 36,
+            "title" : "DDF - Perfume/Cosmetics",
+            "data_id" : "0x3e5f5da7b0700021:0x6e8d8fc1c6e3a27b",
+            "data_cid" : "7966181378316542587",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7b0700021%3A0x6e8d8fc1c6e3a27b&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7b0700021%3A0x6e8d8fc1c6e3a27b&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.248749099999998,
+              "longitude" : 55.3607151
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da7b0700021%3A0x6e8d8fc1c6e3a27b%218m2%213d25.248749099999998%214d55.3607151&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Duty free store",
+            "type_id" : "duty_free_store"
+          }, {
+            "position" : 37,
+            "title" : "Nursing Station",
+            "data_id" : "0x3e5f5da696723f6f:0xc7a0b725f6c92ae7",
+            "data_cid" : "14384698583503416039",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da696723f6f%3A0xc7a0b725f6c92ae7&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da696723f6f%3A0xc7a0b725f6c92ae7&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.247427,
+              "longitude" : 55.3631294
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da696723f6f%3A0xc7a0b725f6c92ae7%218m2%213d25.247427%214d55.3631294&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Medical clinic",
+            "type_id" : "medical_clinic"
+          }, {
+            "position" : 38,
+            "title" : "Emirates Counter",
+            "data_id" : "0x3e5f5da6ff573777:0x8776dc3b447ef94f",
+            "data_cid" : "9761231389482481999",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6ff573777%3A0x8776dc3b447ef94f&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6ff573777%3A0x8776dc3b447ef94f&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2482184,
+              "longitude" : 55.3616722
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da6ff573777%3A0x8776dc3b447ef94f%218m2%213d25.2482184%214d55.3616722&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Airline",
+            "type_id" : "airline"
+          }, {
+            "position" : 39,
+            "title" : "Nursing Station",
+            "data_id" : "0x3e5f5dbd3f4efd0f:0x9817d746bf837068",
+            "data_cid" : "10959464917090136168",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd3f4efd0f%3A0x9817d746bf837068&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd3f4efd0f%3A0x9817d746bf837068&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2442334,
+              "longitude" : 55.3707322
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5dbd3f4efd0f%3A0x9817d746bf837068%218m2%213d25.2442334%214d55.3707322&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Medical clinic",
+            "type_id" : "medical_clinic"
+          }, {
+            "position" : 40,
+            "title" : "Arabian Adventures",
+            "data_id" : "0x3e5f5da656245825:0x6c0868d912099a47",
+            "data_cid" : "7784587237429713479",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da656245825%3A0x6c0868d912099a47&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da656245825%3A0x6c0868d912099a47&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.248307,
+              "longitude" : 55.3618253
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da656245825%3A0x6c0868d912099a47%218m2%213d25.248307%214d55.3618253&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Professional services",
+            "type_id" : "professional_services"
+          }, {
+            "position" : 41,
+            "title" : "First Aid",
+            "data_id" : "0x3e5f5da6a242bdcf:0xb15d3bccad328b6d",
+            "data_cid" : "12780437067812473709",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6a242bdcf%3A0xb15d3bccad328b6d&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6a242bdcf%3A0xb15d3bccad328b6d&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2473875,
+              "longitude" : 55.3636592
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da6a242bdcf%3A0xb15d3bccad328b6d%218m2%213d25.2473875%214d55.3636592&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Medical clinic",
+            "type_id" : "medical_clinic"
+          }, {
+            "position" : 42,
+            "title" : "Kiehl's",
+            "data_id" : "0x3e5f5da6930dbe09:0x318271438372cf48",
+            "data_cid" : "3567538389612941128",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6930dbe09%3A0x318271438372cf48&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6930dbe09%3A0x318271438372cf48&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2476831,
+              "longitude" : 55.3628819
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da6930dbe09%3A0x318271438372cf48%218m2%213d25.2476831%214d55.3628819&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Beauty salon",
+            "type_id" : "beauty_salon"
+          }, {
+            "position" : 43,
+            "title" : "Mandarin Oriental Hotel Entrance",
+            "data_id" : "0x3e5f5da7ba1866a9:0xd112ac2168f3b42",
+            "data_cid" : "941580810187651906",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7ba1866a9%3A0xd112ac2168f3b42&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7ba1866a9%3A0xd112ac2168f3b42&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.248886400000004,
+              "longitude" : 55.3605896
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da7ba1866a9%3A0xd112ac2168f3b42%218m2%213d25.248886400000004%214d55.3605896&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Hotel",
+            "type_id" : "hotel"
+          }, {
+            "position" : 44,
+            "title" : "DDF - Confectionery",
+            "data_id" : "0x3e5f5da7c075f295:0x2473f9032a73bacd",
+            "data_cid" : "2626716799679576781",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7c075f295%3A0x2473f9032a73bacd&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7c075f295%3A0x2473f9032a73bacd&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2491089,
+              "longitude" : 55.3600834
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da7c075f295%3A0x2473f9032a73bacd%218m2%213d25.2491089%214d55.3600834&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Candy store",
+            "type_id" : "candy_store"
+          }, {
+            "position" : 45,
+            "title" : "Swatch",
+            "data_id" : "0x3e5f5da6f22b975b:0xd700cb92f67bc321",
+            "data_cid" : "15492606550215476001",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6f22b975b%3A0xd700cb92f67bc321&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6f22b975b%3A0xd700cb92f67bc321&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2479372,
+              "longitude" : 55.3624182
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da6f22b975b%3A0xd700cb92f67bc321%218m2%213d25.2479372%214d55.3624182&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Watch store",
+            "type_id" : "watch_store"
+          }, {
+            "position" : 46,
+            "title" : "Raffle Counter",
+            "data_id" : "0x3e5f5da6f0d59eaf:0x84d5664c2c5db7da",
+            "data_cid" : "9571669060393744346",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6f0d59eaf%3A0x84d5664c2c5db7da&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6f0d59eaf%3A0x84d5664c2c5db7da&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2480486,
+              "longitude" : 55.362223799999995
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da6f0d59eaf%3A0x84d5664c2c5db7da%218m2%213d25.2480486%214d55.362223799999995&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Business service",
+            "type_id" : "business_service"
+          }, {
+            "position" : 47,
+            "title" : "First Aid",
+            "data_id" : "0x3e5f5dbd4089e971:0x8316b839954018c",
+            "data_cid" : "590371239119552908",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd4089e971%3A0x8316b839954018c&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd4089e971%3A0x8316b839954018c&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.244161,
+              "longitude" : 55.370869299999995
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5dbd4089e971%3A0x8316b839954018c%218m2%213d25.244161%214d55.370869299999995&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Medical clinic",
+            "type_id" : "medical_clinic"
+          }, {
+            "position" : 48,
+            "title" : "Wizz Rent A Car",
+            "data_id" : "0x3e5f5d4e0aeb1edb:0x8ffe2c910d2a7a9a",
+            "data_cid" : "10375779593010969242",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d4e0aeb1edb%3A0x8ffe2c910d2a7a9a&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5d4e0aeb1edb%3A0x8ffe2c910d2a7a9a&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.243518599999998,
+              "longitude" : 55.372054
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5d4e0aeb1edb%3A0x8ffe2c910d2a7a9a%218m2%213d25.243518599999998%214d55.372054&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Car rental agency",
+            "type_id" : "car_rental_agency"
+          }, {
+            "position" : 49,
+            "title" : "DDF - Confectionery",
+            "data_id" : "0x3e5f5dbd6879b735:0x6e2f300a600fc6ee",
+            "data_cid" : "7939617489196926702",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd6879b735%3A0x6e2f300a600fc6ee&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd6879b735%3A0x6e2f300a600fc6ee&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.243666100000002,
+              "longitude" : 55.371182499999996
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5dbd6879b735%3A0x6e2f300a600fc6ee%218m2%213d25.243666100000002%214d55.371182499999996&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Candy store",
+            "type_id" : "candy_store"
+          }, {
+            "position" : 50,
+            "title" : "First Aid",
+            "data_id" : "0x3e5f5da7b24ace4f:0x4f2ea83e455adcab",
+            "data_cid" : "5705682763330018475",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7b24ace4f%3A0x4f2ea83e455adcab&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da7b24ace4f%3A0x4f2ea83e455adcab&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.248893799999998,
+              "longitude" : 55.361111799999996
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da7b24ace4f%3A0x4f2ea83e455adcab%218m2%213d25.248893799999998%214d55.361111799999996&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Medical clinic",
+            "type_id" : "medical_clinic"
+          }, {
+            "position" : 51,
+            "title" : "DDF - Watches",
+            "data_id" : "0x3e5f5dbd7d3474f1:0xd0b94f034e02d32e",
+            "data_cid" : "15040139306192786222",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd7d3474f1%3A0xd0b94f034e02d32e&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd7d3474f1%3A0xd0b94f034e02d32e&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.243259199999997,
+              "longitude" : 55.371753399999996
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5dbd7d3474f1%3A0xd0b94f034e02d32e%218m2%213d25.243259199999997%214d55.371753399999996&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Jewelry store",
+            "type_id" : "jewelry_store"
+          }, {
+            "position" : 52,
+            "title" : "Currency Exchange",
+            "data_id" : "0x3e5f5dbd471e0345:0x9f5efbe969030968",
+            "data_cid" : "11483893079749101928",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd471e0345%3A0x9f5efbe969030968&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd471e0345%3A0x9f5efbe969030968&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2439835,
+              "longitude" : 55.3705947
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5dbd471e0345%3A0x9f5efbe969030968%218m2%213d25.2439835%214d55.3705947&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Currency exchange service",
+            "type_id" : "currency_exchange_service"
+          }, {
+            "position" : 53,
+            "title" : "Le Clos",
+            "data_id" : "0x3e5f5dbdcb0e1323:0xc6f2b5227d4e7efe",
+            "data_cid" : "14335719723609521918",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbdcb0e1323%3A0xc6f2b5227d4e7efe&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbdcb0e1323%3A0xc6f2b5227d4e7efe&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.248898999999998,
+              "longitude" : 55.3614639
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5dbdcb0e1323%3A0xc6f2b5227d4e7efe%218m2%213d25.248898999999998%214d55.3614639&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Liquor store",
+            "type_id" : "liquor_store"
+          }, {
+            "position" : 54,
+            "title" : "Transfers",
+            "data_id" : "0x3e5f5dbd684ce89d:0xd3a5f3ae4acd7314",
+            "data_cid" : "15250863643064890132",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd684ce89d%3A0xd3a5f3ae4acd7314&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd684ce89d%3A0xd3a5f3ae4acd7314&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.243804299999997,
+              "longitude" : 55.3711622
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5dbd684ce89d%3A0xd3a5f3ae4acd7314%218m2%213d25.243804299999997%214d55.3711622&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Airline",
+            "type_id" : "airline"
+          }, {
+            "position" : 55,
+            "title" : "Nursing Station",
+            "data_id" : "0x3e5f5da68dfe4071:0xc4f70252935f4a9d",
+            "data_cid" : "14192815304364477085",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da68dfe4071%3A0xc4f70252935f4a9d&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da68dfe4071%3A0xc4f70252935f4a9d&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2479811,
+              "longitude" : 55.3630869
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da68dfe4071%3A0xc4f70252935f4a9d%218m2%213d25.2479811%214d55.3630869&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Medical clinic",
+            "type_id" : "medical_clinic"
+          }, {
+            "position" : 56,
+            "title" : "Jo Malone",
+            "data_id" : "0x3e5f5da6946451f1:0xb7e142c3275560a5",
+            "data_cid" : "13249944984646672549",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6946451f1%3A0xb7e142c3275560a5&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6946451f1%3A0xb7e142c3275560a5&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.247553699999997,
+              "longitude" : 55.3629505
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da6946451f1%3A0xb7e142c3275560a5%218m2%213d25.247553699999997%214d55.3629505&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Beauty salon",
+            "type_id" : "beauty_salon"
+          }, {
+            "position" : 57,
+            "title" : "Derma Center",
+            "data_id" : "0x3e5f5dbd41f922d5:0x6fcc798c2347780",
+            "data_cid" : "503496717265827712",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd41f922d5%3A0x6fcc798c2347780&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5dbd41f922d5%3A0x6fcc798c2347780&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2439465,
+              "longitude" : 55.3710197
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5dbd41f922d5%3A0x6fcc798c2347780%218m2%213d25.2439465%214d55.3710197&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Medical clinic",
+            "type_id" : "medical_clinic"
+          }, {
+            "position" : 58,
+            "title" : "First Aid",
+            "data_id" : "0x3e5f5da6f3194805:0xe00e9e13b1a1f997",
+            "data_cid" : "16145015521591556503",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6f3194805%3A0xe00e9e13b1a1f997&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da6f3194805%3A0xe00e9e13b1a1f997&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2480327,
+              "longitude" : 55.362643899999995
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da6f3194805%3A0xe00e9e13b1a1f997%218m2%213d25.2480327%214d55.362643899999995&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Medical clinic",
+            "type_id" : "medical_clinic"
+          }, {
+            "position" : 59,
+            "title" : "First Aid",
+            "data_id" : "0x3e5f5da68db0813b:0xf94c0dd1605b73b2",
+            "data_cid" : "17963748206589998002",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da68db0813b%3A0xf94c0dd1605b73b2&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da68db0813b%3A0xf94c0dd1605b73b2&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2480588,
+              "longitude" : 55.36297450000001
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da68db0813b%3A0xf94c0dd1605b73b2%218m2%213d25.2480588%214d55.36297450000001&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Medical clinic",
+            "type_id" : "medical_clinic"
+          }, {
+            "position" : 60,
+            "title" : "Raffle Counter",
+            "data_id" : "0x3e5f5da656362147:0x76ab6ca039586541",
+            "data_cid" : "8551047752905680193",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da656362147%3A0x76ab6ca039586541&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x3e5f5da656362147%3A0x76ab6ca039586541&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2483646,
+              "longitude" : 55.361854
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x3e5f5da656362147%3A0x76ab6ca039586541%218m2%213d25.2483646%214d55.361854&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "type" : "Business service",
+            "type_id" : "business_service"
+          } ]
+        },
+        "user_reviews" : {
+          "most_relevant" : [ {
+            "username" : "GY",
+            "rating" : 5,
+            "contributor_id" : "103434760843590043331",
+            "user_review_count" : 148,
+            "user_photo_count" : 655,
+            "user_thumbnail" : "https://lh3.googleusercontent.com/a-/ALV-UjXvXbTyFDBc60aAwTc1OtHUlso1LbTaVt_junppuXepf-o55yI=s120-c-rp-mo-ba12-br100",
+            "description" : "Dubai International Airport is truly extraordinary. The terminal feels incredibly spacious with soaring high ceilings that create an open and airy atmosphere. The big lifts make moving between levels effortless even with luggage. Friendly helpers are readily available if you need assistance, and the official app is a real timesaver for navigating the vast layout. Food options are plentiful throughout, so you won’t go hungry no matter how long your layover is. An impressive and well-run airport experience overall.",
+            "link" : "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT21WU09IaENYM05rVFdWWFgycE5XWEEwTkY5cVRHYxAB!2m1!1s0x0:0xe695d4007a48eee9!3m1!1s2@1:CAIQACodChtycF9oOmVSOHhCX3NkTWVXX2pNWXA0NF9qTGc%7C%7C?hl=en-US",
+            "date" : "3 weeks ago",
+            "date_iso8601" : "2026-08-06T06:58:27+00:00"
+          }, {
+            "username" : "aaryesdee",
+            "rating" : 5,
+            "contributor_id" : "101546053606377875131",
+            "user_review_count" : 446,
+            "user_photo_count" : 11817,
+            "user_thumbnail" : "https://lh3.googleusercontent.com/a/ACg8ocKbKyGIabFJhIpKalhsbn6eNCWRfAvZeKt9osiwCC4voVhZIA=s120-c-rp-mo-ba12-br100",
+            "description" : "Biometric Smart Gates: Passing through immigration has become incredibly fast. Enhanced contactless \"Smart Gates\" now process the majority of travelers, often reducing the time at passport control to under 13 seconds. It's amazing.\nDXB World-Class Shopping: Dubai Duty Free remains a benchmark for airport retail, covering over 37000 square meters. It’s particularly well-regarded for luxury brands, electronics, and local specialties like gold and high-end dates.\nZen Gardens: Located in Terminal 3, these lush indoor gardens with tropical plants and fish ponds offer a rare moment of tranquility in a busy terminal.\nKudos to DXB authorities.👍👏👏👏",
+            "link" : "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT21wSWNWcHlhV3RDU1VWSFJUYzJSRVl6ZWtNNGNGRRAB!2m1!1s0x0:0xe695d4007a48eee9!3m1!1s2@1:CAIQACodChtycF9oOmpIcVpyaWtCSUVHRTc2REYzekM4cFE%7C%7C?hl=en-US",
+            "images" : [ {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmP3gVre6JxHRH5bqKc_Xqe6V5c7WjD1CYm6PJaCa1HBMoUDL-kiF40JItzqeKijHtZYnFJ9NEzr_UDWo6wAvfthHye6r2KT4f_kOlMHR_LpEti3bKqCdDP1UabigWy7qbwgZlo3AdM6_XWS=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMh-Ll6wlqkLgUxuZZCVa0KOPEWH0c5iaPbkWSW_und6vjv02e2pi5G13JAahvoXdkU-iRx6hMZwnUBPZvMHmPjAm4vD8AWUfgealCML0GOcSC76XxUlceUgD2v4QS72hbYWcaTu32lu10E=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMEasYzq9XUuAzLYnhM5X3zsDWSpbg2fCfEnXWtLpxIOe4aKoklU-mVP8wTVsqO3hWJlrVh_cStPTlp3GwONdyDw_L77Wq4y0oeRXQpvgZzhX2ibcIV837MMyZI_CVt5jw2CCpMSZS9l54=k-no"
+            } ],
+            "date" : "Edited 3 weeks ago",
+            "date_iso8601" : "2026-08-05T06:38:00+00:00"
+          }, {
+            "username" : "Krishna Kumar",
+            "rating" : 4,
+            "contributor_id" : "106129683800131858418",
+            "user_review_count" : 83,
+            "user_photo_count" : 2600,
+            "user_thumbnail" : "https://lh3.googleusercontent.com/a-/ALV-UjVrE04ol5Ka0yC76stY-Q3bOaPSxtrBK_dRptlh-waPPnlxt2NBBA=s120-c-rp-mo-ba12-br100",
+            "description" : "Dubai International Airport is truly one of the busiest and most well-managed airports in the world. Despite the heavy passenger flow at all times, the operations are handled smoothly and efficiently. The airport is extremely well organized, making transit, arrivals, and departures quite comfortable even during peak hours.\nOne of the biggest highlights of DXB is the excellent service provided by dnata and the supporting airport staff. From ground handling to passenger assistance, the staff are professional, polite, and always ready to help. Security checks, immigration counters, and baggage handling are generally fast and systematic considering the volume of travelers.\nThe airport offers a wide range of shopping and purchasing options, including duty-free stores, luxury brands, electronics, perfumes, souvenirs, and travel essentials. For food lovers, there are plenty of fooding options ranging from quick snacks to international cuisines, cafés, and full-service restaurants catering to all tastes and budgets.\nFacilities such as clean washrooms, prayer rooms, lounges, charging points, clear signages, and easy connectivity between terminals make the overall experience very convenient. Transit passengers are especially well taken care of, with comfortable waiting areas and helpful information desks.\nOverall, Dubai International Airport sets a global benchmark for airport standards. Excellent service, supportive staff, great shopping and dining options, and efficient management make it a world-class travel hub. Highly recommended for both transit and destination travelers.",
+            "link" : "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT21ZM2RsOXlhR3czVGtOM1dHRjVMVzVyY3poWmFFRRAB!2m1!1s0x0:0xe695d4007a48eee9!3m1!1s2@1:CAIQACodChtycF9oOmY3dl9yaGw3TkN3WGF5LW5rczhZaEE%7C%7C?hl=en-US",
+            "images" : [ {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMo7ig_N3IPZX5oT4w3cEDoiMstDYtpzoPi8TqzIHsJExpBE-FT0cRcUWnYWr-KIB2fvOLuYWmkNUqzmXpyZgqwJ25d-QDOSsxlBMWwreWcKGywUkPQbayrVzgSuxCJbpZOZADls4O8Udc=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmM51y3J_wsOlYQXfA-8GmJYgaVjNkxrsLr3sCVenHjQ2ZpT9cQnT-CKuWg035w4k6BraQQksMoLEs4otme5xz8uvK2DJeOyhxW8a7Otaghk9iJ89KLlQ8jrrFBiz2s24uR9NQfg6ItHn806=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNhpiB_Z5uMBuH8gKQvoQOdDxbpY7YZ708kQSZYpvS1gEteGohES4dABD-ZBQqw2wwzg9fmOjpcg0_dGaXIZdl3RZ1nKvE08f33ye1AHe-58v57CUCz92zwkNMoBfkV3fqK7vI43mJXYRE=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOHM-EKGk3NY3dkxAOv4JX4VsBliydHP13kw7M9n-ASqtFf7F55Gx9egQ_k-wH8lwyHJOId06m0kVf9kGpYvIq0g6W__Hx8lMVtOv6giQHJsKa2hsEQk9ijdVi_C2j_6CvmLZ0OME6qdvLh=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOHhgRwX9QBXuDfkQzVNXhA-fcB6V0uiDUgpIs0s1q-QM5J2g2LGCaDFfRa3KnBZY5v0TVm82OPWa0DqtDAe55TaYr2rqblxHCyDlW84A4XWXFg1Ms2sTLpDLp2pojfzofJUZCq41OgRxI0=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPJUeWP8k_c3vnx7mr8IPK-JRCBCRwivOJ9Bj3eezp2HA_q4_kPq-ILl0qCMWzsWgVJY_y9U1Pl9PiPaNs6-WWGj0i4kJZZBe-9NIjKoFSy_8_1NYEsYFVazaVOyLoXR-2ua7EWlu3gewc=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPO7j0IvWjHKb0YS4vqDs_rx7ov4tfeMkaNboSfhbrySoHu1B81q66AsE2ooUGP1hXKTcqz_ct_UD5rbrAeyDYOv6qAcHIiWmcqTkOzBy7GQARqqYGjJZ4HzPt8sNJRrGRMOwTgaF4tODM=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmO00HZEWtIuEkab9-f7XkAFTevbO7cyxsMpj9QmVy7ve1zYhKtjuOVWnHy-iuKpQWEH99e9mkuEb5CeTsiOOn2NmqKrOEPh9mSUvAYAHXiooB-NVgItMsB22LMGNltdKu_zus37VbxRu5gy=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNp0N2jWvlysIe76iE1w6Xfx07xFWj-VsH-ImJNUDW0pZEDDc8pPD0eUMnbAdDcod2s4WElB2leoCATFPFxm13mop08K79YJJbbmv048Q0wxRSvu5Yb26fSDxGgrhta15_24AzS3iSy11A=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNvT4xHBKc65NFzZ65rY5Yvm2GaCBbJXxzuIq8GNI7mUk600yhkTL1Yq8LYi8wN4Qsag_N1RKVDeMhjIaNPWkb7K5kwHLLqgsRVsaysKQsUyLWjeP-pzmoF5Exu_UCMtaVmo_-iJOS_4WiL=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmN1eekFycB_3xmtN4PTjw6DAJG90Xzg-yE8u9edMwXbVFX5LSQAmEUacHYAyNC3i32rDFkdpxkez3EoWFAakcYP5ptVUadYcr2neY5E8lsdOU1KVp3X0lji_Ya-arCWcpgzVILcV_9Z33FX=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNibx_frXy6GJdWBKBteV3ZUy2456BQRaRDcbRP_JflBqbF06p9tRFDKlk2kNPGwk7E5XQ4Ch8_O2ATr3USIAuqsIdFKDPCoL-BIxvNwndYG7WW3qGpMHClrVTNbpVYb71kpc2Gw5VSKiiV=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmO0laqArEPsCFLITXvXwlR9HmF3BISfJesWHoucdZUYZZIEUMBs92xaeLYe5Zcd_tee-eM6eJ4_rFRWX6JtQY0xDCZuCDBw2AB4xb5hH1Rar6z2Ksawm3UjoZpAXhjpmQ0Cr3ODtF6vLhwH=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNGgVIFmLRpOre42hr7DzIWHPHe3Z7Pu-c9PYsiBKi9Z5_8j1M8Vr_MwGHGCLt57nrhITLyqelg0L2O15TpWw9tdG0tm7GiYtsV5YwFWqcgc8SRtp-VH5JdZehlLvxjfRHL0aS8sLxB0mwV=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPzUDzKZFtmZ2BRD-0I2OfczrODbmUe2MGosxgA2NUGeoFfw2N3e2SXNpmgnwLH6H3AmVjIxv_Hl-XqEkdSHVehembe8G9f8paRiF3AmFLCCJ48JBDb-I3tpqdCU0kXhkWwLyzjOs0Lfk9D=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNHdOLhzvy_VX1RNHoNlteh-qzlDAwjI7ieuZoFiPfEzowmy78G-5qlJ37MzQeXv72YG-RpL3hYPRXYKJBMIDYHO8JU9qSVZnoBQM6X_UiLM-vsIPjDrOhp_R5kkXWeYOZQI6twujZ7Q21F=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMzGwyHaEU6YW5z__VNMptJWxsSXc7KssChMwCigfqBDGwT0u3OjaRxoLv2Rth0m_rPn1FbGju-5E5LSCOLIQWYHYPITbalLHFW-likXi6bie_pZIx5gbuvcYqXaAVec4WDZZO06r2PP9av=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMt07jG8UnIq3MGeJ0jXWRKTX7XF2bhF42nzSKSnp9j9xanP37F92OaT6XnCdeyeeAuZ571DCvMdXlvg5nI1K-oMZ5a6xp_4VaiyOGEtZsE0QW3pxlOZV3npWf7UpUVZxG-vzTdlzzrShRZ=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMO1kzBkhxuCmRTXfgirQB0eN_mca_w_83D2VmLNWhO1XKEKy_RLzuqak0ujUaWjmFtKrKPPVahMnGhNKh4aDvEdHHdri0BgeIzY262vxcSk8QOqDQ58cfo4yml9VuVTDJJHJzQj8uYfWM=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOzmv7bDhHWcUf4TpmWdb5M292YPin27Qs5zGVyRZ4zuAe0dfyMkahIXmNVDMsiE35fX5azCuet4i81XfEA_jU55LrCgKzDQ6a0TecSmlXkkNG4qhBDn4HZBA4gY9cKEglxRmL6kyJyTDTK=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOQDj_RMOTriG5fGPbxKw-lXF03oH2MsFLdxKt9NAZFcZHs6XWKlQPOkp7AF7AdGZWgwkIHtlWpZdxIF7O3yci_OL6C2keM6RkBNgvXy1fD2qiArUxCLhCcw-5SpY_DfWXETSSz71vhDlM7=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNsucNedxWLW023pJJJa7E-oTX5pk87sLitUdsvzVbauC1D0448ZDYqhSDQUpeZ9Dn2r-ygOXVBipw3TNlNKubV3pvRt-U91W8FiFUPrqClOC3JBSvJguVxB0xOO7MuZRW3rapgtm4iOrUM=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNXWHsuMo2A5eSOmSU_OwZmKIor2K5e_0Ctlma79XbKPZzm2w-V9TaW3Ytb338qu-muWYLzX-FlcJym7FYOUfb3Wx4hnBim45cFEMpJDh1ZNcQ85hu8_P4qGLtyv-qFgkjrDCwNwAg0ao4=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPxeyIkqNxC9v9vfqHITqOaJDuKKQQdWux6085xvJjCUyv_FR23XY2EssmXzx-45EyIbhmflxh62QtWamHtVfNsmzOs_HjM4hpw10I7dL0kI2t-Ph5rB7ZVUTtB1CgiOF081OsuX_xU1SGs=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmM5ZPwqLq_pyH5e9Vg79V_bmqstq4-DKx0fpj_cwTSIWox2uhoadYd-QKnalSrrslpIm8XNyi6LSSXz2RCoc3OLEO6JdSiYDDeEh59qs2nJiJhzeoBEQKxPVcqMISuVPxM5QyRGkA8zBUc=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPJA34fltdA4HkzLC5ELcSpvVsVv3cSnOPQtPjV17_nzyvypUk33mUtZgkYJ_JMy-niCY2X4edQYGG5x7X-fPMKDDf21R9PBccFZ5XOgpAUcUdMxUWAqioTIv_SUsIqQmkcm6XrGn3ca7sp=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNQ8WMTWLIYqdnG60z1IP_IkVRCO_H5jeAnH9n39Rk65ge9XDCKIhja9gz2m1tqNvPWd-sVb98oXgAy_2wZR8saHMddIvUvxTQlQctnZiE3kAY5YscjGap_QtkpQXNTwK-LDe2YK9yciics=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOI1EJULXMDXRKNHGZ7Z4sM6XH3OfovH7QjKyLS8Q_45pE_9jrtMRmGdI2IH84LXuaszRsqpJtP9BB1-qwkiRNZ9h-gLdcojqKd5sCO7jIDdLnH2thdo_ciHZJPA0NPoyGal-KRr2Sp6Uwj=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNgDGOUC6iMP1lNQSBrV_chU61xmTBStxynYtrcG1GeD3EHFrYf3jn4bN8t79pquqAO1BKETUfM_5x6Rheq4LuxKe2tPzpD_-jjMzE2DdXp7W-85LHwXInzg9gDPvAOOpsEqIQEprVI9Bo=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMPdjTe-Dgy2cyFjRegXDy_hVDtFC8O0ypsI3MamaRd9bCC0yxM7Ezf_Wodw90I1E5CAPXgNLJtuBTCj0KYZTXdrZDs3rJFOyVIxezQmvqxvti1EWfagtEunxyFnGY0fFWuDxNon0Ddo9VN=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPMIHHFaQu2LqsoPFKdOISBg9KwEo62PomzHYVafI2_Wkk8J-_8opoaFu02Ego54a_Ql9t8b364hE0gRzt7UU1wB-LvBIDs2cwQ_hH-26--Ft621H53ZMOxiz3GdHXqUgDzhBQSo7BQI4UG=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPFazQqYWjbhBb_bNTxuzqCinkNY7XJM1rGwSWeiYvx0EHMTJyye83PzQQivjoTp4AkNrnjyDVxx4-z6lYM8ru_L-EQjLArIc-ijZsxRC5lPdjUcyaB03l_Hv5uEAR_w-6C6tKIvvORvlpA=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMDi6Swh5OvBJMnXuzDl0az4agOvK2y45dLr9OyNmSTJgTshnnzFblc3_hDfnwlQRpG1HH9SJpBy5benMgwkDiBCKo_tlhuIGI7NmchMLEz6KgfQugHnt8giH8Ngd-IQd3k8cVwKyCy5muj=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOo7NAMaoJ5YgfUysXzkHVQRxM49KcSuorCboQNDsTA0RQZf3LO14xt5GkoFbDKMLxHzjiBR8vqsaBmQ2a7hzVF7B7eYQbWFNlLvcmJP_yvLuLpgsv_0wT51HQHgpeuqQ7LeCCRB72GYY-x=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPrW-U1vySd4pjwZ8S-FukDK-RwAAc4vRoPrwPByaRL17qVhL_zG3erds3WmjGX6D3tHJWqSpDydBcZExfS_94WBiA2nwNaCGtx69-fdKZem4QszO5VEpQ-idro9Wo-BPN4xZS2xPeXF7W-=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOgK3lKXPH9EhRhmSxLptLua_Ok6l0aVhCKB1kSXOFqEx9m9aljmf-bauH6ed5xeX9LX-eUM_mSy7JszHiZC9O5MP5cz00_xSlY5NF5cd8y0PRhVPLokYX8nrjxF_CdFD_RBkYIIsDbwN8=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPZttH6fv2RBEGax5YYLDLPPj6gi9_lqZiH0fqB5D_1Qszd_snQjn82ZM7mO6vetTHDiBqHTByi3aKJq_3CwsEfKmws_Qgd7gkHhGrmul1E9SSWQd3xLYmsc2SWxPYP_KCXBVnrlA4a3TM=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPz4SI0mU7zKBuNQXJvtKu1pG5tebUzitaRah-rnbzzUhlDtWxUjdwyqWnRm9lRRbmGEQ1u9vo6Hl2mxg8NVNe0S2h-Dfq2XyOSr_48D6-SBk-Ia9u7vq3f6nZSJ0DfY5ZCtbnjmbp4dkbm=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPnN6Y-iVhZ3dDhnWgaxnoaKgAv1prkex-iTHYWF95rPY-xj7qwsuUCan5E9_WeJ0CixrlWM4al6VSNONAdjxRGw_p-2SI4KkE2Bs04XTilfMO0r7Ri1WvgucotXgOsm2hT_ymesN9jySFp=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPDPrxMolRVDl-LaxS-ol83_HV9bw1_rjUyIVvXiOPJKRnUVfh8jtcznOfbSdISYXXTttaHi1D7z0v-qYuCJVeanrScI1Ji65LwEL3hval-CAcEPcR5pGoCkn7i3PBCjiKKNsVPSCOHhaBX=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPT-fFy5naovoDFax0Ey37J_rhqIJLxOV1sHO0TeXVhP1BmFs4XiO9XHGhjkRoP2H3HTgsd5WC5SVP61M-T0Zaqv957s9sAeNX80KNlmGFg73_NdwKgvx8o5nDCYMYrl3DAcM0fI35mkF-5=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmM2uj85X62k6bcIzp5mojNe5RkghLttAKSAamsblhyXKZgrqGcZ1rI0s_M0hwCnQUT7P7lUmh_P1olbxfgaweQ9ybO4TGeK18W5dDwI-OXLETCs9AxvcSMc8XGmxdQqHPjhAvbQ42AzBWNP=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMJNvTQ-H_0zJbPhfqEJFi0J541M1sDrVZub2cqaOuW62bL4thYiZq6T9P4gzLxHrQpLE8f1U8rrjriGfIMFOZuVeD_-xyiEaOBWtF3xI56S4mKcVifT6lykeKw8jfKVsWR60REdRpX1yYI=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOSqbkzpDXv8Sfj73y9A-_uyH9iHXAhscqJ6bf3o8E4i-PV5PHxn75qCoqzGi-PlOW8p7gcqyxvijcWtbgmdephCpdmDkrizi2lfFkKMeWG8Tg37-ErhMxStJ6oD474wjNGidSuteX6SeM=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMux71VXQr2yPk_tsRH9jqfz6OGVtqZQughdgqMxygpbXosom8zJGNdsqYCMnsMfWBBU1_9SoMhMyCYNIreCXLpc2AlLdluxjsbTo6893ShwZK5jOj6FGitppUNZbte6mVU308gzJKWpkE=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNOFILHHd5BSg_d6fHSNQAfeHx7fpXOk2cKUizxVJnOlpamQlKnqGH_1NqsdfR4dE1_D8k5M8TDmduXd6kx8R5M0QnugGuK1MmIA7lWJzmDSZ3OvJgYI-MAvD9wbvtfZMkArLtZJCzKJBTP=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmP0KTiGjQ8UVVgwW0sYkyAV_A5GaObWTD9weS2n795qfYhSsK3rQaGbmT-LR228MD8HxHo7U0p9Po8m7n4NuDm4r4qbgmnUfKOYf_VXMk-otV5jXUf0wRAH3oIOKzsQFMsZVNOMviSmk6LH=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOgHmH3Lty2isFl6HLXf36vR9HUv5VxCVIY507JEJuw2_gb9-oOE3FKhBSwMtrmX9pZuXK4wqTHNySPC0v3eOCZjoHiRFIMvh3CShnZ31FwK2wMDciqFeTQ1nkplcGjQFj5SbHma-bTFD31=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmP5O8BTpr25dV2zvmoiCTwOWBKW_NRtdM1aXtme3O6sIkIvpwB_06qlrBpyeeBtx00Tl5wwH0tg8G_piI0aHGMcu6n1S-ukc9nCjIFBD-jOrXcfceSeNRhxbm6qVv_4n9gPWiT6b5WR1y21=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPIKTX8Wzg3HEA3gewFCXokgugO1f-4LFQr09YbNKGPvMtFlCRmfWpZeFn55XCT77tyA5N72p9qJDA6myXpHNZBe07M30iTR-R8wZjA9Alaxj_XLpztzNnQK80iU0MGsvYMGstwIgk92IE=k-no"
+            } ],
+            "date" : "7 months ago",
+            "date_iso8601" : "2026-01-12T07:48:39+00:00"
+          }, {
+            "username" : "Sashank Upadhaya",
+            "rating" : 4,
+            "contributor_id" : "108401862165864769087",
+            "user_review_count" : 203,
+            "user_photo_count" : 1466,
+            "user_thumbnail" : "https://lh3.googleusercontent.com/a-/ALV-UjV0aAjMovrEKiZS9gDgAivZrc8d2aFafaztUBQzb3cQ24pcqBok=s120-c-rp-mo-ba12-br100",
+            "description" : "Dubai International Airport (DXB) remains the gold standard for global transit hubs, seamlessly blending futuristic efficiency with high-end luxury. As the world’s busiest airport for international passengers, it acts as a glittering gateway between East and West.\n​The Experience\n​The sheer scale of Terminal 3—the dedicated Emirates hub—is breathtaking. From the indoor Zen Garden to the world-renowned Dubai Duty Free, the airport feels more like a luxury mall than a transit station. For those with long layovers, the amenities are unmatched:\n​Relaxation: Sleep pods, \"Sleep 'n Fly\" lounges, and even a swimming pool at the G-Force Health Club.\n​Technology: Biometric \"Smart Gates\" have revolutionized arrivals, often clearing passengers in under 13 seconds.\n​Dining: A global palate ranging from quick bites like Shake Shack to fine dining and gold-flecked coffee.\n​The Caveat\n​However, DXB’s popularity is its primary challenge. During \"peak banks\"—the late-night hours when hundreds of flights connect—the terminals can feel incredibly crowded. Navigating the vast distances between concourses often requires a train or a long walk, which can be stressful during tight connections.\n​Verdict: If you enjoy world-class shopping and high-energy environments, DXB is a destination in itself. Just be sure to wear comfortable shoes and give yourself plenty of time to explore.",
+            "link" : "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT21abWFFZHdOMEp4TVVjeFVXMVpXSFp4TFdWNVRGRRAB!2m1!1s0x0:0xe695d4007a48eee9!3m1!1s2@1:CAIQACodChtycF9oOmZmaEdwN0JxMUcxUW1ZWHZxLWV5TFE%7C%7C?hl=en-US",
+            "images" : [ {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmO3uGZzddld-1tCDWAIc307vgmIekwvherx4tOBZtB2qlE1xxDEo6kMLp4chrrmH2FZ_EsJVQ2wJrrLRREZdNsuZ9JcJ-eI7CcC82dFSDIaBDrTJm58YKAAbPm_XONK2J5P2yp4RvVFqtjo=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMOjDdkJP52VLcHz6M-xKt12xCT4JUmYtFo-UflbrMSK_A4ajSn1KfluS15TJr3IlQ93de_LJuA0iG7-78W83refzqkuG1DdQMykf4qOqZVe4tR61qYuR29lDu-94DId2TDcc5uX0_1d7Qf=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMXsBF-TKn2S23J6LzNVaw-Ke8xXgQT5jiEgut0KY2FPjz012bRA7YdrEGvHfktVfw7bUH76hlcnecfHIKNOLh412ackNqNmkV7MbbKW8fkYOQ4GFyjsuI9_ldxd8eU2ahLjugvEbN9o8E=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPX_TvWAqfc_2cpKVJQZDnt0atvUsTQ-AJxkAr57G2huKK3nYPxVFQHn5tJzxinimBHF9HTvmltNhsaBhYyO6m-DIszsafzqFi35JsNLDIn_0QvPaoqiUiXjMj8TGwMVANqn5S3MBC4zhWS=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMMDRHzFne9J0bNh3VLYSjoBK6CTnwj40QaMp6wCydY9tChttsM7ZBaNL-Bb0Px-poYlqQiQokGAHE3S8JmYy-8rdMMUeWTw74UQPZ-UPeYetC4eEAp1j39ZUB1vValfLoP7veOTwGPnUWl=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMcSiJAaZT2CuAjwQZUoQ31IRDgkAKJG9EHEaa8l4kyUGRFUQ6aIu8mtARHffZJ_FRDaORm5K4D5Fbntddg0Wk-Bx7cycqitb_cRLYZBxNsNn2nEdx4nh_JbLEe0XjxE8KzAy7sDdkBhN4=k-no"
+            } ],
+            "date" : "7 months ago",
+            "date_iso8601" : "2026-01-23T11:06:17+00:00"
+          }, {
+            "username" : "Tasha (AutismFamilyTravelGuide)",
+            "rating" : 5,
+            "contributor_id" : "102145155812769451114",
+            "user_review_count" : 281,
+            "user_photo_count" : 2590,
+            "user_thumbnail" : "https://lh3.googleusercontent.com/a-/ALV-UjXQ-SVO7x2Rhf0IPO2ybkW-JBDW_txkINULMCNSdFrVx7geEkNH=s120-c-rp-mo-ba12-br100",
+            "description" : "Dubai Airport is less of an airport and more like a small, air-conditioned city that happens to have planes attached.\n\nIt’s huge, shiny, fast-moving and impressively efficient, even when it’s busy.\n\nFor travellers, it’s one of the easiest major hubs to navigate. Clear signage in English and Arabic, endless moving walkways, and staff everywhere to help keep things flowing. Security and passport control are usually smooth, and connections between flights are well organised.\n\nThe facilities are what really stand out. There are shops everywhere – from luxury brands to souvenir stores – plus countless places to eat, from quick snacks to proper sit-down restaurants.\n\nYou’ll find kids’ play areas, prayer rooms, quiet rest zones, showers, and lounges scattered through the terminals. If you have a long layover, there’s more than enough to keep you comfortable.\n\nIt’s also a surprisingly family-friendly airport. Wide spaces, plenty of seating, and lots of distractions for children mean it feels less stressful than many big international airports.\n\nYes, it can involve a lot of walking. And yes, it can feel overwhelming at first glance. But everything works, everything is clean, and everything is designed to keep you moving.\n\nWhether Dubai is your destination or just a stop on the way somewhere else, it’s one of those airports that actually makes travel feel a bit exciting rather than exhausting.",
+            "link" : "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2xkeGFGbFNhMGQ0UzJSV1kweHBNalp3Tm0xQlEzYxAB!2m1!1s0x0:0xe695d4007a48eee9!3m1!1s2@1:CAIQACodChtycF9oOldxaFlSa0d4S2RWY0xpMjZwNm1BQ3c%7C%7C?hl=en-US",
+            "images" : [ {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNqlB5g-8IiF4UHsktyGZ1zAAFHUKUDhY4BOvSa7PmAteDfgixvus41yKP7dV7u8cJfpNfTPH1Uk0HkQMh_esv3YocvIEhtkzU_2vpydUT4PCpLJB1nvEUkFHYBAj1m2qktaTOko4AtAJOW=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOh_R1fyEpMMMSMkmXHIMsy6AGOSrFPrFSkGqPw5YNt8aso76gUhVT_0pWz_ZF2NbgC7kl4xJWBEuvk5vn3ED5IbjiFVMpnPRSKua3N1DUTn8aRZCxbHvprETWVpGByzLw7S6TiV___7r1Q=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPdwxMqKyTtxWWd8jgxBpZZdcLvffwCwXEJkTstAelJ6ZAOvwMpdpN0D1oHMVpVMFMfCG6Huaum05faIKszhu3s0rmHRzv6XfcO7Gg_n4VacpssUbU7QosfRpAiMMayWPZY5UD7MnU041gZ=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPoRvHB6mc0yCPNVruKewKW93m2TJrVwIVWppOmTEr1udKVQgv_WL19nRaTBVAhaPdIqZTmvxWajhuh2mYSw1cLqwk9ZDa2CDRNl4rpHuMUAFyIE6E_ksUD90w3yStVA2GmwPOr4FwCJLQ=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNC7oKeaLLXu65JHcEvnSrJuQxe4ZQVIEVTajZlLqaKfabqIWFQPED7OA-x4AHDi0Ei-ynh6x6Lmt6EBvpxCt9a59L24bJIQrd0Beue6IREy5wLSSl89MNngltwe_rIVITWND1yT38F1nov=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNf-ula7q-U4jXS1VCRTrR3jfnRNeyqAhxYhQvEXuVleuftbz5dgkPaSMiGLra5vA5tW6SMlsAYgsTLQurLZR_Ojfpbw3NvxvkyPH75IMnet4eaDWhr9fnabL94NpWXV4Oqw2O-BxgTELE=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmN6Aywgh96vAj5KB2aXUZNdxYdRfkUJgs8AUud7xCID1HdWYe1N5UOspmK6EQhTyyT3HLwg-hSY16cr-FkcwpX1dYWaHTqP2o9jACzLRpfN8p3M4AdFEL9tOBr_lLUsP5oD20o1Aym4ltA8=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMdyyryIfmCzn0YToSU1mL7W-g2-eUza4X9DBLmVkkLJ8YQGm0XveqJxV68HcYrQ3Phbk3baVuBdV3Y3Vb8vYOa26KaE1JYbGtr2gUx9lCdUbaS2dS902kGp0nEN8OHiBuZHzBMn01jcjex=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOcC82fAb7ljXqlvdonV4xllUDvxueT5zu0V8fyZbMeifCEHYhgC4ZLilE0HKMxlPfe84HaNzaDlsvmmWeM6uwgKukDxKecgS6YrwvNWQDixFmmFxWOMLWJzRIzv6bwIJONqnCgiiXzvzVb=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMznD0CdBgkrD0NFLo3scdLBS5QR3ZMz2EWBfmejyOq02ZSAZSYoMGm0F3JuHWHhf_YcGdmpnPC4whl3vdAynRO_MvCODps5rdIopB6eCCJ0b2S9VmTBi5yJjldbbBqC15GyFBEcd27Aan8=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPrJgEO2jK15ZZbPOP3j0mPtRtc5rVgwTSMiLPYOwv9kU61xCvoqFXsXpP_TmdQFbu0X4g8eSsMEO3rFWqvzTYHZP4pbXjDm36GX9Tq8S6AwkX9jxthCuEM_6dWba704qKSY1FthFeg-fSl=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOEUHRS6y1T6-uDzkOAeMMSFQ2BNIRAoB190eXfEenA299gERRdb7yVTn6WNT1lWVqmJaoYEOo1kswgcWopmkQMc81ww7G9LNjrKd4wBtVN_4jeMYOLfwlHCGg5OZvqCWnBt3pu7rYH7SU=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmM7V2f1GEa01rVSr_ef1hHDH8dH_qhcSAkbMzynyuLSxEIttFec0BNlFsaWcxgp8R19cKYlTvvaAg7Bwzm769Tya9RFC8quO_yQxVh7O5E6JmNJkYX1Avw6pi-9f1bDB-VGv29kqTvIK2CQ=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNUqudZ8g2t2Q45Dc4A6LyrLBucber0Gjew0E7c0zMs0C1e62gKDbBCOUEE_N9mXSBFMgTebiHRa-SgNiqsHT1EOU2SkATrVn1BNth26Jbg90mDuuwkhYYyvZ2Hz5uDarIU0rWOTPoBQJ6u=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOmpnJUfBvpG1gRAL36bbKTwhZhyeZWqU1vbznIrs8rQ51LjQKnH4GbL9FpzRsTvZnWxlUKG_DEnx3Ir5BaoBvD9WbaxEPeuz5h0jzyntsHdxxsuoQf5mlaqoZhvVcYWs4rzWTRcW8zsm7z=k-no"
+            } ],
+            "date" : "7 months ago",
+            "date_iso8601" : "2026-01-19T09:39:03+00:00"
+          }, {
+            "username" : "LK",
+            "rating" : 5,
+            "contributor_id" : "107656037980464274866",
+            "user_review_count" : 89,
+            "user_photo_count" : 467,
+            "user_thumbnail" : "https://lh3.googleusercontent.com/a-/ALV-UjUu1YwVQdFpkZCHMIewSph3oLkM6s-TTVUaxKH6ur_C4C4LtAQ=s120-c-rp-mo-ba12-br100",
+            "description" : "Concourse B at Dubai International Airport is spacious, clean, and easy to navigate. Plenty of dining and duty-free options, comfortable seating, and clear signage make transfers smooth and stress-free. A well-organized concourse with great amenities.",
+            "link" : "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT25RM1pIQXpRUzEzUmw5T1VXaGtWelJ1YlRCM1dtYxAB!2m1!1s0x0:0xe695d4007a48eee9!3m1!1s2@1:CAIQACodChtycF9oOnQ3ZHAzQS13Rl9OUWhkVzRubTB3Wmc%7C%7C?hl=en-US",
+            "images" : [ {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPc-uAySHHNomdbwOFbvR632z0NKSvY4KgABjH7rXN9a0xQZWLbYaOIuAHkLVBzHWNBf5avj2Kpoahfc4qhgKmwIzLMryCfnSgTBZcPkzSxwE81et_P0fCmDLIWS9Vyn_8kj2DeBJc3dIdD=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNHUomSsoHYZ6BY2UiY5mnvdrQHcjdhsgXgoFZQp7QhP3fe5ZGIxo0lM8YYDnwkQclAinjVyXPSBgS81NA59CXdVaVTP3G-y3CW6c2XnI6_Y9e_46pF19urwabRzUS9wqonGmMw9CjfwHNR=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOYBEFhFURfu-Wa-EzQpTTpXlrkYGE8dsz1VLYqUzyVQgISr9IuIzTJkeK24Vcs5TRz2Hfh7rBT_7XAIZFbTFkdXvb1-qMS7FBHiT3uO9F6w_KwEhaqfTJlPkKHPSY8tpcMVkUIHxNBo4gw=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMb03GRdnzaEtUUV8U_FX8CgFrKqV9F-MARMB7850NAqPIFJwHD5l3q2ts-8hbE96MY29nBCqKVlyB10Ekw17LHLe_oNa2taF6_IQAEFY7jkop6DNo-JviVnlBQQqJ6XiPhyEco_1tjd0c=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMK9SpE3r0JM3-XT03VyHGxz5eLkSGp3wEphe_Ca4sLVExMfJQ2A_pUqVhKVBQ3LkFmnCvfd67a88mcC-MFHblXUxHv4R6_5Qf2bRBnmsEK-OvIdQHk00-i62kPMiIGBVvMnnS8VlR6Y2Rk=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPWdqV3GfFcxuh9h-XSYFFr0U4CC2k056yCODJKnJz8TNiUu-e9BQPbHCOePkTPqEkztVcIHz8h9GmVnhSHGNH2AT0gjhdpwL3QeOvzHTHDnqdn6YFXHZ-sZ_qxyXEj0aBMA7VCaTqXtjxm=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMkm4hmBg8qvXq9FT6cuk5z6q3LeEKhkj8zffMyKrDYYRoB8lTpPKT5GfIUCantrPAsONCHbWPLYBS8yu544l5C8dHlVuSZIbMwDvIbjw83bcNGSsuuTf4SShgjfJgF6meZUEQjUzZZwoKi=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPZDYlzGymF-RQKTlGiyWfuACy5du5LrCHTWfp5phBTxa4XnYY2UDNf8Tqg2QkqNQsWt4zRMn5MfUOsDIbH2C69AO1VKeIvVfq_qdaHwSoA2CX7hvTl4VnXrnVzCMaZlZPwCRkgwxZWmAWv=k-no"
+            } ],
+            "date" : "6 months ago",
+            "date_iso8601" : "2026-02-23T15:26:38+00:00"
+          }, {
+            "username" : "Ahmad Raza",
+            "rating" : 5,
+            "contributor_id" : "118410616666136263385",
+            "user_review_count" : 17,
+            "user_photo_count" : 90,
+            "user_thumbnail" : "https://lh3.googleusercontent.com/a-/ALV-UjVBiMaevDHB0Sdt8vUyXZpEG1kWKsG6nF4iAx7kaRrqbvQCsZs=s120-c-rp-mo-ba12-br100",
+            "description" : "Dubai International Airport (DXB) has had a phenomenal year in 2024, setting a new record with 92.3 million passengers, making it the world's busiest international airport for the 11th consecutive year.\n\n*Key Highlights:*\n\n- _Passenger Traffic_: DXB handled 92.3 million passengers in 2024, a 6.1% increase from 2023.\n- _Aircraft Movements_: The airport saw 440,300 flights, a 5.7% increase from 2023.\n- _Cargo_: DXB handled 2.2 million tonnes of cargo, a 20.5% increase from 2023.\n- _Top Routes_: India, Saudi Arabia, and the UK were the top three countries for passenger traffic.\n\n*Operational Excellence:*\n\n- _Baggage Handling_: DXB handled 81.2 million bags with a success rate of 99.45%.\n- _Security and Immigration_: 98.2% of guests waited less than 10 minutes at departure passport control, and 99.2% waited under five minutes at security ³ ⁶.\n\n*Future Plans:*\n\n- DXB aims to reach 100 million annual passengers by 2027.\n- The airport is investing $35 billion in expansion plans, including Dubai World Central - Al Maktoum International (DWC).\n\nOverall, Dubai International Airport continues to be a world-class hub, offering exceptional experiences to its passengers.",
+            "link" : "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT21Gc1RHRjNNMU5TY1RoS2NsOWFTbE14YjBnMGQyYxAB!2m1!1s0x0:0xe695d4007a48eee9!3m1!1s2@1:CAIQACodChtycF9oOmFsTGF3M1NScThKcl9aSlMxb0g0d2c%7C%7C?hl=en-US",
+            "images" : [ {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNwSyS9gxJRHD_EU-Eu1TSy_XDleip4ZC-BzCSqMn6WiwutjWN4HjHJfTWdy2VC1KiGLgJnghVUmOGKZnNNPsOdaFWCPi1qfiyiGT7gLAABZyAPH6xlwcgq71uEjG6gbWDQ6ct-7tJkUqE=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmO-dRhB9aISo874XfsuqqeVrrJN7_3px2uXsBeTQRiHJ7P7PUZEWGAsWRoX2dqIt4Ku83y_e2be_4ivx94FAtjiuUNC1J9o-gxHGCzgecSNJAr8ODLBuYluEIlquhPwkg7K9YFoayqv3zsV=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNr0aRi66maoiB6Ym8a0LOv9Fim7lOwAhB7VBQMZMwMDMTgE1YGiDJ-nxyofqzP2Vn-5w-GZsnTSgDMj-j-jRQbqqWxFfLq2dFeOKOvE6Y7Zxza9KE5cvMM3_ixTPQsKklpC5ns92eo1qA=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMa0ojBjs9jgaqz_-Z4LKBoXQkNFDE9lqe0Jr9fBMjb_XQsUlXy5GrBd5hieQp1KBngAFsRkUSM5Tq2Z4CKGYjSbxOGwJicK_1L5cTXBnF5Ts7r5oSZo_UNGW7-skbj3lNtydBwiQ8IXN4=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPiGFrjUO-IhdJ81ndo6P0n-diHD8xOH9Ic94jLTzIa5qOurtE7vqZgixpBvmHsebH0Bu3CWfbyY58y0kANz7hktZnjYtxMyE9A-Cb3M6XxnwIpDkk40ZqgrawKghhYx79rItTldQc4ApPL=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmM1kbrENuV9HyPjuZ1Dcrj9DZ61ia3Th8D0eVchL-1IIchHH5WKUKNvJPPyis0X48kP2M2KqB7X27g2bOGenEIssB72J_F2YgSEOkTqovKPhHCarY9ZvGiPg5FWLSYPdodaj5lqOFkFkOk=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOM2H9NJdrnxB1w_THFmdZKJfCZ5dH4tXeyiy-nkl1NF6nxrB9H4GM1R1zjFnS8qjVhsdPrm1nOYBsz1f_SPjpZDAPH5cOOa0unx6pJL_hZqqtYkRdIq8o4gR11UwrgOnJ2gaWPytIkJlDm=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMGj0vnogKTbl8eKCPiqvlgrF8WLw1-sXxYK15mzAACycFpxvIOte0WYZC7y6JiYZwUTrYhu3tnIKnPwTbL6DDkrFvyFECuhFH3mo9er7yzZKqnjHk2znTrKbUHaXPnx_qwDVC51JTpRg=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOsyrdyJ0JeUnd9y2w3LY8ovio7xUpNduIvhQB5fp58_exW_xdekXYDy_wmxpX0PLCO8Uto7mm9bkeV6J3pDO1iNrEZSwnVzTjPSbRuaM6jDBweeQpvQJuO9uJB6vk_mLjbHbWtErTGmT4=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPHQ0QqdTFLcHYGI9eixezh3KSLU9EMVFcOczCweECw7cl72-ebu7JMynbiwfZOcIw1_OVEyW7gy-g5xZ_2Chcs0nqnZkih0Xc3E5cnoBK3iI6Ul9kkPKJT_wepo8WLwfmAhljbr2O0gdjD=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPf4B2cLpyMCCusud_BiK38hFLT1MHMfnWxPef0x05XK0DmTWDh62Hc3gNZEIIVRBZrnr_EYdAHa8UwttDW2yXexdkvv3axCJJjTLKVux3vfu1UVKaj-jtoGag61ueWq1c19W61ip_qdbup=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmONl_5kmWqCT_wukRVrSqN437JLuB6QmapRewe1g8nfMfnYvYkztmztQnLTsA953mGxyW0PC-gp-ZR4d0W6dad7mzmsJVjQXpboxgbwKIpo1kcuSbCuUr0OKgVuilsWYa4OCi27OSd51dUe=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmP0vA07om6Z1YQt5OQRC9k2103vQEf2SWW9PTvK-FuyIsU7dQ0MQIur9L_blupybFrlK2_C6wbxiB3r0U_5hmzsUwkZ57GOaS5YwPtcNbvRoezjNQG1mLKxmujJPUCiSfkhySZXRizkinOD=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMj4hCOXxuULMzB_eUogiWv5zTl2c7jgMV0bdwRMEFrimsmcuM6-99S8fxNdhZmkb-v7txCxVJKPTSteHDDZ-qwiUTKpTtIRBpmxJu30bUk9pavkO3wD_mTzeHvawPPFr4eij7OOUISOZ1Y=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmP7kuI-V7KQWJizofq5MXCBLpFBt4Pp6Jt8Nf1feZSM_mn9-Gd6C1xKbFMHJ6gAQzivnKlq1IDAvhTOLo9uaw4MrgemB003bEGD-OqwCpu5jfPZqJKUM5OkZJcmWGAT9I3KEH7FZX0A-GqC=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmM9eqBPhBX2lctnMVCRFBdHhkLa7DPjvVTMrZ5BpP9jX393zNmt36igPkrziJFhnb9IJPjE1lG36Al66pb1XKBtanmnTYcW9aZnv0hKfQkSKU2-mcCCk3qC1ircm4vEPJ19GXGlymm-b136=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNbt86lHXhTJSQdkDX_yShNIW_DGuwTOLkf6L0J8kHWb3OmovqMAjWfrNyQDxPUgmpG0vvWRB0jzR_X_twjAERm-4Wmb5BcCfEOQ-5AyPN9vYtXHzlvEInl3EbIL5KKDB4-2KEYHRRfyoAW=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOs0OJNLu-7WiGsg8i9mKOw692nLP49HAoPutlU7PXqwFRrhx3oC1V3BUYBdATupdQFlxh2fxhO-JGbMs94vopWOGzn2il_Q6S93bAfYMt6TG5ojPojNlWo6xgqnPYRF80WnBolWC0akJw=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmP11wb8QLb0eYxuheeLc5Pk9ecZnJiNF4pOCZHfdizfkle7MNEooOyCvi7v956YaZL0j0kJzOqdgP8KFWVHJpJfj9qh2x1-uMQiV_6CoyL6B0wgHjRK71vxvXFBKFj-P74GAU9u_fAiovx5=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOrvdoKz83hoJ-rmNqtPbMVXwptfaoWJvFxOUBg9Qfv8PjwW_W7PONXKkn1xGf92-_hKR2za5mGVDMqO59g_YH5cHX1zyVgcaRO090fZlRpAAbU3SU216bKZnyRF3AfKAp7S_KTwn661dc=k-no"
+            } ],
+            "date" : "8 months ago",
+            "date_iso8601" : "2025-12-03T06:05:53+00:00"
+          }, {
+            "username" : "Mr Nemat",
+            "rating" : 5,
+            "contributor_id" : "108777090295756715389",
+            "user_review_count" : 46,
+            "user_photo_count" : 295,
+            "user_thumbnail" : "https://lh3.googleusercontent.com/a-/ALV-UjWx8hVun0b3fVTMO_Nebvd1CMEOsL85tdz0Cs4Z8f_VDZtWy6s=s120-c-rp-mo-br100",
+            "description" : "Dubai International Airport (DXB) offers a diverse and often efficient travel experience, though it can be inconsistent depending on the terminal. Many praise its extensive amenities, including vast duty-free shopping, diverse dining options, and modern facilities. Passengers frequently report rapid immigration and baggage handling, with positive interactions with staff noted as common. However, some reviews point to significant challenges such as very long walking distances within the massive terminals and potential inefficiencies, especially in older areas like Terminal 1. Despite its status as a world-leading hub, the passenger experience can be inconsistent, with some encountering frustrating delays or logistical issues.",
+            "link" : "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2s1MVozQmxXV0UwUnpGVFRVcHdhR1V5TTFCTGFWRRAB!2m1!1s0x0:0xe695d4007a48eee9!3m1!1s2@1:CAIQACodChtycF9oOk51Z3BlWWE0RzFTTUpwaGUyM1BLaVE%7C%7C?hl=en-US",
+            "images" : [ {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPZVkOuV7fgydHjkI-PpRj4UclK3x3rCtifKvj5EbqhbyRvlYmEbuWc8RnTkyKIBhOW-pLsMeJmIf78CXmqP810FBkW76VFN9Y7X0DLU9bNWwEG5PG34c2dTdwqwqq0f22mpZmiYGX3rESk=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMWe2iMAJgOe4XUyjscEXCzdamqRapYC6bNnoROfo1CWpPhA47u0bYjaDvDUExwpEvU8GpchOZkg4fyYvua9U8MmSHJ4zY--Ze577TRDaZunpLo8MZ1P7Ll2a734X8y9RKfGD0sdoIZq_EI=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMFNDEyHstbPJVsbmiCslRKydKKQysP67_L7afNklkghpMDBcTkWARGSkIG3cTdf6dyOOwO6clOHvmnsv8Uow6O_SWeAi3NEOwPgL7BJ3pA18xQzmaCwiS_0av4u9JGqHQW9SZ7QlRFstF4=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMOVO2-PbooEr9b_OQcyT48LMINKpxpkvvz5ctChc1rscXKtLrfQ0Bi548HQythi2MvItDwK_LK-oIHUfQkbkXacncIB-EOuJWo7L0xT--NNzHWTX7MKfUvdCcVbfHOjczIyTphqX87ZGoJ=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNbo_mOjDluJ7tL5iaP_-MwHk2Q-ZPO7GRa4a5f2MGuZiqs3WIcAS3ja09n3X80O0kDW_HQS5f4qSzDC2uV7zkuw-P-s-CL9KFdwyWdAHN7S1tcDr-L8nuV1zK77w7uyOWkqm2FRshxYWc=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPChV4FWOnfCSewspiV0qGB5udzcGtbwC3TMjlcPpGc1qQSz-7jIyhjeIA2z9BWf_7_kQIQHAuRDAEuTI20j1_CJ06sj6lbsVOCHaLSq-a6L_JZYRBstfmb4PF0dNRDgeB8D_tTC6EW_BrO=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNpGUMgKfLb3feUIo33mKU8eZ_c3CTfYjuJjY4qKVUYHEz5-XbsSujq3vAZbb-k_3nQ-hD40x83W_zRdaD4rf2EhTAqp2doDsxcLkCcIlt4NWjd1XuZOrXCZ3UZnntrqi8q_YNUKhQmV0w=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmN0T9I3Kp-7IEHFsylXvwGl2tYAtp2vfHgIHtLk-MIrcSu0XQZzeU827CCz4062NClHIMMBLVV54tcTDP2AO_9BygC68Yfsn8VAHxPNyB3JzV2m2Z84dPgERsNPVtCGsEclXjlirMP8emPg=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNJX50gXNTXWbOXQOBBpulSp8q4LbRnSmByKe38QHJ5iChFaCf5Nh_deFrMFPvG_P8-i0GHLlnq2FNhlyCZfJKkdwa1KXYdoWoSOBBIuXwAQnOAiBDUw2Qhcl6sFIoX-VOKf-xdMYW_1jOQ=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmO3Sl3RFsbzVzcc2dQ_ZWm4M0qVnlglBpNkQaq2Rr-_pzoak1e-bELyyDKWMMNyg_ujUP6ApwO0VLgJ6nnTbadVolErxAzblZURMMHSZoOh-O63DUUOcq_wX9kdJyMbQl5X-_QB72wIvWu-=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNiix10FndRGFi5E8ZJxuLVHsJcCK56eG94JgQdD7yOjsE4lpY0SEo5zNrjzevuj-ZIrGGGg5MFG9km6WjhdSWcPdRri9CNC1OuoB9sF_VvlT-ZCcS_0vX4ExhbETkgRcyIq_j99kQD0IWy=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmPOfOClK3wiPAIP4WpPLL2a5qjUlFQKLIkSvyWBkub6n6N-aqEGoyx1BZFpr05ZGCaRlCOKHA7jTz4G6OpdPNUNIWqFNMwRb8AumxNzezl5RZSsVfKlvC3Haqh-crQzRrupUwjCLVSUltE=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMx-Dz5JXG0Ta6bFsturaN3_aFB0XKoOC-jl7ML8t0X7aRzVGnMH_9NZRu9C06kbcsGnMGiXciVd73tsNJipPwR8vrBdhLF2JsEgAkOviDXOMlovv7IwsQPqU_M8XIObi5Zf7qnqUl6nWo0=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmMrDmaXWsFxFqguM0SiCRLck2ER3bOkcRzPnp_wjecYrrxaRYGPDOYEnVeTm6Nq2XjAbzScEV7S2tV2HC8feuf3OQxGerHlZOwZM1gWAIQYo-HbNRccdLu4W2qcfcM2jx-lXnPabwrfwCr3=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOT-L4OSxcXnbmAXBEGEXRlkMF3NZuux-Kzd3TPUPkr-hhZdjjfyeS3cog7knFKq32UqH9UWeD9q3wC4smr8-IKgaobDNASdZhNdm3_S5OfWuASn9iWsZ0IRRBSSf-xf5IXewVpxbYDk3Ux=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmO-FBclyhpzrLx0tZ4IS151MmCZFjm4LdP3M7lMJqmLocQl6yiTjMLtCm55dQiEnlNIHhskGLWNyIAF_EEF9vop548mRZ_sdEnfKeMYMttCsVv7CqAX-taEHeXlpMz8hdEhk8G-mvhIKHe_=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmNcdGOaIzn3ty3Xw8IQA7-DgEQNUgmnVChkbVBZqCCyA4bPuCNq3znCxywXLzEAixpq0QA0Q26egmW0keDuhDmRceaQ7gYN4kK5EPENCVPWE7hOeLjJ_QWVjDdNPAvsoCL8SRUQwRvnnFuR=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmO9uiE0PhHN84jIYohIwqQpUceL44pclTax_xBzCplwex2YuCC4g4BIVccP6xpIqfUi9ZeUtwhjLNQuRQppe26kL19SQoxmU_POqJz6xys23LiuKz2UbSHkKheusAiHwaVPAvKXHl82OoF_=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOCHifxQRgo_6q-Pj8LoM6U0oRtLhxhGlvPckNzUB8v9T7wXL3v3H9XcnQcsYRTfAd7vfCdodxkckWfFu47EKTVJeT9kHJ81rn5vcbWEh0g4o53ITt_NZ1iHs0QunB9fd6A-gTymXImy7sR=k-no"
+            }, {
+              "thumbnail" : "https://lh3.googleusercontent.com/grass-cs/ACvplmOHqDUOI9fi4ysn2_JyMjt5sbFGwimuskL8VWFFm8mXPGFqnlNxMmv_Zwy5dRnfe8-N7t9Z7Un6SSha8npqwiJ720IP2z44F7ySIVKKHTqoWrNs6AHU9QGf9dEOemcKxEsocxzQwQqkMlnp=k-no"
+            } ],
+            "date" : "8 months ago",
+            "date_iso8601" : "2025-12-02T13:49:28+00:00"
+          } ]
+        },
+        "people_also_search_for" : [ {
+          "search_term" : "People also search for",
+          "local_results" : [ {
+            "position" : 1,
+            "title" : "Airport Terminal 1",
+            "data_id" : "0x0:0x9a6ef92340f4fde9",
+            "data_cid" : "11128105659088043497",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x0%3A0x9a6ef92340f4fde9&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x0%3A0x9a6ef92340f4fde9&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2479081,
+              "longitude" : 55.3511933
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x0%3A0x9a6ef92340f4fde9%218m2%213d25.2479081%214d55.3511933&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "rating" : 3.6,
+            "reviews" : 510,
+            "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWko2ONQWSOYGG6-jxK5P-cDdg8_qpd_uzPpQ9woDOlXCIblIkeL27MY7FniD_ehSKK7YADPVtcxaHb7Vp8tswJRxXmE9YrCdz6_ucZ-wiOVwXVdguBzMfKc5ceWdSgCW3ecTDDSUQ=w156-h156-n-k-no",
+            "type" : [ "Transport hub" ]
+          }, {
+            "position" : 2,
+            "title" : "Airport Terminal 3",
+            "data_id" : "0x0:0xe003f3966c58904e",
+            "data_cid" : "16142013316814377038",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x0%3A0xe003f3966c58904e&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x0%3A0xe003f3966c58904e&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.248420499999998,
+              "longitude" : 55.36119610000001
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x0%3A0xe003f3966c58904e%218m2%213d25.248420499999998%214d55.36119610000001&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "rating" : 4.4,
+            "reviews" : 875,
+            "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkOXpUsLAafpuFybEP_VT4Wsb2I0jgB6XXWKpH-1y6uFIjhFIinNxIDbV5XBOhW1mvQisMaa0VhfnfKAG0FoHK2qaH65ESNyNyVXG5uR6fsYKkUPbWJQg2iWMQRXoTdl88y6DZ78hTA_UBl=w156-h156-n-k-no",
+            "type" : [ "Transport hub" ]
+          }, {
+            "position" : 3,
+            "title" : "Airport Terminal 2, Departure",
+            "data_id" : "0x0:0xc688494de392abc3",
+            "data_cid" : "14305764815221730243",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x0%3A0xc688494de392abc3&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x0%3A0xc688494de392abc3&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.267253999999998,
+              "longitude" : 55.356075
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x0%3A0xc688494de392abc3%218m2%213d25.267253999999998%214d55.356075&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "rating" : 4,
+            "reviews" : 1791,
+            "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlkFiHptcQKoH-kRsWuSxBF9GUfgjGLSFwyGB8E3JTrGO73X_Vd4wpAE3e73d5GKRTpNbs4oQzaQtFotF9kf0vipkh7ICIsOKKaVH21fk2r_B6E804fAYcktYDtthNtQhlCIQseBA=w156-h156-n-k-no",
+            "type" : [ "Bus stop" ]
+          }, {
+            "position" : 4,
+            "title" : "Sharjah International Airport",
+            "data_id" : "0x0:0x2f6157c92fbf23b3",
+            "data_cid" : "3414106514124645299",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x0%3A0x2f6157c92fbf23b3&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x0%3A0x2f6157c92fbf23b3&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.3213647,
+              "longitude" : 55.5205401
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x0%3A0x2f6157c92fbf23b3%218m2%213d25.3213647%214d55.5205401&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "rating" : 4.2,
+            "reviews" : 32990,
+            "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmN3BgGK7kA7LQR5qREyOt1A4zeXcD3qQT961dy8q2LxSu3lVTdMxFR-NpvFhIa-qGamXz79sD4IpQRGh5SONPehizwKGo6NJNLB6tY--IcbF03DOmJH4HU62JBLvL3QfxrFOjr6ZIwaaY=w156-h156-n-k-no",
+            "type" : [ "International airport", "Airport" ]
+          }, {
+            "position" : 5,
+            "title" : "Dubai International Airport",
+            "data_id" : "0x0:0x15f1aaa7495b10cb",
+            "data_cid" : "1581232579650719947",
+            "reviews_link" : "https://serpapi.com/search.json?data_id=0x0%3A0x15f1aaa7495b10cb&engine=google_maps_reviews&hl=en",
+            "photos_link" : "https://serpapi.com/search.json?data_id=0x0%3A0x15f1aaa7495b10cb&engine=google_maps_photos&hl=en",
+            "gps_coordinates" : {
+              "latitude" : 25.2655612,
+              "longitude" : 55.358129899999994
+            },
+            "place_id_search" : "https://serpapi.com/search.json?data=%214m5%213m4%211s0x0%3A0x15f1aaa7495b10cb%218m2%213d25.2655612%214d55.358129899999994&engine=google_maps&google_domain=google.com&hl=en&type=place",
+            "rating" : 4.3,
+            "reviews" : 173,
+            "thumbnail" : "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmWJbdFpdqJ4Xm_t_dfl84ClD5MrxxLHIwBjNCl3nswImMzNN9KRiDS2gYPAWyxx8Wg2VqPWa8y_oW6sFhZTdXiw2UA9884wBfb2KLF_Oz6W7CFtzZF04O4TcvxJ0sdBVdhofRy=w156-h156-n-k-no",
+            "type" : [ "Travel agency" ]
+          } ]
+        } ],
+        "popular_times" : {
+          "current_day" : "saturday",
+          "live_hash" : {
+            "info" : "Busier than usual"
+          },
+          "graph_results" : {
+            "sunday" : [ {
+              "time" : "4 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 37
+            }, {
+              "time" : "5 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 44
+            }, {
+              "time" : "6 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 52
+            }, {
+              "time" : "7 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 54
+            }, {
+              "time" : "8 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 52
+            }, {
+              "time" : "9 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 46
+            }, {
+              "time" : "10 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 43
+            }, {
+              "time" : "11 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 44
+            }, {
+              "time" : "12 PM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 49
+            }, {
+              "time" : "1 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 53
+            }, {
+              "time" : "2 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 52
+            }, {
+              "time" : "3 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 50
+            }, {
+              "time" : "4 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 50
+            }, {
+              "time" : "5 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 55
+            }, {
+              "time" : "6 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 62
+            }, {
+              "time" : "7 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 68
+            }, {
+              "time" : "8 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 74
+            }, {
+              "time" : "9 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 82
+            }, {
+              "time" : "10 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 86
+            }, {
+              "time" : "11 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 86
+            }, {
+              "time" : "12 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 65
+            }, {
+              "time" : "1 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 51
+            }, {
+              "time" : "2 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 39
+            }, {
+              "time" : "3 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 35
+            } ],
+            "monday" : [ {
+              "time" : "4 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 33
+            }, {
+              "time" : "5 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 38
+            }, {
+              "time" : "6 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 44
+            }, {
+              "time" : "7 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 47
+            }, {
+              "time" : "8 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 47
+            }, {
+              "time" : "9 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 44
+            }, {
+              "time" : "10 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 42
+            }, {
+              "time" : "11 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 43
+            }, {
+              "time" : "12 PM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 47
+            }, {
+              "time" : "1 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 50
+            }, {
+              "time" : "2 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 50
+            }, {
+              "time" : "3 PM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 47
+            }, {
+              "time" : "4 PM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 46
+            }, {
+              "time" : "5 PM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 49
+            }, {
+              "time" : "6 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 54
+            }, {
+              "time" : "7 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 59
+            }, {
+              "time" : "8 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 66
+            }, {
+              "time" : "9 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 74
+            }, {
+              "time" : "10 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 78
+            }, {
+              "time" : "11 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 78
+            }, {
+              "time" : "12 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 60
+            }, {
+              "time" : "1 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 49
+            }, {
+              "time" : "2 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 38
+            }, {
+              "time" : "3 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 34
+            } ],
+            "tuesday" : [ {
+              "time" : "4 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 34
+            }, {
+              "time" : "5 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 38
+            }, {
+              "time" : "6 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 44
+            }, {
+              "time" : "7 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 47
+            }, {
+              "time" : "8 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 48
+            }, {
+              "time" : "9 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 46
+            }, {
+              "time" : "10 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 46
+            }, {
+              "time" : "11 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 48
+            }, {
+              "time" : "12 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 52
+            }, {
+              "time" : "1 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 55
+            }, {
+              "time" : "2 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 54
+            }, {
+              "time" : "3 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 51
+            }, {
+              "time" : "4 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 51
+            }, {
+              "time" : "5 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 54
+            }, {
+              "time" : "6 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 58
+            }, {
+              "time" : "7 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 62
+            }, {
+              "time" : "8 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 67
+            }, {
+              "time" : "9 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 74
+            }, {
+              "time" : "10 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 79
+            }, {
+              "time" : "11 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 79
+            }, {
+              "time" : "12 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 61
+            }, {
+              "time" : "1 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 50
+            }, {
+              "time" : "2 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 39
+            }, {
+              "time" : "3 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 34
+            } ],
+            "wednesday" : [ {
+              "time" : "4 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 37
+            }, {
+              "time" : "5 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 42
+            }, {
+              "time" : "6 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 48
+            }, {
+              "time" : "7 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 51
+            }, {
+              "time" : "8 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 50
+            }, {
+              "time" : "9 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 48
+            }, {
+              "time" : "10 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 47
+            }, {
+              "time" : "11 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 49
+            }, {
+              "time" : "12 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 53
+            }, {
+              "time" : "1 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 56
+            }, {
+              "time" : "2 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 55
+            }, {
+              "time" : "3 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 53
+            }, {
+              "time" : "4 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 52
+            }, {
+              "time" : "5 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 55
+            }, {
+              "time" : "6 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 59
+            }, {
+              "time" : "7 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 65
+            }, {
+              "time" : "8 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 71
+            }, {
+              "time" : "9 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 81
+            }, {
+              "time" : "10 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 86
+            }, {
+              "time" : "11 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 87
+            }, {
+              "time" : "12 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 69
+            }, {
+              "time" : "1 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 57
+            }, {
+              "time" : "2 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 45
+            }, {
+              "time" : "3 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 39
+            } ],
+            "thursday" : [ {
+              "time" : "4 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 40
+            }, {
+              "time" : "5 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 45
+            }, {
+              "time" : "6 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 51
+            }, {
+              "time" : "7 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 55
+            }, {
+              "time" : "8 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 55
+            }, {
+              "time" : "9 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 52
+            }, {
+              "time" : "10 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 51
+            }, {
+              "time" : "11 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 53
+            }, {
+              "time" : "12 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 58
+            }, {
+              "time" : "1 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 62
+            }, {
+              "time" : "2 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 61
+            }, {
+              "time" : "3 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 58
+            }, {
+              "time" : "4 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 58
+            }, {
+              "time" : "5 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 62
+            }, {
+              "time" : "6 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 68
+            }, {
+              "time" : "7 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 75
+            }, {
+              "time" : "8 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 82
+            }, {
+              "time" : "9 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 91
+            }, {
+              "time" : "10 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 95
+            }, {
+              "time" : "11 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 94
+            }, {
+              "time" : "12 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 73
+            }, {
+              "time" : "1 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 60
+            }, {
+              "time" : "2 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 47
+            }, {
+              "time" : "3 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 41
+            } ],
+            "friday" : [ {
+              "time" : "4 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 42
+            }, {
+              "time" : "5 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 47
+            }, {
+              "time" : "6 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 53
+            }, {
+              "time" : "7 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 58
+            }, {
+              "time" : "8 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 57
+            }, {
+              "time" : "9 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 54
+            }, {
+              "time" : "10 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 52
+            }, {
+              "time" : "11 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 54
+            }, {
+              "time" : "12 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 59
+            }, {
+              "time" : "1 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 63
+            }, {
+              "time" : "2 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 62
+            }, {
+              "time" : "3 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 59
+            }, {
+              "time" : "4 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 59
+            }, {
+              "time" : "5 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 63
+            }, {
+              "time" : "6 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 69
+            }, {
+              "time" : "7 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 76
+            }, {
+              "time" : "8 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 83
+            }, {
+              "time" : "9 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 93
+            }, {
+              "time" : "10 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 98
+            }, {
+              "time" : "11 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 100
+            }, {
+              "time" : "12 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 79
+            }, {
+              "time" : "1 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 65
+            }, {
+              "time" : "2 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 51
+            }, {
+              "time" : "3 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 44
+            } ],
+            "saturday" : [ {
+              "time" : "4 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 41,
+              "live_busyness_score" : 71,
+              "current" : true
+            }, {
+              "time" : "5 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 47
+            }, {
+              "time" : "6 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 54
+            }, {
+              "time" : "7 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 58
+            }, {
+              "time" : "8 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 56
+            }, {
+              "time" : "9 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 52
+            }, {
+              "time" : "10 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 50
+            }, {
+              "time" : "11 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 53
+            }, {
+              "time" : "12 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 58
+            }, {
+              "time" : "1 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 62
+            }, {
+              "time" : "2 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 61
+            }, {
+              "time" : "3 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 58
+            }, {
+              "time" : "4 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 58
+            }, {
+              "time" : "5 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 61
+            }, {
+              "time" : "6 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 67
+            }, {
+              "time" : "7 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 72
+            }, {
+              "time" : "8 PM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 78
+            }, {
+              "time" : "9 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 86
+            }, {
+              "time" : "10 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 91
+            }, {
+              "time" : "11 PM",
+              "info" : "Usually as busy as it gets",
+              "busyness_score" : 92
+            }, {
+              "time" : "12 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 73
+            }, {
+              "time" : "1 AM",
+              "info" : "Usually a little busy",
+              "busyness_score" : 59
+            }, {
+              "time" : "2 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 46
+            }, {
+              "time" : "3 AM",
+              "info" : "Usually not too busy",
+              "busyness_score" : 40
+            } ]
+          }
+        },
+        "web_results_link" : "https://www.google.com/search?q=local+guide+program&ibp=gwp;0,26,Oj4KPCI4RHViYWkgSW50ZXJuYXRpb25hbCBBaXJwb3J0IER1YmFpIC0gVW5pdGVkIEFyYWIgRW1pcmF0ZXMoAg&pcl=lp",
+        "serpapi_web_results_link" : "https://serpapi.com/search.json?device=desktop&engine=google&google_domain=google.com&ibp=gwp%3B0%2C26%2COj4KPCI4RHViYWkgSW50ZXJuYXRpb25hbCBBaXJwb3J0IER1YmFpIC0gVW5pdGVkIEFyYWIgRW1pcmF0ZXMoAg&q=local+guide+program"
+      }
+    },
+    "elapsedMs" : 1703
+  } ],
+  "observedHttpRequestCount" : 2,
+  "error" : null
+}

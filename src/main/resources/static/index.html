@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#1B2537">
   <title>OneStep Flight</title>
-  <link rel="stylesheet" href="styles.css?v=29">
+  <link rel="stylesheet" href="styles.css?v=37">
 </head>
 <body>
   <div class="app-shell">
@@ -272,6 +272,10 @@
         </div>
         <div class="journey-end-time-stack">
           <div class="journey-end-action"><button class="end-journey-link icon-button" type="button" data-action="end-journey"><svg class="end-journey-icon" viewBox="1.5 1.5 21 21" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.6"/><path d="m9 9 6 6m0-6-6 6"/></svg><span data-i18n="endJourney">结束本次指引</span></button></div>
+          <div class="airport-resource-actions" data-airport-resource-row hidden>
+            <button class="button button-secondary airport-resource-button" type="button" data-action="open-airport-map"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 5 5-2 8 3 5-2v15l-5 2-8-3-5 2V5Zm5-2v15m8-12v15"/></svg><span data-i18n="viewAirportMap">查看机场地图</span></button>
+            <button class="button button-secondary airport-resource-button" type="button" data-action="contact-airport-resource"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.2 3.5 10 8l-2.1 2.1a15.2 15.2 0 0 0 6 6L16 14l4.5 2.8-1.2 3.4c-.3.8-1.1 1.3-2 1.2C9.7 20.3 3.7 14.3 2.6 6.7c-.1-.9.4-1.7 1.2-2l3.4-1.2Z"/></svg><span data-i18n="contactAirport">联系机场</span></button>
+          </div>
           <div class="time-status step-time-status" data-time-status hidden>
             <div><span data-i18n="airportLocalTime">机场当地时间</span><strong data-airport-local-time>—</strong></div>
             <div><span data-i18n="timeUntilDeparture">距离预计起飞</span><strong data-departure-countdown>—</strong></div>
@@ -295,48 +299,73 @@
       </section>
     </main>
 
+    <section class="airport-resource-qa" data-qa-airport-panel hidden aria-labelledby="qa-airport-title">
+      <h2 id="qa-airport-title" data-i18n="qaAirportTitle">机场信息查询</h2>
+      <form data-qa-airport-form>
+        <label><span data-i18n="qaAirportCode">机场代码</span><input name="airportCode" inputmode="latin" autocapitalize="characters" spellcheck="false" maxlength="3" pattern="[A-Za-z]{3}" aria-describedby="qa-airport-code-hint" required><small id="qa-airport-code-hint" data-i18n="qaAirportCodeHint">三字母</small></label>
+        <label><span data-i18n="qaAirportTerminalOptional">航站楼（可选）</span><input name="terminal" maxlength="40"></label>
+        <div class="qa-airport-actions"><button class="button button-primary" type="submit" data-qa-airport-query data-i18n="qaAirportQuery">查询</button></div>
+      </form>
+      <div class="qa-airport-result" data-qa-airport-result role="status" aria-live="polite"></div>
+    </section>
+
     <footer class="site-footer"><span data-i18n="globalFooter">© 2026 OneStep Flight · 无障碍乘机指引</span></footer>
 
     <div class="staff-overlay" data-staff-overlay hidden role="dialog" aria-modal="true" aria-labelledby="staff-title">
       <div class="staff-card">
-        <div class="staff-card-header">
-          <div class="staff-card-instruction">
-            <p lang="zh-CN" data-staff-instruction-primary>请把这个页面拿给工作人员看</p>
-            <p lang="en" data-staff-instruction-en>Please show this page to a member of staff.</p>
+        <div class="staff-card-topbar">
+          <button class="button button-primary airport-resource-button staff-contact-button" type="button" data-action="contact-airport-resource" data-staff-contact-button data-airport-resource-row hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.2 3.5 10 8l-2.1 2.1a15.2 15.2 0 0 0 6 6L16 14l4.5 2.8-1.2 3.4c-.3.8-1.1 1.3-2 1.2C9.7 20.3 3.7 14.3 2.6 6.7c-.1-.9.4-1.7 1.2-2l3.4-1.2Z"/></svg><span data-i18n="contactAirport">联系机场</span></button>
+          <button class="card-close staff-overlay-close" type="button" data-action="close-staff" data-i18n-aria="closeStaffAria" aria-label="关闭"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6L18 18M18 6L6 18"></path></svg></button>
+        </div>
+        <section class="staff-card-view" data-staff-card-view>
+          <div class="staff-completed" data-staff-completed>
+            <p lang="zh-CN" data-staff-completed-primary>我已完成：尚未开始</p>
+            <p lang="en" data-staff-completed-en>Completed: not started</p>
           </div>
-          <button class="card-close" type="button" data-action="close-staff" data-i18n="close" aria-label="Close">关闭</button>
-        </div>
-        <div class="staff-completed" data-staff-completed>
-          <p lang="zh-CN" data-staff-completed-primary>我已完成：尚未开始</p>
-          <p lang="en" data-staff-completed-en>Completed: not started</p>
-        </div>
-        <div class="staff-flight-strip" data-staff-flight-strip hidden>
-          <strong data-staff-flight>—</strong>
-          <span class="staff-flight-dates">
-            <time lang="zh-CN" data-staff-date-primary>—</time>
-            <time lang="en" data-staff-date-en>—</time>
-          </span>
-        </div>
-        <h1 id="staff-title" data-staff-title>
-          <span lang="zh-CN" data-staff-title-primary>请帮助我</span>
-          <span lang="en" data-staff-title-en>Please help me</span>
-        </h1>
-        <div class="staff-explanation">
-          <p lang="zh-CN" data-staff-primary>您好，我需要乘机帮助。可以请您帮我吗？</p>
-          <p lang="en" data-staff-en>Hello. I need help with my flight. Could you please help me?</p>
-        </div>
-        <dl class="assistance-facts" data-staff-facts></dl>
-        <button class="button button-primary button-large" type="button" data-action="copy-staff" data-i18n="copyCard" data-i18n-aria="copyCardAria">复制</button>
+          <div class="staff-flight-strip" data-staff-flight-strip hidden>
+            <strong data-staff-flight>—</strong>
+            <span class="staff-flight-dates">
+              <time lang="zh-CN" data-staff-date-primary>—</time>
+              <time lang="en" data-staff-date-en>—</time>
+            </span>
+          </div>
+          <h1 id="staff-title" data-staff-title>
+            <span lang="zh-CN" data-staff-title-primary>请帮助我</span>
+            <span lang="en" data-staff-title-en>Please help me</span>
+          </h1>
+          <div class="staff-explanation">
+            <p lang="zh-CN" data-staff-primary>您好，我需要乘机帮助。可以请您帮我吗？</p>
+            <p lang="en" data-staff-en>Hello. I need help with my flight. Could you please help me?</p>
+          </div>
+          <dl class="assistance-facts" data-staff-facts></dl>
+        </section>
+        <section class="airport-resource-view" data-airport-resource-view aria-busy="false" hidden>
+          <h1 id="airport-resource-title" data-airport-resource-title tabindex="-1">联系机场</h1>
+          <p class="airport-resource-airport" data-airport-resource-airport hidden></p>
+          <div class="airport-resource-status" role="status" aria-live="polite" aria-atomic="true">
+            <svg class="airport-phone-icon" data-airport-phone-icon viewBox="0 0 24 24" aria-hidden="true" focusable="false" hidden><path d="M7.2 3.5 10 8l-2.1 2.1a15.2 15.2 0 0 0 6 6L16 14l4.5 2.8-1.2 3.4c-.3.8-1.1 1.3-2 1.2C9.7 20.3 3.7 14.3 2.6 6.7c-.1-.9.4-1.7 1.2-2l3.4-1.2Z"/></svg>
+            <p class="airport-resource-message" data-airport-resource-message>请稍候</p>
+            <p class="airport-resource-detail" data-airport-resource-detail></p>
+            <p class="airport-phone-display" data-airport-phone-display hidden></p>
+          </div>
+          <div class="airport-resource-result-actions">
+            <a class="button button-primary" data-airport-map-result target="_blank" rel="noopener noreferrer" hidden></a>
+            <a class="button button-primary" data-airport-phone-result hidden></a>
+            <a class="button button-secondary airport-contact-secondary" data-airport-contact-result target="_blank" rel="noopener noreferrer" hidden></a>
+            <button class="button button-primary" type="button" data-action="retry-airport-resource" data-i18n="retry" hidden>重试</button>
+            <button class="button button-secondary" type="button" data-action="back-to-staff-card" data-airport-resource-back data-i18n="backToCard">返回大字卡</button>
+          </div>
+        </section>
       </div>
     </div>
-    <div class="confirm-overlay" data-family-overlay hidden role="dialog" aria-modal="true" aria-labelledby="family-title"><div class="confirm-card family-card"><button class="card-close" type="button" data-action="close-family" data-i18n="close">关闭</button><h1 id="family-title" data-i18n="familyTitle">分享行程给家属</h1><p data-i18n="familyLead">通过系统分享面板分享 48 小时有效的安全链接或脱敏行程图片。</p><p class="share-local-warning" data-share-local-warning hidden data-i18n="localhostWarning">当前是 localhost：其他设备无法打开这个地址。请部署到可访问的网址后再分享。</p><p class="share-status" data-share-status role="status" aria-live="polite"></p><p class="share-expiry" data-share-expiry></p><div class="family-actions"><button class="button button-primary" type="button" data-action="share-family" data-i18n="shareLink" data-i18n-aria="shareLinkAria">分享链接</button><button class="button button-secondary" type="button" data-action="share-family-card" data-i18n="sharePng" data-i18n-aria="sharePngAria">分享图片</button></div></div></div>
+    <div class="confirm-overlay" data-family-overlay hidden role="dialog" aria-modal="true" aria-labelledby="family-title"><div class="confirm-card family-card"><button class="card-close family-overlay-close" type="button" data-action="close-family" data-i18n-aria="close" aria-label="关闭"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6L18 18M18 6L6 18"></path></svg></button><h1 id="family-title" data-i18n="familyTitle">分享行程给家属</h1><p data-i18n="familyLead">通过系统分享面板分享 48 小时有效的安全链接或脱敏行程图片。</p><p class="share-local-warning" data-share-local-warning hidden data-i18n="localhostWarning">当前是 localhost：其他设备无法打开这个地址。请部署到可访问的网址后再分享。</p><p class="share-status" data-share-status role="status" aria-live="polite"></p><p class="share-expiry" data-share-expiry></p><div class="family-actions"><button class="button button-primary" type="button" data-action="share-family" data-i18n="shareLink" data-i18n-aria="shareLinkAria">分享链接</button><button class="button button-secondary" type="button" data-action="share-family-card" data-i18n="sharePng" data-i18n-aria="sharePngAria">分享图片</button></div></div></div>
     <div class="confirm-overlay" data-end-overlay hidden role="dialog" aria-modal="true" aria-labelledby="end-title"><div class="confirm-card"><h1 id="end-title" data-i18n="endConfirmTitle">确定要结束本次指引吗？</h1><p data-i18n="endConfirmLead">结束后，当前步骤记录会从这台设备清除。</p><div class="choice-actions"><button class="button button-primary button-large" type="button" data-action="cancel-end" data-i18n="continueJourney">继续指引</button><button class="button button-secondary button-large" type="button" data-action="confirm-end" data-i18n="confirmEnd">结束并返回首页</button></div></div></div>
     <div class="confirm-overlay" data-board-overlay hidden role="dialog" aria-modal="true" aria-labelledby="board-confirm-title"><div class="confirm-card"><h1 id="board-confirm-title" data-i18n="boardConfirmTitle">确认你已经登机吗？</h1><p data-i18n="boardConfirmLead">确认后将进入机上模式，到达后继续提供下机指引。</p><button class="support-button dialog-speech-button" type="button" data-action="speak" aria-pressed="false" data-i18n-aria="speakAria"><svg class="speech-icon" viewBox="2 4 20 16" aria-hidden="true" focusable="false"><path d="M4 10v4h4l5 4V6l-5 4H4zm12 0a4 4 0 010 4m2-7a8 8 0 010 10"/></svg><span data-speech-label data-i18n="speak">朗读</span></button><div class="choice-actions two-choice-grid"><button class="button button-primary button-large" type="button" data-action="confirm-board" data-i18n="confirmBoard">是，我已经登机</button><button class="button button-secondary button-large" type="button" data-action="cancel-board" data-i18n="cancelBoard">返回，再检查一下</button></div></div></div>
     <div class="confirm-overlay" data-landed-overlay hidden role="dialog" aria-modal="true" aria-labelledby="landed-confirm-title"><div class="confirm-card"><h1 id="landed-confirm-title" data-i18n="landedConfirmTitle">确认你已经下飞机吗？</h1><p data-i18n="landedConfirmLead">确认后，我们会继续指引你领取行李或前往出口。</p><button class="support-button dialog-speech-button" type="button" data-action="speak" aria-pressed="false" data-i18n-aria="speakAria"><svg class="speech-icon" viewBox="2 4 20 16" aria-hidden="true" focusable="false"><path d="M4 10v4h4l5 4V6l-5 4H4zm12 0a4 4 0 010 4m2-7a8 8 0 010 10"/></svg><span data-speech-label data-i18n="speak">朗读</span></button><div class="choice-actions two-choice-grid"><button class="button button-primary button-large" type="button" data-action="confirm-landed" data-i18n="confirmLanded">是，我已经下飞机</button><button class="button button-secondary button-large" type="button" data-action="cancel-landed" data-i18n="cancelLanded">返回，再检查一下</button></div></div></div>
     <div class="visually-hidden" role="status" aria-live="assertive" aria-atomic="true" data-live-region></div>
     <div class="toast" role="status" aria-live="polite" data-toast></div>
   </div>
-  <script src="locale.js?v=29"></script>
-  <script src="app.js?v=29"></script>
+  <script src="locale.js?v=37"></script>
+  <script src="app.js?v=37"></script>
 </body>
 </html>

@@ -35,7 +35,7 @@ class ResolvedFlightServiceFieldSemanticsTest {
 		return new FlightResponse("BA117", LocalDate.of(2026, 9, 4),
 				"CDG", "Paris Charles de Gaulle", "XMN", "Xiamen Gaoqi",
 				departure, departure, null, departure.plusHours(11), null, null, null,
-				terminal, gate, "D", "EXPECTED", 0, 0, Instant.EPOCH, Instant.EPOCH,
+				terminal, null, gate, "D", "EXPECTED", 0, 0, Instant.EPOCH, Instant.EPOCH,
 				"TEST", null, null, true, false, false);
 	}
 }

@@ -340,7 +340,7 @@ class ResolvedFlightServiceDocumentSelectionTest {
 			OffsetDateTime scheduled = OffsetDateTime.parse("2026-08-24T08:20:00+08:00");
 			FlightResponse flight = new FlightResponse(flightNumber, departureDate,
 					"XMN", "Xiamen", "CDG", "Paris", scheduled, null, null,
-					scheduled.plusHours(12), null, null, null, null, null, null,
+					scheduled.plusHours(12), null, null, null, null, null, null, null,
 					"EXPECTED", 0, 0, Instant.EPOCH, Instant.EPOCH, "TEST_LIVE",
 					null, null, true, true, false);
 			return new MultiSourceFlightSnapshot(flight, null, null, Map.of(), Map.of(), List.of(),

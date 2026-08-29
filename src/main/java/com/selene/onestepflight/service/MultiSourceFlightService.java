@@ -181,6 +181,8 @@ public class MultiSourceFlightService {
 				ProviderFlightResult::boardingTime, FieldPolicy.OPERATIONAL, provenance);
 		Choice<String> terminal = choose("terminal", successful, ProviderFlightResult::terminal,
 				FieldPolicy.OPERATIONAL, provenance);
+		Choice<String> arrivalTerminal = choose("arrivalTerminal", successful, ProviderFlightResult::arrivalTerminal,
+				FieldPolicy.OPERATIONAL, provenance);
 		Choice<String> gate = choose("gate", successful, ProviderFlightResult::gate,
 				FieldPolicy.OPERATIONAL, provenance);
 		Choice<String> checkIn = choose("checkInDeskOrZone", successful,
@@ -226,7 +228,8 @@ public class MultiSourceFlightService {
 				departureAirport.value(), departureAirportName.value(), arrivalAirport.value(), arrivalAirportName.value(),
 				scheduledDeparture.value(), estimatedDeparture.value(), actualDeparture.value(),
 				scheduledArrival.value(), estimatedArrival.value(), actualArrival.value(), boardingTime.value(),
-				terminal.value(), gate.value(), checkIn.value(), status.value() == null ? "UNKNOWN" : status.value(),
+				terminal.value(), arrivalTerminal.value(), gate.value(), checkIn.value(),
+				status.value() == null ? "UNKNOWN" : status.value(),
 				departureDelayValue, arrivalDelayValue, freshestUpdatedAt, retrievedAt, sources,
 				sourceUrl.value(), codeshare.value(), hasLiveOperationalSource, checkIn.value() == null, false);
 		List<FlightFieldConflict> conflicts = buildProviderConflicts(provenance, retrievedAt);

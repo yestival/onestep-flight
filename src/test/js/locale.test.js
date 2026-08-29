@@ -60,9 +60,9 @@ test('document review and field staff copy is complete in all supported locales'
   assert.match(app, /fieldStaffHelp: '请工作人员帮忙'/);
   assert.match(app, /fieldStaffHelp: 'Ask staff for help'/);
   assert.match(app, /fieldStaffHelp: 'Pedir ayuda al personal'/);
-  assert.match(app, /staffCardInstruction: '请把这个页面拿给工作人员看。'/);
-  assert.match(app, /staffCardInstruction: 'Please show this page to a member of staff\.'/);
-  assert.match(app, /staffCardInstruction: 'Por favor, muestre esta página a un miembro del personal\.'/);
+  assert.match(app, /staffCardInstruction: '请把这个页面给工作人员看。需要时可联系机场。'/);
+  assert.match(app, /staffCardInstruction: 'Please show this screen to a member of staff\. Contact the airport if needed\.'/);
+  assert.match(app, /staffCardInstruction: 'Muestre esta pantalla a un miembro del personal\. Contacte con el aeropuerto si lo necesita\.'/);
   assert.match(app, /请帮我确认航班号/);
   assert.match(app, /Please help me confirm my flight number/);
   assert.match(app, /Ayúdeme a confirmar mi número de vuelo/);

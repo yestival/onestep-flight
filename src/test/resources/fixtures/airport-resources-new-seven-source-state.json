@@ -1,0 +1,29 @@
+{
+  "runId": "new-seven-20260829-run-01",
+  "frozenAt": "2026-08-29T08:05:00Z",
+  "sourceCommit": "637358fb90c53d36458c3b51bc046e05b4ad4848",
+  "workingTreeWasDirty": true,
+  "airportDatasetVersion": "994eaea9c8140217",
+  "identityVerifierVersion": "2",
+  "goldenSha256": "D84C19106DBDCFA7B213990BE4B9B7745E988878136D1B8783ADF8F3A31142AC",
+  "combinedRelevantSourceSha256": "66C444E8110F738873A50720FC62FE70BC828110C4DA8F2CF3D62FF933576F89",
+  "offlineGate": {
+    "java": "PASS",
+    "javascript": "69/69 PASS",
+    "architectureReplay": "7/7 PASS"
+  },
+  "files": {
+    "src/main/java/com/selene/onestepflight/service/AiResponseCandidateExtractor.java": "FF160783C78B5EB98FE904770C83DE5D752D0102B28C9691240DB51E64462C39",
+    "src/main/java/com/selene/onestepflight/service/AirportContactCandidate.java": "E75C8541D9E85A67CFB40AA423F908D5209CE24E8E582AC7428416619143EEC1",
+    "src/main/java/com/selene/onestepflight/service/AirportMapCandidate.java": "7055062EA5A83B62C839AFD4B31B6BCFBF14EE3F242513E3C490E027ED987549",
+    "src/main/java/com/selene/onestepflight/service/AirportMapCandidateClassifier.java": "4AB845622C15114A88B0D8F09DF8004C08847D2110EC0B3A020E2ECF329F7982",
+    "src/main/java/com/selene/onestepflight/service/AirportMapSelector.java": "216D71F0ACB7652F255485AD74A5DC58B701F3C7C4A7DC342D0843995565E9B5",
+    "src/main/java/com/selene/onestepflight/service/DecisionTrace.java": "F90BB0CAF8D669F45548F1229A33468E84A75D27DBFED82E3985095C74262EDD",
+    "src/main/java/com/selene/onestepflight/service/MapIntentLexicon.java": "1DB759880C28E1CCCAD90DB8C030AC11DFD7667A1005774977DFDBFF3DFF3AC6",
+    "src/main/java/com/selene/onestepflight/service/PageAudienceClassifier.java": "BA9E686657E1FA55DBEA9E348364E55C90C8C2B092EFDF20A2E97D3B80896B55",
+    "src/main/java/com/selene/onestepflight/service/SerpApiAirportResourcesService.java": "09FDB60E7952548D1479E58C7D5F4A4FD348018327BA92DAE521C382BFF94554",
+    "src/main/resources/airport-identities.json": "1F7213631FF49A20D466A00D5508AE04EA6C9870E24B66093BA46472AF72F893",
+    "src/test/java/com/selene/onestepflight/service/SerpApiAirportResourcesLiveTest.java": "E896446D3E489D39A44E02E4ED0AEE8A32840668D1E5C46F6ACA8639E60EA70D",
+    "src/test/resources/fixtures/airport-resources-new-seven-golden.json": "D84C19106DBDCFA7B213990BE4B9B7745E988878136D1B8783ADF8F3A31142AC"
+  }
+}

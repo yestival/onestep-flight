@@ -512,7 +512,7 @@ class StaticFrontendRegressionTest {
         assertTrue(errorHandling.contains("实时航班状态暂未更新"));
         assertTrue(errorHandling.contains("localhost|127\\.0\\.0\\.1|\\[::1\\]"));
         assertTrue(errorHandling.contains("AeroDataBox provider result"));
-        assertTrue(errorHandling.contains("SerpApi provider result"));
+        assertTrue(errorHandling.contains("Secondary flight-data provider result"));
         assertTrue(errorHandling.contains("HTTP status"));
         assertTrue(errorHandling.contains("Error code"));
         assertTrue(errorHandling.contains("Backend message (zh)"));
@@ -608,19 +608,20 @@ class StaticFrontendRegressionTest {
                 js.indexOf("function flightChangeCopyContext()"));
 
         assertFalse(css.contains("button:not(.brand)"));
-        assertFalse(css.matches("(?s).*\\.(?:button|answer-choice|assistance-button)[^{]*\\{[^}]*overflow-wrap:anywhere.*"));
+        assertTrue(css.contains("@media(max-width:220px)"));
+        assertTrue(css.contains("max-width:100%;overflow-wrap:anywhere;hyphens:auto"));
         assertTrue(css.contains("word-break:normal;overflow-wrap:normal;hyphens:none"));
         assertTrue(css.contains("--full-row-control-font-size:clamp(28px,7vw,32px)"));
         assertTrue(css.contains("--manual-control-font:800 clamp(18px,4vw,22px)"));
         assertTrue(css.contains("--multi-control-font-size:26px"));
-        assertTrue(css.contains("html[lang=\"en\"]{--multi-control-font-size:24px}"));
-        assertTrue(css.contains("html[lang=\"es\"]{--multi-control-font-size:23px}"));
+        assertTrue(css.contains("html[lang=\"en\"]{--multi-control-font-size:25px}"));
+        assertTrue(css.contains("html[lang=\"es\"]{--multi-control-font-size:25px}"));
         assertFalse(css.contains("--action-control-font-size"));
         assertFalse(css.contains("--three-choice-font-size"));
         assertTrue(css.contains("@media(max-width:280px)"));
         assertTrue(css.contains(".answer-choice-grid,.step-assistance-actions,.step-assistance-actions.share-unavailable{grid-template-columns:minmax(0,1fr)}"));
-        assertTrue(css.contains(".scenario-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))"));
-        assertTrue(css.contains(".scenario-actions button{width:100%;min-height:40px"));
+        assertTrue(css.contains(".scenario-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))"));
+        assertTrue(css.contains(".scenario-actions button{width:100%;min-height:60px"));
         assertTrue(css.contains("font:800 14px/1.25 var(--body)"));
         assertTrue(css.contains("--flight-change-bg:#163D75"));
         assertTrue(css.contains("--flight-change-text:#F0D68A"));
@@ -675,8 +676,8 @@ class StaticFrontendRegressionTest {
         assertTrue(dismiss.contains("displayedFlightChanges = []"));
         assertTrue(dismiss.contains("displayedFlightChangeFlight = null"));
         assertTrue(dismiss.contains("stepChangeAlert = null"));
-        assertTrue(css.contains("grid-template-columns:repeat(4,minmax(0,1fr))"));
-        assertTrue(css.contains("min-height:40px"));
+        assertTrue(css.contains("grid-template-columns:repeat(3,minmax(0,1fr))"));
+        assertTrue(css.contains(".scenario-actions button{width:100%;min-height:60px"));
         assertTrue(css.contains("font:800 14px/1.25 var(--body)"));
         assertTrue(css.contains("@media(max-width:280px){.scenario-actions{grid-template-columns:1fr}}"));
         assertTrue(css.contains(":not([data-flight-change-alert]):not([data-scenario-test-card])"));
@@ -693,14 +694,14 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("No se encontró información del vuelo"));
         assertTrue(js.contains("Only some information was found"));
         assertTrue(js.contains("Solo se encontró parte de la información"));
-        assertTrue(html.contains("styles.css?v=29"));
-        assertTrue(html.contains("locale.js?v=29"));
-        assertTrue(html.contains("app.js?v=29"));
-        assertFalse(html.contains("?v=28"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v29'"));
-        assertFalse(worker.contains("CACHE_PREFIX + 'v28'"));
-        for (String asset : new String[] { "/styles.css?v=29", "/locale.js?v=29", "/app.js?v=29",
-                "/share.css?v=29", "/share.js?v=29" }) {
+        assertTrue(html.contains("styles.css?v=37"));
+        assertTrue(html.contains("locale.js?v=37"));
+        assertTrue(html.contains("app.js?v=37"));
+        assertFalse(html.contains("?v=36"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v37'"));
+        assertFalse(worker.contains("CACHE_PREFIX + 'v36'"));
+        for (String asset : new String[] { "/styles.css?v=37", "/locale.js?v=37", "/app.js?v=37",
+                "/share.css?v=33", "/share.js?v=33" }) {
             assertTrue(worker.contains("'" + asset + "'"), asset);
         }
     }
@@ -723,12 +724,12 @@ class StaticFrontendRegressionTest {
         assertTrue(shareHtml.contains("aria-label=\"Choose language\""));
         assertTrue(index.contains("Now, take the next step"));
         assertTrue(shareHtml.contains("Loading the shared journey"));
-        assertTrue(index.contains("locale.js?v=29"));
-        assertTrue(shareHtml.contains("/share.css?v=29"));
-        assertTrue(shareHtml.contains("/locale.js?v=29"));
-        assertTrue(shareHtml.contains("/share.js?v=29"));
-        assertFalse(index.contains("?v=28"));
-        assertFalse(shareHtml.contains("?v=28"));
+        assertTrue(index.contains("locale.js?v=37"));
+        assertTrue(shareHtml.contains("/share.css?v=33"));
+        assertTrue(shareHtml.contains("/locale.js?v=33"));
+        assertTrue(shareHtml.contains("/share.js?v=33"));
+        assertFalse(index.contains("?v=35"));
+        assertFalse(shareHtml.contains("?v=29"));
         assertTrue(app.contains("window.OneStepLocale.resolveLocalePreference(stored, navigator.languages, navigator.language)"));
         assertTrue(shareJs.contains("window.OneStepLocale.resolveLocalePreference(stored, navigator.languages, navigator.language)"));
         assertTrue(app.contains("window.OneStepLocale.orderLocaleOptions(localeSelect, currentLocale)"));
@@ -791,8 +792,10 @@ class StaticFrontendRegressionTest {
         assertTrue(css.contains(".action-full-row,.primary-action-row,.danger-action-row{grid-column:1/-1}"));
         assertTrue(css.contains("--full-row-control-font-size:clamp(28px,7vw,32px)"));
         assertTrue(css.contains("--multi-control-font-size:26px"));
-        assertTrue(css.contains("html[lang=\"en\"]{--multi-control-font-size:24px}"));
-        assertTrue(css.contains("html[lang=\"es\"]{--multi-control-font-size:23px}"));
+        assertTrue(css.contains("html[lang=\"en\"]{--multi-control-font-size:25px}"));
+        assertTrue(css.contains("html[lang=\"es\"]{--multi-control-font-size:25px}"));
+        assertTrue(css.contains(":root{--full-row-control-font-size:22px;--multi-control-font-size:18px;--action-control-icon-size:32px"));
+        assertTrue(css.contains(".screen-step.is-departure-exception .step-assistance-actions{grid-template-columns:minmax(0,1fr)}"));
         assertTrue(css.contains(".site-header{height:68px}"));
         assertTrue(css.contains(".screen:not(.screen-welcome),.screen-step,.screen-confirm{padding-top:20px}"));
         assertTrue(css.contains(".section-heading{margin-bottom:22px}"));
@@ -958,12 +961,56 @@ class StaticFrontendRegressionTest {
     }
 
     @Test
+    void journeyKeepsMapAndContactWhileHelpCardKeepsOnlyContactAndClose() throws IOException {
+        String html = resource("index.html");
+        String js = resource("app.js");
+        String overlay = html.substring(html.indexOf("data-staff-overlay"), html.indexOf("data-family-overlay"));
+		String journeyResources = html.substring(html.indexOf("class=\"airport-resource-actions\""),
+				html.indexOf("data-time-status", html.indexOf("class=\"airport-resource-actions\"")));
+		String helpTopbar = overlay.substring(overlay.indexOf("staff-card-topbar"),
+				overlay.indexOf("data-staff-card-view"));
+
+        assertEquals(1, overlay.split("role=\"dialog\"", -1).length - 1);
+        assertTrue(overlay.contains("data-staff-card-view"));
+        assertTrue(overlay.contains("data-airport-resource-view"));
+		assertTrue(journeyResources.contains("data-action=\"open-airport-map\""));
+		assertTrue(journeyResources.contains("data-action=\"contact-airport-resource\""));
+        assertTrue(overlay.contains("staff-card-topbar"));
+        assertTrue(overlay.indexOf("data-staff-contact-button") < overlay.indexOf("data-action=\"close-staff\""));
+		assertTrue(helpTopbar.contains("data-action=\"contact-airport-resource\""));
+		assertFalse(helpTopbar.contains("open-airport-map"));
+		assertFalse(helpTopbar.contains("viewAirportMap"));
+		assertTrue(overlay.contains("data-airport-map-result target=\"_blank\" rel=\"noopener noreferrer\""));
+        assertTrue(overlay.contains("data-airport-contact-result target=\"_blank\" rel=\"noopener noreferrer\""));
+        assertTrue(overlay.contains("data-action=\"back-to-staff-card\""));
+        assertFalse(overlay.contains("copy-staff"));
+        assertFalse(overlay.contains("find-staff"));
+        assertFalse(overlay.contains("extra-assistance"));
+        assertFalse(js.contains("function staffCardText("));
+        assertFalse(js.contains("function copyText("));
+        assertFalse(js.contains("copyCardAria"));
+        assertTrue(js.contains("staffOverlayView = 'CARD'"));
+		assertTrue(js.contains("airportResourceOrigin = origin"));
+		assertTrue(js.contains("if (mode === 'MAP' && origin !== 'JOURNEY_STEP') return"));
+        assertTrue(js.contains("airportResourceState = 'IDLE'"));
+        assertTrue(js.contains("airportResourceGeneration"));
+        assertTrue(js.contains("/api/assistance/airport-resources"));
+		assertFalse(js.contains("data-qa-airport-debug"));
+		assertFalse(js.contains("qaAirportDebug"));
+		assertFalse(js.contains("qa-airport-debug"));
+		String qaResult = js.substring(js.indexOf("function renderAirportQaResult("),
+				js.indexOf("function appendQaHeading("));
+		assertFalse(qaResult.contains("document.createElement('details')"));
+		assertFalse(qaResult.contains("serpApiRequestCount"));
+    }
+
+    @Test
     void staffSpeechIsExactSingleAndCancelableWhileConfirmationReadsDisplayedOperationalFacts() throws IOException {
         String js = resource("app.js");
 
-        assertTrue(js.contains("staffCardInstruction: '请把这个页面拿给工作人员看。'"));
-        assertTrue(js.contains("staffCardInstruction: 'Please show this page to a member of staff.'"));
-        assertTrue(js.contains("staffCardInstruction: 'Por favor, muestre esta página a un miembro del personal.'"));
+        assertTrue(js.contains("staffCardInstruction: '请把这个页面给工作人员看。需要时可联系机场。'"));
+        assertTrue(js.contains("staffCardInstruction: 'Please show this screen to a member of staff. Contact the airport if needed.'"));
+        assertTrue(js.contains("staffCardInstruction: 'Muestre esta pantalla a un miembro del personal. Contacte con el aeropuerto si lo necesita.'"));
         assertTrue(js.contains("function startSpeechText(text, automatic)"));
         String speechStarter = js.substring(js.indexOf("function startSpeechText(text, automatic)"),
                 js.indexOf("function startSpeech(automatic)"));
@@ -974,7 +1021,7 @@ class StaticFrontendRegressionTest {
         String showStaff = js.substring(js.indexOf("function showStaff(context)"),
                 js.indexOf("function closeStaff()"));
         assertTrue(showStaff.indexOf("stopSpeech(false)") < showStaff.indexOf("openDialog("));
-        assertTrue(showStaff.indexOf("openDialog(") < showStaff.indexOf("startSpeechText(t('staffCardInstruction'), true)"));
+        assertTrue(showStaff.indexOf("openDialog(") < showStaff.indexOf("startSpeechText(t('staffCardInstruction')"));
         assertEquals(1, showStaff.split("startSpeechText\\(", -1).length - 1);
         String closeStaff = js.substring(js.indexOf("function closeStaff()"),
                 js.indexOf("function openDialog("));

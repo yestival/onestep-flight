@@ -59,6 +59,21 @@
   var flightCorrectionOpen = false;
   var partialDocumentEntry = false;
   var fieldStaffHelpContext = null;
+  var staffOverlayView = 'CARD';
+  var staffReturnFocusElement = null;
+  var airportMapCache = Object.create(null);
+  var airportContactCache = Object.create(null);
+  var airportIdentityCache = Object.create(null);
+  var airportResourceInFlight = Object.create(null);
+  var airportResourceGeneration = 0;
+  var airportResourceMode = null;
+  var airportResourceOrigin = null;
+  var airportResourceState = 'IDLE';
+  var airportResourceResult = null;
+  var airportResourceContext = null;
+  var airportResourceReturnFocus = null;
+  var airportResourceHistoryActive = false;
+  var airportResourceHistoryClosing = false;
   var manualCandidateEntryFields = { flight_number: false, departure_date: false };
   var AUTO_REFRESH_FAR_MS = 300000;
   var AUTO_REFRESH_NEAR_MS = 120000;
@@ -82,13 +97,13 @@
     zh: {
       eyebrow: '你的乘机助手', welcomeTitle: '现在，只做下一步', welcomeLead: '上传旅行文件或输入航班信息，我们每次只告诉你现在应该做什么。',
       upload: '上传预订确认、电子客票或登机牌', uploadHint: '支持 PDF、JPG、JPEG、PNG，也可以上传航空公司预订确认页截图、电子客票行程单或登机牌。', manual: '手动输入航班号', family: '分享行程给家属', privacy: '旅行文件只用于生成乘机指引',
-      languageLabel: '选择语言', back: '返回', backStep: '返回上一步', fileLabel: '选择预订确认、电子客票或登机牌文件', loadingTitle: '正在准备你的乘机步骤', checkDetails: '请确认', confirmTitle: '这是你的航班吗？', departure: '计划起飞', terminal: '航站楼', gate: '登机口', status: '状态', notPublished: '尚未公布', demoDisclaimer: '演示数据', yesContinue: '是，继续', editFlight: '不是，我要修改', manualContext: '填写航班信息', baggageContext: '确认行李情况', manualTitle: '输入你的航班信息', manualLead: '请输入航班号和出发日期。', flightLabel: '航班号', dateLabel: '出发日期', flightPlaceholder: '例如 BA 117', searchLiveFlight: '查询真实航班', useDemoFlight: '使用 BA 117 演示航班', demoHint: '演示数据', nextAction: '现在要做的事', baggageYes: '有，需要托运', baggageNo: '没有', baggageUnsure: '我不确定', speak: '朗读当前步骤', staff: '请工作人员帮忙', contactFamily: '分享行程给家属', endJourney: '结束本次指引', askForHelp: '请工作人员帮忙', destination: '现在前往', couldNotLoad: '暂时无法读取', errorTitle: '实时航班状态暂未更新', errorLead: '请检查输入或网络连接，然后重试。你也可以手动输入航班。', retry: '重试', enterManually: '手动输入航班', askStaff: '请工作人员帮忙', technicalDetails: '查看技术详情', returnHome: '返回首页', endConfirmTitle: '确定要结束本次指引吗？', endConfirmLead: '结束后，当前步骤记录会从这台设备清除。', continueJourney: '继续指引', confirmEnd: '结束并返回首页', refreshLive: '刷新实时信息', refreshArrival: '重新查询行李转盘', reviewNeeded: '需要你确认', reviewCorrect: '这项信息正确', reviewEdit: '信息不对，手动修改', reviewOnSite: '这项未读取到，稍后现场确认', reviewWrongOnSite: '这项不对，标记为现场确认', currentStep: '当前步骤', boardConfirmTitle: '确认你已经登机吗？', boardConfirmLead: '确认后将进入机上模式，抵达后仍会继续指引。', confirmBoard: '是，我已经登机', cancelBoard: '返回，再检查一下', landedConfirmTitle: '确认你已经下飞机吗？', landedConfirmLead: '确认后，我们会继续指引你领取行李或前往出口。', confirmLanded: '是，我已经下飞机', cancelLanded: '返回，再检查一下', flightDuration: '预计飞行时间', estimatedArrival: '预计到达', timeUntilArrival: '距离预计到达', destinationLocalTime: '目的地当地时间', estimatedDeparture: '预计起飞', boardingTime: '登机时间', seat: '座位', airportLocalTime: '机场当地时间', timeUntilDeparture: '距离预计起飞', journeyTimeline: '查看本次行程记录', scenarioTitle: '模拟场景', scenarioLead: '仅供本地流程演示。', conflictTitle: '信息有关键冲突，请先停下来', conflictLead: '请向机场工作人员核对文件和实时屏幕后，再继续。', confirmConflicts: '我已向工作人员核对，继续', checkInArea: '值机 / 托运区域', close: '关闭', copyCard: '复制大字卡内容', familyTitle: '分享行程给家属', familyLead: '通过系统分享面板分享 48 小时有效的安全链接或脱敏行程图片。', localhostWarning: '当前是 localhost：其他设备无法打开这个地址。请部署到可访问的网址后再分享。', shareLink: '分享链接', sharePng: '分享图片'
+      languageLabel: '选择语言', back: '返回', backStep: '返回上一步', fileLabel: '选择预订确认、电子客票或登机牌文件', loadingTitle: '正在准备你的乘机步骤', checkDetails: '请确认', confirmTitle: '这是你的航班吗？', departure: '计划起飞', terminal: '航站楼', gate: '登机口', status: '状态', notPublished: '尚未公布', demoDisclaimer: '演示数据', yesContinue: '是，继续', editFlight: '不是，我要修改', manualContext: '填写航班信息', baggageContext: '确认行李情况', manualTitle: '输入你的航班信息', manualLead: '请输入航班号和出发日期。', flightLabel: '航班号', dateLabel: '出发日期', flightPlaceholder: '例如 BA 117', searchLiveFlight: '查询真实航班', useDemoFlight: '使用 BA 117 演示航班', demoHint: '演示数据', nextAction: '现在要做的事', baggageYes: '有，需要托运', baggageNo: '没有', baggageUnsure: '我不确定', speak: '朗读当前步骤', staff: '请工作人员帮忙', contactFamily: '分享行程给家属', endJourney: '结束本次指引', askForHelp: '请工作人员帮忙', destination: '现在前往', couldNotLoad: '暂时无法读取', errorTitle: '实时航班状态暂未更新', errorLead: '请检查输入或网络连接，然后重试。你也可以手动输入航班。', retry: '重试', enterManually: '手动输入航班', askStaff: '请工作人员帮忙', technicalDetails: '查看技术详情', returnHome: '返回首页', endConfirmTitle: '确定要结束本次指引吗？', endConfirmLead: '结束后，当前步骤记录会从这台设备清除。', continueJourney: '继续指引', confirmEnd: '结束并返回首页', refreshLive: '刷新实时信息', refreshArrival: '重新查询行李转盘', reviewNeeded: '需要你确认', reviewCorrect: '这项信息正确', reviewEdit: '信息不对，手动修改', reviewOnSite: '这项未读取到，稍后现场确认', reviewWrongOnSite: '这项不对，标记为现场确认', currentStep: '当前步骤', boardConfirmTitle: '确认你已经登机吗？', boardConfirmLead: '确认后将进入机上模式，抵达后仍会继续指引。', confirmBoard: '是，我已经登机', cancelBoard: '返回，再检查一下', landedConfirmTitle: '确认你已经下飞机吗？', landedConfirmLead: '确认后，我们会继续指引你领取行李或前往出口。', confirmLanded: '是，我已经下飞机', cancelLanded: '返回，再检查一下', flightDuration: '预计飞行时间', estimatedArrival: '预计到达', timeUntilArrival: '距离预计到达', destinationLocalTime: '目的地当地时间', estimatedDeparture: '预计起飞', boardingTime: '登机时间', seat: '座位', airportLocalTime: '机场当地时间', timeUntilDeparture: '距离预计起飞', journeyTimeline: '查看本次行程记录', scenarioTitle: '模拟场景', scenarioLead: '仅供本地流程演示。', conflictTitle: '信息有关键冲突，请先停下来', conflictLead: '请向机场工作人员核对文件和实时屏幕后，再继续。', confirmConflicts: '我已向工作人员核对，继续', checkInArea: '值机 / 托运区域', close: '关闭', familyTitle: '分享行程给家属', familyLead: '通过系统分享面板分享 48 小时有效的安全链接或脱敏行程图片。', localhostWarning: '当前是 localhost：其他设备无法打开这个地址。请部署到可访问的网址后再分享。', shareLink: '分享链接', sharePng: '分享图片'
     },
     en: {
-      eyebrow: 'Your flight companion', welcomeTitle: 'Now, take the next step', welcomeLead: 'Upload a travel document or enter flight details. We show one action at a time.', upload: 'Upload booking confirmation, e-ticket, or boarding pass', uploadHint: 'PDF, JPG, JPEG, and PNG are supported, including booking screenshots, e-ticket itineraries, and boarding passes.', manual: 'Enter flight number manually', family: 'Share journey with family', privacy: 'Your travel document is only used to create flight guidance', languageLabel: 'Choose language', back: 'Back', backStep: 'Go back', fileLabel: 'Choose a booking confirmation, e-ticket, or boarding pass', loadingTitle: 'Preparing your next step', checkDetails: 'Please confirm', confirmTitle: 'Is this your flight?', departure: 'Scheduled departure', terminal: 'Terminal', gate: 'Gate', status: 'Status', notPublished: 'Not published', demoDisclaimer: 'Demo data', yesContinue: 'Yes, continue', editFlight: 'No, edit it', manualContext: 'Enter flight details', baggageContext: 'Confirm your baggage', manualTitle: 'Enter your flight details', manualLead: 'Enter the flight number and departure date.', flightLabel: 'Flight number', dateLabel: 'Departure date', flightPlaceholder: 'For example BA 117', searchLiveFlight: 'Search live flight', useDemoFlight: 'Use BA 117 demo flight', demoHint: 'Demo data', nextAction: 'Your next action', baggageYes: 'Yes, I have bags to check', baggageNo: 'No', baggageUnsure: 'I am not sure', speak: 'Read this step aloud', staff: 'Ask a member of staff', contactFamily: 'Share journey with family', endJourney: 'End this journey', askForHelp: 'Ask a member of staff', destination: 'Go now to', couldNotLoad: 'Unable to load', errorTitle: 'We cannot continue right now', errorLead: 'Check your details or connection, then try again. You can also enter the flight manually or ask staff for help.', retry: 'Try again', enterManually: 'Enter flight manually', askStaff: 'Ask a member of staff', technicalDetails: 'View technical details', returnHome: 'Return home', endConfirmTitle: 'End this journey?', endConfirmLead: 'Your current step history will be cleared from this device.', continueJourney: 'Continue journey', confirmEnd: 'End and return home', refreshLive: 'Refresh live information', refreshArrival: 'Check baggage belt again', reviewNeeded: 'Please confirm this', reviewCorrect: 'This information is correct', reviewEdit: 'This is wrong; edit manually', reviewOnSite: 'Not found; confirm it at the airport', reviewWrongOnSite: 'This is wrong; confirm it at the airport', currentStep: 'Current step', boardConfirmTitle: 'Have you boarded the aircraft?', boardConfirmLead: 'After confirmation, onboard mode will continue guiding you through arrival.', confirmBoard: 'Yes, I have boarded', cancelBoard: 'Go back and check again', landedConfirmTitle: 'Have you left the aircraft?', landedConfirmLead: 'After confirmation, guidance will continue to baggage claim or the exit.', confirmLanded: 'Yes, I have left the aircraft', cancelLanded: 'Go back and check again', flightDuration: 'Estimated flight time', estimatedArrival: 'Expected arrival', timeUntilArrival: 'Until expected arrival', destinationLocalTime: 'Destination local time', estimatedDeparture: 'Estimated departure', boardingTime: 'Boarding time', seat: 'Seat', airportLocalTime: 'Airport local time', timeUntilDeparture: 'Until expected departure', journeyTimeline: 'View this journey timeline', scenarioTitle: 'Simulated scenarios', scenarioLead: 'For local journey demonstrations only.', conflictTitle: 'Critical details conflict — stop here', conflictLead: 'Confirm the document and live screen with airport staff before continuing.', confirmConflicts: 'I confirmed with staff; continue', checkInArea: 'Check-in / bag-drop area', close: 'Close', copyCard: 'Copy card text', familyTitle: 'Share journey with family', familyLead: 'Create a read-only link that remains active for 48 hours. It includes only essential flight and current-step details.', localhostWarning: 'This is localhost. Other devices cannot open this address. Deploy the app to an accessible URL before sharing.', shareLink: 'Share link', sharePng: 'Share image'
+      eyebrow: 'Your flight companion', welcomeTitle: 'Now, take the next step', welcomeLead: 'Upload a travel document or enter flight details. We show one action at a time.', upload: 'Upload booking confirmation, e-ticket, or boarding pass', uploadHint: 'PDF, JPG, JPEG, and PNG are supported, including booking screenshots, e-ticket itineraries, and boarding passes.', manual: 'Enter flight number manually', family: 'Share journey with family', privacy: 'Your travel document is only used to create flight guidance', languageLabel: 'Choose language', back: 'Back', backStep: 'Go back', fileLabel: 'Choose a booking confirmation, e-ticket, or boarding pass', loadingTitle: 'Preparing your next step', checkDetails: 'Please confirm', confirmTitle: 'Is this your flight?', departure: 'Scheduled departure', terminal: 'Terminal', gate: 'Gate', status: 'Status', notPublished: 'Not published', demoDisclaimer: 'Demo data', yesContinue: 'Yes, continue', editFlight: 'No, edit it', manualContext: 'Enter flight details', baggageContext: 'Confirm your baggage', manualTitle: 'Enter your flight details', manualLead: 'Enter the flight number and departure date.', flightLabel: 'Flight number', dateLabel: 'Departure date', flightPlaceholder: 'For example BA 117', searchLiveFlight: 'Search live flight', useDemoFlight: 'Use BA 117 demo flight', demoHint: 'Demo data', nextAction: 'Your next action', baggageYes: 'Yes, I have bags to check', baggageNo: 'No', baggageUnsure: 'I am not sure', speak: 'Read this step aloud', staff: 'Ask a member of staff', contactFamily: 'Share journey with family', endJourney: 'End this journey', askForHelp: 'Ask a member of staff', destination: 'Go now to', couldNotLoad: 'Unable to load', errorTitle: 'We cannot continue right now', errorLead: 'Check your details or connection, then try again. You can also enter the flight manually or ask staff for help.', retry: 'Try again', enterManually: 'Enter flight manually', askStaff: 'Ask a member of staff', technicalDetails: 'View technical details', returnHome: 'Return home', endConfirmTitle: 'End this journey?', endConfirmLead: 'Your current step history will be cleared from this device.', continueJourney: 'Continue journey', confirmEnd: 'End and return home', refreshLive: 'Refresh live information', refreshArrival: 'Check baggage belt again', reviewNeeded: 'Please confirm this', reviewCorrect: 'This information is correct', reviewEdit: 'This is wrong; edit manually', reviewOnSite: 'Not found; confirm it at the airport', reviewWrongOnSite: 'This is wrong; confirm it at the airport', currentStep: 'Current step', boardConfirmTitle: 'Have you boarded the aircraft?', boardConfirmLead: 'After confirmation, onboard mode will continue guiding you through arrival.', confirmBoard: 'Yes, I have boarded', cancelBoard: 'Go back and check again', landedConfirmTitle: 'Have you left the aircraft?', landedConfirmLead: 'After confirmation, guidance will continue to baggage claim or the exit.', confirmLanded: 'Yes, I have left the aircraft', cancelLanded: 'Go back and check again', flightDuration: 'Estimated flight time', estimatedArrival: 'Expected arrival', timeUntilArrival: 'Until expected arrival', destinationLocalTime: 'Destination local time', estimatedDeparture: 'Estimated departure', boardingTime: 'Boarding time', seat: 'Seat', airportLocalTime: 'Airport local time', timeUntilDeparture: 'Until expected departure', journeyTimeline: 'View this journey timeline', scenarioTitle: 'Simulated scenarios', scenarioLead: 'For local journey demonstrations only.', conflictTitle: 'Critical details conflict — stop here', conflictLead: 'Confirm the document and live screen with airport staff before continuing.', confirmConflicts: 'I confirmed with staff; continue', checkInArea: 'Check-in / bag-drop area', close: 'Close', familyTitle: 'Share journey with family', familyLead: 'Create a read-only link that remains active for 48 hours. It includes only essential flight and current-step details.', localhostWarning: 'This is localhost. Other devices cannot open this address. Deploy the app to an accessible URL before sharing.', shareLink: 'Share link', sharePng: 'Share image'
     },
     es: {
-      eyebrow: 'Tu asistente de vuelo', welcomeTitle: 'Ahora, solo el siguiente paso', welcomeLead: 'Sube un documento de viaje o introduce los datos del vuelo. Mostramos una sola acción cada vez.', upload: 'Subir confirmación de reserva, billete electrónico o tarjeta de embarque', uploadHint: 'Se admiten PDF, JPG, JPEG y PNG, incluidas capturas de reserva, itinerarios electrónicos y tarjetas de embarque.', manual: 'Introducir el vuelo manualmente', family: 'Compartir el viaje con la familia', privacy: 'Tu documento solo se usa para crear las indicaciones del viaje', languageLabel: 'Elegir idioma', back: 'Volver', backStep: 'Volver', fileLabel: 'Elegir confirmación, billete electrónico o tarjeta de embarque', loadingTitle: 'Preparando tu siguiente paso', checkDetails: 'Confirma los datos', confirmTitle: '¿Es este tu vuelo?', departure: 'Salida programada', terminal: 'Terminal', gate: 'Puerta', status: 'Estado', notPublished: 'Aún no publicado', demoDisclaimer: 'Datos de demostración', yesContinue: 'Sí, continuar', editFlight: 'No, modificar', manualContext: 'Datos del vuelo', baggageContext: 'Confirmar el equipaje', manualTitle: 'Introduce los datos de tu vuelo', manualLead: 'Introduce el número de vuelo y la fecha de salida.', flightLabel: 'Número de vuelo', dateLabel: 'Fecha de salida', flightPlaceholder: 'Por ejemplo BA 117', searchLiveFlight: 'Buscar vuelo real', useDemoFlight: 'Usar vuelo BA 117 de demostración', demoHint: 'Datos de demostración', nextAction: 'Tu siguiente acción', baggageYes: 'Sí, tengo equipaje para facturar', baggageNo: 'No', baggageUnsure: 'No estoy seguro', speak: 'Leer este paso', staff: 'Pedir ayuda al personal', contactFamily: 'Compartir el viaje con la familia', endJourney: 'Finalizar este viaje', askForHelp: 'Pedir ayuda al personal', destination: 'Ve ahora a', couldNotLoad: 'No se puede cargar', errorTitle: 'No podemos continuar ahora', errorLead: 'Comprueba los datos o la conexión y vuelve a intentarlo. También puedes introducir el vuelo o pedir ayuda.', retry: 'Reintentar', enterManually: 'Introducir vuelo manualmente', askStaff: 'Pedir ayuda al personal', technicalDetails: 'Ver detalles técnicos', returnHome: 'Volver al inicio', endConfirmTitle: '¿Finalizar este viaje?', endConfirmLead: 'El historial del paso actual se borrará de este dispositivo.', continueJourney: 'Continuar el viaje', confirmEnd: 'Finalizar y volver al inicio', refreshLive: 'Actualizar información', refreshArrival: 'Volver a consultar la cinta', reviewNeeded: 'Confirma este dato', reviewCorrect: 'Este dato es correcto', reviewEdit: 'No es correcto; modificar', reviewOnSite: 'No encontrado; confirmar en el aeropuerto', reviewWrongOnSite: 'No es correcto; confirmar en el aeropuerto', currentStep: 'Paso actual', boardConfirmTitle: '¿Ya has embarcado?', boardConfirmLead: 'Tras confirmar, el modo a bordo seguirá guiándote hasta la llegada.', confirmBoard: 'Sí, ya he embarcado', cancelBoard: 'Volver y comprobar', landedConfirmTitle: '¿Ya has bajado del avión?', landedConfirmLead: 'Tras confirmar, te guiaremos a la recogida de equipaje o a la salida.', confirmLanded: 'Sí, ya he bajado', cancelLanded: 'Volver y comprobar', flightDuration: 'Duración estimada', estimatedArrival: 'Llegada estimada', timeUntilArrival: 'Tiempo hasta la llegada', destinationLocalTime: 'Hora local del destino', estimatedDeparture: 'Salida estimada', boardingTime: 'Hora de embarque', seat: 'Asiento', airportLocalTime: 'Hora local del aeropuerto', timeUntilDeparture: 'Tiempo hasta la salida', journeyTimeline: 'Ver el historial del viaje', scenarioTitle: 'Escenarios simulados', scenarioLead: 'Solo para probar el recorrido local.', conflictTitle: 'Hay un conflicto importante: detente', conflictLead: 'Confirma el documento y la pantalla con el personal antes de continuar.', confirmConflicts: 'Lo confirmé con el personal; continuar', checkInArea: 'Zona de facturación / entrega', close: 'Cerrar', copyCard: 'Copiar el texto de la tarjeta', familyTitle: 'Compartir el viaje con la familia', familyLead: 'Crea un enlace de solo lectura válido durante 48 horas. Solo incluye el vuelo y el paso actual imprescindibles.', localhostWarning: 'Esta dirección es localhost y no se puede abrir en otro dispositivo. Despliega la aplicación en una URL accesible antes de compartir.', shareLink: 'Compartir enlace', sharePng: 'Compartir imagen'
+      eyebrow: 'Tu asistente de vuelo', welcomeTitle: 'Ahora, solo el siguiente paso', welcomeLead: 'Sube un documento de viaje o introduce los datos del vuelo. Mostramos una sola acción cada vez.', upload: 'Subir confirmación de reserva, billete electrónico o tarjeta de embarque', uploadHint: 'Se admiten PDF, JPG, JPEG y PNG, incluidas capturas de reserva, itinerarios electrónicos y tarjetas de embarque.', manual: 'Introducir el vuelo manualmente', family: 'Compartir el viaje con la familia', privacy: 'Tu documento solo se usa para crear las indicaciones del viaje', languageLabel: 'Elegir idioma', back: 'Volver', backStep: 'Volver', fileLabel: 'Elegir confirmación, billete electrónico o tarjeta de embarque', loadingTitle: 'Preparando tu siguiente paso', checkDetails: 'Confirma los datos', confirmTitle: '¿Es este tu vuelo?', departure: 'Salida programada', terminal: 'Terminal', gate: 'Puerta', status: 'Estado', notPublished: 'Aún no publicado', demoDisclaimer: 'Datos de demostración', yesContinue: 'Sí, continuar', editFlight: 'No, modificar', manualContext: 'Datos del vuelo', baggageContext: 'Confirmar el equipaje', manualTitle: 'Introduce los datos de tu vuelo', manualLead: 'Introduce el número de vuelo y la fecha de salida.', flightLabel: 'Número de vuelo', dateLabel: 'Fecha de salida', flightPlaceholder: 'Por ejemplo BA 117', searchLiveFlight: 'Buscar vuelo real', useDemoFlight: 'Usar vuelo BA 117 de demostración', demoHint: 'Datos de demostración', nextAction: 'Tu siguiente acción', baggageYes: 'Sí, tengo equipaje para facturar', baggageNo: 'No', baggageUnsure: 'No estoy seguro', speak: 'Leer este paso', staff: 'Pedir ayuda al personal', contactFamily: 'Compartir el viaje con la familia', endJourney: 'Finalizar este viaje', askForHelp: 'Pedir ayuda al personal', destination: 'Ve ahora a', couldNotLoad: 'No se puede cargar', errorTitle: 'No podemos continuar ahora', errorLead: 'Comprueba los datos o la conexión y vuelve a intentarlo. También puedes introducir el vuelo o pedir ayuda.', retry: 'Reintentar', enterManually: 'Introducir vuelo manualmente', askStaff: 'Pedir ayuda al personal', technicalDetails: 'Ver detalles técnicos', returnHome: 'Volver al inicio', endConfirmTitle: '¿Finalizar este viaje?', endConfirmLead: 'El historial del paso actual se borrará de este dispositivo.', continueJourney: 'Continuar el viaje', confirmEnd: 'Finalizar y volver al inicio', refreshLive: 'Actualizar información', refreshArrival: 'Volver a consultar la cinta', reviewNeeded: 'Confirma este dato', reviewCorrect: 'Este dato es correcto', reviewEdit: 'No es correcto; modificar', reviewOnSite: 'No encontrado; confirmar en el aeropuerto', reviewWrongOnSite: 'No es correcto; confirmar en el aeropuerto', currentStep: 'Paso actual', boardConfirmTitle: '¿Ya has embarcado?', boardConfirmLead: 'Tras confirmar, el modo a bordo seguirá guiándote hasta la llegada.', confirmBoard: 'Sí, ya he embarcado', cancelBoard: 'Volver y comprobar', landedConfirmTitle: '¿Ya has bajado del avión?', landedConfirmLead: 'Tras confirmar, te guiaremos a la recogida de equipaje o a la salida.', confirmLanded: 'Sí, ya he bajado', cancelLanded: 'Volver y comprobar', flightDuration: 'Duración estimada', estimatedArrival: 'Llegada estimada', timeUntilArrival: 'Tiempo hasta la llegada', destinationLocalTime: 'Hora local del destino', estimatedDeparture: 'Salida estimada', boardingTime: 'Hora de embarque', seat: 'Asiento', airportLocalTime: 'Hora local del aeropuerto', timeUntilDeparture: 'Tiempo hasta la salida', journeyTimeline: 'Ver el historial del viaje', scenarioTitle: 'Escenarios simulados', scenarioLead: 'Solo para probar el recorrido local.', conflictTitle: 'Hay un conflicto importante: detente', conflictLead: 'Confirma el documento y la pantalla con el personal antes de continuar.', confirmConflicts: 'Lo confirmé con el personal; continuar', checkInArea: 'Zona de facturación / entrega', close: 'Cerrar', familyTitle: 'Compartir el viaje con la familia', familyLead: 'Crea un enlace de solo lectura válido durante 48 horas. Solo incluye el vuelo y el paso actual imprescindibles.', localhostWarning: 'Esta dirección es localhost y no se puede abrir en otro dispositivo. Despliega la aplicación en una URL accesible antes de compartir.', shareLink: 'Compartir enlace', sharePng: 'Compartir imagen'
     }
   };
   translations.zh.technicalDetails = '调试详情';
@@ -158,7 +173,7 @@
     completeShort: '完成', backStep: '返回', backStepAria: '返回上一步', shareLink: '分享链接', sharePng: '分享图片',
     shareLinkAria: '使用系统分享面板分享安全链接', sharePngAria: '使用系统分享面板分享脱敏行程图片',
     refreshShort: '刷新', refreshLiveAria: '刷新实时航班信息', refreshArrivalAria: '重新查询到达行李转盘',
-    staffCardInstruction: '请把这个页面拿给工作人员看。', fieldStaffHelp: '请工作人员帮忙', familyLead: '通过系统分享面板分享 48 小时有效的安全链接或脱敏行程图片。', globalFooter: '© 2026 OneStep Flight · 无障碍乘机指引',
+    staffCardInstruction: '请把这个页面给工作人员看。需要时可联系机场。', fieldStaffHelp: '请工作人员帮忙', familyLead: '通过系统分享面板分享 48 小时有效的安全链接或脱敏行程图片。', globalFooter: '© 2026 OneStep Flight · 无障碍乘机指引',
     allFlightInfo: '查看全部航班信息', flightSourceLabel: '航班信息来源',
     departurePassedTitle: '这趟航班已经离港', departurePassedLead: '点击下方“请工作人员帮忙”，并前往航空公司服务柜台出示给工作人员。',
     enterNewFlight: '输入新的航班信息', backHome: '返回首页', uploadContext: '选择旅行文件', uploadTitle: '选择或上传文件', chooseFile: '选择文件',
@@ -199,7 +214,7 @@
     completeShort: 'Done', backStep: 'Back', backStepAria: 'Go back to the previous step', shareLink: 'Share link', sharePng: 'Share image',
     shareLinkAria: 'Share the secure link with the system share panel', sharePngAria: 'Share the redacted journey image with the system share panel',
     refreshShort: 'Refresh', refreshLiveAria: 'Refresh live flight information', refreshArrivalAria: 'Check the arrival baggage belt again',
-    staffCardInstruction: 'Please show this page to a member of staff.', fieldStaffHelp: 'Ask staff for help', familyLead: 'Use the system share panel for a secure link valid for 48 hours or a redacted journey image.', globalFooter: '© 2026 OneStep Flight · Accessible air-travel guidance',
+    staffCardInstruction: 'Please show this screen to a member of staff. Contact the airport if needed.', fieldStaffHelp: 'Ask staff for help', familyLead: 'Use the system share panel for a secure link valid for 48 hours or a redacted journey image.', globalFooter: '© 2026 OneStep Flight · Accessible air-travel guidance',
     allFlightInfo: 'View all flight information', flightSourceLabel: 'Flight information source',
     departurePassedTitle: 'This flight has departed', departurePassedLead: 'Select “Ask a member of staff” below, then go to the airline service desk and show it to a staff member.',
     enterNewFlight: 'Enter new flight information', backHome: 'Return home', uploadContext: 'Choose a travel document', uploadTitle: 'Choose or upload a file', chooseFile: 'Choose file',
@@ -240,7 +255,7 @@
     completeShort: 'Hecho', backStep: 'Volver', backStepAria: 'Volver al paso anterior', shareLink: 'Compartir enlace', sharePng: 'Compartir imagen',
     shareLinkAria: 'Compartir el enlace seguro con el panel del sistema', sharePngAria: 'Compartir la imagen anonimizada del viaje con el panel del sistema',
     refreshShort: 'Actualizar', refreshLiveAria: 'Actualizar la información del vuelo en directo', refreshArrivalAria: 'Volver a consultar la cinta de equipaje',
-    staffCardInstruction: 'Por favor, muestre esta página a un miembro del personal.', fieldStaffHelp: 'Pedir ayuda al personal', familyLead: 'Usa el panel del sistema para compartir un enlace seguro válido durante 48 horas o una imagen anonimizada del viaje.', globalFooter: '© 2026 OneStep Flight · Guía accesible para viajar en avión',
+    staffCardInstruction: 'Muestre esta pantalla a un miembro del personal. Contacte con el aeropuerto si lo necesita.', fieldStaffHelp: 'Pedir ayuda al personal', familyLead: 'Usa el panel del sistema para compartir un enlace seguro válido durante 48 horas o una imagen anonimizada del viaje.', globalFooter: '© 2026 OneStep Flight · Guía accesible para viajar en avión',
     allFlightInfo: 'Ver toda la información del vuelo', flightSourceLabel: 'Fuente de información del vuelo',
     departurePassedTitle: 'Este vuelo ya ha salido', departurePassedLead: 'Pulsa «Pedir ayuda al personal» y ve al mostrador de atención de la aerolínea para mostrárselo al personal.',
     enterNewFlight: 'Introducir un vuelo nuevo', backHome: 'Volver al inicio', uploadContext: 'Elegir un documento de viaje', uploadTitle: 'Elegir o subir un archivo', chooseFile: 'Elegir archivo',
@@ -313,12 +328,70 @@
     scenarioExpectedArrivalTime: 'La llegada estimada cambia y el retraso pasa a 40 minutos', scenarioExpectedArrived: 'El estado cambia a llegado', scenarioExpectedBelt: 'La cinta cambia a 8', scenarioExpectedStale: 'Los datos en directo quedan desactualizados'
   });
 
-  translations.zh.copyCard = '复制';
-  translations.en.copyCard = 'Copy';
-  translations.es.copyCard = 'Copiar';
-  translations.zh.copyCardAria = '复制工作人员大字卡内容';
-  translations.en.copyCardAria = 'Copy the staff assistance card';
-  translations.es.copyCardAria = 'Copiar la tarjeta de ayuda para el personal';
+  Object.assign(translations.zh, {
+    viewAirportMap: '查看机场地图', contactAirport: '联系机场', airportMapTitle: '机场地图', airportContactTitle: '联系机场',
+    findingAirportMap: '正在查找机场地图……', findingAirportContact: '正在查找机场联系方式……',
+    airportResourceWaitHint: '可能需要等候近一分钟。',
+    mapFound: '已找到机场地图。', openOfficialMap: '打开机场地图', mapPageOnly: '已找到机场官方导航页面。',
+    viewAirportWebsite: '打开官方导航页面', airportLocationOnly: '暂未找到官方平面图，已找到准确的机场位置。',
+    openAirportLocation: '在 Google 地图中查看机场位置', mapNotFound: '暂未找到可核实的机场地图。',
+    mapTemporarilyUnavailable: '机场地图暂时不可用，请稍后重试。',
+    phoneFound: '已找到机场联系电话。', callAirport: '拨打机场电话',
+    phoneNotFound: '暂未找到可核实的通用电话', openAirportContactPage: '打开机场联系页面',
+    viewAirportContactPage: '查看机场官方联系页面', contactNotFound: '暂时无法取得机场官方联系方式',
+    contactTemporarilyUnavailable: '机场联系方式暂时不可用，请稍后重试。',
+    backToCard: '返回大字卡', closeStaffAria: '关闭帮助窗口',
+    staffCardInstruction: '请把这个页面给工作人员看。需要时可联系机场。',
+    qaAirportTitle: '机场信息查询', qaAirportCode: '机场代码',
+    qaAirportCodeHint: '三字母',
+    qaAirportTerminalOptional: '航站楼（可选）', qaAirportQuery: '查询',
+    qaAirportLoading: '查询中……', qaAirportFailed: '查询失败，请稍后重试。',
+    qaAirportContactHeading: '联系机场', qaAirportMapHeading: '机场地图',
+    qaAirportTerminalLabel: '航站楼'
+  });
+  Object.assign(translations.en, {
+    viewAirportMap: 'View airport map', contactAirport: 'Contact airport', airportMapTitle: 'Airport map', airportContactTitle: 'Contact airport',
+    findingAirportMap: 'Finding the airport map…', findingAirportContact: 'Finding airport contact details…',
+    airportResourceWaitHint: 'This may take up to a minute.',
+    mapFound: 'The airport map is ready.', openOfficialMap: 'Open airport map', mapPageOnly: 'An official airport navigation page is ready.',
+    viewAirportWebsite: 'Open official navigation page', airportLocationOnly: 'No official floor plan was found. The exact airport location is available.',
+    openAirportLocation: 'View airport location in Google Maps', mapNotFound: 'No verified airport map was found.',
+    mapTemporarilyUnavailable: 'The airport map is temporarily unavailable. Try again shortly.',
+    phoneFound: 'The airport phone number is ready.', callAirport: 'Call airport',
+    phoneNotFound: 'No verified general phone number was found.', openAirportContactPage: 'Open airport contact page',
+    viewAirportContactPage: 'View official airport contact page', contactNotFound: 'Official airport contact details are unavailable.',
+    contactTemporarilyUnavailable: 'Airport contact details are temporarily unavailable. Try again shortly.',
+    backToCard: 'Back to large card', closeStaffAria: 'Close help window',
+    staffCardInstruction: 'Please show this screen to a member of staff. Contact the airport if needed.',
+    qaAirportTitle: 'Airport information lookup', qaAirportCode: 'Airport code',
+    qaAirportCodeHint: '3 letters',
+    qaAirportTerminalOptional: 'Terminal (optional)', qaAirportQuery: 'Search',
+    qaAirportLoading: 'Searching…', qaAirportFailed: 'The lookup failed. Please try again shortly.',
+    qaAirportContactHeading: 'Contact airport', qaAirportMapHeading: 'Airport map',
+    qaAirportTerminalLabel: 'Terminal'
+  });
+  Object.assign(translations.es, {
+    viewAirportMap: 'Ver mapa del aeropuerto', contactAirport: 'Contactar con el aeropuerto', airportMapTitle: 'Mapa del aeropuerto', airportContactTitle: 'Contactar con el aeropuerto',
+    findingAirportMap: 'Buscando el mapa del aeropuerto…', findingAirportContact: 'Buscando los datos de contacto del aeropuerto…',
+    airportResourceWaitHint: 'Esto puede tardar hasta un minuto.',
+    mapFound: 'El mapa del aeropuerto está listo.', openOfficialMap: 'Abrir mapa del aeropuerto', mapPageOnly: 'Hay una página oficial de orientación del aeropuerto.',
+    viewAirportWebsite: 'Abrir la página oficial de orientación', airportLocationOnly: 'No se encontró un plano oficial. Está disponible la ubicación exacta del aeropuerto.',
+    openAirportLocation: 'Ver la ubicación en Google Maps', mapNotFound: 'No se encontró un mapa verificado del aeropuerto.',
+    mapTemporarilyUnavailable: 'El mapa del aeropuerto no está disponible temporalmente. Inténtelo de nuevo pronto.',
+    phoneFound: 'Se ha encontrado el teléfono del aeropuerto.', callAirport: 'Llamar al aeropuerto',
+    phoneNotFound: 'No se encontró un teléfono general verificado.', openAirportContactPage: 'Abrir la página de contacto del aeropuerto',
+    viewAirportContactPage: 'Ver la página oficial de contacto', contactNotFound: 'No se pudieron obtener los datos de contacto oficiales del aeropuerto.',
+    contactTemporarilyUnavailable: 'Los datos de contacto del aeropuerto no están disponibles temporalmente. Inténtelo de nuevo pronto.',
+    backToCard: 'Volver a la tarjeta grande', closeStaffAria: 'Cerrar la ventana de ayuda',
+    staffCardInstruction: 'Muestre esta pantalla a un miembro del personal. Contacte con el aeropuerto si lo necesita.',
+    qaAirportTitle: 'Consulta de información del aeropuerto', qaAirportCode: 'Código del aeropuerto',
+    qaAirportCodeHint: '3 letras',
+    qaAirportTerminalOptional: 'Terminal (opcional)', qaAirportQuery: 'Consultar',
+    qaAirportLoading: 'Consultando…', qaAirportFailed: 'La consulta falló. Inténtalo de nuevo en breve.',
+    qaAirportContactHeading: 'Contactar con el aeropuerto', qaAirportMapHeading: 'Mapa del aeropuerto',
+    qaAirportTerminalLabel: 'Terminal'
+  });
+
   Object.assign(translations.zh, { datePlaceholder: '请选择出发日期', preparingPng: '正在准备图片…' });
   Object.assign(translations.en, { datePlaceholder: 'Choose departure date', preparingPng: 'Preparing image…' });
   Object.assign(translations.es, { datePlaceholder: 'Elige la fecha de salida', preparingPng: 'Preparando imagen…' });
@@ -595,6 +668,7 @@
     renderConnectivityStatus();
     renderManualDocumentEntry();
     renderStaffCard();
+    renderStaffOverlayView();
     renderShareEntryVisibility();
     renderScenarioTestCards();
     persistJourney();
@@ -663,6 +737,7 @@
     }
     renderShareEntryVisibility();
     renderFlightChanges();
+    syncAirportResourceQaVisibility();
     if (speechViewKey() == null) lastAutomaticSpeechKey = null;
     if (!settings.silent) queueAutomaticSpeech();
     syncAutoRefreshForScreen();
@@ -918,6 +993,39 @@
 
   function formatBaggageBeltValue(value) { return formatBeltValue(value); }
 
+  function airportResourceUsesArrival(action, context) {
+    if (!action || !context) return false;
+    if (['IN_FLIGHT', 'BAGGAGE_CLAIM', 'EXIT_AIRPORT'].indexOf(action.actionCode) >= 0) return true;
+    return Boolean(context.boarded || context.landed || context.baggageCollected || context.exitedAirport);
+  }
+
+  function currentAirportResourcesContext() {
+    if (!currentFlight || !currentAction || !journeyContext) return null;
+    var recognized = currentAction.stepType === 'CHECK_IN_QUESTION'
+      || currentAction.stepType === 'BAGGAGE_QUESTION'
+      || currentAction.stepType === 'COMPLETE'
+      || ['CHECK_IN', 'BAG_DROP', 'SECURITY', 'GO_TO_GATE', 'WAIT', 'BOARD_NOW', 'IN_FLIGHT',
+        'BAGGAGE_CLAIM', 'EXIT_AIRPORT', 'ASK_FOR_HELP'].indexOf(currentAction.actionCode) >= 0;
+    if (!recognized) return null;
+    var arrival = airportResourceUsesArrival(currentAction, journeyContext);
+    var code = arrival ? currentFlight.arrivalAirport : currentFlight.departureAirport;
+    if (!/^[A-Za-z]{3}$/.test(String(code || ''))) return null;
+    var airportCode = String(code).toUpperCase();
+    var terminal = arrival ? currentFlight.arrivalTerminal || null : currentFlight.terminal || null;
+    var rawAirportName = String((arrival ? currentFlight.arrivalAirportName : currentFlight.departureAirportName) || '').trim();
+    var airportName = rawAirportName && rawAirportName.toUpperCase() !== airportCode ? rawAirportName : null;
+    return {
+      airportCode: airportCode,
+      airportName: airportName,
+      terminal: terminal,
+      arrival: arrival,
+      contactKey: airportCode,
+      mapKey: airportCode + ':' + String(terminal || '').toUpperCase().replace(/^TERMINAL\s*/, '').replace(/[^A-Z0-9]/g, ''),
+      key: airportCode + ':' + String(terminal || '').toUpperCase().replace(/^TERMINAL\s*/, '').replace(/[^A-Z0-9]/g, ''),
+      payload: { airportCode: airportCode, airportName: airportName, terminal: terminal, forceRefresh: false }
+    };
+  }
+
   function preferredOperationalTime(flight, phase) {
     var prefix = phase === 'arrival' ? 'Arrival' : 'Departure';
     var actual = flight['actual' + prefix];
@@ -1066,6 +1174,7 @@
     renderFlightCorrection();
     renderShareEntryVisibility();
     renderScenarioTestCards();
+    syncAirportResourcesContext();
     if (!settings.silent) queueAutomaticSpeech();
   }
 
@@ -3028,6 +3137,7 @@
       renderConnectivityStatus();
       if (!settings.silent) announceLatestChangesOr(actionLocaleText(currentAction, 'title'));
       renderShareEntryVisibility();
+      syncAirportResourcesContext();
       if (!settings.silent) queueAutomaticSpeech();
       return;
     }
@@ -3114,6 +3224,7 @@
     maybeRefreshArrivalOnEntry();
     renderShareEntryVisibility();
     renderScenarioTestCards();
+    syncAirportResourcesContext();
     if (!settings.silent) queueAutomaticSpeech();
   }
 
@@ -4144,7 +4255,7 @@
       instructionPrimary.hidden = false;
     }
     var closeButton = document.querySelector('[data-action="close-staff"]');
-    if (closeButton) closeButton.setAttribute('aria-label', t('close'));
+    if (closeButton) closeButton.setAttribute('aria-label', t('closeStaffAria'));
     var completedPanel = document.querySelector('[data-staff-completed]');
     if (completedPanel) completedPanel.hidden = true;
     var flightStrip = document.querySelector('[data-staff-flight-strip]');
@@ -4169,6 +4280,8 @@
   }
 
   function renderStaffCard() {
+    var cardResourceButton = document.querySelector('[data-staff-contact-button]');
+    if (cardResourceButton) cardResourceButton.hidden = !currentAirportResourcesContext();
     if (fieldStaffHelpContext && renderFieldStaffCard(fieldStaffHelpContext)) return;
     var instructionEn = document.querySelector('[data-staff-instruction-en]');
     var instructionPrimary = document.querySelector('[data-staff-instruction-primary]');
@@ -4182,7 +4295,7 @@
       instructionPrimary.hidden = false;
     }
     var closeButton = document.querySelector('[data-action="close-staff"]');
-    if (closeButton) closeButton.setAttribute('aria-label', t('close'));
+    if (closeButton) closeButton.setAttribute('aria-label', t('closeStaffAria'));
     var completedPanel = document.querySelector('[data-staff-completed]');
     if (completedPanel) completedPanel.hidden = false;
     var titlePrimary = document.querySelector('[data-staff-title-primary]');
@@ -4291,30 +4404,511 @@
     return facts;
   }
 
-  function staffCardText() {
-    if (fieldStaffHelpContext && fieldStaffContent[fieldStaffHelpContext.field]) {
-      var content = fieldStaffContent[fieldStaffHelpContext.field];
-      var primarySuffix = currentLocale === 'zh' ? 'Zh' : currentLocale === 'es' ? 'Es' : 'En';
-      var fieldText = t('staffCardInstruction') + '\n\n'
-        + content['title' + primarySuffix] + '\n\n' + content['body' + primarySuffix];
-      var primaryReading = fieldStaffReading(fieldStaffHelpContext, currentLocale);
-      if (primaryReading) fieldText += '\n\n' + primaryReading;
-      if (currentLocale !== 'en') {
-        fieldText += '\n\n' + content.titleEn + '\n\n' + content.bodyEn;
-        var englishReading = fieldStaffReading(fieldStaffHelpContext, 'en');
-        if (englishReading) fieldText += '\n\n' + englishReading;
-      }
-      return fieldText;
+  function safeAirportHttpsUrl(value) {
+    try {
+      var url = new URL(value);
+      if (url.protocol !== 'https:' || url.username || url.password || url.port) return null;
+      return url.href;
+    } catch (error) { return null; }
+  }
+
+  function verifiedAirportResourcesResponse(response, context) {
+    if (!response || response.airportCode !== context.airportCode) return null;
+    var terminal = function (value) {
+      return String(value || '').toUpperCase().replace(/^TERMINAL\s*/, '').replace(/[^A-Z0-9]/g, '');
+    };
+    if (terminal(response.terminal) !== terminal(context.terminal) || !response.map || !response.contact) return null;
+    var mapStatus = ['FOUND', 'OFFICIAL_PAGE_ONLY', 'AIRPORT_LOCATION', 'NOT_FOUND', 'TEMPORARILY_UNAVAILABLE']
+      .indexOf(response.map.status) >= 0 ? response.map.status : 'TEMPORARILY_UNAVAILABLE';
+    var mapUrl = ['FOUND', 'OFFICIAL_PAGE_ONLY', 'AIRPORT_LOCATION'].indexOf(mapStatus) >= 0
+      ? safeAirportHttpsUrl(response.map.url) : null;
+    var mapSource = mapUrl ? safeAirportHttpsUrl(response.map.sourceUrl) : null;
+    if (mapUrl && !mapSource) { mapStatus = 'TEMPORARILY_UNAVAILABLE'; mapUrl = null; }
+    var mapTypes = ['DIRECT_INTERACTIVE_MAP', 'DIRECT_MAP_DOCUMENT', 'OFFICIAL_MAP_LANDING_PAGE',
+      'GOOGLE_MAPS_AIRPORT_LOCATION', 'GUIDE_OR_GENERIC_PAGE', 'NOT_FOUND', 'TEMPORARILY_UNAVAILABLE'];
+    var mapResultType = mapTypes.indexOf(response.map.resultType) >= 0
+      ? response.map.resultType : 'TEMPORARILY_UNAVAILABLE';
+
+    var status = ['PHONE_FOUND', 'CONTACT_PAGE_ONLY', 'NOT_FOUND', 'TEMPORARILY_UNAVAILABLE']
+      .indexOf(response.contact.status) >= 0 ? response.contact.status : 'TEMPORARILY_UNAVAILABLE';
+    var sourceUrl = response.contact.sourceUrl ? safeAirportHttpsUrl(response.contact.sourceUrl) : null;
+    var contactUrl = response.contact.contactUrl ? safeAirportHttpsUrl(response.contact.contactUrl) : null;
+    var telUri = /^tel:\+?\d{5,18}$/.test(response.contact.telUri || '') ? response.contact.telUri : null;
+    var phoneDisplay = String(response.contact.phoneDisplay || '').trim();
+    var exactMapsPhone = response.contact.sourceType === 'GOOGLE_MAPS'
+      && Boolean(response.contact.airportIdentityConfirmed)
+      && Boolean(response.contact.mapsStructuredPhonePresent);
+    if (status === 'PHONE_FOUND' && (!telUri || !phoneDisplay || !sourceUrl && !exactMapsPhone)) {
+      status = 'TEMPORARILY_UNAVAILABLE';
     }
-    var progress = completedProgressText();
-    var primaryTitle = currentLocale === 'zh' ? staffContent.titleZh : currentLocale === 'es' ? staffContent.titleEs : staffContent.titleEn;
-    var primaryBody = currentLocale === 'zh' ? staffContent.bodyZh : currentLocale === 'es' ? staffContent.bodyEs : staffContent.bodyEn;
-    var heading = t('staffCardInstruction') + '\n\n' + progress[currentLocale]
-      + '\n' + primaryTitle + '\n\n' + primaryBody;
-    if (currentLocale !== 'en') heading += '\n\n' + progress.en
-      + '\n' + staffContent.titleEn + '\n\n' + staffContent.bodyEn;
-    return heading + '\n\n'
-      + assistanceFacts().map(function (fact) { return fact[0] + ': ' + fact[1]; }).join('\n');
+    if (status === 'CONTACT_PAGE_ONLY' && (!contactUrl || !sourceUrl)) status = 'TEMPORARILY_UNAVAILABLE';
+    if (status === 'NOT_FOUND' || status === 'TEMPORARILY_UNAVAILABLE') {
+      telUri = null;
+      phoneDisplay = '';
+      contactUrl = null;
+      sourceUrl = null;
+    }
+    return {
+      airportCode: response.airportCode,
+      airportName: String(response.airportName || context.airportName),
+      terminal: response.terminal || null,
+      localAirportName: String(response.localAirportName || ''),
+      countryOrRegion: String(response.countryOrRegion || ''),
+      map: { status: mapStatus, url: mapUrl, sourceUrl: mapSource,
+        sourceTitle: String(response.map.sourceTitle || ''), resultType: mapResultType,
+        sourceLanguage: String(response.map.sourceLanguage || ''), mapScope: String(response.map.mapScope || ''),
+        verificationReason: String(response.map.verificationReason || ''),
+        rejectedCandidateTypes: Array.isArray(response.map.rejectedCandidateTypes)
+          ? response.map.rejectedCandidateTypes.map(String) : [], fromCache: Boolean(response.map.fromCache) },
+      contact: { status: status, phoneDisplay: phoneDisplay, telUri: telUri,
+        contactUrl: contactUrl, sourceUrl: sourceUrl, sourceTitle: String(response.contact.sourceTitle || ''),
+        sourceLanguage: String(response.contact.sourceLanguage || ''), sourceType: String(response.contact.sourceType || ''),
+        phoneRole: String(response.contact.phoneRole || ''), evidenceTier: String(response.contact.evidenceTier || ''),
+        airportIdentityConfirmed: Boolean(response.contact.airportIdentityConfirmed),
+        aiDedicatedPhoneField: Boolean(response.contact.aiDedicatedPhoneField),
+        mapsStructuredPhonePresent: Boolean(response.contact.mapsStructuredPhonePresent),
+        phoneConflict: Boolean(response.contact.phoneConflict), fromCache: Boolean(response.contact.fromCache) },
+      serpApiRequestCount: Number.isInteger(response.serpApiRequestCount) ? response.serpApiRequestCount : 0,
+      rejectionReasons: Array.isArray(response.rejectionReasons) ? response.rejectionReasons.map(String) : [],
+      retrievedAt: response.retrievedAt || null,
+      fromCache: Boolean(response.fromCache)
+    };
+  }
+
+  function renderStaffOverlayView() {
+    var overlay = document.querySelector('[data-staff-overlay]');
+    var cardView = document.querySelector('[data-staff-card-view]');
+    var resourceView = document.querySelector('[data-airport-resource-view]');
+    var resource = staffOverlayView === 'RESOURCE';
+    if (cardView) cardView.hidden = resource;
+    if (resourceView) resourceView.hidden = !resource;
+    var contactButton = document.querySelector('[data-staff-contact-button]');
+    if (contactButton) {
+      contactButton.disabled = resource;
+      contactButton.hidden = resource || !currentAirportResourcesContext();
+    }
+    if (overlay) overlay.setAttribute('aria-labelledby', resource ? 'airport-resource-title' : 'staff-title');
+    if (resource) renderAirportResourceView();
+  }
+
+  function setAirportResourceLink(link, href, label) {
+    if (!link) return;
+    link.hidden = !href;
+    link.textContent = href ? label : '';
+    if (href) link.href = href;
+    else link.removeAttribute('href');
+  }
+
+  function airportResourceDisplayName(result, context) {
+    var code = String(result && result.airportCode || context && context.airportCode || '').toUpperCase();
+    var localName = String(result && result.localAirportName || '').trim();
+    var suppliedName = String(result && result.airportName || context && context.airportName || '').trim();
+    var name = localName && localName.toUpperCase() !== code ? localName
+      : suppliedName && suppliedName.toUpperCase() !== code ? suppliedName : '';
+    return name ? name + ' (' + code + ')' : code;
+  }
+
+  function renderAirportResourceView() {
+    var view = document.querySelector('[data-airport-resource-view]');
+    if (!view) return;
+    var context = airportResourceContext;
+    var result = airportResourceResult;
+    var loading = airportResourceState === 'LOADING';
+    var title = document.querySelector('[data-airport-resource-title]');
+    var airport = document.querySelector('[data-airport-resource-airport]');
+    var message = document.querySelector('[data-airport-resource-message]');
+    var detail = document.querySelector('[data-airport-resource-detail]');
+    var phone = document.querySelector('[data-airport-phone-display]');
+    var phoneIcon = document.querySelector('[data-airport-phone-icon]');
+    var mapLink = document.querySelector('[data-airport-map-result]');
+    var phoneLink = document.querySelector('[data-airport-phone-result]');
+    var contactLink = document.querySelector('[data-airport-contact-result]');
+    var retry = document.querySelector('[data-action="retry-airport-resource"]');
+    var back = document.querySelector('[data-airport-resource-back]');
+    var mapMode = airportResourceMode === 'MAP';
+    view.setAttribute('aria-busy', String(loading));
+    title.textContent = t(mapMode ? 'airportMapTitle' : 'airportContactTitle');
+    airport.textContent = '';
+    airport.hidden = true;
+    message.textContent = '';
+    detail.textContent = '';
+    phone.textContent = '';
+    phone.hidden = true;
+    phoneIcon.hidden = true;
+    setAirportResourceLink(mapLink, null, '');
+    setAirportResourceLink(phoneLink, null, '');
+    setAirportResourceLink(contactLink, null, '');
+    contactLink.classList.remove('button-primary');
+    contactLink.classList.add('button-secondary');
+    retry.hidden = true;
+    back.hidden = false;
+    back.textContent = t(airportResourceOrigin === 'HELP_CARD' ? 'backToCard' : 'backStep');
+    if (!context) return;
+
+    if (loading) {
+      message.textContent = t(mapMode ? 'findingAirportMap' : 'findingAirportContact');
+      detail.textContent = t('airportResourceWaitHint');
+      return;
+    }
+
+    if (!result) {
+      message.textContent = t('contactTemporarilyUnavailable');
+      retry.hidden = false;
+      return;
+    }
+	airport.textContent = airportResourceDisplayName(result, context);
+	airport.hidden = false;
+    if (mapMode && result.map.status === 'FOUND') {
+      message.textContent = t('mapFound');
+      setAirportResourceLink(mapLink, result.map.url, t('openOfficialMap'));
+    } else if (mapMode && result.map.status === 'OFFICIAL_PAGE_ONLY') {
+      message.textContent = t('mapPageOnly');
+      setAirportResourceLink(mapLink, result.map.url, t('viewAirportWebsite'));
+    } else if (mapMode && result.map.status === 'AIRPORT_LOCATION') {
+      message.textContent = t('airportLocationOnly');
+      setAirportResourceLink(mapLink, result.map.url, t('openAirportLocation'));
+    } else if (mapMode) {
+      message.textContent = t(result.map.status === 'TEMPORARILY_UNAVAILABLE'
+        ? 'mapTemporarilyUnavailable' : 'mapNotFound');
+      retry.hidden = false;
+    } else if (result.contact.status === 'PHONE_FOUND') {
+      message.textContent = t('phoneFound');
+      phone.textContent = result.contact.phoneDisplay;
+      phone.hidden = false;
+      phoneIcon.hidden = false;
+      setAirportResourceLink(phoneLink, result.contact.telUri, t('callAirport'));
+      if (result.contact.contactUrl) setAirportResourceLink(contactLink, result.contact.contactUrl, t('viewAirportContactPage'));
+    } else if (result.contact.status === 'CONTACT_PAGE_ONLY') {
+      message.textContent = t('phoneNotFound');
+      contactLink.classList.remove('button-secondary');
+      contactLink.classList.add('button-primary');
+      setAirportResourceLink(contactLink, result.contact.contactUrl, t('openAirportContactPage'));
+    } else {
+      message.textContent = t(result.contact.status === 'TEMPORARILY_UNAVAILABLE'
+        ? 'contactTemporarilyUnavailable' : 'contactNotFound');
+      retry.hidden = false;
+    }
+  }
+
+  function airportResourceLoadingSpeech() {
+    return t(airportResourceMode === 'MAP' ? 'findingAirportMap' : 'findingAirportContact');
+  }
+
+  function emptyAirportMapResult() {
+    return { status: 'NOT_FOUND', url: null, sourceUrl: null, sourceTitle: '', resultType: 'NOT_FOUND',
+      sourceLanguage: '', mapScope: '', verificationReason: '', rejectedCandidateTypes: [], fromCache: true };
+  }
+
+  function emptyAirportContactResult() {
+    return { status: 'NOT_FOUND', phoneDisplay: '', telUri: null, contactUrl: null, sourceUrl: null,
+      sourceTitle: '', sourceLanguage: '', sourceType: '', phoneRole: '', evidenceTier: '',
+      airportIdentityConfirmed: false, aiDedicatedPhoneField: false, mapsStructuredPhonePresent: false,
+      phoneConflict: false, fromCache: true };
+  }
+
+  function cachedAirportResources(context) {
+    var map = airportMapCache[context.mapKey];
+    var contact = airportContactCache[context.contactKey];
+    var identity = airportIdentityCache[context.contactKey] || {};
+    if (!map && !contact) return null;
+    return { airportCode: context.airportCode, airportName: identity.airportName || context.airportName || context.airportCode,
+      terminal: context.terminal, localAirportName: identity.localAirportName || '',
+      countryOrRegion: identity.countryOrRegion || '',
+      map: map || emptyAirportMapResult(), contact: contact && contact.resource || emptyAirportContactResult(),
+      serpApiRequestCount: 0, rejectionReasons: contact && contact.rejectionReasons || [], fromCache: true };
+  }
+
+  function hasAirportResourceForMode(context, mode) {
+    if (mode === 'BOTH') {
+      return Boolean(airportMapCache[context.mapKey]) && Boolean(airportContactCache[context.contactKey]);
+    }
+    return mode === 'MAP' ? Boolean(airportMapCache[context.mapKey])
+      : Boolean(airportContactCache[context.contactKey]);
+  }
+
+  function storeAirportResources(context, verified, target) {
+    if (!verified) return;
+    airportIdentityCache[context.contactKey] = { airportName: verified.airportName,
+      localAirportName: verified.localAirportName, countryOrRegion: verified.countryOrRegion };
+    if (target !== 'CONTACT' && verified.map.status !== 'TEMPORARILY_UNAVAILABLE') {
+      airportMapCache[context.mapKey] = verified.map;
+    }
+    if (target !== 'MAP' && verified.contact.status !== 'TEMPORARILY_UNAVAILABLE') {
+      airportContactCache[context.contactKey] = { resource: verified.contact,
+        localAirportName: verified.localAirportName, countryOrRegion: verified.countryOrRegion,
+        rejectionReasons: verified.rejectionReasons };
+    }
+  }
+
+  function requestAirportResources(context, forceRefresh, refreshTarget) {
+    if (!context) return Promise.resolve(null);
+	var target = ['MAP', 'CONTACT', 'BOTH'].indexOf(refreshTarget || airportResourceMode) >= 0
+	  ? refreshTarget || airportResourceMode : 'BOTH';
+	if (forceRefresh && target !== 'CONTACT') delete airportMapCache[context.mapKey];
+	if (forceRefresh && target !== 'MAP') delete airportContactCache[context.contactKey];
+    if (!forceRefresh && hasAirportResourceForMode(context, target)) {
+      return Promise.resolve(cachedAirportResources(context));
+    }
+    var inFlightKey = context.key + ':' + target;
+    if (airportResourceInFlight[inFlightKey]) return airportResourceInFlight[inFlightKey].promise;
+    var controller = new AbortController();
+    var timeout = window.setTimeout(function () { controller.abort(); }, 60000);
+    var payload = {
+      airportCode: context.airportCode,
+      airportName: context.airportName,
+      terminal: context.terminal,
+      forceRefresh: Boolean(forceRefresh),
+      refreshTarget: target
+    };
+    var entry = { controller: controller, promise: null };
+    entry.promise = fetchJson('/api/assistance/airport-resources', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload), signal: controller.signal
+    }).then(function (response) {
+      var verified = verifiedAirportResourcesResponse(response, context);
+      storeAirportResources(context, verified, target);
+      return verified || cachedAirportResources(context);
+    }).catch(function () {
+      return null;
+    }).finally(function () {
+      window.clearTimeout(timeout);
+      if (airportResourceInFlight[inFlightKey] === entry) delete airportResourceInFlight[inFlightKey];
+    });
+    airportResourceInFlight[inFlightKey] = entry;
+    return entry.promise;
+  }
+
+  function pushAirportResourceHistory() {
+    if (airportResourceHistoryActive) return;
+    var state = Object.assign({}, window.history.state || {}, { oneStepAirportContact: true });
+    window.history.pushState(state, '', window.location.href);
+    airportResourceHistoryActive = true;
+  }
+
+  function openAirportResource(mode, trigger) {
+    var context = currentAirportResourcesContext();
+    if (!context) return;
+    var origin = document.querySelector('[data-staff-overlay]').hidden ? 'JOURNEY_STEP' : 'HELP_CARD';
+    if (mode === 'MAP' && origin !== 'JOURNEY_STEP') return;
+    var cached = hasAirportResourceForMode(context, mode) ? cachedAirportResources(context) : null;
+    airportResourceReturnFocus = trigger || document.activeElement;
+    airportResourceOrigin = origin;
+    if (airportResourceOrigin === 'JOURNEY_STEP') {
+      staffReturnFocusElement = airportResourceReturnFocus;
+      openDialog('[data-staff-overlay]', '[data-action="close-staff"]');
+    }
+    stopSpeech(false);
+    staffOverlayView = 'RESOURCE';
+    airportResourceMode = mode;
+    airportResourceContext = context;
+    airportResourceResult = cached || null;
+    airportResourceState = cached ? 'RESULT' : 'LOADING';
+    var generation = ++airportResourceGeneration;
+    pushAirportResourceHistory();
+    renderStaffOverlayView();
+    var title = document.querySelector('[data-airport-resource-title]');
+    if (title) title.focus({ preventScroll: true });
+    if (cached) return;
+    startSpeechText(airportResourceLoadingSpeech(), true);
+    requestAirportResources(context, false, mode).then(function (result) {
+      if (generation !== airportResourceGeneration || staffOverlayView !== 'RESOURCE') return;
+      var latest = currentAirportResourcesContext();
+      if (!latest || latest.key !== context.key || airportResourceContext.key !== context.key) return;
+      airportResourceResult = result;
+      airportResourceState = 'RESULT';
+      renderAirportResourceView();
+    });
+  }
+
+  function retryAirportResource() {
+    var context = airportResourceContext || currentAirportResourcesContext();
+    if (!context) return;
+    airportResourceState = 'LOADING';
+    airportResourceResult = null;
+    var generation = ++airportResourceGeneration;
+    renderAirportResourceView();
+    startSpeechText(airportResourceLoadingSpeech(), true);
+    requestAirportResources(context, true, airportResourceMode).then(function (result) {
+      if (generation !== airportResourceGeneration || staffOverlayView !== 'RESOURCE') return;
+      airportResourceResult = result;
+      airportResourceState = 'RESULT';
+      renderAirportResourceView();
+    });
+  }
+
+  function cancelAirportResourceViewRequest() {
+    airportResourceGeneration += 1;
+    var inFlightKey = airportResourceContext && airportResourceMode
+      ? airportResourceContext.key + ':' + airportResourceMode : null;
+    if (inFlightKey && airportResourceInFlight[inFlightKey]) {
+      airportResourceInFlight[inFlightKey].controller.abort();
+      delete airportResourceInFlight[inFlightKey];
+    }
+  }
+
+  function returnToStaffCard(fromHistory) {
+    if (!fromHistory && airportResourceHistoryActive && window.history.state
+        && window.history.state.oneStepAirportContact) {
+      window.history.back();
+      return;
+    }
+    if (airportResourceOrigin === 'JOURNEY_STEP') {
+      finishCloseStaff();
+      return;
+    }
+    var returnFocus = airportResourceReturnFocus;
+    stopSpeech(false);
+    cancelAirportResourceViewRequest();
+    staffOverlayView = 'CARD';
+    airportResourceMode = null;
+    airportResourceOrigin = null;
+    airportResourceState = 'IDLE';
+    airportResourceResult = null;
+    airportResourceContext = null;
+    renderStaffCard();
+    renderStaffOverlayView();
+    var cardContact = document.querySelector('[data-staff-contact-button]');
+    if (cardContact && !cardContact.hidden) cardContact.focus({ preventScroll: true });
+    else if (returnFocus && document.contains(returnFocus) && !returnFocus.disabled) returnFocus.focus({ preventScroll: true });
+  }
+
+  function syncAirportResourcesContext() {
+    var context = currentAirportResourcesContext();
+    document.querySelectorAll('[data-airport-resource-row]').forEach(function (row) {
+      row.hidden = !context;
+    });
+    if (staffOverlayView !== 'RESOURCE') {
+      renderStaffOverlayView();
+      return;
+    }
+    if (!context) {
+      if (airportResourceOrigin === 'HELP_CARD') returnToStaffCard();
+      else closeStaff();
+      return;
+    }
+    if (!airportResourceContext || context.key !== airportResourceContext.key) {
+      airportResourceContext = context;
+      airportResourceResult = hasAirportResourceForMode(context, airportResourceMode)
+        ? cachedAirportResources(context) : null;
+      airportResourceState = airportResourceResult ? 'RESULT' : 'LOADING';
+      var generation = ++airportResourceGeneration;
+      renderAirportResourceView();
+      if (!airportResourceResult) requestAirportResources(context, false, airportResourceMode).then(function (result) {
+        if (generation !== airportResourceGeneration || staffOverlayView !== 'RESOURCE') return;
+        airportResourceResult = result;
+        airportResourceState = 'RESULT';
+        renderAirportResourceView();
+      });
+    }
+  }
+
+  function airportResourceQaAllowed(locationValue) {
+    var host = String(locationValue && locationValue.hostname || '').toLowerCase();
+    if (host === '[::1]') host = '::1';
+    var local = ['localhost', '127.0.0.1', '::1'].indexOf(host) >= 0;
+    return local && new URLSearchParams(String(locationValue && locationValue.search || '')).get('qaAirport') === '1';
+  }
+
+  function syncAirportResourceQaVisibility() {
+    var panel = document.querySelector('[data-qa-airport-panel]');
+    if (!panel) return;
+    panel.hidden = !(airportResourceQaAllowed(window.location) && currentScreen === 'confirm' && !activeDialog);
+  }
+
+  function setupAirportResourceQaPanel() {
+    var panel = document.querySelector('[data-qa-airport-panel]');
+    if (!panel) return;
+    syncAirportResourceQaVisibility();
+    var form = panel.querySelector('[data-qa-airport-form]');
+    var output = panel.querySelector('[data-qa-airport-result]');
+    var codeInput = form.elements.airportCode;
+    codeInput.addEventListener('input', function () {
+      codeInput.value = String(codeInput.value || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+      codeInput.setCustomValidity('');
+    });
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var code = String(codeInput.value || '').trim().toUpperCase();
+      codeInput.value = code;
+      codeInput.setCustomValidity(/^[A-Z]{3}$/.test(code) ? '' : localeText(
+        '请输入三个英文字母的机场代码', 'Enter a three-letter airport code',
+        'Introduce un código de aeropuerto de tres letras'));
+      if (!codeInput.reportValidity()) return;
+      var terminal = String(form.elements.terminal.value || '').trim() || null;
+      var context = {
+        airportCode: code,
+        airportName: null,
+        terminal: terminal,
+        contactKey: code,
+        mapKey: code + ':' + String(terminal || '').toUpperCase().replace(/^TERMINAL\s*/, '').replace(/[^A-Z0-9]/g, ''),
+        key: code + ':' + String(terminal || '').toUpperCase().replace(/^TERMINAL\s*/, '').replace(/[^A-Z0-9]/g, '')
+      };
+      output.textContent = t('qaAirportLoading');
+      requestAirportResources(context, true, 'BOTH').then(function (result) {
+        output.textContent = '';
+        if (!result) {
+          output.textContent = t('qaAirportFailed');
+          return;
+        }
+        renderAirportQaResult(output, result, context);
+      });
+    });
+  }
+
+  function renderAirportQaResult(output, result, context) {
+    var name = document.createElement('h3');
+    name.className = 'qa-airport-name';
+    name.textContent = airportResourceDisplayName(result, context);
+    output.appendChild(name);
+    if (context.terminal) appendQaPlain(output, t('qaAirportTerminalLabel') + ': ' + context.terminal);
+
+    appendQaHeading(output, t('qaAirportContactHeading'));
+    if (result.contact.status === 'PHONE_FOUND') {
+      var phone = document.createElement('p');
+      phone.className = 'qa-airport-phone';
+      phone.textContent = result.contact.phoneDisplay;
+      output.appendChild(phone);
+      appendQaAction(output, t('callAirport'), result.contact.telUri);
+    } else {
+      appendQaPlain(output, t('phoneNotFound'));
+      if (result.contact.contactUrl) appendQaAction(output, t('openAirportContactPage'), result.contact.contactUrl);
+    }
+
+    appendQaHeading(output, t('qaAirportMapHeading'));
+    if (result.map.status === 'FOUND' || result.map.status === 'OFFICIAL_PAGE_ONLY') {
+      appendQaAction(output, t('openOfficialMap'), result.map.url);
+    } else if (result.map.status === 'AIRPORT_LOCATION') {
+      appendQaPlain(output, t('airportLocationOnly'));
+      appendQaAction(output, t('openAirportLocation'), result.map.url);
+    } else {
+      appendQaPlain(output, t('mapNotFound'));
+    }
+
+  }
+
+  function appendQaHeading(output, value) {
+    var heading = document.createElement('h4');
+    heading.textContent = value;
+    output.appendChild(heading);
+  }
+
+  function appendQaPlain(output, value) {
+    var row = document.createElement('p');
+    row.textContent = value;
+    output.appendChild(row);
+  }
+
+  function appendQaAction(output, label, href) {
+    if (!href) return;
+    var link = document.createElement('a');
+    link.className = 'button button-primary qa-airport-action';
+    link.textContent = label;
+    link.href = href;
+    if (String(href).startsWith('https://')) {
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+    }
+    output.appendChild(link);
   }
 
   function snapshotJourney() {
@@ -4635,7 +5229,7 @@
       'HTTP status: ' + (error && error.status != null ? error.status : 'unavailable'),
       'Error code: ' + code,
       'AeroDataBox provider result: ' + JSON.stringify(aeroDataBox || 'not provided', null, 2),
-      'SerpApi provider result: ' + JSON.stringify(serpApi || 'not provided', null, 2),
+      'Secondary flight-data provider result: ' + JSON.stringify(serpApi || 'not provided', null, 2),
       'Backend message (zh): ' + (details && details.messageZh || 'not provided'),
       'Backend message (en): ' + (details && details.messageEn || 'not provided')
     ];
@@ -4796,7 +5390,7 @@
   }
 
   function startSpeechText(text, automatic) {
-    text = String(text || '').trim();
+    text = normalizeSpeechText(text, currentLocale);
     if (!text) return;
     stopSpeech(false);
     if (!speechIsSupported()) {
@@ -4824,6 +5418,17 @@
       updateSpeechButtons();
       if (!automatic) showToast(localeText('暂时无法开始朗读。', 'Reading could not start.', 'No se pudo iniciar la lectura.'));
     }
+  }
+
+  function normalizeSpeechText(text, locale) {
+    var value = String(text || '').trim();
+    if (normalizeLocale(locale) !== 'zh') return value;
+    return value
+      .replace(/(\d+)\s*[-–—]\s*(\d+)/g, '$1 到 $2')
+      .replace(/\b([A-Z])(\d+)\s*登机口/gi, '英文字母 $1，$2 号登机口')
+      .replace(/\b([A-Z])\s*区/gi, '英文字母 $1 区')
+      .replace(/\b([A-Z])(\d+)\b/gi, '英文字母 $1，$2')
+      .replace(/[：:]/g, '，');
   }
 
   function startSpeech(automatic) {
@@ -4872,17 +5477,55 @@
     setTimeout(function () { toast.classList.remove('is-visible'); }, 2600);
   }
 
+  function visibleStaffTrigger() {
+    return Array.from(document.querySelectorAll('[data-action="staff"]')).find(function (button) {
+      return !button.hidden && !button.disabled && button.offsetParent !== null;
+    }) || null;
+  }
+
   function showStaff(context) {
     fieldStaffHelpContext = context && fieldStaffContent[context.field] ? context : null;
+    staffReturnFocusElement = document.activeElement
+      && document.activeElement.matches('[data-action="staff"]')
+      ? document.activeElement : visibleStaffTrigger();
     stopSpeech(false);
+    cancelAirportResourceViewRequest();
+    staffOverlayView = 'CARD';
+    airportResourceMode = null;
+    airportResourceOrigin = null;
+    airportResourceState = 'IDLE';
+    airportResourceResult = null;
+    airportResourceContext = null;
     renderStaffCard();
+    renderStaffOverlayView();
     openDialog('[data-staff-overlay]', '[data-action="close-staff"]');
     startSpeechText(t('staffCardInstruction'), true);
   }
 
   function closeStaff() {
+    if (staffOverlayView === 'RESOURCE' && airportResourceHistoryActive && window.history.state
+        && window.history.state.oneStepAirportContact) {
+      airportResourceHistoryClosing = true;
+      window.history.back();
+      return;
+    }
+    finishCloseStaff();
+  }
+
+  function finishCloseStaff() {
+    var returnFocus = airportResourceOrigin === 'JOURNEY_STEP' ? airportResourceReturnFocus : staffReturnFocusElement;
     stopSpeech(false);
+    cancelAirportResourceViewRequest();
+    staffOverlayView = 'CARD';
+    airportResourceMode = null;
+    airportResourceOrigin = null;
+    airportResourceState = 'IDLE';
+    airportResourceResult = null;
+    airportResourceContext = null;
+    airportResourceReturnFocus = null;
     closeDialog('[data-staff-overlay]');
+    staffReturnFocusElement = null;
+    if (returnFocus && document.contains(returnFocus) && !returnFocus.disabled) returnFocus.focus();
   }
 
   function openDialog(dialogSelector, focusSelector) {
@@ -4891,6 +5534,7 @@
     document.querySelector('.site-header').inert = true;
     document.getElementById('main-content').inert = true;
     activeDialog.hidden = false;
+    syncAirportResourceQaVisibility();
     var focusTarget = activeDialog.querySelector(focusSelector);
     if (focusTarget) focusTarget.focus();
   }
@@ -4901,27 +5545,8 @@
     document.querySelector('.site-header').inert = false;
     document.getElementById('main-content').inert = false;
     activeDialog = null;
+    syncAirportResourceQaVisibility();
     if (overlayReturnFocus && document.contains(overlayReturnFocus)) overlayReturnFocus.focus();
-  }
-
-  function copyText(text, successMessage) {
-    var copy = navigator.clipboard && navigator.clipboard.writeText
-      ? navigator.clipboard.writeText(text)
-      : new Promise(function (resolve, reject) {
-        var area = document.createElement('textarea');
-        area.value = text;
-        area.setAttribute('readonly', '');
-        area.style.position = 'fixed';
-        area.style.opacity = '0';
-        document.body.appendChild(area);
-        area.select();
-        try { document.execCommand('copy') ? resolve() : reject(new Error('copy failed')); }
-        catch (error) { reject(error); }
-        area.remove();
-      });
-    return copy.then(function () { showToast(successMessage); }).catch(function () {
-      showToast(localeText('暂时无法复制，请直接展示屏幕。', 'Copy is unavailable. Please show the card on screen.', 'No se puede copiar. Muestra la tarjeta en pantalla.'));
-    });
   }
 
   function completedStepCodes() {
@@ -5623,7 +6248,7 @@
       'arrivalAirport', 'arrivalAirportName', 'scheduledDeparture', 'estimatedDeparture',
       'actualDeparture', 'effectiveDeparture', 'scheduledArrival', 'estimatedArrival',
       'actualArrival', 'boardingTime', 'documentScheduledDeparture', 'documentBoardingTime',
-      'documentTerminal', 'documentGate', 'documentDataSource', 'liveDataSource', 'terminal', 'gate',
+      'documentTerminal', 'documentGate', 'documentDataSource', 'liveDataSource', 'terminal', 'arrivalTerminal', 'gate',
       'checkInCounter', 'checkInDeskOrZone', 'dedicatedBagDropDesk', 'arrivalBaggageBelt',
       'status', 'delayMinutes', 'arrivalDelayMinutes', 'dataLastUpdatedAt', 'dataRetrievedAt',
       'retrievedAt', 'freshestSourceUpdatedAt', 'live', 'demo', 'demoScenario',
@@ -5935,8 +6560,11 @@
     if (action === 'retry' && retryRequest) retryRequest();
     if (action === 'speak') speak();
     if (action === 'staff') showStaff();
+    if (action === 'open-airport-map') openAirportResource('MAP', actionElement);
+    if (action === 'contact-airport-resource') openAirportResource('CONTACT', actionElement);
     if (action === 'close-staff') closeStaff();
-    if (action === 'copy-staff') copyText(staffCardText(), localeText('大字卡内容已复制。', 'Staff card copied.', 'Texto de la tarjeta copiado.'));
+    if (action === 'back-to-staff-card') returnToStaffCard();
+    if (action === 'retry-airport-resource') retryAirportResource();
     if (action === 'family') showFamily();
     if (action === 'close-family') closeFamily();
     if (action === 'share-family') shareFamily();
@@ -5969,8 +6597,10 @@
     currentLocale = normalizeLocale(event.target.value);
     storeLocale(currentLocale);
     updateLanguage();
+    if (staffOverlayView === 'RESOURCE') renderAirportResourceView();
     lastAutomaticSpeechKey = speechViewKey();
     languageChangeInProgress = false;
+    syncAirportResourcesContext();
   });
 
   document.querySelector('[data-action="manual-submit"]').addEventListener('submit', function (event) {
@@ -6102,6 +6732,17 @@
   }
 
   window.addEventListener('focus', refreshAfterReturnToPage);
+  window.addEventListener('popstate', function () {
+    if (!airportResourceHistoryActive) return;
+    if (window.history.state && window.history.state.oneStepAirportContact) return;
+    airportResourceHistoryActive = false;
+    if (airportResourceHistoryClosing) {
+      airportResourceHistoryClosing = false;
+      finishCloseStaff();
+    } else if (staffOverlayView === 'RESOURCE') {
+      returnToStaffCard(true);
+    }
+  });
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) stopAutoRefresh(false);
     else refreshAfterReturnToPage();
@@ -6130,6 +6771,7 @@
   }
 
   document.querySelector('[data-scenario-panel]').hidden = !demoScenariosEnabled;
+	setupAirportResourceQaPanel();
 
   updateLanguage();
   var restoredJourney = restoreJourney();
