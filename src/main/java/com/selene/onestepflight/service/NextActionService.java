@@ -36,6 +36,7 @@ public class NextActionService {
 			return action(flight, ActionCode.ASK_FOR_HELP,
 					"现在请工作人员帮忙", "把这张双语大字卡给附近的机场工作人员看。",
 					"Ask a member of staff now", "Show this bilingual large card to a nearby airport staff member.",
+					"Pide ayuda al personal ahora", "Muestra esta tarjeta bilingüe con letra grande al personal del aeropuerto que tengas cerca.",
 					"Airport staff / 机场工作人员", Urgency.URGENT,
 					"PASSENGER_REQUESTED_ASSISTANCE", "JOURNEY_CONTEXT", true);
 		}
@@ -49,14 +50,16 @@ public class NextActionService {
 			return action(flight, ActionCode.ASK_FOR_HELP,
 					"航班已取消，请立即找工作人员", "不要继续按原行程前进，请联系航空公司工作人员重新安排。",
 					"The flight is cancelled. Ask for help now", "Do not continue with the old plan. Ask airline staff to rearrange your journey.",
+					"El vuelo está cancelado. Pide ayuda ahora", "No sigas el plan anterior. Pide al personal de la aerolínea que reorganice tu viaje.",
 					checkInArea(flight), Urgency.URGENT,
 					"FLIGHT_CANCELLED", "FLIGHT_STATUS", true);
 		}
 		DepartureTiming departureTiming = departureTiming(flight, context.departureDate());
 		if (departureTiming.dateMismatch()) {
 			return action(flight, ActionCode.ASK_FOR_HELP,
-					"航班日期和起飞时间需要核对", "当前航班日期与带时区的起飞时间不一致，请先让工作人员核对航班日期。",
-					"Confirm the flight date and departure time", "The flight date does not match the offset-aware departure time. Ask staff to confirm the flight date first.",
+					"航班日期和起飞时间需要核对", "航班日期与起飞时间不一致，请先让工作人员核对航班日期。",
+					"Confirm the flight date and departure time", "The flight date does not match the departure time. Ask staff to confirm the flight date first.",
+					"Revisa la fecha y la hora de salida", "La fecha del vuelo no coincide con la hora de salida. Pide primero al personal que confirme la fecha del vuelo.",
 					gateOrTerminal(flight), Urgency.URGENT,
 					"FLIGHT_DATE_TIME_MISMATCH", "FLIGHT_DATE_AND_OFFSET_TIME", true);
 		}
@@ -67,6 +70,7 @@ public class NextActionService {
 			return action(flight, ActionCode.ASK_FOR_HELP,
 					"这趟航班已经离港", "点击下方“请工作人员帮忙”，并前往航空公司服务柜台出示给工作人员。",
 					"This flight has departed", "Select “Ask a member of staff” below, then go to the airline service desk and show the card to a staff member.",
+					"Este vuelo ya ha salido", "Pulsa «Pedir ayuda» abajo, ve al mostrador de atención de la aerolínea y muestra la tarjeta al personal.",
 					"航空公司服务柜台 / Airline service desk", Urgency.URGENT,
 					"FLIGHT_ALREADY_DEPARTED", "LIVE_FLIGHT_STATUS", true);
 		}
@@ -74,6 +78,7 @@ public class NextActionService {
 			return action(flight, ActionCode.ASK_FOR_HELP,
 					"这趟航班已经离港", "点击下方“请工作人员帮忙”，并前往航空公司服务柜台出示给工作人员。",
 					"This flight has departed", "Select “Ask a member of staff” below, then go to the airline service desk and show the card to a staff member.",
+					"Este vuelo ya ha salido", "Pulsa «Pedir ayuda» abajo, ve al mostrador de atención de la aerolínea y muestra la tarjeta al personal.",
 					"航空公司服务柜台 / Airline service desk", Urgency.URGENT,
 					"DEPARTURE_TIME_PASSED", "SERVER_TIME_AND_SCHEDULE", true);
 		}
@@ -83,6 +88,7 @@ public class NextActionService {
 			return action(flight, ActionCode.CHECK_IN,
 					"先去办理值机", "请前往航空公司值机区域，出示护照或旅行证件，并现场确认柜台。",
 					"Check in first", "Go to the airline check-in area, show your passport or travel document, and confirm the counter on site.",
+					"Facturar primero", "Ve a la zona de facturación de la aerolínea, muestra el pasaporte o documento de viaje y confirma allí el mostrador.",
 					checkInArea(flight), Urgency.SOON,
 					"CHECK_IN_NOT_COMPLETED", "JOURNEY_CONTEXT", true);
 		}
@@ -100,6 +106,9 @@ public class NextActionService {
 					"Drop off your checked baggage now", dedicatedDeskKnown
 							? "Go to the explicitly published bag-drop desk and give your checked baggage to staff."
 							: "No live source explicitly published a dedicated bag-drop desk. Go to the airline check-in area and ask staff to point out bag drop.",
+					"Entrega ahora el equipaje facturado", dedicatedDeskKnown
+							? "Ve al mostrador de entrega de equipaje indicado y entrégaselo al personal."
+							: "No se ha publicado un mostrador específico para entregar equipaje. Ve a la zona de facturación de la aerolínea y pide al personal que te indique dónde entregarlo.",
 					bagDropArea(flight), Urgency.SOON,
 					"CHECKED_BAGGAGE_NOT_DROPPED", "JOURNEY_CONTEXT", !dedicatedDeskKnown);
 		}
@@ -108,6 +117,7 @@ public class NextActionService {
 			return action(flight, ActionCode.SECURITY,
 					"现在前往安检", "准备好登机牌和旅行证件，跟随机场内的安检标志。",
 					"Go to security now", "Have your boarding pass and travel document ready, then follow the airport security signs.",
+					"Ve ahora al control de seguridad", "Ten preparados la tarjeta de embarque y el documento de viaje, y sigue las señales del control de seguridad.",
 					terminalArea(flight, "安检 / Security"), Urgency.SOON,
 					"SECURITY_NOT_COMPLETED", "JOURNEY_CONTEXT", true);
 		}
@@ -116,6 +126,7 @@ public class NextActionService {
 			return action(flight, ActionCode.ASK_FOR_HELP,
 					"实时信息较旧，请工作人员确认", "起飞时间已经临近，但实时数据超过 10 分钟没有可靠更新。请先让工作人员核对。",
 					"Live information is old. Ask staff to confirm", "Departure is getting close, but the live data is more than 10 minutes old. Ask staff to verify it first.",
+					"La información en directo está desactualizada. Pide al personal que la confirme", "Se acerca la salida, pero la información en directo no se ha actualizado de forma fiable desde hace más de 10 minutos. Pide al personal que la compruebe primero.",
 					terminalArea(flight, "航班信息屏 / Flight information screen"), Urgency.URGENT,
 					"STALE_DATA_NEAR_DEPARTURE", "SERVER_TIME_AND_DATA_AGE", true);
 		}
@@ -124,6 +135,7 @@ public class NextActionService {
 			return action(flight, ActionCode.WAIT,
 					"航班明显延误，先不要继续前往登机口", "必要步骤已经完成。请留在能看到屏幕、听到广播的位置，并等待新的实时信息。",
 					"The flight is significantly delayed. Do not continue to the gate yet", "Required steps are complete. Stay where you can see screens and hear announcements, then wait for a live update.",
+					"El vuelo lleva un retraso importante. No vayas todavía a la puerta", "Ya has completado los pasos necesarios. Quédate donde puedas ver las pantallas y oír los avisos mientras esperas nueva información.",
 					terminalArea(flight, "航班信息屏附近 / Near a flight information screen"), Urgency.NORMAL,
 					"SIGNIFICANT_DELAY_AFTER_REQUIRED_STEPS", "LIVE_FLIGHT_STATUS", true);
 		}
@@ -133,12 +145,14 @@ public class NextActionService {
 				return action(flight, ActionCode.ASK_FOR_HELP,
 						"登机口还未公布，请工作人员帮忙", "时间临近，请工作人员帮你确认登机口。",
 						"The gate is not posted. Ask a member of staff", "Departure is getting close. Ask staff to confirm your gate.",
+						"La puerta aún no está anunciada. Pide ayuda al personal", "La salida está próxima. Pide al personal que confirme tu puerta.",
 						flight.terminal(), Urgency.URGENT,
 						"GATE_MISSING_NEAR_DEPARTURE", "FLIGHT_STATUS_AND_SERVER_TIME", true);
 			}
 			return action(flight, ActionCode.WAIT,
 					"先在航站楼内等候", "登机口尚未公布，请留在能看到屏幕、听到广播的区域。",
 					"Wait in the terminal", "The gate is not posted yet. Stay where you can see screens and hear announcements.",
+					"Espera en la terminal", "La puerta aún no está anunciada. Quédate donde puedas ver las pantallas y oír los avisos.",
 					flight.terminal(), Urgency.NORMAL,
 					"GATE_NOT_PUBLISHED", "FLIGHT_STATUS", true);
 		}
@@ -152,6 +166,7 @@ public class NextActionService {
 			return action(flight, ActionCode.GO_TO_GATE,
 					"航站楼已从 " + oldTerminal + " 改为 " + flight.terminal(), "请不要去原来的航站楼，先向工作人员确认跨航站楼路线。",
 					"The terminal changed from " + oldTerminal + " to " + flight.terminal(), "Do not go to the old terminal. Ask staff to confirm the route between terminals first.",
+					"La terminal ha cambiado de " + oldTerminal + " a " + flight.terminal(), "No vayas a la terminal anterior. Pide primero al personal que confirme la ruta entre terminales.",
 					terminalArea(flight, flight.gate()), Urgency.URGENT,
 					"TERMINAL_CHANGED", "LIVE_FLIGHT_UPDATE", true);
 		}
@@ -162,6 +177,7 @@ public class NextActionService {
 			return action(flight, ActionCode.GO_TO_GATE,
 					"登机口已从 " + oldGate + " 改为 " + flight.gate(), "不要去原来的登机口，请跟随标志前往新登机口。",
 					"The gate changed from " + oldGate + " to " + flight.gate(), "Do not go to the old gate. Follow the signs to the new gate.",
+					"La puerta ha cambiado de " + oldGate + " a " + flight.gate(), "No vayas a la puerta anterior. Sigue las señales hasta la nueva puerta.",
 					flight.gate(), Urgency.URGENT,
 					"GATE_CHANGED", "LIVE_FLIGHT_UPDATE", true);
 		}
@@ -170,6 +186,7 @@ public class NextActionService {
 			return action(flight, ActionCode.GO_TO_GATE,
 					"现在前往 " + flight.gate() + " 登机口", "请跟随机场标志前往登机口。",
 					"Go to gate " + flight.gate() + " now", "Follow the airport signs to the gate.",
+					"Ve ahora a la puerta " + flight.gate(), "Sigue las señales del aeropuerto hasta la puerta.",
 					flight.gate(), "BOARDING".equals(status) || minutesUntilDeparture <= 75 ? Urgency.URGENT : Urgency.SOON,
 					"SECURITY_COMPLETED_GATE_AVAILABLE", "FLIGHT_STATUS_AND_JOURNEY_CONTEXT", flight.demo());
 		}
@@ -178,6 +195,7 @@ public class NextActionService {
 			return action(flight, ActionCode.BOARD_NOW,
 					"现在准备登机", "请留在登机队伍中，准备好登机牌和旅行证件。",
 					"Board now", "Stay in the boarding line with your boarding pass and travel document ready.",
+					"Embarca ahora", "Quédate en la fila de embarque y ten preparados la tarjeta de embarque y el documento de viaje.",
 					flight.gate(), Urgency.URGENT,
 					"BOARDING_WINDOW_OPEN", "FLIGHT_STATUS_AND_SERVER_TIME", flight.demo());
 		}
@@ -185,6 +203,7 @@ public class NextActionService {
 		return action(flight, ActionCode.WAIT,
 				"在登机口附近等候", "你已经到达登机口，请坐在能看到屏幕、听到广播的地方。",
 				"Wait near the gate", "You are at the gate. Sit where you can see screens and hear announcements.",
+				"Espera cerca de la puerta", "Ya estás en la puerta. Siéntate donde puedas ver las pantallas y oír los avisos.",
 				flight.gate(), Urgency.NORMAL,
 				"AT_GATE_BEFORE_BOARDING", "JOURNEY_CONTEXT_AND_SERVER_TIME", true);
 	}
@@ -203,6 +222,9 @@ public class NextActionService {
 					"You are on board", hasCheckedBaggage
 							? "After arrival, check the baggage claim screens first. During the flight, follow cabin crew announcements."
 							: "After arrival, follow the Arrivals / Exit signs. During the flight, follow cabin crew announcements.",
+					"Ya estás a bordo", hasCheckedBaggage
+							? "Después de llegar, consulta primero las pantallas de recogida de equipaje. Durante el vuelo, sigue los avisos y las indicaciones de la tripulación."
+							: "Después de llegar, sigue las señales de Llegadas / Salida. Durante el vuelo, sigue los avisos y las indicaciones de la tripulación.",
 					arrivalAirport(flight), Urgency.NORMAL,
 					"PASSENGER_BOARDED", "JOURNEY_CONTEXT_AND_SAVED_FLIGHT_DATA", false);
 		}
@@ -216,6 +238,9 @@ public class NextActionService {
 					"Collect your checked baggage now", baggageBeltKnown
 							? "Check the flight number on the arrivals screen before waiting at this baggage belt."
 							: "Check the arrivals screen to find the baggage belt for your flight.",
+					"Recoge ahora el equipaje facturado", baggageBeltKnown
+							? "Comprueba el número de vuelo en la pantalla de llegadas antes de esperar en esta cinta de equipajes."
+							: "Consulta la pantalla de llegadas para encontrar la cinta de equipajes de tu vuelo.",
 					baggageBeltKnown
 							? "行李转盘 " + flight.arrivalBaggageBelt() + " / Baggage belt " + flight.arrivalBaggageBelt()
 							: "行李提取区 / Baggage claim",
@@ -228,6 +253,7 @@ public class NextActionService {
 			return action(flight, ActionCode.EXIT_AIRPORT,
 					"现在前往到达出口", "按照 Arrivals / Exit 指示前往出口。",
 					"Go to the arrivals exit now", "Follow the Arrivals / Exit signs to the exit.",
+					"Ve ahora a la salida de llegadas", "Sigue las señales de Llegadas / Salida hasta la salida.",
 					"Arrivals / Exit", Urgency.NORMAL,
 					"ARRIVAL_STEPS_COMPLETED_EXIT_PENDING", "JOURNEY_CONTEXT", false);
 		}
@@ -239,6 +265,7 @@ public class NextActionService {
 		return response(flight, JourneyStepType.BAGGAGE_QUESTION, null,
 				"你有需要托运的行李吗？", "随身携带的小包不算托运行李。请选择最符合你情况的一项。",
 				"Do you have baggage to check?", "A small carry-on bag does not count as checked baggage. Choose the option that fits you.",
+				"¿Tienes equipaje para facturar?", "El equipaje de mano no cuenta como equipaje facturado. Elige la opción que corresponda.",
 				null, Urgency.NORMAL, "BAGGAGE_STATUS_REQUIRED", "JOURNEY_CONTEXT", true);
 	}
 
@@ -246,23 +273,27 @@ public class NextActionService {
 		return response(flight, JourneyStepType.COMPLETE, null,
 				"你已经完成乘机指引", "你已经到达机场出口，本次一步乘机指引已完成。",
 				"Your flight guidance is complete", "You have reached the airport exit and completed this OneStep Flight journey.",
+				"Indicaciones completadas", "Has llegado a la salida del aeropuerto. Buen viaje.",
 				null, Urgency.NORMAL, "PASSENGER_EXITED_AIRPORT", "JOURNEY_CONTEXT", flight.demo());
 	}
 
 	private NextActionResponse action(ResolvedFlightContext flight, ActionCode code,
 			String titleZh, String descriptionZh, String titleEn, String descriptionEn,
+			String titleEs, String descriptionEs,
 			String destination, Urgency urgency, String reason, String triggeredBy,
 			boolean needsOnSiteConfirmation) {
 		return response(flight, JourneyStepType.ACTION, code, titleZh, descriptionZh, titleEn,
-				descriptionEn, destination, urgency, reason, triggeredBy, needsOnSiteConfirmation);
+				descriptionEn, titleEs, descriptionEs, destination, urgency, reason, triggeredBy,
+				needsOnSiteConfirmation);
 	}
 
 	private NextActionResponse response(ResolvedFlightContext flight, JourneyStepType stepType, ActionCode code,
 			String titleZh, String descriptionZh, String titleEn, String descriptionEn,
+			String titleEs, String descriptionEs,
 			String destination, Urgency urgency, String reason, String triggeredBy,
 			boolean needsOnSiteConfirmation) {
 		return new NextActionResponse(stepType, code, titleZh, descriptionZh, titleEn, descriptionEn,
-				destination, urgency, reason, triggeredBy, flight.liveDataSource(),
+				titleEs, descriptionEs, destination, urgency, reason, triggeredBy, flight.liveDataSource(),
 				flight.live() ? "LIVE_PROVIDER_WITHOUT_FIELD_CONFIDENCE"
 						: "DOCUMENT_FALLBACK".equals(flight.liveDataSource())
 								? "DOCUMENT_FALLBACK_UNVERIFIED"

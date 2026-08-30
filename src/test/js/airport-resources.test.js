@@ -25,9 +25,14 @@ test('journey has map and contact while the help-card top row has only contact a
   assert.match(journey, /data-action="open-airport-map"[\s\S]*data-action="contact-airport-resource"/);
   assert.equal((journey.match(/airport-resource-button/g) || []).length, 2);
   assert.match(topbar, /data-staff-contact-button[\s\S]*data-action="close-staff"/);
+  assert.equal((overlay.match(/data-staff-contact-button/g) || []).length, 1);
+  assert.equal((overlay.match(/data-action="close-staff"/g) || []).length, 1);
+  assert.doesNotMatch(overlay, /staff-card-secondary-actions/);
   assert.doesNotMatch(topbar, /open-airport-map|viewAirportMap|airport map|机场地图|mapa del aeropuerto/i);
   assert.match(css, /\.airport-resource-actions\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(css, /\.staff-card-topbar\{display:grid;grid-template-columns:minmax\(0,1fr\) 56px/);
+  assert.match(css, /@media\(max-width:390px\)\{[\s\S]*\.staff-card-topbar\{grid-template-columns:minmax\(0,1fr\) 56px;gap:8px\}/);
+  assert.match(css, /html\{min-width:0;overflow-x:hidden\}/);
 });
 
 test('combined response validates map and contact independently including exact Maps phone evidence', () => {

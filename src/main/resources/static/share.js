@@ -15,12 +15,12 @@
 
   var translations = {
     zh: {
-      pageTitle: 'OneStep Flight · 家属行程', brandSubtitle: '一步乘机', languageLabel: '选择语言',
+      pageTitle: 'OneStep Flight · 共享行程', brandSubtitle: '一步乘机', languageLabel: '选择语言',
       loadingTitle: '正在读取共享行程', loadingLead: '请稍候，我们正在取得最新一步。',
-      sharedJourney: '家属共享行程', currentStep: '正在进行的步骤', autoUpdates: '自动更新', destinationLabel: '现在前往',
-      flight: '航班', routeLabel: '航线', departureDate: '出发日期', completedSteps: '已完成步骤', completedCount: '已完成 {count} 个步骤',
+      sharedJourney: '共享行程', currentStep: '旅客当前步骤', autoUpdates: '自动更新', destinationLabel: '现在前往',
+      flight: '航班', routeLabel: '航线', departureDate: '出发日期', completedSteps: '已完成步骤', completedCount: '已完成 {count} 步', completedCountOne: '已完成 {count} 步',
       knownLocation: '已确认的地点', lastUpdated: '最近更新', airportReminder: '请以机场屏幕和工作人员的最新指引为准。',
-      completeTitle: '这段行程已完成', completeLead: '家属已完成本次乘机指引。', stoppedTitle: '共享已停止',
+      completeTitle: '这段行程已完成', completeLead: '旅客已完成本次行程', stoppedTitle: '共享已停止',
       stoppedLead: '旅客已经停止分享这段行程。', expiredTitle: '共享链接已过期', expiredLead: '为保护隐私，这个链接已不再提供行程信息。',
       errorTitle: '暂时无法读取行程', errorLead: '请检查网络连接，然后重试。', invalidTitle: '这个共享链接无效',
       invalidLead: '请让旅客重新发送正确的共享链接。', notFoundTitle: '找不到这段共享行程', notFoundLead: '链接可能不完整，请向旅客确认。', retry: '重试',
@@ -29,21 +29,22 @@
       terminalValue: '{value}号航站楼', gateValue: '{value}登机口', checkInValue: '{value}号柜台', checkInAreaValue: '{value}区值机柜台',
       checkInAreaCountersValue: '{area}区 {counters}号值机柜台', bagDropAreaCountersValue: '{area}区 {counters}号柜台',
       bagDropValue: '{value}号托运行李柜台', baggageBeltValue: '{value}号行李转盘',
-      justNow: '刚刚', minutesAgo: '{count}分钟前', hoursAgo: '{count}小时前', daysAgo: '{count}天前', unknownTime: '更新时间未知',
-      statusNormal: '航班正常', statusBoarding: '正在登机', statusDelayed: '航班延误', statusDeparted: '已经起飞', statusArrived: '已经到达', statusCancelled: '航班取消',
+      locationAreaValue: '{value}区', locationCountersValue: '{value}号柜台', locationAreaCountersValue: '{area}区 · {counters}号柜台',
+      justNow: '刚刚', minutesAgo: '{count}分钟前', hoursAgo: '{count}小时前', dayAgo: '{count}天前', daysAgo: '{count}天前', unknownTime: '更新时间未知',
+      statusNormal: '航班正常', statusBoarding: '正在登机', statusDelayed: '航班延误', statusDeparted: '已经起飞', statusArrived: '已经到达', statusCancelled: '航班取消', statusDiverted: '航班备降', statusReturned: '航班返航',
       actionConfirmFlightTitle: '正在确认航班', actionConfirmFlightDescription: '旅客正在核对航班号、航线和出发日期。',
       actionCheckInQuestionTitle: '正在确认值机状态', actionCheckInQuestionDescription: '旅客正在确认是否已经值机或拿到登机牌。',
       actionBaggageQuestionTitle: '正在确认行李情况', actionBaggageQuestionDescription: '旅客正在确认是否有需要托运的行李。',
-      actionCheckInTitle: '先办理值机', actionCheckInDescription: '请前往航空公司值机区域，准备好旅行文件。',
-      actionBagDropTitle: '现在托运行李', actionBagDropDescription: '请把需要托运的行李交给航空公司。',
-      actionSecurityTitle: '现在前往安检', actionSecurityDescription: '请准备好旅行文件，按照机场指引通过安检。',
-      actionGateTitle: '现在前往登机口', actionGateDescription: '请查看机场屏幕，并前往航班登机口。',
-      actionWaitTitle: '现在原地等候', actionWaitDescription: '请留意机场屏幕和广播，等待下一步。',
-      actionBoardTitle: '现在登机', actionBoardDescription: '请准备好旅行文件，按照工作人员指引登机。',
-      actionHelpTitle: '请向工作人员求助', actionHelpDescription: '请把这个页面出示给机场工作人员。',
-      actionFlightTitle: '现在安心乘机', actionFlightDescription: '航班正在途中。到达后，我们会继续提示下一步。',
-      actionBaggageTitle: '现在领取行李', actionBaggageDescription: '请前往行李提取区，并核对屏幕上的航班信息。',
-      actionExitTitle: '现在前往出口', actionExitDescription: '请带好随身物品和行李，按照出口标志离开机场。',
+      actionCheckInTitle: '旅客需要办理值机', actionCheckInDescription: '旅客应前往航空公司值机区域，并准备好旅行文件。',
+      actionBagDropTitle: '旅客需要托运行李', actionBagDropDescription: '旅客应把需要托运的行李交给航空公司。',
+      actionSecurityTitle: '旅客需要前往安检', actionSecurityDescription: '旅客应准备好旅行文件，并按照机场指引通过安检。',
+      actionGateTitle: '旅客需要前往登机口', actionGateDescription: '旅客应查看机场屏幕，并前往航班登机口。',
+      actionWaitTitle: '旅客正在等候', actionWaitDescription: '旅客应留意机场屏幕和广播，等待下一步。',
+      actionBoardTitle: '旅客需要登机', actionBoardDescription: '旅客应准备好旅行文件，并按照工作人员指引登机。',
+      actionHelpTitle: '旅客需要工作人员帮助', actionHelpDescription: '旅客应向机场工作人员求助。',
+      actionFlightTitle: '旅客正在乘机', actionFlightDescription: '航班正在途中。到达后，此处会显示下一步。',
+      actionBaggageTitle: '旅客需要领取行李', actionBaggageDescription: '旅客应前往行李提取区，并核对屏幕上的航班信息。',
+      actionExitTitle: '旅客需要前往出口', actionExitDescription: '旅客应带好随身物品和行李，按照出口标志离开机场。',
       destinationCheckIn: '航空公司值机区域', destinationBagDrop: '托运行李柜台', destinationSecurity: '安检入口', destinationGate: '航班登机口',
       destinationWait: '当前安全位置', destinationStaff: '机场工作人员服务台', destinationFlight: '飞往{airport}', destinationBaggage: '行李提取区', destinationExit: '机场出口',
       completedCheckIn: '办理值机', completedBagDrop: '托运行李', completedSecurity: '通过安检', completedGate: '到达登机口', completedBoard: '完成登机', completedFlight: '抵达目的地', completedBaggage: '领取行李', completedExit: '离开机场'
@@ -51,10 +52,10 @@
     en: {
       pageTitle: 'OneStep Flight · Shared journey', brandSubtitle: 'Journey update', languageLabel: 'Choose language',
       loadingTitle: 'Loading the shared journey', loadingLead: 'Please wait while we get the latest step.',
-      sharedJourney: 'Journey shared with family', currentStep: 'Current step', autoUpdates: 'Updates automatically', destinationLabel: 'Go to',
-      flight: 'Flight', routeLabel: 'Route', departureDate: 'Departure date', completedSteps: 'Completed steps', completedCount: '{count} steps completed',
+      sharedJourney: 'Shared journey', currentStep: 'Traveller’s current step', autoUpdates: 'Updates automatically', destinationLabel: 'Go to',
+      flight: 'Flight', routeLabel: 'Route', departureDate: 'Departure date', completedSteps: 'Completed steps', completedCount: '{count} steps completed', completedCountOne: '{count} step completed',
       knownLocation: 'Confirmed locations', lastUpdated: 'Last updated', airportReminder: 'Always follow the latest airport screens and staff instructions.',
-      completeTitle: 'This journey is complete', completeLead: 'Your family member has completed this journey.', stoppedTitle: 'Sharing has stopped',
+      completeTitle: 'This journey is complete', completeLead: 'The traveller has completed this journey.', stoppedTitle: 'Sharing has stopped',
       stoppedLead: 'The traveller has stopped sharing this journey.', expiredTitle: 'This sharing link has expired', expiredLead: 'To protect privacy, this link no longer shows journey information.',
       errorTitle: 'The journey cannot be loaded right now', errorLead: 'Check your connection, then try again.', invalidTitle: 'This sharing link is invalid',
       invalidLead: 'Ask the traveller to send the correct sharing link again.', notFoundTitle: 'This shared journey was not found', notFoundLead: 'The link may be incomplete. Please check with the traveller.', retry: 'Try again',
@@ -63,8 +64,9 @@
       terminalValue: 'Terminal {value}', gateValue: 'Gate {value}', checkInValue: 'Counters {value}', checkInAreaValue: 'Check-in area {value}',
       checkInAreaCountersValue: 'Check-in area {area}, counters {counters}', bagDropAreaCountersValue: 'Area {area}, counters {counters}',
       bagDropValue: 'Bag drop {value}', baggageBeltValue: 'Baggage belt {value}',
-      justNow: 'just now', minutesAgo: '{count} min ago', hoursAgo: '{count} hr ago', daysAgo: '{count} days ago', unknownTime: 'update time unavailable',
-      statusNormal: 'Flight on time', statusBoarding: 'Boarding now', statusDelayed: 'Flight delayed', statusDeparted: 'Flight departed', statusArrived: 'Flight arrived', statusCancelled: 'Flight cancelled',
+      locationAreaValue: 'Area {value}', locationCountersValue: 'Counters {value}', locationAreaCountersValue: 'Area {area} · counters {counters}',
+      justNow: 'just now', minutesAgo: '{count} min ago', hoursAgo: '{count} hr ago', dayAgo: '{count} day ago', daysAgo: '{count} days ago', unknownTime: 'update time unavailable',
+      statusNormal: 'Flight on time', statusBoarding: 'Boarding now', statusDelayed: 'Flight delayed', statusDeparted: 'Flight departed', statusArrived: 'Flight arrived', statusCancelled: 'Flight cancelled', statusDiverted: 'Flight diverted', statusReturned: 'Flight returned',
       actionConfirmFlightTitle: 'Confirming the flight', actionConfirmFlightDescription: 'The traveller is checking the flight number, route, and departure date.',
       actionCheckInQuestionTitle: 'Confirming check-in status', actionCheckInQuestionDescription: 'The traveller is confirming whether check-in or a boarding pass is complete.',
       actionBaggageQuestionTitle: 'Confirming baggage details', actionBaggageQuestionDescription: 'The traveller is confirming whether any baggage needs to be checked.',
@@ -85,10 +87,10 @@
     es: {
       pageTitle: 'OneStep Flight · Viaje compartido', brandSubtitle: 'Un paso para volar', languageLabel: 'Elegir idioma',
       loadingTitle: 'Cargando el viaje compartido', loadingLead: 'Espera mientras obtenemos el paso más reciente.',
-      sharedJourney: 'Viaje compartido con la familia', currentStep: 'Paso actual', autoUpdates: 'Se actualiza automáticamente', destinationLabel: 'Ve a',
-      flight: 'Vuelo', routeLabel: 'Ruta', departureDate: 'Fecha de salida', completedSteps: 'Pasos completados', completedCount: '{count} pasos completados',
+      sharedJourney: 'Viaje compartido', currentStep: 'Paso actual del viajero', autoUpdates: 'Se actualiza automáticamente', destinationLabel: 'Ve a',
+      flight: 'Vuelo', routeLabel: 'Ruta', departureDate: 'Fecha de salida', completedSteps: 'Pasos completados', completedCount: '{count} pasos completados', completedCountOne: '{count} paso completado',
       knownLocation: 'Lugares confirmados', lastUpdated: 'Última actualización', airportReminder: 'Sigue siempre las pantallas del aeropuerto y las indicaciones más recientes del personal.',
-      completeTitle: 'Este viaje ha terminado', completeLead: 'Tu familiar ha completado este viaje.', stoppedTitle: 'Se dejó de compartir',
+      completeTitle: 'Este viaje ha terminado', completeLead: 'La persona que viaja ha completado el viaje.', stoppedTitle: 'Se dejó de compartir',
       stoppedLead: 'La persona que viaja dejó de compartir este viaje.', expiredTitle: 'Este enlace ha caducado', expiredLead: 'Para proteger la privacidad, el enlace ya no muestra información del viaje.',
       errorTitle: 'No se puede cargar el viaje ahora', errorLead: 'Comprueba la conexión y vuelve a intentarlo.', invalidTitle: 'Este enlace no es válido',
       invalidLead: 'Pide a la persona que viaja que vuelva a enviar el enlace correcto.', notFoundTitle: 'No se encontró este viaje compartido', notFoundLead: 'Es posible que el enlace esté incompleto. Confírmalo con la persona que viaja.', retry: 'Volver a intentar',
@@ -97,8 +99,9 @@
       terminalValue: 'Terminal {value}', gateValue: 'Puerta {value}', checkInValue: 'Mostradores {value}', checkInAreaValue: 'Zona de facturación {value}',
       checkInAreaCountersValue: 'Zona de facturación {area}, mostradores {counters}', bagDropAreaCountersValue: 'Zona {area}, mostradores {counters}',
       bagDropValue: 'Entrega de equipaje {value}', baggageBeltValue: 'Cinta de equipaje {value}',
-      justNow: 'ahora mismo', minutesAgo: 'hace {count} min', hoursAgo: 'hace {count} h', daysAgo: 'hace {count} días', unknownTime: 'hora de actualización no disponible',
-      statusNormal: 'Vuelo puntual', statusBoarding: 'Embarcando ahora', statusDelayed: 'Vuelo retrasado', statusDeparted: 'Vuelo despegado', statusArrived: 'Vuelo llegado', statusCancelled: 'Vuelo cancelado',
+      locationAreaValue: 'Zona {value}', locationCountersValue: 'Mostradores {value}', locationAreaCountersValue: 'Zona {area} · mostradores {counters}',
+      justNow: 'ahora mismo', minutesAgo: 'hace {count} min', hoursAgo: 'hace {count} h', dayAgo: 'hace {count} día', daysAgo: 'hace {count} días', unknownTime: 'hora de actualización no disponible',
+      statusNormal: 'Vuelo puntual', statusBoarding: 'Embarcando ahora', statusDelayed: 'Vuelo retrasado', statusDeparted: 'Vuelo despegado', statusArrived: 'Vuelo llegado', statusCancelled: 'Vuelo cancelado', statusDiverted: 'Vuelo desviado', statusReturned: 'El vuelo ha regresado',
       actionConfirmFlightTitle: 'Confirmando el vuelo', actionConfirmFlightDescription: 'La persona que viaja está comprobando el número de vuelo, la ruta y la fecha de salida.',
       actionCheckInQuestionTitle: 'Confirmando la facturación', actionCheckInQuestionDescription: 'La persona que viaja está confirmando si ya ha facturado o recibido la tarjeta de embarque.',
       actionBaggageQuestionTitle: 'Confirmando el equipaje', actionBaggageQuestionDescription: 'La persona que viaja está confirmando si tiene equipaje para facturar.',
@@ -126,10 +129,10 @@
     BAG_DROP: ['actionBagDropTitle', 'actionBagDropDescription', 'destinationBagDrop'],
     SECURITY: ['actionSecurityTitle', 'actionSecurityDescription', 'destinationSecurity'],
     GO_TO_GATE: ['actionGateTitle', 'actionGateDescription', 'destinationGate'],
-    WAIT: ['actionWaitTitle', 'actionWaitDescription', 'destinationWait'],
+    WAIT: ['actionWaitTitle', 'actionWaitDescription', null],
     BOARD_NOW: ['actionBoardTitle', 'actionBoardDescription', 'destinationGate'],
     ASK_FOR_HELP: ['actionHelpTitle', 'actionHelpDescription', 'destinationStaff'],
-    IN_FLIGHT: ['actionFlightTitle', 'actionFlightDescription', 'destinationFlight'],
+    IN_FLIGHT: ['actionFlightTitle', 'actionFlightDescription', null],
     BAGGAGE_CLAIM: ['actionBaggageTitle', 'actionBaggageDescription', 'destinationBaggage'],
     EXIT_AIRPORT: ['actionExitTitle', 'actionExitDescription', 'destinationExit']
   };
@@ -200,14 +203,33 @@
     var text = String(value).trim();
     return text && text !== '-' && text !== '—' ? text : null;
   }
-  function stripPrefix(value, pattern) { var text = cleanValue(value); return text ? text.replace(pattern, '').trim() : null; }
+  function terminalLocationValue(value) {
+    var clean = cleanValue(value);
+    if (!clean) return null;
+    clean = clean
+      .replace(/^(?:terminal(?:\s+de)?|航站楼|航廈)\s*[:：-]?\s*/i, '')
+      .replace(/\s*(?:号|號)?(?:航站楼|航廈)$/i, '')
+      .replace(/^t\s*(?=\d)/i, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return clean || null;
+  }
   function formatTerminal(value, locale) {
-    var clean = stripPrefix(value, /^(terminal|航站楼|航廈|terminal de)\s*/i);
-    clean = clean ? clean.replace(/^t\s*(?=\d)/i, '').replace(/\s+/g, ' ').trim() : null;
+    var clean = terminalLocationValue(value);
     return clean ? t('terminalValue', { value: clean }, locale) : null;
   }
+  function gateLocationValue(value) {
+    var clean = cleanValue(value);
+    if (!clean) return null;
+    clean = clean
+      .replace(/^(?:gate|登机口|登機口|puerta)\s*[:：-]?\s*/i, '')
+      .replace(/\s*(?:号|號)?(?:登机口|登機口)$/i, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return clean || null;
+  }
   function formatGate(value, locale) {
-    var clean = stripPrefix(value, /^(gate|登机口|登機口|puerta)\s*/i);
+    var clean = gateLocationValue(value);
     return clean ? t('gateValue', { value: clean }, locale) : null;
   }
   function parseDeskParts(value) {
@@ -242,17 +264,34 @@
     if (parts.area) return t('bagDropValue', { value: parts.area }, locale);
     return parts.counters ? t('bagDropValue', { value: parts.counters }, locale) : null;
   }
+  function formatDeskLocation(value, locale) {
+    var parts = parseDeskParts(value);
+    if (!parts) return null;
+    if (parts.area && parts.counters) return t('locationAreaCountersValue', parts, locale);
+    if (parts.area) return t('locationAreaValue', { value: parts.area }, locale);
+    return parts.counters ? t('locationCountersValue', { value: parts.counters }, locale) : null;
+  }
+  function beltLocationValue(value) {
+    var clean = cleanValue(value);
+    if (!clean) return null;
+    clean = clean
+      .replace(/^(?:baggage\s*(?:belt|carousel)|belt|carousel|行李转盘|行李轉盤|cinta de equipaje)\s*[:：-]?\s*/i, '')
+      .replace(/\s*(?:号|號)?(?:行李转盘|行李轉盤|cinta de equipaje)$/i, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return clean || null;
+  }
   function formatBelt(value, locale) {
-    var clean = stripPrefix(value, /^(baggage\s*(belt|carousel)|belt|carousel|行李转盘|行李轉盤|cinta de equipaje)\s*/i);
+    var clean = beltLocationValue(value);
     return clean ? t('baggageBeltValue', { value: clean }, locale) : null;
   }
 
   function actionDestination(data, locale) {
     var code = safeCode(data.actionCode);
+    if (code === 'WAIT' || code === 'IN_FLIGHT') return null;
     if (code === 'CHECK_IN') return formatCounter(data.checkInDeskOrZone, locale) || formatTerminal(data.terminal, locale) || t('destinationCheckIn', null, locale);
     if (code === 'BAG_DROP') return formatBagDrop(data.dedicatedBagDropDesk, locale) || formatCounter(data.checkInDeskOrZone, locale) || t('destinationBagDrop', null, locale);
-    if (code === 'GO_TO_GATE' || code === 'BOARD_NOW' || code === 'WAIT') return formatGate(data.gate, locale) || t(actions[code][2], null, locale);
-    if (code === 'IN_FLIGHT') return t('destinationFlight', { airport: cleanValue(data.arrivalAirport) || '' }, locale).trim();
+    if (code === 'GO_TO_GATE' || code === 'BOARD_NOW') return formatGate(data.gate, locale) || t(actions[code][2], null, locale);
     if (code === 'BAGGAGE_CLAIM') return formatBelt(data.arrivalBaggageBelt, locale) || t('destinationBaggage', null, locale);
     var mapped = actions[code];
     return mapped && mapped[2] ? t(mapped[2], null, locale) : null;
@@ -266,21 +305,22 @@
     if (code === 'DEPARTED') return t('statusDeparted');
     if (code === 'ARRIVED') return t('statusArrived');
     if (code === 'CANCELLED' || code === 'CANCELED') return t('statusCancelled');
+    if (code === 'DIVERTED') return t('statusDiverted');
+    if (code === 'RETURNED') return t('statusReturned');
     return null;
   }
 
-  function completedStepValues(value) {
-    if (Array.isArray(value)) return value.map(safeCode).filter(function (code) { return completedLabels[code]; });
-    if (Number.isFinite(Number(value))) return Number(value);
+  function completedStepCount(value) {
+    if (Array.isArray(value)) {
+      return value.map(safeCode).filter(function (code) { return Boolean(completedLabels[code]); }).length;
+    }
+    if (Number.isFinite(Number(value))) return Math.max(0, Math.floor(Number(value)));
     return 0;
   }
 
   function completedSummary(value) {
-    var normalized = completedStepValues(value);
-    if (Array.isArray(normalized)) {
-      return normalized.map(function (code) { return t(completedLabels[code]); }).join(' · ') || t('completedCount', { count: 0 });
-    }
-    return t('completedCount', { count: Math.max(0, normalized) });
+    var count = completedStepCount(value);
+    return t(count === 1 ? 'completedCountOne' : 'completedCount', { count: count });
   }
 
   function formatDate(value) {
@@ -300,7 +340,8 @@
     if (minutes < 60) return t('minutesAgo', { count: minutes });
     var hours = Math.floor(minutes / 60);
     if (hours < 24) return t('hoursAgo', { count: hours });
-    return t('daysAgo', { count: Math.floor(hours / 24) });
+    var days = Math.floor(hours / 24);
+    return t(days === 1 ? 'dayAgo' : 'daysAgo', { count: days });
   }
 
   function addLocation(list, labelKey, value) {
@@ -317,7 +358,7 @@
 
   function renderJourney(data, announceChange) {
     currentJourney = data;
-    if (data.completed || !cleanValue(data.actionCode)) {
+    if (data.completed === true) {
       setBilingualContent(document.getElementById('complete-title'), t('completeTitle'), t('completeTitle', null, 'en'), true);
       setBilingualContent(document.querySelector('[data-view="complete"] > p'), t('completeLead'), t('completeLead', null, 'en'), false);
       document.querySelector('[data-complete-flight]').textContent = [cleanValue(data.flightNumber), cleanValue(data.departureAirport), cleanValue(data.arrivalAirport)].filter(Boolean).join(' · ');
@@ -349,12 +390,12 @@
 
     var list = document.querySelector('[data-location-list]');
     list.replaceChildren();
-    addLocation(list, 'terminal', formatTerminal(data.terminal, currentLocale));
-    addLocation(list, 'gate', formatGate(data.gate, currentLocale));
-    addLocation(list, 'checkIn', formatCounter(data.checkInDeskOrZone, currentLocale));
-    addLocation(list, 'bagDrop', formatBagDrop(data.dedicatedBagDropDesk, currentLocale));
+    addLocation(list, 'terminal', terminalLocationValue(data.terminal));
+    addLocation(list, 'gate', gateLocationValue(data.gate));
+    addLocation(list, 'checkIn', formatDeskLocation(data.checkInDeskOrZone, currentLocale));
+    addLocation(list, 'bagDrop', formatDeskLocation(data.dedicatedBagDropDesk, currentLocale));
     if (safeCode(data.actionCode) === 'BAGGAGE_CLAIM' || safeCode(data.actionCode) === 'EXIT_AIRPORT') {
-      addLocation(list, 'baggageBelt', formatBelt(data.arrivalBaggageBelt, currentLocale));
+      addLocation(list, 'baggageBelt', beltLocationValue(data.arrivalBaggageBelt));
     }
     document.querySelector('[data-location-card]').hidden = !list.children.length;
     document.querySelector('[data-last-updated]').textContent = relativeUpdated(data.lastUpdated);

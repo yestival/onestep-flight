@@ -23,7 +23,7 @@ body{font-size:20px;overflow-x:hidden}
 .manual-fields label{display:block;margin-bottom:8px}
 .manual-fields input{display:block;width:100%;inline-size:100%;max-width:100%;min-width:0;min-height:60px;box-sizing:border-box;margin:0;border:2px solid var(--border);border-radius:4px;background:var(--white);padding:12px 16px;color:var(--navy);font:var(--manual-control-font)}
 .manual-fields input[name="flight"]{text-transform:uppercase}
-.manual-confirmation{display:flex;align-items:flex-start;gap:10px;margin:12px 0 0;color:var(--navy);font-size:17px;font-weight:800;line-height:1.35;cursor:pointer}
+.manual-confirmation{display:flex;align-items:center;gap:10px;min-height:44px;margin:12px 0 0;padding:9px 0;color:var(--navy);font-size:17px;font-weight:800;line-height:1.35;cursor:pointer;word-break:normal;overflow-wrap:normal;hyphens:none}
 .manual-confirmation input{width:24px;min-width:24px;height:24px;min-height:24px;margin:0;accent-color:var(--accent)}
 .manual-confirmation:has(input:focus-visible){outline:4px solid var(--color-focus);outline-offset:3px;border-radius:var(--radius-small)}
 .manual-document-segments{margin-bottom:24px}
@@ -90,6 +90,7 @@ body{background:var(--color-bg);color:var(--navy)}
 .action-summary .destination-primary-en{margin-top:5px;font-size:clamp(38px,6vw,48px)}
 .action-summary .destination-secondary{display:block;color:var(--color-text-secondary);font-size:clamp(21px,3vw,27px);font-weight:800;line-height:1.3;margin-top:18px;word-break:normal;overflow-wrap:normal;hyphens:none}
 .action-summary .destination-en{color:var(--color-text-muted);font-size:clamp(17px,2.5vw,22px);letter-spacing:.035em;margin-top:8px}
+.action-summary .action-guidance{max-width:none;margin:22px 0 0;color:var(--color-text-secondary);font-size:clamp(17px,2.5vw,19px);font-weight:600;line-height:1.55;text-align:left}
 .action-time{display:grid;gap:5px;border-top:2px solid var(--color-border);margin-top:25px;padding-top:20px;color:var(--color-text-secondary);font-weight:750}
 .action-time span{display:block!important;font-size:18px!important;line-height:1.45}
 .action-time-primary{font-family:var(--data);font-weight:850!important}
@@ -102,7 +103,7 @@ body{background:var(--color-bg);color:var(--navy)}
 .urgency-badge[data-urgency="URGENT"],.flight-change-alert.is-critical{background:var(--color-danger);border-color:var(--color-danger);color:var(--color-on-dark)}
 .technical-details{background:var(--color-surface-muted);border:1px solid var(--color-border);margin:0 0 24px}
 .technical-details summary{cursor:pointer;padding:14px 16px;color:var(--color-text-secondary);font-size:15px;font-weight:800}
-.technical-details pre{white-space:pre-wrap;overflow-wrap:anywhere;border-top:1px solid var(--color-border);margin:0;padding:14px 16px;color:var(--color-text-secondary);font:600 14px/1.5 var(--data)}
+.technical-details pre{white-space:pre-wrap;word-break:normal;overflow-wrap:break-word;hyphens:none;border-top:1px solid var(--color-border);margin:0;padding:14px 16px;color:var(--color-text-secondary);font:600 14px/1.5 var(--data)}
 .staff-card{border-top-color:var(--color-text-muted);padding:clamp(28px,6vw,58px)}
 .staff-card h1{font:800 clamp(25px,4vw,34px)/1.2 var(--title);margin:12px 0 28px}
 .staff-card h1 span{display:block}
@@ -227,7 +228,7 @@ body{background:var(--color-bg);color:var(--navy)}
 .screen-complete [data-complete-title]>span,.screen-complete [data-complete-description]>span{display:block}
 .screen-complete [data-complete-title-en]{color:var(--color-text-muted);font-size:.7em;margin-top:8px}
 .screen-complete [data-complete-description-en]{color:var(--color-text-muted);font-size:.9em;margin-top:5px}
-.toast{width:max-content;max-width:calc(100% - 24px);overflow-wrap:anywhere;text-align:center}
+.toast{width:max-content;max-width:calc(100% - 24px);word-break:normal;overflow-wrap:normal;hyphens:none;text-align:center}
 .bilingual-primary,.bilingual-heading-primary,.bilingual-secondary,.bilingual-heading-secondary{display:block;color:inherit}
 .bilingual-secondary,.bilingual-heading-secondary{margin-top:8px}
 .bilingual-heading-secondary{font-size:.82em;line-height:1.25}
@@ -465,7 +466,7 @@ body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-ri
 /* The airport contact sheet reuses the existing large-card dialog. */
 .staff-card-topbar{display:grid;grid-template-columns:minmax(0,1fr) 56px;align-items:stretch;gap:12px;width:100%;margin:0 0 20px}
 .staff-card .staff-overlay-close{display:block;grid-column:2;position:static;float:none;width:56px;min-width:56px;min-height:56px;margin:0;background:var(--color-surface)}
-.staff-contact-button{width:100%;justify-content:flex-start;text-align:left;overflow-wrap:anywhere}
+.staff-contact-button{width:100%;justify-content:center;text-align:center;word-break:normal;overflow-wrap:normal;hyphens:none}
 .staff-card-view,.airport-resource-view{clear:both;min-width:0}
 .staff-card-view .staff-card-header{display:block;margin-bottom:18px}
 @media(prefers-reduced-motion:reduce){
@@ -575,7 +576,7 @@ html[lang="es"]{--multi-control-font-size:25px}
 .journey-problem-button:hover{background:#e4ca73}
 .journey-problem-button:active{transform:translateY(2px)}
 .journey-problem-button:focus-visible{outline:4px solid var(--color-focus,#1d5f91);outline-offset:4px}
-.journey-problem-card{width:min(100%,680px);max-width:680px;padding-top:76px;overflow-wrap:anywhere}
+.journey-problem-card{width:min(100%,680px);max-width:680px;padding-top:76px;word-break:normal;overflow-wrap:normal;hyphens:none}
 .journey-problem-close{position:absolute;top:16px;right:16px;margin:0}
 .journey-problem-card h1{margin-top:0;padding-right:44px;font-size:clamp(34px,6vw,52px)}
 .journey-problem-question{font-size:clamp(22px,3.6vw,28px);font-weight:800;line-height:1.45}
@@ -591,11 +592,11 @@ html[lang="es"]{--multi-control-font-size:25px}
 .journey-problem-submit{width:100%;max-width:none;min-height:68px}
 .journey-problem-submit:disabled,.journey-problem-voice-button:disabled{cursor:not-allowed;opacity:.52}
 .journey-problem-result{min-width:0}
-.journey-problem-answer{margin:8px 0 18px;font-size:clamp(20px,3.4vw,25px);line-height:1.55;overflow-wrap:anywhere}
-.journey-problem-confirmation{margin:0;color:var(--color-text-secondary);font-size:clamp(17px,2.8vw,21px);font-weight:750;line-height:1.5;overflow-wrap:anywhere}
+.journey-problem-answer{margin:8px 0 18px;font-size:clamp(20px,3.4vw,25px);line-height:1.55;word-break:normal;overflow-wrap:normal;hyphens:none}
+.journey-problem-confirmation{margin:0;color:var(--color-text-secondary);font-size:clamp(17px,2.8vw,21px);font-weight:750;line-height:1.5;word-break:normal;overflow-wrap:normal;hyphens:none}
 .flight-change-journey-problem-link{display:block;width:100%;min-height:44px;margin:6px 0 0;padding:8px 0;border:0;background:transparent;color:#f6df94;font:inherit;font-size:max(15px,.92em);font-weight:750;line-height:1.45;text-align:left;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .flight-change-journey-problem-link:focus-visible{outline:3px solid currentColor;outline-offset:3px}
-@media(max-width:520px){.journey-problem-connection-actions{grid-template-columns:minmax(0,1fr)}.journey-problem-card{padding:70px 16px 22px}.journey-problem-card h1{padding-right:36px}}
+@media(max-width:340px){.journey-problem-connection-actions{grid-template-columns:minmax(0,1fr)}.journey-problem-card{padding-inline:12px}.journey-problem-card h1{padding-right:36px}}
 @media(forced-colors:active){.journey-problem-button{border-color:ButtonText;background:ButtonFace;color:ButtonText}.journey-problem-button:focus-visible,.flight-change-journey-problem-link:focus-visible{outline-color:Highlight}.journey-problem-microphone-icon,.flight-change-journey-problem-link{color:LinkText;forced-color-adjust:auto}}
 
 /* Operational changes stay in normal document flow and use one accessible visual contract. */
@@ -796,11 +797,11 @@ html[lang="es"]{--multi-control-font-size:25px}
 
 /* Airport contact action and local-only diagnostics. */
 .airport-resource-qa{width:min(100% - 32px,760px);margin:24px auto;padding:24px;border:2px solid var(--color-border);border-radius:var(--radius-medium);background:var(--color-surface)}
-.airport-resource-qa h2{margin-top:0}.airport-resource-qa form{display:grid;gap:12px}.airport-resource-qa label{display:grid;gap:5px;font-weight:700}.airport-resource-qa label small{color:var(--color-text-muted);font-weight:600}.airport-resource-qa input{min-height:44px;padding:8px;border:2px solid var(--color-border);font:inherit}.qa-airport-actions{display:flex;justify-content:center}.qa-airport-actions .button{width:min(100%,260px);min-height:44px;border-radius:var(--radius-small)}.qa-airport-result{overflow-wrap:anywhere}.qa-airport-result p{margin:10px 0}.qa-airport-name{margin:22px 0 6px}.qa-airport-result h4{margin:24px 0 8px}.qa-airport-phone{font:850 clamp(25px,5vw,36px)/1.2 var(--data)}.qa-airport-action{display:flex;width:min(100%,340px);min-height:52px;margin:10px 0;align-items:center;justify-content:center;text-decoration:none}
+.airport-resource-qa h2{margin-top:0}.airport-resource-qa form{display:grid;gap:12px}.airport-resource-qa label{display:grid;gap:5px;font-weight:700}.airport-resource-qa label small{color:var(--color-text-muted);font-weight:600}.airport-resource-qa input{min-height:44px;padding:8px;border:2px solid var(--color-border);font:inherit}.qa-airport-actions{display:flex;justify-content:center}.qa-airport-actions .button{width:min(100%,260px);min-height:44px;border-radius:var(--radius-small)}.qa-airport-result{word-break:normal;overflow-wrap:break-word;hyphens:none}.qa-airport-result p{margin:10px 0}.qa-airport-name{margin:22px 0 6px}.qa-airport-result h4{margin:24px 0 8px}.qa-airport-phone{font:850 clamp(25px,5vw,36px)/1.2 var(--data)}.qa-airport-action{display:flex;width:min(100%,340px);min-height:52px;margin:10px 0;align-items:center;justify-content:center;text-decoration:none}
 .card-close{width:56px;height:56px;min-width:56px;min-height:56px;padding:0;display:grid;place-items:center;line-height:0;color:var(--color-text)}
 .card-close svg{display:block;width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
 .staff-overlay-close{position:static;float:none;margin:0}
-.staff-contact-button{min-width:0;white-space:normal;overflow-wrap:anywhere}
+.staff-contact-button{min-width:0;white-space:normal;word-break:normal;overflow-wrap:normal;hyphens:none}
 .family-card{position:relative;padding-top:76px}
 .family-overlay-close{position:absolute;top:16px;right:16px;margin:0;float:none}
 .airport-resource-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;margin-top:14px}
@@ -814,7 +815,7 @@ html[lang="es"]{--multi-control-font-size:25px}
 .airport-phone-icon[hidden]{display:none}
 .airport-resource-message{margin:0;color:var(--color-text);font-size:clamp(24px,4vw,34px);font-weight:850;line-height:1.35}
 .airport-resource-detail{margin:14px 0 0;color:var(--color-text-secondary);font-size:clamp(17px,2.5vw,21px);font-weight:750;line-height:1.45}
-.airport-phone-display{margin:20px 0 0;font:850 clamp(27px,5vw,42px)/1.25 var(--data);overflow-wrap:anywhere}
+.airport-phone-display{margin:20px 0 0;font:850 clamp(27px,5vw,42px)/1.25 var(--data);word-break:normal;overflow-wrap:break-word;hyphens:none}
 .airport-resource-result-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:22px}
 .airport-resource-result-actions .button{display:flex;align-items:center;justify-content:center;width:100%;max-width:none;min-height:64px;text-align:center;text-decoration:none}
 @media(max-width:319px){
@@ -822,14 +823,14 @@ html[lang="es"]{--multi-control-font-size:25px}
   .airport-resource-button{width:100%;max-width:none}
 }
 
-@media(max-width:480px){
+@media(max-width:340px){
   .airport-resource-actions{grid-template-columns:minmax(0,1fr)}
-  .airport-resource-button{width:100%;max-width:none;white-space:normal;overflow-wrap:anywhere}
+  .airport-resource-button{width:100%;max-width:none;white-space:normal;word-break:normal;overflow-wrap:normal;hyphens:none}
 }
 
 @media(max-width:220px){
   .airport-resource-qa{box-sizing:border-box;width:calc(100% - 8px);padding:10px 6px}
-  .airport-resource-qa h2,.airport-resource-qa label,.airport-resource-qa form{min-width:0;max-width:100%;overflow-wrap:anywhere}
+  .airport-resource-qa h2,.airport-resource-qa label,.airport-resource-qa form{min-width:0;max-width:100%;word-break:normal;overflow-wrap:normal;hyphens:none}
   .airport-resource-qa input{box-sizing:border-box;width:100%;min-width:0}
 }
 
@@ -862,11 +863,11 @@ html[lang="es"]{--multi-control-font-size:25px}
   .button,.home-back-button,.back-button,.card-close,.text-button,.support-button,
   .journey-end-action .end-journey-link,.flight-candidate,.review-candidate,
   .review-candidate-manual,.segment-option,.scenario-actions button{
-    max-width:100%;padding-inline:6px;font-size:20px;overflow-wrap:anywhere;hyphens:auto
+    max-width:100%;padding-inline:6px;font-size:20px;word-break:normal;overflow-wrap:normal;hyphens:none
   }
   .button>span,.support-button>span,.icon-button>span,.answer-choice>span,
   .assistance-button>span,.segment-option strong,.segment-option>span{
-    max-width:100%;overflow-wrap:anywhere;hyphens:auto
+    max-width:100%;word-break:normal;overflow-wrap:normal;hyphens:none
   }
   .button,.icon-button,.support-button,.home-back-button,.staff-help-button{flex-direction:column}
   .support-button.assistance-button .speech-icon,.support-button.dialog-speech-button .speech-icon{stroke-width:2.7}
@@ -886,11 +887,53 @@ html[lang="es"]{--multi-control-font-size:25px}
   .screen h1,.screen h2,.section-heading>*,.confirm-card h1,.confirm-card p,
   .family-card h1,.family-card p,.conflict-card h2,.segment-selector h2,
   .departure-passed-flight dt,.departure-passed-flight dd{
-    max-width:100%;overflow-wrap:anywhere;hyphens:auto
+    max-width:100%;word-break:normal;overflow-wrap:normal;hyphens:none
   }
   .screen h1,.screen-step h1,.departure-passed-confirmation h1{font-size:30px}
   .date-control{height:auto;min-height:72px;padding-right:18px}
-  .date-control-value{padding:8px 0;white-space:normal;overflow-wrap:anywhere;hyphens:auto;line-height:1.2}
+  .date-control-value{padding:8px 0;white-space:normal;word-break:normal;overflow-wrap:normal;hyphens:none;line-height:1.2}
   .departure-passed-confirmation{padding-inline:10px}
   .departure-passed-flight,.flight-details,.flight-details-expanded{grid-template-columns:minmax(0,1fr)}
+}
+
+/* Formal passenger copy and controls keep whole words and remain usable on phones. */
+body,button,input,select,textarea{word-break:normal;overflow-wrap:normal;hyphens:none}
+.loading-current-status{min-height:2.5em;margin:0;color:var(--navy);font:700 clamp(2rem,6vw,2.7rem)/1.22 var(--title)}
+.upload-hint,.document-unusable-hint,.welcome-speech-note p,.form-hint,.privacy-note,.share-expiry{font-size:max(16px,1rem)}
+
+.document-unusable-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:620px}
+.document-unusable-actions .staff-help-button,.document-unusable-actions .home-back-button{grid-column:1/-1}
+.document-unusable-actions .home-back-button{width:auto;justify-self:start}
+.error-actions .action-full-row{grid-column:1/-1}
+.departure-passed-end-action{margin-top:18px}
+
+.screen-confirm .airport-city{font-size:16px;line-height:1.35}
+.screen-confirm .airport-time-label{min-height:0;font-size:15px;line-height:1.35}
+.screen-confirm .airport-local-time{font-size:18px;line-height:1.35}
+
+/* Dialog cards scroll internally so their close control stays visible above safe areas. */
+.staff-overlay,.confirm-overlay{
+  padding-top:calc(12px + env(safe-area-inset-top));
+  padding-right:calc(12px + env(safe-area-inset-right));
+  padding-bottom:calc(12px + env(safe-area-inset-bottom));
+  padding-left:calc(12px + env(safe-area-inset-left));
+}
+.staff-card,.confirm-card{
+  max-height:calc(100vh - 24px);
+  max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+.staff-card-topbar{position:sticky;top:0;z-index:3;grid-template-columns:minmax(0,1fr) 56px;background:var(--color-surface);padding-bottom:8px}
+.staff-card .staff-overlay-close{grid-column:2;justify-self:end}
+.family-card,.journey-problem-card{padding-top:16px}
+.family-overlay-close,.journey-problem-close{position:sticky;top:0;right:auto;z-index:3;margin:0 0 -56px auto;background:var(--color-surface)}
+.family-card h1,.journey-problem-card h1{padding-top:68px;padding-right:64px}
+
+/* Airport resources and transfer choices stay paired at ordinary mobile widths. */
+.airport-resource-actions,.journey-problem-connection-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+@media(max-width:340px){
+  .document-unusable-actions,.error-actions,.airport-resource-actions,.journey-problem-connection-actions{grid-template-columns:minmax(0,1fr)}
+  .document-unusable-actions .staff-help-button,.document-unusable-actions .home-back-button,.error-actions .action-full-row{grid-column:1}
 }

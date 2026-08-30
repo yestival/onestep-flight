@@ -25,14 +25,18 @@ const sandbox = {};
 vm.createContext(sandbox);
 vm.runInContext([
   sourceBetween('  function normalizeFlightNumber(value)', '  function fetchJson(url, options)'),
+  sourceBetween('  function offsetMinutesFromDateTime(value)', '  function arrivalOffsetMinutes()'),
+  sourceBetween('  function formatAtOffset(value, includeDate, offsetMinutes)', '  function formatAtDeparture(value, includeDate)'),
   sourceBetween('  function setLookupBusy(busy)', '  function announce(message)'),
   sourceBetween('  function resolvePayload(flightNumber, departureDate, demo, documentResult, demoScenario, refresh)', '  function extractionToFlight(result)'),
   sourceBetween('  function selectedDocumentResult(source, index)', '  function renderSegmentSelector()'),
   sourceBetween('  function validDocumentFlightNumber(value)', '  function resetDocumentResultState()'),
   sourceBetween('  function syncUsableDocumentSegmentIndexes()', '  function setDocumentExtractionState(result, assessment)'),
-	 sourceBetween('  function isLocalDebugEnvironment()', '  function safeProviderDebugResult(result)'),
+  sourceBetween('  function isLocalDebugEnvironment()', '  function safeProviderDebugResult(result)'),
   `this.documentSegmentApi = {
     normalizeFlightNumber, normalizeDocumentResult, classifyDocumentResult, selectedDocumentResult, createSegmentDisplay,
+    offsetMinutesFromDateTime, formatAtOffset, formatDocumentSegmentDate,
+    formatDocumentSegmentTime, formatDocumentSegmentDateTime,
     validDocumentDepartureDate, validDocumentMonthDay, normalizeFlightNumberConfidence,
     documentSegmentLookupReady, documentSegmentHasConflict, documentSegmentHasCriticalConflict,
     documentSegmentHasAdvisory, documentSegmentReviewIssues, normalizeReviewIssue,
@@ -42,6 +46,8 @@ vm.runInContext([
 ].join('\n'), sandbox);
 
 const api = sandbox.documentSegmentApi;
+const realFormatAtOffset = api.formatAtOffset;
+const realOffsetMinutesFromDateTime = api.offsetMinutesFromDateTime;
 sandbox.confirmedDocumentFlightNumberIndexes = [];
 sandbox.documentRootReviewFields = [];
 sandbox.documentRootReviewIssues = [];
@@ -56,18 +62,22 @@ test('top-level live-flight error code takes precedence over provider details', 
 		AERODATABOX: { outcome: 'PARSE_ERROR' }
 	} };
 	const mixed = api.liveFlightErrorCopy(request, details, 'ALL_LIVE_FLIGHT_PROVIDERS_FAILED');
-	assert.equal(mixed.titleZh, '暂时无法确认这个航班');
-	assert.match(mixed.en, /cannot be verified/i);
+	assert.equal(mixed.titleZh, '航班信息暂时不可用');
+	assert.equal(mixed.en, 'Try again later or ask staff for help.');
 	assert.doesNotMatch(mixed.en, /timed out/i);
 
 	const timeout = api.liveFlightErrorCopy(request, details, 'LIVE_FLIGHT_TIMEOUT');
-	assert.match(timeout.en, /timed out/i);
-	assert.match(timeout.en, /does not show that the flight does not exist/i);
+	assert.equal(timeout.titleEn, 'Search timed out');
+	assert.equal(timeout.en, 'No result yet. Try again later.');
 
 	const missing = api.liveFlightErrorCopy(
 		{ requestUrl: '/api/flights/BA117', status: 404 }, details, 'FLIGHT_NOT_FOUND');
 	assert.equal(missing.titleZh, '没有找到这个航班');
-	assert.match(missing.es, /código de la aerolínea/i);
+	assert.equal(missing.es, 'Comprueba el número de vuelo y la fecha.');
+
+	const missingWithoutCode = api.liveFlightErrorCopy(
+		{ requestUrl: '/api/flights/BA117', status: 404 }, details, 'REQUEST_FAILED');
+	assert.equal(missingWithoutCode.titleEn, 'Flight not found');
 });
 
 function clone(value) {
@@ -96,6 +106,10 @@ function installSegmentDisplayFixture(reviewFields = []) {
   sandbox.currentLocale = 'zh';
   sandbox.formatFlightNumber = String;
   sandbox.formatDate = String;
+  sandbox.offsetMinutesFromDateTime = () => 0;
+  sandbox.formatAtOffset = (value, includeDate) => includeDate
+    ? String(value).slice(0, 10) + ' · ' + String(value).slice(11, 16)
+    : String(value).slice(11, 16);
   sandbox.t = function (key) {
     return {
       incompleteSegment: '补全这一段',
@@ -122,6 +136,94 @@ function installSegmentDisplayFixture(reviewFields = []) {
     }
   };
 }
+
+test('formatAtOffset formats a scheduled document departure without a current flight', () => {
+  const scheduledDeparture = '2026-08-04T17:30:00+01:00';
+  sandbox.currentFlight = null;
+  sandbox.currentLocale = 'zh';
+  let formatted;
+
+  assert.doesNotThrow(() => {
+    formatted = realFormatAtOffset(
+      scheduledDeparture,
+      true,
+      realOffsetMinutesFromDateTime(scheduledDeparture)
+    );
+  });
+  assert.equal(typeof formatted, 'string');
+  assert.ok(formatted.trim());
+  assert.doesNotMatch(formatted, /undefined|NaN/);
+});
+
+test('a scheduled document segment uses the real formatter and remains selectable without a current flight', () => {
+  const segment = {
+    flightNumber: 'KL1036',
+    departureAirport: 'MAN',
+    arrivalAirport: 'AMS',
+    departureDate: '2026-08-04',
+    scheduledDeparture: '2026-08-04T17:30:00+01:00'
+  };
+  installSegmentDisplayFixture();
+  sandbox.currentFlight = null;
+  sandbox.formatAtOffset = realFormatAtOffset;
+  sandbox.offsetMinutesFromDateTime = realOffsetMinutesFromDateTime;
+  let option;
+
+  assert.doesNotThrow(() => {
+    option = api.createSegmentDisplay(segment, 0);
+  });
+  assert.ok(option);
+  assert.equal(option.type, 'button');
+  assert.equal(option.dataset.action, 'select-segment');
+  assert.equal(option.dataset.segmentIndex, '0');
+  assert.equal(option.disabled, false);
+  assert.ok(option.children[1].textContent.trim());
+  assert.notEqual(option.children[1].textContent.trim(), '—');
+  assert.match(option.children[1].textContent, /2026/);
+  assert.match(option.children[1].textContent, /17:30/);
+  assert.doesNotMatch(option.children[1].textContent, /undefined|NaN/);
+});
+
+test('segment cards keep departureDate authoritative and use scheduledDeparture only for time', () => {
+  installSegmentDisplayFixture();
+  const mismatchedDate = {
+    flightNumber: 'KL1036', departureAirport: 'MAN', arrivalAirport: 'AMS',
+    departureDate: '2026-08-30', scheduledDeparture: '2026-08-31T21:40:00+02:00'
+  };
+
+  const option = api.createSegmentDisplay(mismatchedDate, 0);
+  const payload = plain(api.resolvePayload('KL1036', mismatchedDate.departureDate,
+    false, { segments: [mismatchedDate] }, null, false));
+
+  assert.equal(option.children[1].textContent, '2026-08-30 · 21:40');
+  assert.doesNotMatch(option.children[1].textContent, /2026-08-31/);
+  assert.equal(payload.departureDate, '2026-08-30');
+});
+
+test('segment cards retain HH:mm and HH:mm:ss time-only values', () => {
+  installSegmentDisplayFixture();
+
+  assert.equal(api.formatDocumentSegmentDateTime({
+    departureDate: '2026-08-30', scheduledDeparture: '21:40'
+  }), '2026-08-30 · 21:40');
+  assert.equal(api.formatDocumentSegmentDateTime({
+    departureDate: '2026-08-30', scheduledDeparture: '17:30:00'
+  }), '2026-08-30 · 17:30');
+  assert.equal(api.formatDocumentSegmentDateTime({
+    departureDate: '2026-08-30'
+  }), '2026-08-30');
+});
+
+test('formatAtOffset does not read currentFlight.timeContext without a null guard', () => {
+  const formatterSource = sourceBetween(
+    '  function formatAtOffset(value, includeDate, offsetMinutes)',
+    '  function formatAtDeparture(value, includeDate)'
+  );
+
+  assert.doesNotMatch(formatterSource, /!currentFlight\.timeContext/);
+  assert.match(formatterSource,
+    /Boolean\(currentFlight && currentFlight\.timeContext\)/);
+});
 
 test('preserves the server-completed full date, month-day, and date source', () => {
   const fixture = clone(fixtures.singleSegment);

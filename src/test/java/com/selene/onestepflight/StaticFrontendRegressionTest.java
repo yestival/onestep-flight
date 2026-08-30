@@ -34,7 +34,8 @@ class StaticFrontendRegressionTest {
         assertFalse(welcome.contains("data-journey-problem-entry"));
         assertFalse(manual.contains("data-journey-problem-entry"));
         assertFalse(ordinaryConfirm.contains("data-journey-problem-entry"));
-        assertTrue(step.lastIndexOf("data-journey-problem-entry") > step.indexOf("timeline-panel"));
+        assertTrue(step.indexOf("step-assistance-actions") < step.indexOf("data-journey-problem-entry"));
+        assertTrue(step.indexOf("data-journey-problem-entry") < step.indexOf("journey-end-action"));
         assertTrue(departed.contains("data-journey-problem-entry"));
         assertTrue(overlay.contains("journey-problem-close"));
         assertEquals(2, overlay.split("data-action=\"journey-problem-connection\"", -1).length - 1);
@@ -45,12 +46,12 @@ class StaticFrontendRegressionTest {
         assertTrue(overlay.contains("data-action=\"journey-problem-voice\""));
         assertTrue(overlay.contains("data-journey-problem-submit"));
         assertTrue(overlay.contains("data-journey-problem-result"));
-        assertTrue(html.contains("styles.css?v=39"));
-        assertTrue(html.contains("locale.js?v=39"));
-        assertTrue(html.contains("app.js?v=39"));
+        assertTrue(html.contains("styles.css?v=41"));
+        assertTrue(html.contains("locale.js?v=41"));
+        assertTrue(html.contains("app.js?v=41"));
         assertTrue(worker.contains("onestep-flight-shell-"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v39'"));
-        assertTrue(worker.contains("/app.js?v=39"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v41'"));
+        assertTrue(worker.contains("/app.js?v=41"));
         assertTrue(js.contains("POST") || js.contains("method: 'POST'"));
     }
 
@@ -194,7 +195,10 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("PNG_FILE_FAILED"));
         assertTrue(js.contains("PNG_SHARE_FAILED"));
         assertTrue(js.contains("console.error(code"));
-        assertTrue(js.contains("卡片图片编码失败，请重试。"));
+        assertTrue(js.contains("图片准备失败"));
+        assertTrue(js.contains("Image could not be prepared"));
+        assertTrue(js.contains("No se pudo preparar la imagen"));
+        assertFalse(js.contains("卡片图片编码失败，请重试。"));
         assertFalse(js.contains("预览后保存"));
         assertFalse(js.contains("save from the preview"));
         assertFalse(js.contains("guarda desde la vista previa"));
@@ -438,25 +442,19 @@ class StaticFrontendRegressionTest {
     }
 
     @Test
-    void recognitionAndLiveLookupUseDistinctFixedLocalizedWaitCopyAboveOneLiveStage() throws IOException {
+    void recognitionAndLiveLookupUseOneLocalizedCurrentLoadingStage() throws IOException {
         String html = resource("index.html");
         String js = resource("app.js");
         String loading = html.substring(html.indexOf("data-screen=\"loading\""),
                 html.indexOf("data-screen=\"document-unusable\""));
 
-        assertTrue(loading.contains("data-loading-fixed data-i18n=\"documentRecognitionWaiting\""));
-        assertTrue(loading.contains("正在识别，请耐心等待"));
-        assertTrue(loading.contains("class=\"loading-status\" aria-live=\"polite\" aria-atomic=\"true\" data-loading-status"));
-        assertTrue(loading.indexOf("data-loading-fixed") < loading.indexOf("data-loading-status"));
-        assertFalse(loading.substring(loading.indexOf("data-loading-fixed"),
-                loading.indexOf("</h1>", loading.indexOf("data-loading-fixed"))).contains("aria-live"));
-
-        assertTrue(js.contains("documentRecognitionWaiting: '正在识别，请耐心等待'"));
-        assertTrue(js.contains("documentRecognitionWaiting: 'Recognizing your document. Please wait.'"));
-        assertTrue(js.contains("documentRecognitionWaiting: 'Reconociendo el documento. Espera un momento.'"));
-        assertTrue(js.contains("liveFlightLookupWaiting: '正在查询实时航班，请耐心等待'"));
-        assertTrue(js.contains("liveFlightLookupWaiting: 'Looking up live flight information. Please wait.'"));
-        assertTrue(js.contains("liveFlightLookupWaiting: 'Consultando el vuelo en tiempo real. Espera un momento.'"));
+        assertEquals(1, loading.split("data-loading-fixed", -1).length - 1);
+        assertFalse(loading.contains("data-loading-status"));
+        assertTrue(loading.contains("aria-live=\"polite\""));
+        assertTrue(js.contains("['正在上传文件', 'Uploading the file', 'Subiendo el archivo']"));
+        assertTrue(js.contains("['正在读取航班信息', 'Reading flight information', 'Leyendo la información del vuelo']"));
+        assertTrue(js.contains("['正在查询航班', 'Searching for the flight', 'Buscando el vuelo']"));
+        assertTrue(js.contains("['正在准备下一步', 'Preparing the next step', 'Preparando el siguiente paso']"));
         assertTrue(js.contains("runLoading(uploadLoadingMessages, 'documentRecognitionWaiting')"));
         assertTrue(js.contains("runLoading(loadingMessages, 'liveFlightLookupWaiting')"));
     }
@@ -469,23 +467,21 @@ class StaticFrontendRegressionTest {
 
         assertTrue(html.contains("class=\"welcome-speech-note\""));
         assertTrue(html.contains("data-i18n=\"welcomeSpeechNotice\""));
-        assertTrue(html.contains("Voice guidance will play as you continue. Please check your volume. You can pause or turn it off at any time."));
-        assertTrue(js.contains("接下来会播放语音提示，请留意音量。你可以随时暂停或关闭声音。"));
-        assertTrue(js.contains("Voice guidance will play as you continue. Please check your volume. You can pause or turn it off at any time."));
-        assertTrue(js.contains("La guía de voz se reproducirá durante el proceso. Compruebe el volumen. Puede pausarla o desactivarla en cualquier momento."));
-        assertTrue(js.contains("upload: '上传出行文件'"));
-        assertTrue(js.contains("uploadHint: '支持行程单、电子客票、订单截图或登机牌'"));
-        assertTrue(js.contains("upload: 'Upload travel document'"));
-        assertTrue(js.contains("uploadHint: 'Supports itineraries, e-tickets, order screenshots, or boarding passes'"));
-        assertTrue(js.contains("upload: 'Subir documento de viaje'"));
-        assertTrue(js.contains("uploadHint: 'Admite itinerarios, billetes electrónicos, capturas del pedido o tarjetas de embarque'"));
-        assertTrue(html.contains("data-i18n=\"upload\">Upload travel document"));
-        assertTrue(html.contains("data-i18n=\"uploadHint\">Supports itineraries, e-tickets, order screenshots, or boarding passes"));
-        assertEquals(3, js.split("welcomeSpeechNotice:", -1).length - 1);
-        assertEquals(3, js.split("liveStatusUnavailable:", -1).length - 1);
+        assertTrue(html.contains("Voice guidance will play automatically. Select “Stop” while it is reading."));
+        assertTrue(js.contains("接下来会自动朗读；朗读时可点“停止”。"));
+        assertTrue(js.contains("Voice guidance will play automatically. Select “Stop” while it is reading."));
+        assertTrue(js.contains("La guía de voz se reproducirá automáticamente. Pulsa «Detener» durante la lectura."));
+        assertTrue(js.contains("upload: '上传旅行文件'"));
+        assertTrue(js.contains("uploadHint: '支持行程单、电子客票、预订截图或登机牌'"));
+        assertTrue(js.contains("upload: 'Upload a travel document'"));
+        assertTrue(js.contains("uploadHint: 'Supports itineraries, e-tickets, booking screenshots, or boarding passes'"));
+        assertTrue(js.contains("upload: 'Subir un documento de viaje'"));
+        assertTrue(js.contains("uploadHint: 'Admite itinerarios, billetes electrónicos, capturas de reserva o tarjetas de embarque'"));
+        assertTrue(html.contains("data-i18n=\"upload\">Upload a travel document"));
+        assertTrue(html.contains("data-i18n=\"uploadHint\">Supports itineraries, e-tickets, booking screenshots, or boarding passes"));
         assertTrue(html.contains("data-live-status-unavailable"));
-        assertTrue(js.contains("暂时没有更新到实时航班状态。请确认下面是不是你的航班。"));
-        assertTrue(js.contains("Live flight status has not updated yet. Please confirm whether the itinerary below is yours."));
+        assertTrue(js.contains("实时状态暂不可用，请核对下方行程。"));
+        assertTrue(js.contains("Live status is unavailable. Check the journey below."));
         assertTrue(css.contains(".welcome-speech-note"));
         assertTrue(js.contains("flight.liveDataSource === 'DOCUMENT_FALLBACK'"));
 		assertTrue(js.contains("continueButton.disabled = Boolean(documentFallback"));
@@ -548,7 +544,21 @@ class StaticFrontendRegressionTest {
 
         assertTrue(errorScreen.contains("data-action=\"retry\""));
         assertTrue(errorScreen.contains("data-action=\"manual\""));
-        assertFalse(errorScreen.contains("data-action=\"staff\""));
+        assertTrue(errorScreen.contains("data-action=\"staff\""));
+        assertEquals(1, errorScreen.split("data-action=\"retry\"", -1).length - 1);
+        assertEquals(1, errorScreen.split("data-action=\"manual\"", -1).length - 1);
+        assertEquals(1, errorScreen.split("data-action=\"staff\"", -1).length - 1);
+        assertTrue(errorScreen.indexOf("data-action=\"retry\"") < errorScreen.indexOf("data-action=\"manual\""));
+        assertTrue(errorScreen.indexOf("data-action=\"manual\"") < errorScreen.indexOf("data-action=\"staff\""));
+        assertTrue(errorScreen.contains("class=\"choice-actions two-choice-grid error-actions\""));
+        assertTrue(errorScreen.contains("staff-help-button action-full-row"));
+        String errorStaffButton = errorScreen.substring(errorScreen.indexOf("data-action=\"staff\""),
+                errorScreen.indexOf("</button>", errorScreen.indexOf("data-action=\"staff\"")));
+        assertTrue(errorStaffButton.contains("<svg"));
+        assertTrue(errorStaffButton.contains("aria-hidden=\"true\""));
+        assertTrue(errorStaffButton.contains("focusable=\"false\""));
+        assertTrue(errorStaffButton.indexOf("<svg") < errorStaffButton.indexOf("<span"));
+        assertFalse(errorScreen.toLowerCase().contains(">svg<"));
         assertTrue(fetchJson.contains("error.apiError = payload"));
         assertTrue(fetchJson.contains("error.status = response.status"));
         assertTrue(fetchJson.contains("error.requestUrl = url"));
@@ -561,14 +571,11 @@ class StaticFrontendRegressionTest {
         assertTrue(errorHandling.contains("normalizedCode.indexOf('INVALID_') === 0 || status === 400"));
         assertTrue(errorHandling.contains("航班号或日期有误"));
         assertTrue(errorHandling.contains("status === 429"));
-        assertTrue(errorHandling.contains("查询过于频繁，或外部数据源已达到限制"));
-        assertTrue(errorHandling.contains("ALL_LIVE_FLIGHT_PROVIDERS_FAILED"));
-        assertTrue(errorHandling.contains("status === 502"));
-        assertTrue(errorHandling.contains("实时航班数据源暂时不可用"));
+        assertTrue(errorHandling.contains("查询次数达到限制"));
+        assertTrue(errorHandling.contains("航班信息暂时不可用"));
         assertTrue(errorHandling.contains("CLIENT_FLIGHT_TIMEOUT"));
 		assertTrue(errorHandling.contains("normalizedCode === 'LIVE_FLIGHT_TIMEOUT'"));
-		assertTrue(errorHandling.contains("实时航班查询服务超时"));
-        assertTrue(errorHandling.contains("实时航班状态暂未更新"));
+        assertTrue(errorHandling.contains("查询超时"));
         assertTrue(errorHandling.contains("localhost|127\\.0\\.0\\.1|\\[::1\\]"));
         assertTrue(errorHandling.contains("AeroDataBox provider result"));
         assertTrue(errorHandling.contains("Secondary flight-data provider result"));
@@ -581,8 +588,8 @@ class StaticFrontendRegressionTest {
         assertFalse(safeProviderDebug.contains("sourceUrl"));
         assertFalse(safeProviderDebug.toLowerCase().contains("apikey"));
         assertFalse(safeProviderDebug.toLowerCase().contains("authorization"));
-        assertFalse(errorHandling.contains("setStaffContent("));
-        assertTrue(html.contains("data-i18n=\"errorTitle\">实时航班状态暂未更新"));
+        assertTrue(errorHandling.contains("setStaffContent("));
+        assertTrue(html.contains("data-i18n=\"errorTitle\">航班信息暂时不可用"));
         assertTrue(html.contains("data-i18n=\"technicalDetails\">调试详情"));
         assertTrue(js.contains("translations.en.technicalDetails = 'Debug details'"));
     }
@@ -653,7 +660,7 @@ class StaticFrontendRegressionTest {
     }
 
     @Test
-    void flightChangeNoticesAreTransientAndLocalizedControlsUseScopedReadableTypography()
+    void flightChangeNoticesPersistAndLocalizedControlsKeepWholeWords()
             throws IOException {
         String css = resource("styles.css");
         String js = resource("app.js");
@@ -668,7 +675,8 @@ class StaticFrontendRegressionTest {
 
         assertFalse(css.contains("button:not(.brand)"));
         assertTrue(css.contains("@media(max-width:220px)"));
-        assertTrue(css.contains("max-width:100%;overflow-wrap:anywhere;hyphens:auto"));
+        assertFalse(css.contains("overflow-wrap:anywhere"));
+        assertFalse(css.contains("hyphens:auto"));
         assertTrue(css.contains("word-break:normal;overflow-wrap:normal;hyphens:none"));
         assertTrue(css.contains("--full-row-control-font-size:clamp(28px,7vw,32px)"));
         assertTrue(css.contains("--manual-control-font:800 clamp(18px,4vw,22px)"));
@@ -689,9 +697,10 @@ class StaticFrontendRegressionTest {
         assertTrue(css.contains("font-size:clamp(18px,2.7vw,22px)"));
         assertTrue(css.contains("-webkit-text-fill-color:transparent;background:transparent;opacity:0"));
 
-        assertTrue(js.contains("var FLIGHT_CHANGE_NOTICE_MS = 12000"));
-        assertTrue(js.contains("flightChangeDismissTimer = window.setTimeout(dismissFlightChangeNotice, FLIGHT_CHANGE_NOTICE_MS)"));
+        assertFalse(js.contains("FLIGHT_CHANGE_NOTICE_MS"));
+        assertFalse(js.contains("setTimeout(dismissFlightChangeNotice"));
         assertTrue(js.contains("function dismissFlightChangeNotice()"));
+        assertTrue(renderNotice.contains("dismissButton.dataset.action = 'dismiss-flight-change'"));
         assertFalse(js.contains("showCurrentFlightChangesWithoutRepeatSuppression"));
         assertFalse(beginFlight.contains("latestChanges"));
         assertTrue(requestNextAction.contains("if (!refreshRequested) dismissFlightChangeNotice()"));
@@ -753,13 +762,13 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("No se encontró información del vuelo"));
         assertTrue(js.contains("Only some information was found"));
         assertTrue(js.contains("Solo se encontró parte de la información"));
-        assertTrue(html.contains("styles.css?v=39"));
-        assertTrue(html.contains("locale.js?v=39"));
-        assertTrue(html.contains("app.js?v=39"));
+        assertTrue(html.contains("styles.css?v=41"));
+        assertTrue(html.contains("locale.js?v=41"));
+        assertTrue(html.contains("app.js?v=41"));
         assertFalse(html.contains("?v=37"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v39'"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v41'"));
         assertFalse(worker.contains("CACHE_PREFIX + 'v37'"));
-        for (String asset : new String[] { "/styles.css?v=39", "/locale.js?v=39", "/app.js?v=39",
+        for (String asset : new String[] { "/styles.css?v=41", "/locale.js?v=41", "/app.js?v=41",
                 "/share.css?v=33", "/share.js?v=33" }) {
             assertTrue(worker.contains("'" + asset + "'"), asset);
         }
@@ -783,7 +792,7 @@ class StaticFrontendRegressionTest {
         assertTrue(shareHtml.contains("aria-label=\"Choose language\""));
         assertTrue(index.contains("Now, take the next step"));
         assertTrue(shareHtml.contains("Loading the shared journey"));
-        assertTrue(index.contains("locale.js?v=39"));
+        assertTrue(index.contains("locale.js?v=41"));
         assertTrue(shareHtml.contains("/share.css?v=33"));
         assertTrue(shareHtml.contains("/locale.js?v=33"));
         assertTrue(shareHtml.contains("/share.js?v=33"));
@@ -923,7 +932,7 @@ class StaticFrontendRegressionTest {
         String css = resource("styles.css");
 
         int staffActionCount = html.split("data-action=\"staff\"", -1).length - 1;
-        assertEquals(5, staffActionCount);
+        assertEquals(6, staffActionCount);
         int documentHelpCount = html.split("data-action=\"manual-document-help\"", -1).length - 1;
         assertEquals(1, documentHelpCount);
         assertEquals(staffActionCount + documentHelpCount, html.split("staff-help-button", -1).length - 1);
@@ -1023,6 +1032,7 @@ class StaticFrontendRegressionTest {
     void journeyKeepsMapAndContactWhileHelpCardKeepsOnlyContactAndClose() throws IOException {
         String html = resource("index.html");
         String js = resource("app.js");
+        String css = resource("styles.css");
         String overlay = html.substring(html.indexOf("data-staff-overlay"), html.indexOf("data-family-overlay"));
 		String journeyResources = html.substring(html.indexOf("class=\"airport-resource-actions\""),
 				html.indexOf("data-time-status", html.indexOf("class=\"airport-resource-actions\"")));
@@ -1035,10 +1045,20 @@ class StaticFrontendRegressionTest {
 		assertTrue(journeyResources.contains("data-action=\"open-airport-map\""));
 		assertTrue(journeyResources.contains("data-action=\"contact-airport-resource\""));
         assertTrue(overlay.contains("staff-card-topbar"));
-        assertTrue(overlay.indexOf("data-staff-contact-button") < overlay.indexOf("data-action=\"close-staff\""));
-		assertTrue(helpTopbar.contains("data-action=\"contact-airport-resource\""));
+		assertTrue(helpTopbar.contains("data-staff-contact-button"));
+		assertTrue(helpTopbar.indexOf("data-staff-contact-button") < helpTopbar.indexOf("data-action=\"close-staff\""));
+		assertEquals(1, overlay.split("data-staff-contact-button", -1).length - 1);
+		assertEquals(1, overlay.split("data-action=\"close-staff\"", -1).length - 1);
+		assertFalse(overlay.contains("staff-card-secondary-actions"));
 		assertFalse(helpTopbar.contains("open-airport-map"));
 		assertFalse(helpTopbar.contains("viewAirportMap"));
+		assertTrue(css.contains(".staff-card-topbar{display:grid;grid-template-columns:minmax(0,1fr) 56px"));
+		assertTrue(css.contains(".staff-card-topbar{position:sticky;top:0"));
+		assertTrue(css.contains("@media(max-width:390px)"));
+		assertTrue(css.contains(".staff-card-topbar{grid-template-columns:minmax(0,1fr) 56px;gap:8px}"));
+		assertTrue(css.contains("html{min-width:0;overflow-x:hidden}"));
+		assertTrue(css.contains(".staff-contact-button{width:100%"));
+		assertTrue(css.contains(".staff-card .staff-overlay-close{display:block;grid-column:2"));
 		assertTrue(overlay.contains("data-airport-map-result target=\"_blank\" rel=\"noopener noreferrer\""));
         assertTrue(overlay.contains("data-airport-contact-result target=\"_blank\" rel=\"noopener noreferrer\""));
         assertTrue(overlay.contains("data-action=\"back-to-staff-card\""));

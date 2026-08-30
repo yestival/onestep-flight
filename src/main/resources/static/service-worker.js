@@ -1,8 +1,8 @@
 'use strict';
 
 const CACHE_PREFIX = 'onestep-flight-shell-';
-const CACHE_NAME = CACHE_PREFIX + 'v39';
-const APP_SHELL = ['/', '/index.html', '/styles.css?v=39', '/locale.js?v=39', '/app.js?v=39',
+const CACHE_NAME = CACHE_PREFIX + 'v41';
+const APP_SHELL = ['/', '/index.html', '/styles.css?v=41', '/locale.js?v=41', '/app.js?v=41',
   '/share.html', '/share.css?v=33', '/share.js?v=33'];
 const APP_SHELL_CACHE_KEY = APP_SHELL.reduce((keys, path) => {
   keys[new URL(path, self.location.origin).pathname] = path;

@@ -9,6 +9,8 @@ public record NextActionResponse(
 		String descriptionZh,
 		String titleEn,
 		String descriptionEn,
+		String titleEs,
+		String descriptionEs,
 		String destination,
 		Urgency urgency,
 		String reason,

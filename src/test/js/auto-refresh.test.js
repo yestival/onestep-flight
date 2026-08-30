@@ -19,22 +19,23 @@ function sourceBetween(start, end) {
 const sandbox = {
   AUTO_REFRESH_FAR_MS: 300000,
   AUTO_REFRESH_NEAR_MS: 120000,
-  AUTO_REFRESH_BOUNDARY_MS: 90 * 60 * 1000
+  AUTO_REFRESH_BOUNDARY_MS: 90 * 60 * 1000,
+  qaJourneyEnabled: false
 };
 vm.createContext(sandbox);
 vm.runInContext([
-  sourceBetween('  var FLIGHT_CHANGE_NOTICE_MS = ', '  var currentScreen = '),
   sourceBetween('  var DEMO_SCENARIO_METADATA = [', '  var statusLabels = {'),
   sourceBetween('  function autoRefreshDelayMs(flight, nowMs)', '  function runtimeAutoRefreshState('),
   sourceBetween('  var PRESENTABLE_FLIGHT_CHANGE_TYPES = [', '  function retainFlightChangeBatch('),
   sourceBetween('  function retainFlightChangeBatch(', '  function flightChangesSignature('),
+  sourceBetween('  function flightChangesSignature(', '  function initialDelayAnnouncement('),
   sourceBetween('  function isUnseenFlightChangeSignature(', '  function updateRefreshChangeState('),
   sourceBetween('  function initialDelayAnnouncement(', '  function refreshFlight('),
   sourceBetween('  function flightChangeSpeechText(', '  function presentNewFlightChangeBatch('),
   sourceBetween('  function localizedAlertText(', '  function displayChangeValue('),
   'this.autoRefreshApi = { autoRefreshDelayMs, autoRefreshEligible, flightChangeAlertCopy, ' +
     'flightChangeSpeechText, retainFlightChangeBatch, presentableFlightChanges, buildFlightChangeGroups, ' +
-    'initialDelayAnnouncement, isUnseenFlightChangeSignature, FLIGHT_CHANGE_NOTICE_MS, ' +
+    'initialDelayAnnouncement, isUnseenFlightChangeSignature, unseenFlightChangeBatch, ' +
     'DEMO_SCENARIO_METADATA };'
 ].join('\n'), sandbox);
 
@@ -66,6 +67,19 @@ test('a boarded journey is not eligible for automatic refresh', () => {
     currentFlight: { live: true }, currentScreen: 'step', online: true, visible: true,
     requestInFlight: false, journeyContext: { boarded: true }
   }), false);
+});
+
+test('QA journeys are never eligible for automatic refresh', () => {
+  sandbox.qaJourneyEnabled = true;
+  try {
+    assert.equal(api.autoRefreshEligible({
+      currentFlight: { live: true, demo: true, demoScenario: 'NORMAL' },
+      currentScreen: 'step', online: true, visible: true, requestInFlight: false,
+      journeyContext: { boarded: false }
+    }), false);
+  } finally {
+    sandbox.qaJourneyEnabled = false;
+  }
 });
 
 test('formats a Chinese gate change as the two-line operational instruction', () => {
@@ -115,10 +129,34 @@ test('every supported backend and legacy change type has two localized lines', (
   }
 });
 
-test('an empty refresh clears the visual flight-change batch and creates no speech', () => {
+test('an empty refresh retains an unconfirmed flight-change batch and creates no new speech', () => {
   const active = [{ type: 'GATE_CHANGED', oldValue: 'B32', newValue: 'C18' }];
-  assert.deepEqual(Array.from(api.retainFlightChangeBatch(active, [])), []);
+  assert.deepEqual(Array.from(api.retainFlightChangeBatch(active, []), change => ({ ...change })), active);
   assert.equal(api.flightChangeSpeechText([], 'zh'), '');
+});
+
+test('a stable refresh preserves the visible batch without repeating old speech or dropping its step alert', () => {
+  const gateChange = { type: 'GATE_CHANGED', oldValue: 'B32', newValue: 'C18' };
+  const stepChange = {
+    previousIdentity: 'ACTION:WAIT',
+    action: { stepType: 'ACTION', actionCode: 'GO_TO_GATE' }
+  };
+  const presented = {};
+  const first = api.unseenFlightChangeBatch([gateChange], stepChange, presented);
+  assert.ok(first);
+  assert.equal(first.changes.length, 1);
+  assert.equal(first.nextStepChange.action.actionCode, 'GO_TO_GATE');
+  first.signatures.forEach(signature => { presented[signature] = true; });
+
+  assert.equal(api.unseenFlightChangeBatch([gateChange], null, presented), null);
+
+  const terminalChange = { type: 'TERMINAL_CHANGED', oldValue: '4', newValue: '5' };
+  const second = api.unseenFlightChangeBatch([gateChange, terminalChange], null, presented);
+  assert.deepEqual(Array.from(second.changes, change => ({ ...change })), [terminalChange]);
+  assert.equal(second.nextStepChange, null);
+  const speechGroups = api.buildFlightChangeGroups(second.changes, null, 'zh', copyContext);
+  assert.equal(api.flightChangeSpeechText(speechGroups, 'zh').includes('登机口已更改'), false);
+  assert.equal(api.flightChangeSpeechText(speechGroups, 'zh').includes('航站楼已更改'), true);
 });
 
 test('newly published fields without a meaningful old value are silent', () => {
@@ -157,8 +195,10 @@ test('an already presented signature is not eligible to appear again', () => {
   assert.equal(api.isUnseenFlightChangeSignature('', {}), false);
 });
 
-test('flight-change notices have a strict twelve-second visual lifetime', () => {
-  assert.equal(api.FLIGHT_CHANGE_NOTICE_MS, 12000);
+test('flight-change notices persist until the traveller dismisses them', () => {
+  assert.equal(app.includes('FLIGHT_CHANGE_NOTICE_MS'), false);
+  assert.equal(app.includes('setTimeout(dismissFlightChangeNotice'), false);
+  assert.match(app, /dataset\.action = 'dismiss-flight-change'/);
 });
 
 test('one batch deduplicates matching changes before creating one speech text', () => {
