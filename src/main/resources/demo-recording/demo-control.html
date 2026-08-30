@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>隔离录屏演示控制台</title>
+  <link rel="stylesheet" href="/demo-control.css">
+</head>
+<body>
+  <main class="console">
+    <header>
+      <div><p class="eyebrow">ONESTEP FLIGHT · LOCAL</p><h1>隔离录屏演示控制台</h1></div>
+      <span class="connection" data-connection>等待旅客页</span>
+    </header>
+
+    <section>
+      <h2>会话</h2>
+      <div class="session-id"><code data-session-id></code><button type="button" data-copy>复制</button></div>
+      <p class="muted">旅客页：<code data-passenger-url></code></p>
+      <div class="actions">
+        <button type="button" data-action="new-session">新建</button>
+        <button type="button" data-action="reset-session">重置</button>
+        <button type="button" class="primary" data-action="open-passenger">打开旅客页</button>
+        <button type="button" data-action="open-family" disabled>打开家人视角</button>
+        <button type="button" class="danger" data-action="clear-session">清除当前会话</button>
+      </div>
+      <dl class="state"><div><dt>旅客页</dt><dd data-passenger-state>未连接</dd></div><div><dt>当前步骤</dt><dd data-current-step>—</dd></div><div><dt>登机口</dt><dd data-current-gate>—</dd></div><div><dt>分享</dt><dd data-share-state>未生成</dd></div></dl>
+    </section>
+
+    <section>
+      <h2>分段重录</h2>
+      <div class="actions six">
+        <button type="button" data-restore="CHECK_IN">恢复到 CHECK_IN</button>
+        <button type="button" data-restore="BAG_DROP">恢复到 BAG_DROP</button>
+        <button type="button" data-restore="SECURITY">恢复到 SECURITY</button>
+        <button type="button" data-restore="GO_TO_GATE">恢复到 GO_TO_GATE</button>
+        <button type="button" data-restore="BOARD_NOW">恢复到 BOARD_NOW</button>
+        <button type="button" data-restore="COMPLETE">恢复到 COMPLETE</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>登机口变化 <span class="route">B32 → C18</span></h2>
+      <div class="actions">
+        <button type="button" data-action="prepare-gate">准备 B32 → C18</button>
+        <button type="button" data-action="schedule-gate">5 秒后触发</button>
+        <button type="button" class="primary" data-action="trigger-gate">立即触发</button>
+        <button type="button" data-action="restore-gate">恢复变化前</button>
+      </div>
+      <p class="muted" data-countdown>计时由旅客页执行。</p>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>真实调用状态</h2><button type="button" data-action="refresh-status">刷新</button></div>
+      <div class="provider-grid">
+        <article><h3>Nutrient</h3><dl><div><dt>成功</dt><dd data-nutrient-success>—</dd></div><div><dt>航段数</dt><dd data-nutrient-segments>—</dd></div><div><dt>调用时间</dt><dd data-nutrient-time>—</dd></div></dl></article>
+        <article><h3>SerpApi</h3><dl><div><dt>outcome</dt><dd data-serp-outcome>—</dd></div><div><dt>live</dt><dd data-serp-live>—</dd></div><div><dt>fromCache</dt><dd data-serp-cache>—</dd></div><div><dt>调用时间</dt><dd data-serp-time>—</dd></div><div><dt>航站楼</dt><dd data-serp-terminal>—</dd></div><div><dt>登机口</dt><dd data-serp-gate>—</dd></div><div><dt>状态</dt><dd data-serp-status>—</dd></div></dl></article>
+      </div>
+    </section>
+
+    <footer data-result role="status" aria-live="polite">控制台已就绪。</footer>
+  </main>
+  <script src="/demo-control.js"></script>
+</body>
+</html>

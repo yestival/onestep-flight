@@ -2,6 +2,13 @@ package com.selene.onestepflight.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -17,6 +24,7 @@ import com.selene.onestepflight.dto.FlightChange;
 import com.selene.onestepflight.dto.FlightResponse;
 import com.selene.onestepflight.dto.FlightTimeContext;
 import com.selene.onestepflight.dto.ResolvedFlightContext;
+import com.selene.onestepflight.dto.ResolveFlightRequest;
 
 class ResolvedFlightServiceOperationalChangeTest {
 	private static final Instant DETECTED_AT = Instant.parse("2026-08-27T00:00:00Z");
@@ -47,6 +55,28 @@ class ResolvedFlightServiceOperationalChangeTest {
 		assertFalse(types(changes).stream().anyMatch(LOCATION_TYPES::contains));
 	}
 
+	@Test
+	void realProviderChangesRemainNonSimulatedInsideARecordingSession() {
+		String session = "b9500530-069d-4f82-8ed9-0dbfe6b65e9f";
+		MultiSourceFlightService liveFlights = mock(MultiSourceFlightService.class);
+		when(liveFlights.findFlight(anyString(), any(LocalDate.class), nullable(String.class),
+				nullable(String.class), nullable(String.class), anyBoolean()))
+				.thenReturn(realSnapshot("B32"), realSnapshot("C18"));
+		ResolvedFlightService recordingService = new ResolvedFlightService(
+				new FlightService(null, null), liveFlights, new DemoScenarioFlightDataProvider(),
+				new FlightTimeService(), true);
+
+		ResolvedFlightContext before = recordingService.resolve(new ResolveFlightRequest(
+				"BA117", DATE, false, null, session, null, null, false));
+		ResolvedFlightContext after = recordingService.refresh(before, true);
+
+		assertEquals(session, after.demoSessionId());
+		assertTrue(after.live());
+		assertFalse(after.demo());
+		assertEquals(Set.of("GATE_CHANGED"), types(after.latestChanges()));
+		assertFalse(after.simulatedDemoChange());
+	}
+
 	private List<FlightChange> detect(MultiSourceFlightSnapshot snapshot) {
 		ResolvedFlightContext previous = previous();
 		return service.findLiveChanges(previous, snapshot, snapshot.flight().boardingTime(),
@@ -69,6 +99,16 @@ class ResolvedFlightServiceOperationalChangeTest {
 				missingLocations ? null : "Belt 6", Map.of(), Map.of(), List.of(), DETECTED_AT, DETECTED_AT);
 	}
 
+	private MultiSourceFlightSnapshot realSnapshot(String gate) {
+		FlightResponse flight = new FlightResponse("BA117", DATE, "LHR", "London Heathrow",
+				"CDG", "Paris Charles de Gaulle", DEPARTURE, null, null,
+				ARRIVAL, null, null, DEPARTURE.minusMinutes(45),
+				"T1", "T8", gate, "A counters 1-2", "ON_TIME", 0, 0,
+				DETECTED_AT, DETECTED_AT, "SERPAPI", null, null, true, false, false);
+		return new MultiSourceFlightSnapshot(flight, "A counter 5", "Belt 5",
+				Map.of(), Map.of(), List.of(), DETECTED_AT, DETECTED_AT);
+	}
+
 	private ResolvedFlightContext previous() {
 		FlightTimeContext timeContext = new FlightTimeContext(DETECTED_AT, DEPARTURE, "+08:00",
 				DEPARTURE.minusMinutes(50), DEPARTURE, null, null, DEPARTURE,
@@ -79,6 +119,6 @@ class ResolvedFlightServiceOperationalChangeTest {
 				null, null, "T1", "T8", "B32", null, "A counters 1-2", null,
 				"A counter 5", "Belt 5", "EXPECTED", 5, 0, DETECTED_AT, DETECTED_AT,
 				DETECTED_AT, DETECTED_AT, null, "TEST", null, null, true, false, null,
-				false, false, Map.of(), Map.of(), Map.of(), List.of(), false, List.of(), timeContext);
+				null, false, false, false, Map.of(), Map.of(), Map.of(), List.of(), false, List.of(), timeContext);
 	}
 }

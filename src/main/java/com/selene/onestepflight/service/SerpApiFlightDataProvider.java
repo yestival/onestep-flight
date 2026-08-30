@@ -48,17 +48,29 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 	private final Map<String, CachedFlight> cache = new ConcurrentHashMap<>();
 	private final ObjectMapper objectMapper;
 	private final RestClient restClient;
+	private final RealIntegrationCallStatus callStatus;
+
+	public SerpApiFlightDataProvider(ObjectMapper objectMapper) {
+		this(objectMapper, buildRestClient(), () -> System.getenv("SERPAPI_API_KEY"),
+				new RealIntegrationCallStatus());
+	}
 
 	@Autowired
-	public SerpApiFlightDataProvider(ObjectMapper objectMapper) {
-		this(objectMapper, buildRestClient(), () -> System.getenv("SERPAPI_API_KEY"));
+	public SerpApiFlightDataProvider(ObjectMapper objectMapper, RealIntegrationCallStatus callStatus) {
+		this(objectMapper, buildRestClient(), () -> System.getenv("SERPAPI_API_KEY"), callStatus);
 	}
 
 	SerpApiFlightDataProvider(ObjectMapper objectMapper, RestClient restClient,
 			Supplier<String> apiKeySupplier) {
+		this(objectMapper, restClient, apiKeySupplier, new RealIntegrationCallStatus());
+	}
+
+	SerpApiFlightDataProvider(ObjectMapper objectMapper, RestClient restClient,
+			Supplier<String> apiKeySupplier, RealIntegrationCallStatus callStatus) {
 		this.objectMapper = objectMapper;
 		this.restClient = restClient;
 		this.apiKeySupplier = apiKeySupplier;
+		this.callStatus = callStatus;
 	}
 
 	private static RestClient buildRestClient() {
@@ -342,12 +354,13 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 			String departureAirportHint, String arrivalAirportHint,
 			String scheduledDepartureHint, boolean refresh) {
 		Instant attemptedAt = Instant.now();
+		ProviderFlightResult result;
 		try {
 			ResolvedSerpFlight resolved = resolveFlight(flightNumber, departureDate,
 					departureAirportHint, arrivalAirportHint, scheduledDepartureHint, refresh);
 			FlightResponse flight = resolved.flight();
 			boolean scheduleOnly = "SCHEDULE".equals(resolved.quality());
-			return new ProviderFlightResult(providerName(), "SUCCESS", null, flight.flightNumber(),
+			result = new ProviderFlightResult(providerName(), "SUCCESS", null, flight.flightNumber(),
 					flight.departureDate(), flight.departureAirport(), flight.departureAirportName(),
 					flight.arrivalAirport(), flight.arrivalAirportName(), flight.scheduledDeparture(),
 					flight.estimatedDeparture(), flight.actualDeparture(), flight.scheduledArrival(),
@@ -359,15 +372,17 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 					flight.lastUpdated(), flight.dataRetrievedAt(), flight.sourceUrl(), flight.codeshare(),
 					!scheduleOnly, resolved.fromCache());
 		} catch (ExternalServiceNotConfiguredException exception) {
-			return ProviderFlightResult.failure(providerName(), "NOT_CONFIGURED", "SERPAPI_NOT_CONFIGURED", attemptedAt);
+			result = ProviderFlightResult.failure(providerName(), "NOT_CONFIGURED", "SERPAPI_NOT_CONFIGURED", attemptedAt);
 		} catch (IdentityFailureException exception) {
-			return ProviderFlightResult.identityFailure(providerName(), exception.outcome(), exception.code(),
+			result = ProviderFlightResult.identityFailure(providerName(), exception.outcome(), exception.code(),
 					exception.actualFlightNumber(), exception.actualDepartureDate(), attemptedAt);
 		} catch (ExternalServiceUnavailableException exception) {
-			return ProviderFlightResult.failure(providerName(), outcomeFor(exception.code()), exception.code(), attemptedAt);
+			result = ProviderFlightResult.failure(providerName(), outcomeFor(exception.code()), exception.code(), attemptedAt);
 		} catch (RuntimeException exception) {
-			return ProviderFlightResult.failure(providerName(), "PARSE_ERROR", "SERPAPI_PARSE_ERROR", attemptedAt);
+			result = ProviderFlightResult.failure(providerName(), "PARSE_ERROR", "SERPAPI_PARSE_ERROR", attemptedAt);
 		}
+		callStatus.recordSerpApi(result, Instant.now());
+		return result;
 	}
 
 	private ResolvedSerpFlight parseFlightResult(JsonNode matchedDate, String requestedFlightNumber,

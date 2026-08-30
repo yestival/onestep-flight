@@ -10,6 +10,7 @@ public record ResolveFlightRequest(
 		@NotNull LocalDate departureDate,
 		boolean demo,
 		String demoScenario,
+		String demoSessionId,
 		BoardingPassExtractionResponse document,
 		Integer documentSegmentIndex,
 		boolean refresh) {
@@ -20,6 +21,12 @@ public record ResolveFlightRequest(
 	 */
 	public ResolveFlightRequest(String flightNumber, LocalDate departureDate, boolean demo,
 			String demoScenario, BoardingPassExtractionResponse document, boolean refresh) {
-		this(flightNumber, departureDate, demo, demoScenario, document, null, refresh);
+		this(flightNumber, departureDate, demo, demoScenario, null, document, null, refresh);
+	}
+
+	public ResolveFlightRequest(String flightNumber, LocalDate departureDate, boolean demo,
+			String demoScenario, BoardingPassExtractionResponse document,
+			Integer documentSegmentIndex, boolean refresh) {
+		this(flightNumber, departureDate, demo, demoScenario, null, document, documentSegmentIndex, refresh);
 	}
 }

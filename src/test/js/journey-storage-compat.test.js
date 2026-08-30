@@ -42,6 +42,15 @@ function storageSandbox(overrides) {
     OFFLINE_STORAGE_KEY: 'onestep-flight-offline-journey-v1',
     QA_STORAGE_KEY: 'onestep-flight-qa-journey-v1',
     QA_OFFLINE_STORAGE_KEY: 'onestep-flight-qa-offline-journey-v1',
+    SHARE_SESSION_KEY: 'onestep-flight-share-session-v1',
+    SHARE_PENDING_KEY: 'onestep-flight-share-pending-v1',
+    QA_SHARE_SESSION_KEY: 'onestep-flight-qa-share-session-v1',
+    QA_SHARE_PENDING_KEY: 'onestep-flight-qa-share-pending-v1',
+    DEMO_JOURNEY_PREFIX: 'onestep-flight-demo-journey-v1:',
+    DEMO_OFFLINE_PREFIX: 'onestep-flight-demo-offline-journey-v1:',
+    DEMO_SHARE_PREFIX: 'onestep-flight-demo-share-session-v1:',
+    DEMO_SHARE_PENDING_PREFIX: 'onestep-flight-demo-share-pending-v1:',
+    demoRecordingSessionId: null,
     OFFLINE_MAX_AGE_MS: 48 * 60 * 60 * 1000,
     qaJourneyEnabled: false,
     demoFlightEnabled: false,
@@ -66,6 +75,38 @@ test('ordinary and QA journeys select completely separate storage keys', () => {
   sandbox.qaJourneyEnabled = true;
   assert.equal(sandbox.activeJourneyStorageKey(), 'onestep-flight-qa-journey-v1');
   assert.equal(sandbox.activeOfflineJourneyStorageKey(), 'onestep-flight-qa-offline-journey-v1');
+});
+
+test('ordinary, QA, and two recording sessions select completely separate journey and share keys', () => {
+  const sandbox = storageSandbox();
+  const first = 'b9500530-069d-4f82-8ed9-0dbfe6b65e9f';
+  const second = '1c1fb0d2-fded-4e40-bcec-bc42dbe406bf';
+  const ordinary = [sandbox.activeJourneyStorageKey(), sandbox.activeOfflineJourneyStorageKey(),
+    sandbox.activeShareSessionStorageKey(), sandbox.activeSharePendingStorageKey()];
+
+  sandbox.qaJourneyEnabled = true;
+  const qa = [sandbox.activeJourneyStorageKey(), sandbox.activeOfflineJourneyStorageKey(),
+    sandbox.activeShareSessionStorageKey(), sandbox.activeSharePendingStorageKey()];
+  sandbox.demoRecordingSessionId = first;
+  const demoOne = [sandbox.activeJourneyStorageKey(), sandbox.activeOfflineJourneyStorageKey(),
+    sandbox.activeShareSessionStorageKey(), sandbox.activeSharePendingStorageKey()];
+  sandbox.demoRecordingSessionId = second;
+  const demoTwo = [sandbox.activeJourneyStorageKey(), sandbox.activeOfflineJourneyStorageKey(),
+    sandbox.activeShareSessionStorageKey(), sandbox.activeSharePendingStorageKey()];
+
+  const all = [...ordinary, ...qa, ...demoOne, ...demoTwo];
+  assert.equal(new Set(all).size, all.length);
+  assert.deepEqual(demoOne, [
+    `onestep-flight-demo-journey-v1:${first}`,
+    `onestep-flight-demo-offline-journey-v1:${first}`,
+    `onestep-flight-demo-share-session-v1:${first}`,
+    `onestep-flight-demo-share-pending-v1:${first}`
+  ]);
+  assert.equal(sandbox.savedJourneyModeMatches({ demoSessionId: first }), false);
+  sandbox.demoRecordingSessionId = first;
+  assert.equal(sandbox.savedJourneyModeMatches({ demoSessionId: first }), true);
+  assert.equal(sandbox.savedJourneyModeMatches({ demoSessionId: second }), false);
+  assert.equal(sandbox.savedJourneyModeMatches({ qaJourney: true }), false);
 });
 
 test('journey mode markers are enforced and only the unmarked BA117 NORMAL pollution is legacy-cleaned', () => {

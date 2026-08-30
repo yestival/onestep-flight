@@ -17,6 +17,7 @@ import com.selene.onestepflight.service.FlightConflictConfirmationRequiredExcept
 import com.selene.onestepflight.service.ExternalServiceNotConfiguredException;
 import com.selene.onestepflight.service.ExternalServiceUnavailableException;
 import com.selene.onestepflight.service.InvalidDocumentException;
+import com.selene.onestepflight.service.InvalidDemoSessionIdException;
 import com.selene.onestepflight.service.InvalidFlightNumberException;
 
 @RestControllerAdvice
@@ -74,6 +75,15 @@ public class RestExceptionHandler {
 				"INVALID_FLIGHT_NUMBER",
 				"航班号格式不正确，请检查后重试。",
 				"The flight number format is not valid. Check it and try again.",
+				Instant.now()));
+	}
+
+	@ExceptionHandler(InvalidDemoSessionIdException.class)
+	public ResponseEntity<ApiError> handleInvalidDemoSessionId() {
+		return ResponseEntity.badRequest().body(new ApiError(
+				"INVALID_DEMO_SESSION_ID",
+				"演示会话标识无效。请重新打开录屏控制台。",
+				"The demo session ID is invalid. Reopen the recording console.",
 				Instant.now()));
 	}
 

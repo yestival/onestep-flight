@@ -16,6 +16,7 @@ import com.selene.onestepflight.dto.FlightResponse;
 
 @Component
 public class DemoScenarioFlightDataProvider {
+	private static final String SOURCE_PREFIX = "ONESTEP_SIMULATED_SCENARIO_";
 
 	static final Set<String> SCENARIOS = Set.of(
 			"NORMAL", "TERMINAL_CHANGE", "GATE_CHANGE", "CHECK_IN_COUNTER_CHANGE",
@@ -26,15 +27,25 @@ public class DemoScenarioFlightDataProvider {
 	private final Map<String, ScenarioState> scenarioStates = new ConcurrentHashMap<>();
 
 	public MultiSourceFlightSnapshot findInitialSnapshot(String flightNumber, String requestedScenario) {
+		return findInitialSnapshot(null, flightNumber, requestedScenario);
+	}
+
+	public MultiSourceFlightSnapshot findInitialSnapshot(String demoSessionId, String flightNumber,
+			String requestedScenario) {
 		String scenario = requireScenario(flightNumber, requestedScenario);
 		ScenarioState state = new ScenarioState(Instant.now().truncatedTo(ChronoUnit.SECONDS), 0);
-		scenarioStates.put(key(flightNumber, scenario), state);
+		scenarioStates.put(key(demoSessionId, flightNumber, scenario), state);
 		return build(flightNumber, scenario, state);
 	}
 
 	public MultiSourceFlightSnapshot findSnapshot(String flightNumber, String requestedScenario, boolean refresh) {
+		return findSnapshot(null, flightNumber, requestedScenario, refresh);
+	}
+
+	public MultiSourceFlightSnapshot findSnapshot(String demoSessionId, String flightNumber,
+			String requestedScenario, boolean refresh) {
 		String scenario = requireScenario(flightNumber, requestedScenario);
-		String key = key(flightNumber, scenario);
+		String key = key(demoSessionId, flightNumber, scenario);
 		ScenarioState state = scenarioStates.compute(key, (ignored, current) -> {
 			ScenarioState existing = current == null
 					? new ScenarioState(Instant.now().truncatedTo(ChronoUnit.SECONDS), 0) : current;
@@ -42,6 +53,27 @@ public class DemoScenarioFlightDataProvider {
 					? new ScenarioState(existing.anchor(), 1) : existing;
 		});
 		return build(flightNumber, scenario, state);
+	}
+
+	public void clearSession(String demoSessionId) {
+		String prefix = sessionKey(demoSessionId) + ":";
+		scenarioStates.keySet().removeIf(key -> key.startsWith(prefix));
+	}
+
+	boolean hasSessionState(String demoSessionId) {
+		String normalized = DemoRecordingSessionId.normalize(demoSessionId);
+		if (normalized == null) return false;
+		String prefix = normalized + ":";
+		return scenarioStates.keySet().stream().anyMatch(key -> key.startsWith(prefix));
+	}
+
+	int scenarioStateCount() {
+		return scenarioStates.size();
+	}
+
+	static boolean isControlledScenario(FlightResponse flight) {
+		return flight != null && flight.demo() && !flight.live()
+				&& flight.dataSource() != null && flight.dataSource().startsWith(SOURCE_PREFIX);
 	}
 
 	private MultiSourceFlightSnapshot build(String flightNumber, String scenario, ScenarioState state) {
@@ -116,7 +148,7 @@ public class DemoScenarioFlightDataProvider {
 				scheduledArrival, estimatedArrival, actualArrival,
 				boardingTime, terminal, arrivalTerminal, gate, checkInCounter, status,
 				departureDelay, arrivalDelay, sourceUpdatedAt, retrievedAt,
-				"ONESTEP_SIMULATED_SCENARIO_" + scenario, null, null,
+				SOURCE_PREFIX + scenario, null, null,
 				false, false, true);
 		return new MultiSourceFlightSnapshot(flight, bagDropDesk, baggageBelt,
 				Map.of(), Map.of(), List.of(), retrievedAt, sourceUpdatedAt);
@@ -128,8 +160,15 @@ public class DemoScenarioFlightDataProvider {
 		return scenario;
 	}
 
-	private String key(String flightNumber, String scenario) {
-		return flightNumber + ":" + scenario;
+	private String key(String demoSessionId, String flightNumber, String scenario) {
+		return sessionKey(demoSessionId) + ":" + flightNumber + ":" + scenario;
+	}
+
+	private String sessionKey(String demoSessionId) {
+		if (demoSessionId == null || demoSessionId.isBlank()) return "LEGACY";
+		String normalized = DemoRecordingSessionId.normalize(demoSessionId);
+		if (normalized == null) throw new InvalidDemoSessionIdException();
+		return normalized;
 	}
 
 	private String normalize(String value) {

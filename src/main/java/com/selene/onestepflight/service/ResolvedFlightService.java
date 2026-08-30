@@ -19,6 +19,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.selene.onestepflight.dto.BoardingPassExtractionResponse;
@@ -49,17 +51,28 @@ public class ResolvedFlightService {
 	private final MultiSourceFlightService multiSourceFlightService;
 	private final DemoScenarioFlightDataProvider demoScenarioProvider;
 	private final FlightTimeService flightTimeService;
+	private final boolean demoRecordingEnabled;
 
+	@Autowired
 	public ResolvedFlightService(FlightService flightService, MultiSourceFlightService multiSourceFlightService,
 			DemoScenarioFlightDataProvider demoScenarioProvider,
-			FlightTimeService flightTimeService) {
+			FlightTimeService flightTimeService,
+			@Value("${onestep.demo-recording.enabled:false}") boolean demoRecordingEnabled) {
 		this.flightService = flightService;
 		this.multiSourceFlightService = multiSourceFlightService;
 		this.demoScenarioProvider = demoScenarioProvider;
 		this.flightTimeService = flightTimeService;
+		this.demoRecordingEnabled = demoRecordingEnabled;
+	}
+
+	public ResolvedFlightService(FlightService flightService, MultiSourceFlightService multiSourceFlightService,
+			DemoScenarioFlightDataProvider demoScenarioProvider,
+			FlightTimeService flightTimeService) {
+		this(flightService, multiSourceFlightService, demoScenarioProvider, flightTimeService, false);
 	}
 
 	public ResolvedFlightContext resolve(ResolveFlightRequest request) {
+		String demoSessionId = activeDemoSessionId(request.demoSessionId());
 		String normalizedFlightNumber = flightService.normalize(request.flightNumber());
 		BoardingPassExtractionResponse selectedDocument = selectDocumentSegment(
 				request.document(), normalizedFlightNumber, request.departureDate(),
@@ -67,12 +80,14 @@ public class ResolvedFlightService {
 		rejectUnresolvedCriticalDocumentReview(request.document(), selectedDocument,
 				normalizedFlightNumber, request.departureDate());
 		MultiSourceFlightSnapshot snapshot = request.demo() && !isBlank(request.demoScenario()) && !request.refresh()
-				? demoScenarioProvider.findInitialSnapshot(normalizedFlightNumber, request.demoScenario())
+				? demoScenarioProvider.findInitialSnapshot(demoSessionId, normalizedFlightNumber,
+						request.demoScenario())
 				: loadFlight(normalizedFlightNumber, request.departureDate(), request.demo(), request.demoScenario(),
+						demoSessionId,
 						documentRouteHint(selectedDocument, "departure_airport"),
 						documentRouteHint(selectedDocument, "arrival_airport"),
 						selectedDocument == null ? null : selectedDocument.scheduledDeparture(), request.refresh());
-		return merge(snapshot, selectedDocument, null, request.demoScenario());
+		return merge(snapshot, selectedDocument, null, request.demoScenario(), demoSessionId);
 	}
 
 	private void rejectUnresolvedCriticalDocumentReview(
@@ -332,21 +347,22 @@ public class ResolvedFlightService {
 	}
 
 	public ResolvedFlightContext refresh(ResolvedFlightContext previous, boolean refreshRequested) {
+		String demoSessionId = activeDemoSessionId(previous.demoSessionId());
 		if (!refreshRequested && "DOCUMENT_FALLBACK".equals(previous.liveDataSource())) {
-			return sanitizeDocumentFallback(previous);
+			return sanitizeDocumentFallback(previous, demoSessionId);
 		}
 		MultiSourceFlightSnapshot snapshot = loadFlight(previous.flightNumber(), previous.departureDate(), previous.demo(),
-				previous.demoScenario(), previous.departureAirport(), previous.arrivalAirport(),
+				previous.demoScenario(), demoSessionId, previous.departureAirport(), previous.arrivalAirport(),
 				previous.documentScheduledDeparture() == null
 						? null : previous.documentScheduledDeparture().toString(), refreshRequested);
-		return merge(snapshot, null, previous, previous.demoScenario());
+		return merge(snapshot, null, previous, previous.demoScenario(), demoSessionId);
 	}
 
 	private MultiSourceFlightSnapshot loadFlight(String flightNumber, LocalDate departureDate, boolean demo,
-			String demoScenario, String departureHint, String arrivalHint,
+			String demoScenario, String demoSessionId, String departureHint, String arrivalHint,
 			String scheduledDepartureHint, boolean refresh) {
 		if (demo && !isBlank(demoScenario)) {
-			return demoScenarioProvider.findSnapshot(flightNumber, demoScenario, refresh);
+			return demoScenarioProvider.findSnapshot(demoSessionId, flightNumber, demoScenario, refresh);
 		}
 		if (demo) return demoSnapshot(flightService.getFlight(flightNumber, departureDate, true, refresh));
 		return multiSourceFlightService.findFlight(flightNumber, departureDate, departureHint, arrivalHint,
@@ -358,14 +374,14 @@ public class ResolvedFlightService {
 				flight.dataRetrievedAt(), flight.lastUpdated());
 	}
 
-	private ResolvedFlightContext sanitizeDocumentFallback(ResolvedFlightContext previous) {
+	private ResolvedFlightContext sanitizeDocumentFallback(ResolvedFlightContext previous, String demoSessionId) {
 		Instant retrievedAt = Instant.now();
 		FlightResponse flight = documentFallbackFlight(flightService.normalize(previous.flightNumber()),
 				previous.departureDate(), normalizeAirport(previous.departureAirport()),
 				normalizeAirport(previous.arrivalAirport()));
 		MultiSourceFlightSnapshot snapshot = new MultiSourceFlightSnapshot(flight, null, null,
 				Map.of(), Map.of(), List.of(), retrievedAt, null);
-		return merge(snapshot, null, previous, previous.demoScenario());
+		return merge(snapshot, null, previous, previous.demoScenario(), demoSessionId);
 	}
 
 	private FlightResponse documentFallbackFlight(String flightNumber, LocalDate departureDate,
@@ -412,7 +428,8 @@ public class ResolvedFlightService {
 	}
 
 	private ResolvedFlightContext merge(MultiSourceFlightSnapshot snapshot, BoardingPassExtractionResponse document,
-			ResolvedFlightContext previous, String demoScenario) {
+			ResolvedFlightContext previous, String demoScenario, String demoSessionId) {
+		demoSessionId = activeDemoSessionId(demoSessionId);
 		FlightResponse liveFlight = snapshot.flight();
 		boolean documentFallback = "DOCUMENT_FALLBACK".equals(liveFlight.dataSource());
 		if (document != null && !documentMatchesFlight(document, liveFlight)) document = null;
@@ -513,6 +530,10 @@ public class ResolvedFlightService {
 				liveFlight.live(),
 				liveFlight.demo(),
 				demoScenario,
+				demoSessionId,
+				demoRecordingEnabled && demoSessionId != null
+						&& DemoScenarioFlightDataProvider.isControlledScenario(liveFlight)
+						&& previous != null && !changes.isEmpty(),
 				liveFlight.checkInCounterNeedsConfirmation(),
 				timeContext.stale(),
 				snapshot.providerResults(),
@@ -751,6 +772,13 @@ public class ResolvedFlightService {
 
 	private boolean isBlank(String value) {
 		return value == null || value.isBlank();
+	}
+
+	private String activeDemoSessionId(String value) {
+		if (!demoRecordingEnabled || isBlank(value)) return null;
+		String normalized = DemoRecordingSessionId.normalize(value);
+		if (normalized == null) throw new InvalidDemoSessionIdException();
+		return normalized;
 	}
 
 	@SafeVarargs

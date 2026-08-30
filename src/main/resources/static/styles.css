@@ -73,7 +73,7 @@ body{font-size:20px;overflow-x:hidden}
 .assistance-facts{display:grid;grid-template-columns:minmax(110px,.35fr) 1fr;gap:8px 16px;border-top:2px solid var(--blue-pale);padding:22px 0;margin:24px 0}.assistance-facts dt{color:var(--blue-mid);font-size:16px;font-weight:800}.assistance-facts dd{margin:0;color:var(--navy);font:800 18px var(--data);word-break:normal;overflow-wrap:normal;hyphens:none}
 .family-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:20px}.family-actions .button{width:100%;min-height:76px}.share-expiry{min-height:24px;margin:8px 0 0;color:var(--blue-mid);font-size:15px;font-weight:750}
 @media(max-width:650px){.journey-bottom-actions{display:flex;flex-direction:column-reverse}.journey-bottom-actions .button{min-height:72px}.action-summary p{text-align:left}.assistance-facts{grid-template-columns:1fr;gap:2px}.assistance-facts dd{margin-bottom:12px}.staff-card,.confirm-card{max-height:calc(100vh - 20px)}}
-@media(max-width:390px){.screen{width:calc(100% - 24px)}.site-header{width:calc(100% - 24px)}.flight-details{grid-template-columns:1fr 1fr}.route-summary{overflow:hidden}.airport-code{font-size:30px}.staff-overlay,.confirm-overlay{padding:8px}}
+@media(max-width:390px){.screen{width:calc(100% - 24px)}.site-header{width:calc(100% - 24px)}.flight-details{grid-template-columns:1fr 1fr}.airport-code{font-size:30px}.staff-overlay,.confirm-overlay{padding:8px}}
 
 /* Calm operational hierarchy: destination first, action second, time third. */
 :root{--navy:var(--color-text);--blue-dark:var(--color-text-secondary);--blue-mid:var(--color-text-muted);--blue-pale:var(--color-surface-emphasis);--bg:var(--color-bg);--accent:var(--color-primary);--border:var(--color-border);--white:var(--color-surface)}
@@ -330,8 +330,18 @@ body{background:var(--color-bg);color:var(--navy)}
 .screen-confirm .flight-card{padding:24px 28px}
 .screen-confirm .confirm-flight-number-row{justify-content:flex-start;border-bottom:0;padding-bottom:0}
 .screen-confirm .flight-number{font-size:clamp(38px,6vw,48px);line-height:1;letter-spacing:.075em}
-.screen-confirm .route-summary{align-items:start;padding:24px 0 22px}
-.screen-confirm .route-summary>div{min-width:0}
+.screen-confirm .route-summary{grid-template-columns:minmax(0,1fr) 32px minmax(0,1fr);grid-template-rows:auto auto auto auto;align-items:start;column-gap:18px;row-gap:6px;padding:24px 0 22px}
+.screen-confirm .route-summary>div{display:contents}
+.screen-confirm .route-summary [data-departure-name]{grid-column:1;grid-row:1}
+.screen-confirm .route-summary [data-departure-airport]{grid-column:1;grid-row:2}
+.screen-confirm .route-summary [data-route-departure-label]{grid-column:1;grid-row:3}
+.screen-confirm .route-summary [data-route-departure-time]{grid-column:1;grid-row:4}
+.screen-confirm .route-summary [data-arrival-name]{grid-column:3;grid-row:1;justify-self:stretch;text-align:right}
+.screen-confirm .route-summary [data-arrival-airport]{grid-column:3;grid-row:2;justify-self:stretch;text-align:right}
+.screen-confirm .route-summary [data-route-arrival-label]{grid-column:3;grid-row:3;justify-self:stretch;text-align:right}
+.screen-confirm .route-summary [data-route-arrival-time]{grid-column:3;grid-row:4;justify-self:stretch;text-align:right}
+.screen-confirm .route-summary .route-arrow{grid-column:2;grid-row:2;align-self:center;justify-self:center;margin:0}
+.screen-confirm .airport-time-label{min-height:0;margin-top:0}
 .screen-confirm .airport-city,.screen-confirm .airport-time-label,.screen-confirm .airport-local-time{word-break:normal;overflow-wrap:normal;hyphens:none}
 .screen-confirm .flight-details-core{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;padding-top:18px}
 .screen-confirm .flight-details-core>div,.screen-confirm .flight-details-expanded>div{min-width:0}
@@ -400,7 +410,7 @@ body{background:var(--color-bg);color:var(--navy)}
   .screen-confirm .flight-card{padding:16px}
   .screen-confirm .flight-number{font-size:clamp(36px,11vw,42px)}
   .screen-confirm .route-summary{grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:6px;padding:18px 0 16px}
-  .screen-confirm .route-arrow{width:24px;margin-top:30px}
+  .screen-confirm .route-arrow{width:24px}
   .screen-confirm .airport-city{font-size:13px;line-height:1.3}
   .screen-confirm .airport-code{font-size:30px;letter-spacing:.05em}
   .screen-confirm .airport-time-label{min-height:0;margin-top:7px;font-size:12px}
@@ -607,7 +617,7 @@ html[lang="es"]{--multi-control-font-size:25px}
 }
 .flight-change-alert,
 .flight-change-alert.is-critical{
-  position:static;
+  position:relative;
   width:100%;
   max-width:100%;
   margin:10px 0 18px;
@@ -617,8 +627,36 @@ html[lang="es"]{--multi-control-font-size:25px}
   background:var(--flight-change-bg);
   color:var(--flight-change-text);
   padding:clamp(16px,3vw,22px);
+  padding-right:clamp(72px,12vw,82px);
   overflow:hidden;
 }
+.flight-change-dismiss{
+  appearance:none;
+  position:absolute;
+  top:12px;
+  right:12px;
+  display:grid;
+  place-items:center;
+  box-sizing:border-box;
+  width:44px;
+  min-width:44px;
+  max-width:44px;
+  height:44px;
+  min-height:44px;
+  max-height:44px;
+  margin:0;
+  border:2px solid #A9D5F5;
+  border-radius:9px;
+  background:rgba(255,255,255,.06);
+  box-shadow:none;
+  padding:0;
+  color:#BFE2FA;
+  font:800 32px/1 var(--body);
+  cursor:pointer;
+}
+.flight-change-dismiss:hover{background:rgba(255,255,255,.12)}
+.flight-change-dismiss:focus-visible{outline:4px solid #D7EEFF;outline-offset:3px}
+.flight-change-dismiss-mark{display:block;line-height:1;transform:translateY(-1px)}
 .flight-change-group+.flight-change-group{
   margin-top:14px;
   padding-top:14px;
@@ -652,6 +690,8 @@ html[lang="es"]{--multi-control-font-size:25px}
   }
   .flight-change-group p{color:CanvasText}
   .flight-change-group+.flight-change-group{border-color:CanvasText}
+  .flight-change-dismiss{border-color:ButtonText;background:ButtonFace;color:ButtonText;forced-color-adjust:auto}
+  .flight-change-dismiss:focus-visible{outline-color:Highlight}
 }
 
 /* The scenario surface is a compact developer tool, separate from passenger controls. */

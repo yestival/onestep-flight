@@ -1,6 +1,7 @@
 package com.selene.onestepflight.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -22,7 +23,7 @@ class DemoScenarioFlightDataProviderTest {
 
 	private final DemoScenarioFlightDataProvider provider = new DemoScenarioFlightDataProvider();
 	private final ResolvedFlightService resolvedFlights = new ResolvedFlightService(
-			new FlightService(null, null), null, provider, new FlightTimeService());
+			new FlightService(null, null), null, provider, new FlightTimeService(), true);
 
 	@Test
 	void everyScenarioUsesTheProductionComparisonPathAndProducesOnlyItsExpectedChanges() {
@@ -84,9 +85,69 @@ class DemoScenarioFlightDataProviderTest {
 		assertThat(afterAction.titleZh()).isEqualTo("现在准备登机");
 	}
 
+	@Test
+	void recordingSessionsAdvanceAndClearIndependently() {
+		String first = "b9500530-069d-4f82-8ed9-0dbfe6b65e9f";
+		String second = "1c1fb0d2-fded-4e40-bcec-bc42dbe406bf";
+		ResolvedFlightContext firstBefore = initial("GATE_CHANGE", first);
+		ResolvedFlightContext secondBefore = initial("GATE_CHANGE", second);
+
+		ResolvedFlightContext firstAfter = resolvedFlights.refresh(firstBefore, true);
+		ResolvedFlightContext secondStillBefore = resolvedFlights.refresh(secondBefore, false);
+
+		assertThat(firstAfter.gate()).isEqualTo("C18");
+		assertThat(firstAfter.latestChanges()).extracting(change -> change.type())
+				.containsExactly("GATE_CHANGED");
+		assertThat(firstAfter.demo()).isTrue();
+		assertThat(firstAfter.live()).isFalse();
+		assertThat(firstAfter.simulatedDemoChange()).isTrue();
+		assertThat(secondStillBefore.gate()).isEqualTo("B32");
+		assertThat(secondStillBefore.latestChanges()).isEmpty();
+
+		provider.clearSession(first);
+		ResolvedFlightContext firstRestored = initial("GATE_CHANGE", first);
+		ResolvedFlightContext firstRepeated = resolvedFlights.refresh(firstRestored, true);
+		assertThat(firstRepeated.latestChanges()).extracting(change -> change.type())
+				.containsExactly("GATE_CHANGED");
+		assertThat(resolvedFlights.refresh(firstRepeated, true).latestChanges()).isEmpty();
+		assertThat(resolvedFlights.refresh(secondStillBefore, true).gate()).isEqualTo("C18");
+	}
+
+	@Test
+	void disabledServiceClearsSessionIdsFromRequestsAndClientSnapshots() {
+		String session = "b9500530-069d-4f82-8ed9-0dbfe6b65e9f";
+		DemoScenarioFlightDataProvider disabledProvider = new DemoScenarioFlightDataProvider();
+		ResolvedFlightService disabled = new ResolvedFlightService(
+				new FlightService(null, null), null, disabledProvider, new FlightTimeService(), false);
+
+		ResolvedFlightContext resolved = disabled.resolve(new ResolveFlightRequest("BA117",
+				LocalDate.now(ZoneOffset.UTC), true, "GATE_CHANGE", session, null, null, false));
+		assertThat(resolved.demoSessionId()).isNull();
+		assertThat(disabledProvider.hasSessionState(session)).isFalse();
+
+		ResolvedFlightContext clientSnapshot = initial("GATE_CHANGE", session);
+		ResolvedFlightContext refreshed = disabled.refresh(clientSnapshot, true);
+		assertThat(refreshed.demoSessionId()).isNull();
+		assertThat(refreshed.simulatedDemoChange()).isFalse();
+		assertThat(disabledProvider.hasSessionState(session)).isFalse();
+	}
+
+	@Test
+	void invalidRecordingSessionCannotCreateScenarioState() {
+		int statesBefore = provider.scenarioStateCount();
+		assertThatThrownBy(() -> initial("GATE_CHANGE", "b9500530-069d-1f82-8ed9-0dbfe6b65e9f"))
+				.isInstanceOf(InvalidDemoSessionIdException.class);
+		assertThat(provider.scenarioStateCount()).isEqualTo(statesBefore);
+	}
+
 	private ResolvedFlightContext initial(String scenario) {
 		return resolvedFlights.resolve(new ResolveFlightRequest("BA117",
 				LocalDate.now(ZoneOffset.UTC), true, scenario, null, false));
+	}
+
+	private ResolvedFlightContext initial(String scenario, String demoSessionId) {
+		return resolvedFlights.resolve(new ResolveFlightRequest("BA117",
+				LocalDate.now(ZoneOffset.UTC), true, scenario, demoSessionId, null, null, false));
 	}
 
 	private Set<String> types(ResolvedFlightContext flight) {

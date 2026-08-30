@@ -46,12 +46,12 @@ class StaticFrontendRegressionTest {
         assertTrue(overlay.contains("data-action=\"journey-problem-voice\""));
         assertTrue(overlay.contains("data-journey-problem-submit"));
         assertTrue(overlay.contains("data-journey-problem-result"));
-        assertTrue(html.contains("styles.css?v=41"));
-        assertTrue(html.contains("locale.js?v=41"));
-        assertTrue(html.contains("app.js?v=41"));
+        assertTrue(html.contains("styles.css?v=42"));
+        assertTrue(html.contains("locale.js?v=42"));
+        assertTrue(html.contains("app.js?v=43"));
         assertTrue(worker.contains("onestep-flight-shell-"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v41'"));
-        assertTrue(worker.contains("/app.js?v=41"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v43'"));
+        assertTrue(worker.contains("/app.js?v=43"));
         assertTrue(js.contains("POST") || js.contains("method: 'POST'"));
     }
 
@@ -701,6 +701,21 @@ class StaticFrontendRegressionTest {
         assertFalse(js.contains("setTimeout(dismissFlightChangeNotice"));
         assertTrue(js.contains("function dismissFlightChangeNotice()"));
         assertTrue(renderNotice.contains("dismissButton.dataset.action = 'dismiss-flight-change'"));
+        assertTrue(renderNotice.contains("dismissButton.className = 'flight-change-dismiss'"));
+        assertFalse(renderNotice.contains("flight-change-dismiss button"));
+        assertTrue(renderNotice.contains("'关闭航班变化提示'"));
+        assertTrue(renderNotice.contains("'Dismiss flight change notice'"));
+        assertTrue(renderNotice.contains("'Cerrar aviso de cambio de vuelo'"));
+        assertTrue(renderNotice.contains("dismissButton.setAttribute('aria-label', dismissLabel)"));
+        assertTrue(renderNotice.contains("dismissButton.title = dismissLabel"));
+        assertTrue(renderNotice.contains("dismissMark.setAttribute('aria-hidden', 'true')"));
+        assertTrue(renderNotice.contains("dismissMark.textContent = '×'"));
+        assertFalse(renderNotice.contains("localeText('关闭提示', 'Dismiss', 'Cerrar')"));
+        assertTrue(css.contains(".flight-change-dismiss{"));
+        assertTrue(css.contains("width:44px"));
+        assertTrue(css.contains("height:44px"));
+        assertTrue(css.contains(".flight-change-dismiss:focus-visible{outline:4px solid #D7EEFF"));
+        assertTrue(css.contains(".flight-change-dismiss{border-color:ButtonText;background:ButtonFace;color:ButtonText;forced-color-adjust:auto}"));
         assertFalse(js.contains("showCurrentFlightChangesWithoutRepeatSuppression"));
         assertFalse(beginFlight.contains("latestChanges"));
         assertTrue(requestNextAction.contains("if (!refreshRequested) dismissFlightChangeNotice()"));
@@ -708,6 +723,30 @@ class StaticFrontendRegressionTest {
         assertTrue(renderNotice.contains("alert.closest('.screen')"));
         assertTrue(renderNotice.contains("ownerScreen.dataset.screen === currentScreen"));
         assertTrue(renderNotice.contains("delete alert.dataset.renderSignature"));
+    }
+
+    @Test
+    void confirmationRouteUsesFourSharedRowsAtEveryViewportWidth() throws IOException {
+        String html = resource("index.html");
+        String css = resource("styles.css");
+
+        assertTrue(html.contains("<div class=\"route-summary\"><div><span class=\"airport-city\" data-departure-name>"));
+        assertTrue(html.contains("<div class=\"align-right\"><span class=\"airport-city\" data-arrival-name>"));
+        assertTrue(css.contains(".screen-confirm .route-summary{grid-template-columns:minmax(0,1fr) 32px minmax(0,1fr);grid-template-rows:auto auto auto auto"));
+        assertTrue(css.contains(".screen-confirm .route-summary>div{display:contents}"));
+        assertTrue(css.contains("[data-departure-name]{grid-column:1;grid-row:1}"));
+        assertTrue(css.contains("[data-departure-airport]{grid-column:1;grid-row:2}"));
+        assertTrue(css.contains("[data-route-departure-label]{grid-column:1;grid-row:3}"));
+        assertTrue(css.contains("[data-route-departure-time]{grid-column:1;grid-row:4}"));
+        assertTrue(css.contains("[data-arrival-name]{grid-column:3;grid-row:1"));
+        assertTrue(css.contains("[data-arrival-airport]{grid-column:3;grid-row:2"));
+        assertTrue(css.contains("[data-route-arrival-label]{grid-column:3;grid-row:3"));
+        assertTrue(css.contains("[data-route-arrival-time]{grid-column:3;grid-row:4"));
+        assertTrue(css.contains(".screen-confirm .route-summary .route-arrow{grid-column:2;grid-row:2;align-self:center;justify-self:center;margin:0}"));
+        assertTrue(css.contains(".screen-confirm .route-summary{grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:6px"));
+        assertTrue(css.contains(".screen-confirm .route-summary{grid-template-columns:minmax(0,1fr) 14px minmax(0,1fr);gap:4px}"));
+        assertFalse(css.contains(".screen-confirm .route-arrow{width:24px;margin-top:30px}"));
+        assertFalse(css.contains(".route-summary{overflow:hidden}"));
     }
 
     @Test
@@ -762,13 +801,13 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("No se encontró información del vuelo"));
         assertTrue(js.contains("Only some information was found"));
         assertTrue(js.contains("Solo se encontró parte de la información"));
-        assertTrue(html.contains("styles.css?v=41"));
-        assertTrue(html.contains("locale.js?v=41"));
-        assertTrue(html.contains("app.js?v=41"));
+        assertTrue(html.contains("styles.css?v=42"));
+        assertTrue(html.contains("locale.js?v=42"));
+        assertTrue(html.contains("app.js?v=43"));
         assertFalse(html.contains("?v=37"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v41'"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v43'"));
         assertFalse(worker.contains("CACHE_PREFIX + 'v37'"));
-        for (String asset : new String[] { "/styles.css?v=41", "/locale.js?v=41", "/app.js?v=41",
+        for (String asset : new String[] { "/styles.css?v=42", "/locale.js?v=42", "/app.js?v=43",
                 "/share.css?v=33", "/share.js?v=33" }) {
             assertTrue(worker.contains("'" + asset + "'"), asset);
         }
@@ -792,7 +831,7 @@ class StaticFrontendRegressionTest {
         assertTrue(shareHtml.contains("aria-label=\"Choose language\""));
         assertTrue(index.contains("Now, take the next step"));
         assertTrue(shareHtml.contains("Loading the shared journey"));
-        assertTrue(index.contains("locale.js?v=41"));
+        assertTrue(index.contains("locale.js?v=42"));
         assertTrue(shareHtml.contains("/share.css?v=33"));
         assertTrue(shareHtml.contains("/locale.js?v=33"));
         assertTrue(shareHtml.contains("/share.js?v=33"));

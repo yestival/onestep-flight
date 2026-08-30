@@ -196,7 +196,7 @@ class NextActionSpanishLocalizationTest {
 					null, null, terminal, "8", gate, null, "D", "D", dedicatedBagDropDesk, "7",
 					status, delayMinutes, 0, updatedAt, NOW, NOW, updatedAt,
 					null, "TEST", null, null, true, false, null,
-					false, stale, Map.of(), Map.of(), Map.of(), List.of(), false, List.of(), timeContext);
+					null, false, false, stale, Map.of(), Map.of(), Map.of(), List.of(), false, List.of(), timeContext);
 		}
 	}
 }

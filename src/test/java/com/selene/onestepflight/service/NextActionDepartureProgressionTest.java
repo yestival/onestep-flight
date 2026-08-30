@@ -185,7 +185,7 @@ class NextActionDepartureProgressionTest {
 				null, null, "Terminal 5", "Terminal 8", "B42", null, "D", "D", null, null,
 				status, 0, 0, updated, updated, updated, updated,
 				null, "TEST", null, null, true, false, null,
-				false, false, Map.of(), Map.of(), Map.of(), List.of(), false, List.of(), timeContext);
+				null, false, false, false, Map.of(), Map.of(), Map.of(), List.of(), false, List.of(), timeContext);
 	}
 
 	private OffsetDateTime time(String value) {

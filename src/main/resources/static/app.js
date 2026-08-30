@@ -8,6 +8,13 @@
   var LOCALE_KEY = 'onestep-flight-locale';
   var SHARE_SESSION_KEY = 'onestep-flight-share-session-v1';
   var SHARE_PENDING_KEY = 'onestep-flight-share-pending-v1';
+  var QA_SHARE_SESSION_KEY = 'onestep-flight-qa-share-session-v1';
+  var QA_SHARE_PENDING_KEY = 'onestep-flight-qa-share-pending-v1';
+  var DEMO_JOURNEY_PREFIX = 'onestep-flight-demo-journey-v1:';
+  var DEMO_OFFLINE_PREFIX = 'onestep-flight-demo-offline-journey-v1:';
+  var DEMO_SHARE_PREFIX = 'onestep-flight-demo-share-session-v1:';
+  var DEMO_SHARE_PENDING_PREFIX = 'onestep-flight-demo-share-pending-v1:';
+  var DEMO_CONTROL_PREFIX = 'onestep-flight-demo-control-v1:';
   var OFFLINE_MAX_AGE_MS = 48 * 60 * 60 * 1000;
   var currentScreen = 'welcome';
   var navigationHistory = [];
@@ -33,7 +40,7 @@
   var refreshStatusState = null;
   var restoredFromOffline = false;
   var currentDestinationCopy = null;
-  var shareSession = readStoredJson(SHARE_SESSION_KEY);
+  var shareSession = null;
   var shareSyncTimer = null;
   var shareCreationInFlight = false;
   var shareCreationPromise = null;
@@ -99,6 +106,11 @@
     || new URLSearchParams(window.location.search).get('demo') === 'true';
   var activeDemoScenarioId = null;
   var qaJourneyEnabled = new URLSearchParams(window.location.search).get('qaJourney') === 'true';
+  var requestedDemoSessionId = new URLSearchParams(window.location.search).get('demoSession');
+  var demoRecordingSessionId = null;
+  var demoRecordingChannel = null;
+  var demoRecordingCountdownTimer = null;
+  var demoRecordingCountdownSeconds = null;
   var activeDialog = null;
   var screens = document.querySelectorAll('.screen');
   var fileInput = document.getElementById('ticket-file');
@@ -1364,6 +1376,9 @@
     document.querySelector('[data-check-in-area]').textContent = formatCheckInValue(flight.checkInDeskOrZone || flight.checkInCounter) || t('notPublished');
     document.querySelector('[data-seat]').textContent = flight.seat || (pendingDocument && pendingDocument.seat) || '—';
     var simulated = Boolean(flight.demoScenario);
+    document.querySelectorAll('[data-demo-marker]').forEach(function (marker) {
+      marker.hidden = flight.demo !== true;
+    });
     var unavailableNotice = document.querySelector('[data-live-status-unavailable]');
     if (unavailableNotice) unavailableNotice.hidden = !documentFallback;
     var confirmRefresh = document.querySelector('.screen-confirm [data-action="refresh-flight"]');
@@ -1440,6 +1455,7 @@
       departureDate: departureDate,
       demo: Boolean(demo),
       demoScenario: demoScenario || null,
+      demoSessionId: typeof demoRecordingSessionId !== 'undefined' ? demoRecordingSessionId || null : null,
       document: documentResult || null,
       refresh: Boolean(refresh)
     };
@@ -2685,6 +2701,176 @@
     startFlightLookup('BA117', new Date().toISOString().slice(0, 10), true, null, scenario.id);
   }
 
+  function clearDemoRecordingCountdown() {
+    if (demoRecordingCountdownTimer) window.clearInterval(demoRecordingCountdownTimer);
+    demoRecordingCountdownTimer = null;
+    demoRecordingCountdownSeconds = null;
+  }
+
+  function clearDemoRecordingBackendState() {
+    if (!demoRecordingSessionId) return Promise.resolve();
+    return fetch('/api/demo-recording/sessions/' + encodeURIComponent(demoRecordingSessionId)
+      + '/scenario-state', { method: 'DELETE', cache: 'no-store' }).then(function (response) {
+        if (!response.ok) throw new Error('无法清除当前录屏会话的场景状态。');
+      });
+  }
+
+  function demoRecordingJourneyContext(target) {
+    var context = createJourneyContext();
+    context.checkedIn = target !== 'CHECK_IN';
+    context.hasCheckedBaggage = target === 'BAG_DROP';
+    context.bagDropped = target !== 'BAG_DROP' && target !== 'CHECK_IN';
+    context.securityCleared = ['GO_TO_GATE', 'BOARD_NOW', 'COMPLETE'].indexOf(target) >= 0;
+    context.atGate = ['BOARD_NOW', 'COMPLETE'].indexOf(target) >= 0;
+    context.boarded = target === 'COMPLETE';
+    context.landed = target === 'COMPLETE';
+    context.baggageCollected = target === 'COMPLETE';
+    context.exitedAirport = target === 'COMPLETE';
+    context.previousTerminal = currentFlight.terminal;
+    context.previousGate = currentFlight.gate;
+    return context;
+  }
+
+  function calculateDemoRecordingAction(silent) {
+    journeyContext.flightSnapshot = currentFlight;
+    journeyContext.refreshRequested = false;
+    return postFlightJson('/api/journeys/next-action', journeyContext).then(function (response) {
+      currentFlight = response.flight;
+      journeyContext.flightSnapshot = currentFlight;
+      currentAction = response.nextAction;
+      currentError = null;
+      renderFlight(currentFlight, { silent: Boolean(silent), skipChanges: true });
+      renderJourneyResponse({ silent: Boolean(silent) });
+      persistJourney();
+      return response;
+    });
+  }
+
+  function restoreDemoRecordingStep(target, scenario) {
+    if (!demoRecordingSessionId) return Promise.reject(new Error('录屏会话未启用。'));
+    clearDemoRecordingCountdown();
+    stopAutoRefresh(true);
+    clearJourney();
+    resetFlightChangePresentation();
+    return clearDemoRecordingBackendState().then(function () {
+      var requestedScenario = scenario || (target === 'BOARD_NOW' ? 'BOARDING' : 'GATE_CHANGE');
+      return postFlightJson('/api/journeys/resolve-flight', resolvePayload(
+        'BA117', new Date().toISOString().slice(0, 10), true, null, requestedScenario, false));
+    }).then(function (flight) {
+      currentFlight = flight;
+      lastLookupContext = {
+        flightNumber: normalizeFlightNumber(flight.flightNumber), departureDate: flight.departureDate,
+        departureAirport: flight.departureAirport || null, arrivalAirport: flight.arrivalAirport || null,
+        documentSegmentIndex: null
+      };
+      if (target !== 'BOARD_NOW') return flight;
+      return postFlightJson('/api/journeys/refresh-flight', flight).then(function (boardingFlight) {
+        boardingFlight.latestChanges = [];
+        return boardingFlight;
+      });
+    }).then(function (flight) {
+      currentFlight = flight;
+      journeyContext = demoRecordingJourneyContext(target);
+      journeyHistory = [];
+      journeyEvents = [];
+      return calculateDemoRecordingAction(false);
+    });
+  }
+
+  function triggerDemoRecordingGateChange() {
+    if (!currentFlight || currentFlight.demoScenario !== 'GATE_CHANGE') {
+      return restoreDemoRecordingStep('GO_TO_GATE', 'GATE_CHANGE').then(triggerDemoRecordingGateChange);
+    }
+    clearDemoRecordingCountdown();
+    return refreshFlight({ silent: true, source: 'demo-recording' }).then(function (flight) {
+      if (!flight) throw new Error('登机口变化刷新失败。');
+      journeyContext.flightSnapshot = flight;
+      journeyContext.refreshRequested = false;
+      return postFlightJson('/api/journeys/next-action', journeyContext).then(function (response) {
+        currentAction = response.nextAction;
+        renderJourneyResponse({ silent: true });
+        persistJourney();
+        return response;
+      });
+    });
+  }
+
+  function scheduleDemoRecordingGateChange(delayMs) {
+    clearDemoRecordingCountdown();
+    var remaining = Math.max(1, Math.ceil((Number(delayMs) || 5000) / 1000));
+    demoRecordingCountdownSeconds = remaining;
+    publishDemoRecordingState();
+    return new Promise(function (resolve, reject) {
+      demoRecordingCountdownTimer = window.setInterval(function () {
+        remaining -= 1;
+        demoRecordingCountdownSeconds = Math.max(0, remaining);
+        publishDemoRecordingState();
+        if (remaining > 0) return;
+        clearDemoRecordingCountdown();
+        triggerDemoRecordingGateChange().then(resolve, reject);
+      }, 1000);
+    });
+  }
+
+  function publishDemoRecordingState() {
+    if (!demoRecordingChannel || !demoRecordingSessionId) return;
+    demoRecordingChannel.postMessage({
+      type: 'STATE', demoSessionId: demoRecordingSessionId,
+      state: {
+        connected: true,
+        screen: currentScreen,
+        stepType: currentAction && currentAction.stepType || null,
+        actionCode: currentAction && currentAction.actionCode || null,
+        gate: currentFlight && currentFlight.gate || null,
+        shareUrl: shareViewUrl(),
+        countdownSeconds: demoRecordingCountdownSeconds
+      }
+    });
+  }
+
+  function demoRecordingResult(requestId, ok, message) {
+    if (!demoRecordingChannel) return;
+    demoRecordingChannel.postMessage({ type: 'RESULT', demoSessionId: demoRecordingSessionId,
+      requestId: requestId, ok: ok, message: message });
+    publishDemoRecordingState();
+  }
+
+  function handleDemoRecordingCommand(message) {
+    var command = message.command;
+    var task;
+    if (command === 'RESTORE_STEP') task = restoreDemoRecordingStep(message.payload && message.payload.target);
+    else if (command === 'PREPARE_GATE_CHANGE' || command === 'RESTORE_GATE_CHANGE') {
+      task = restoreDemoRecordingStep('GO_TO_GATE', 'GATE_CHANGE');
+    } else if (command === 'TRIGGER_GATE_CHANGE') task = triggerDemoRecordingGateChange();
+    else if (command === 'SCHEDULE_GATE_CHANGE') {
+      task = scheduleDemoRecordingGateChange(message.payload && message.payload.delayMs);
+    } else if (command === 'RESET_SESSION' || command === 'CLEAR_SESSION') {
+      clearDemoRecordingCountdown();
+      task = Promise.all([clearDemoRecordingBackendState(), revokeDemoRecordingShare()]).then(function () {
+        clearJourney();
+        if (command === 'CLEAR_SESSION') localStorage.removeItem(DEMO_CONTROL_PREFIX + demoRecordingSessionId);
+        showScreen('welcome');
+      });
+    } else task = Promise.reject(new Error('未知录屏命令。'));
+    Promise.resolve(task).then(function () {
+      demoRecordingResult(message.requestId, true, '已完成：' + command);
+    }).catch(function (error) {
+      demoRecordingResult(message.requestId, false, error && error.message || '命令执行失败。');
+    });
+  }
+
+  function setupDemoRecordingChannel() {
+    if (!demoRecordingSessionId || typeof BroadcastChannel !== 'function') return;
+    demoRecordingChannel = new BroadcastChannel('onestep-flight-demo-' + demoRecordingSessionId);
+    demoRecordingChannel.addEventListener('message', function (event) {
+      var message = event.data || {};
+      if (message.demoSessionId !== demoRecordingSessionId) return;
+      if (message.type === 'REQUEST_STATE') publishDemoRecordingState();
+      if (message.type === 'COMMAND') handleDemoRecordingCommand(message);
+    });
+    publishDemoRecordingState();
+  }
+
   function qaJourneyDepartureDate() {
     return new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 10);
   }
@@ -2831,7 +3017,7 @@
 
   function autoRefreshEligible(state) {
     state = state || {};
-    if (qaJourneyEnabled) return false;
+    if (qaJourneyEnabled || typeof demoRecordingSessionId !== 'undefined' && demoRecordingSessionId) return false;
     var flight = state.currentFlight || state.flight;
     if (!flight || (state.currentScreen !== 'confirm' && state.currentScreen !== 'step')) return false;
     if (state.awaitingDocumentSelection || state.partialDocumentEntry || state.flightCorrectionOpen) return false;
@@ -4153,9 +4339,20 @@
       }
       var dismissButton = document.createElement('button');
       dismissButton.type = 'button';
-      dismissButton.className = 'flight-change-dismiss button button-secondary';
+      dismissButton.className = 'flight-change-dismiss';
       dismissButton.dataset.action = 'dismiss-flight-change';
-      dismissButton.textContent = localeText('关闭提示', 'Dismiss', 'Cerrar');
+      var dismissLabel = localeText(
+        '关闭航班变化提示',
+        'Dismiss flight change notice',
+        'Cerrar aviso de cambio de vuelo'
+      );
+      dismissButton.setAttribute('aria-label', dismissLabel);
+      dismissButton.title = dismissLabel;
+      var dismissMark = document.createElement('span');
+      dismissMark.className = 'flight-change-dismiss-mark';
+      dismissMark.setAttribute('aria-hidden', 'true');
+      dismissMark.textContent = '×';
+      dismissButton.appendChild(dismissMark);
       alert.appendChild(dismissButton);
     });
   }
@@ -6452,6 +6649,8 @@
 
   function shareSessionMatchesPayload(session, payload) {
     if (!session || !session.viewToken || !session.updateToken || !session.expiresAt || !payload) return false;
+    if (demoRecordingSessionId && session.demoSessionId !== demoRecordingSessionId) return false;
+    if (!demoRecordingSessionId && session.demoSessionId) return false;
     var expiresAt = Date.parse(session.expiresAt);
     if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) return false;
     try {
@@ -6468,9 +6667,28 @@
     shareCreationJourneyKey = null;
     window.clearTimeout(shareSyncTimer);
     shareSyncTimer = null;
+    var previousSession = shareSession;
     shareSession = null;
-    localStorage.removeItem(SHARE_SESSION_KEY);
-    localStorage.removeItem(SHARE_PENDING_KEY);
+    localStorage.removeItem(activeShareSessionStorageKey());
+    localStorage.removeItem(activeSharePendingStorageKey());
+    if (demoRecordingSessionId && previousSession && previousSession.viewToken && previousSession.updateToken) {
+      fetch('/api/share-sessions/' + encodeURIComponent(previousSession.viewToken), {
+        method: 'DELETE', headers: { 'X-Share-Update-Token': previousSession.updateToken }
+      }).catch(function () {});
+    }
+    publishDemoRecordingState();
+  }
+
+  function revokeDemoRecordingShare() {
+    if (!demoRecordingSessionId || !shareSession || !shareSession.viewToken || !shareSession.updateToken) {
+      return Promise.resolve();
+    }
+    return fetch('/api/share-sessions/' + encodeURIComponent(shareSession.viewToken), {
+      method: 'DELETE', headers: { 'X-Share-Update-Token': shareSession.updateToken }
+    }).then(function (response) {
+      if (response.ok || response.status === 404 || response.status === 410) return;
+      throw new Error('当前演示分享链接撤销失败。');
+    });
   }
 
   function shareViewUrl() {
@@ -6529,16 +6747,18 @@
     shareCreationPromise = postJson('/api/share-sessions', payload).then(function (result) {
       if (generation !== shareCreationGeneration || familyShareJourneyKey(safeSharePayload()) !== journeyKey) return null;
       shareSession = {
+        demoSessionId: demoRecordingSessionId || null,
         viewToken: result.viewToken,
         updateToken: result.updateToken,
         viewUrl: result.viewUrl,
         expiresAt: result.expiresAt,
         lastFingerprint: JSON.stringify(payload)
       };
-      localStorage.setItem(SHARE_SESSION_KEY, JSON.stringify(shareSession));
-      localStorage.removeItem(SHARE_PENDING_KEY);
+      localStorage.setItem(activeShareSessionStorageKey(), JSON.stringify(shareSession));
+      localStorage.removeItem(activeSharePendingStorageKey());
       renderFamilyShareControls();
       setShareStatus(localeText('分享链接已准备好。', 'The share link is ready.', 'El enlace para compartir está listo.'));
+      publishDemoRecordingState();
       return shareSession;
     }).catch(function (error) {
       if (generation !== shareCreationGeneration) return null;
@@ -6597,7 +6817,8 @@
     var fingerprint = JSON.stringify(payload);
     if (fingerprint === session.lastFingerprint) return;
     if (!navigator.onLine) {
-      localStorage.setItem(SHARE_PENDING_KEY, JSON.stringify({
+      localStorage.setItem(activeSharePendingStorageKey(), JSON.stringify({
+        demoSessionId: demoRecordingSessionId || null,
         viewToken: session.viewToken, updateToken: session.updateToken, payload: payload
       }));
       return;
@@ -6609,11 +6830,12 @@
     }).then(function () {
       if (shareSession !== session) return;
       session.lastFingerprint = fingerprint;
-      localStorage.setItem(SHARE_SESSION_KEY, JSON.stringify(session));
-      localStorage.removeItem(SHARE_PENDING_KEY);
+      localStorage.setItem(activeShareSessionStorageKey(), JSON.stringify(session));
+      localStorage.removeItem(activeSharePendingStorageKey());
     }).catch(function () {
       if (shareSession !== session) return;
-      localStorage.setItem(SHARE_PENDING_KEY, JSON.stringify({
+      localStorage.setItem(activeSharePendingStorageKey(), JSON.stringify({
+        demoSessionId: demoRecordingSessionId || null,
         viewToken: session.viewToken, updateToken: session.updateToken, payload: payload
       }));
     });
@@ -6626,10 +6848,12 @@
   }
 
   function retryPendingFamilyShare() {
-    var pending = readStoredJson(SHARE_PENDING_KEY);
+    var pending = readStoredJson(activeSharePendingStorageKey());
     if (!pending || !navigator.onLine) return;
-    if (!shareSession || pending.viewToken !== shareSession.viewToken) {
-      localStorage.removeItem(SHARE_PENDING_KEY);
+    if (demoRecordingSessionId && pending.demoSessionId !== demoRecordingSessionId
+        || !demoRecordingSessionId && pending.demoSessionId
+        || !shareSession || pending.viewToken !== shareSession.viewToken) {
+      localStorage.removeItem(activeSharePendingStorageKey());
       return;
     }
     syncFamilyShare();
@@ -6931,14 +7155,38 @@
   }
 
   function activeJourneyStorageKey() {
+    if (typeof demoRecordingSessionId !== 'undefined' && demoRecordingSessionId) {
+      return DEMO_JOURNEY_PREFIX + demoRecordingSessionId;
+    }
     return qaJourneyEnabled ? QA_STORAGE_KEY : STORAGE_KEY;
   }
 
   function activeOfflineJourneyStorageKey() {
+    if (typeof demoRecordingSessionId !== 'undefined' && demoRecordingSessionId) {
+      return DEMO_OFFLINE_PREFIX + demoRecordingSessionId;
+    }
     return qaJourneyEnabled ? QA_OFFLINE_STORAGE_KEY : OFFLINE_STORAGE_KEY;
   }
 
+  function activeShareSessionStorageKey() {
+    if (typeof demoRecordingSessionId !== 'undefined' && demoRecordingSessionId) {
+      return DEMO_SHARE_PREFIX + demoRecordingSessionId;
+    }
+    return qaJourneyEnabled ? QA_SHARE_SESSION_KEY : SHARE_SESSION_KEY;
+  }
+
+  function activeSharePendingStorageKey() {
+    if (typeof demoRecordingSessionId !== 'undefined' && demoRecordingSessionId) {
+      return DEMO_SHARE_PENDING_PREFIX + demoRecordingSessionId;
+    }
+    return qaJourneyEnabled ? QA_SHARE_PENDING_KEY : SHARE_PENDING_KEY;
+  }
+
   function savedJourneyModeMatches(saved) {
+    if (typeof demoRecordingSessionId !== 'undefined' && demoRecordingSessionId) {
+      return Boolean(saved && saved.demoSessionId === demoRecordingSessionId);
+    }
+    if (saved && saved.demoSessionId) return false;
     return !saved || typeof saved.qaJourney !== 'boolean'
       || saved.qaJourney === Boolean(qaJourneyEnabled);
   }
@@ -7006,6 +7254,7 @@
     try {
       sessionStorage.setItem(activeJourneyStorageKey(), JSON.stringify({
         savedAt: Date.now(),
+        demoSessionId: typeof demoRecordingSessionId !== 'undefined' ? demoRecordingSessionId || null : null,
         qaJourney: Boolean(qaJourneyEnabled),
         flight: currentFlight,
         action: currentAction,
@@ -7036,6 +7285,7 @@
     if (pngCardCache && pngCardCache.key !== pngCacheKey()) invalidatePngCard();
     var familyOverlay = document.querySelector('[data-family-overlay]');
     if (familyOverlay && !familyOverlay.hidden && currentFlight && !pngCardCache) prepareFamilyCard().catch(function () {});
+    if (typeof publishDemoRecordingState === 'function') publishDemoRecordingState();
   }
 
   function pick(source, fields) {
@@ -7057,6 +7307,7 @@
       'checkInCounter', 'checkInDeskOrZone', 'dedicatedBagDropDesk', 'arrivalBaggageBelt',
       'status', 'delayMinutes', 'arrivalDelayMinutes', 'dataLastUpdatedAt', 'dataRetrievedAt',
       'retrievedAt', 'freshestSourceUpdatedAt', 'live', 'demo', 'demoScenario',
+      'demoSessionId', 'simulatedDemoChange',
       'documentFallback', 'liveStatusUnavailable', 'checkInCounterNeedsConfirmation', 'stale'
     ]);
     safe.timeContext = flight.timeContext ? pick(flight.timeContext, [
@@ -7157,6 +7408,7 @@
       localStorage.setItem(activeOfflineJourneyStorageKey(), JSON.stringify({
         version: 1,
         savedAt: Date.now(),
+        demoSessionId: typeof demoRecordingSessionId !== 'undefined' ? demoRecordingSessionId || null : null,
         qaJourney: Boolean(qaJourneyEnabled),
         flight: safeFlight,
         action: safeActionSnapshot(currentAction),
@@ -7179,7 +7431,8 @@
       && Array.isArray(saved.documentSegments) && saved.documentSegments.length
       && (saved.awaitingDocumentSelection || saved.partialDocumentEntry));
     var restoringDocumentSelection = restoringDocumentWorkflow && Boolean(saved.awaitingDocumentSelection);
-    if (!saved || !saved.flight && !restoringDocumentWorkflow) return false;
+    if (!saved || !savedJourneyModeMatches(saved)
+        || !saved.flight && !restoringDocumentWorkflow) return false;
     if (saved.savedAt && Date.now() - Number(saved.savedAt) > OFFLINE_MAX_AGE_MS) return false;
     currentFlight = normalizeSavedFlight(saved.flight);
     activeDemoScenarioId = demoScenariosEnabled && currentFlight ? currentFlight.demoScenario || null : null;
@@ -7625,16 +7878,38 @@
     });
   }
 
-  document.querySelector('[data-scenario-panel]').hidden = !demoScenariosEnabled;
-	document.querySelectorAll('[data-demo-only]').forEach(function (element) {
-	  element.hidden = !demoFlightEnabled;
-	});
-	setupAirportResourceQaPanel();
-
-  updateLanguage();
-  var restoredJourney = restoreJourney();
-  updateLanguage();
-  if (qaJourneyEnabled && (!restoredJourney || !qaJourneyFlightIsUsable(currentFlight))) {
-    startFlightLookup('BA117', qaJourneyDepartureDate(), true, null, 'NORMAL');
+  function initializePage() {
+    shareSession = readStoredJson(activeShareSessionStorageKey());
+    document.querySelector('[data-scenario-panel]').hidden = !demoScenariosEnabled || Boolean(demoRecordingSessionId);
+    document.querySelectorAll('[data-scenario-test-card], [data-qa-airport-panel]').forEach(function (element) {
+      if (demoRecordingSessionId) element.hidden = true;
+    });
+    document.querySelectorAll('[data-demo-only]').forEach(function (element) {
+      element.hidden = !demoFlightEnabled || Boolean(demoRecordingSessionId);
+    });
+    setupAirportResourceQaPanel();
+    setupDemoRecordingChannel();
+    updateLanguage();
+    var restoredJourney = restoreJourney();
+    updateLanguage();
+    if (qaJourneyEnabled && (!restoredJourney || !qaJourneyFlightIsUsable(currentFlight))) {
+      startFlightLookup('BA117', qaJourneyDepartureDate(), true, null, 'NORMAL');
+    }
+    publishDemoRecordingState();
   }
+
+  var demoSessionPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (demoSessionPattern.test(requestedDemoSessionId || '')) {
+    fetchJson('/api/demo-recording/sessions/' + encodeURIComponent(requestedDemoSessionId), {
+      cache: 'no-store'
+    }).then(function (status) {
+      if (status && status.enabled && status.demoSessionId === requestedDemoSessionId.toLowerCase()) {
+        demoRecordingSessionId = status.demoSessionId;
+      }
+      initializePage();
+    }).catch(function () {
+      demoRecordingSessionId = null;
+      initializePage();
+    });
+  } else initializePage();
 }());

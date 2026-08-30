@@ -49,6 +49,8 @@ public record ResolvedFlightContext(
 		boolean live,
 		boolean demo,
 		String demoScenario,
+		String demoSessionId,
+		boolean simulatedDemoChange,
 		boolean checkInCounterNeedsConfirmation,
 		boolean stale,
 		Map<String, ProviderFlightResult> providerResults,

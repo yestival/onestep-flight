@@ -1,0 +1,36 @@
+:root { color-scheme: light; font-family: Inter, "Microsoft YaHei UI", system-ui, sans-serif; background: #eef2f6; color: #172033; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 980px; }
+.console { width: min(1180px, calc(100% - 32px)); margin: 18px auto 28px; display: grid; gap: 12px; }
+header, section, footer { background: #fff; border: 1px solid #dce3ec; border-radius: 12px; box-shadow: 0 2px 8px rgb(25 45 75 / 5%); }
+header { padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; }
+h1, h2, h3, p { margin: 0; }
+h1 { margin-top: 2px; font-size: 22px; }
+h2 { font-size: 16px; margin-bottom: 12px; }
+h3 { font-size: 14px; margin-bottom: 8px; }
+.eyebrow { color: #657188; font-size: 11px; font-weight: 700; letter-spacing: .12em; }
+.connection { padding: 5px 10px; border-radius: 999px; background: #fff4d8; color: #735000; font-size: 12px; font-weight: 700; }
+.connection.online { background: #dff7e8; color: #13633a; }
+section { padding: 14px 16px; }
+.session-id { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+.session-id code { min-width: 290px; padding: 7px 9px; background: #f4f6f9; border-radius: 7px; }
+.muted { color: #68758a; font-size: 12px; margin-bottom: 10px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions.six button { min-width: 156px; }
+button { border: 1px solid #bfc9d7; border-radius: 7px; background: #fff; color: #25324a; min-height: 34px; padding: 7px 12px; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+button:hover:not(:disabled) { border-color: #59759e; background: #f7f9fc; }
+button.primary { border-color: #175caa; background: #1768c4; color: #fff; }
+button.danger { border-color: #d6a6a6; color: #9c2929; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.state { margin: 12px 0 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.state div, article dl div { background: #f6f8fb; border-radius: 7px; padding: 7px 9px; }
+dt { color: #6b778b; font-size: 11px; }
+dd { margin: 3px 0 0; font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
+.route { margin-left: 6px; color: #1768c4; font-size: 13px; }
+.section-title { display: flex; align-items: center; justify-content: space-between; }
+.section-title h2 { margin-bottom: 0; }
+.provider-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: 12px; }
+article { border: 1px solid #e2e7ef; border-radius: 9px; padding: 11px; }
+article dl { margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+footer { position: sticky; bottom: 8px; padding: 10px 14px; color: #34445f; font-size: 12px; }

@@ -85,6 +85,6 @@ class NextActionDocumentAndBaggageTest {
 				arrivalBaggageBelt, "EXPECTED", 0, 0,
 				timestamp, timestamp, timestamp, timestamp,
 				null, "AERODATABOX", null, null, true, false, null,
-				false, false, Map.of(), Map.of(), Map.of(), List.of(), false, List.of(), null);
+				null, false, false, false, Map.of(), Map.of(), Map.of(), List.of(), false, List.of(), null);
 	}
 }

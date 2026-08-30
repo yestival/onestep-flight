@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -55,8 +56,15 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 
 	private final RestClient restClient;
 	private final ObjectMapper objectMapper;
+	private final RealIntegrationCallStatus callStatus;
 
 	public NutrientBoardingPassDocumentProcessor(ObjectMapper objectMapper) {
+		this(objectMapper, new RealIntegrationCallStatus());
+	}
+
+	@Autowired
+	public NutrientBoardingPassDocumentProcessor(ObjectMapper objectMapper,
+			RealIntegrationCallStatus callStatus) {
 		HttpClient.Builder clientBuilder = HttpClient.newBuilder()
 				.connectTimeout(Duration.ofSeconds(8))
 				.followRedirects(HttpClient.Redirect.NORMAL)
@@ -73,6 +81,7 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 				.requestFactory(new BufferingClientHttpRequestFactory(requestFactory))
 				.build();
 		this.objectMapper = objectMapper;
+		this.callStatus = callStatus;
 	}
 
 	@Override
@@ -87,22 +96,32 @@ public class NutrientBoardingPassDocumentProcessor implements BoardingPassDocume
 		try {
 			response = requestExtraction(documentBytes, filename, contentType, apiKey);
 		} catch (RestClientResponseException exception) {
+			callStatus.recordNutrient(false, 0, Instant.now());
 			LOGGER.warn("provider=NUTRIENT stage=extraction httpStatus={} rootCauseType={} category=HTTP_REJECTED message={}",
 					exception.getStatusCode().value(), exception.getClass().getName(),
 					ProviderFailureDiagnostics.safeMessage(exception));
 			throw new ExternalServiceUnavailableException("NUTRIENT_EXTRACTION_FAILED");
 		} catch (RestClientException exception) {
+			callStatus.recordNutrient(false, 0, Instant.now());
 			ProviderFailureDiagnostics.Failure failure = ProviderFailureDiagnostics.classify("NUTRIENT", exception);
 			LOGGER.warn("provider=NUTRIENT stage=extraction httpStatus=none rootCauseType={} category={} message={}",
 					failure.rootCauseType(), failure.category(), failure.safeMessage());
 			throw new ExternalServiceUnavailableException("NUTRIENT_EXTRACTION_FAILED");
 		} catch (JacksonException exception) {
+			callStatus.recordNutrient(false, 0, Instant.now());
 			LOGGER.warn("provider=NUTRIENT stage=request-build httpStatus=none rootCauseType={} category=SERIALIZATION_ERROR message={}",
 					exception.getClass().getName(), ProviderFailureDiagnostics.safeMessage(exception));
 			throw new ExternalServiceUnavailableException("NUTRIENT_EXTRACTION_FAILED");
 		}
 
-		return toResponse(response);
+		try {
+			BoardingPassExtractionResponse result = toResponse(response);
+			callStatus.recordNutrient(true, result.segments().size(), Instant.now());
+			return result;
+		} catch (RuntimeException exception) {
+			callStatus.recordNutrient(false, 0, Instant.now());
+			throw exception;
+		}
 	}
 
 	private JsonNode requestExtraction(byte[] documentBytes, String filename, String contentType, String apiKey)

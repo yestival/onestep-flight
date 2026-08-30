@@ -196,9 +196,20 @@ test('an already presented signature is not eligible to appear again', () => {
 });
 
 test('flight-change notices persist until the traveller dismisses them', () => {
+  const renderNotice = sourceBetween('function renderFlightChanges()', 'function flightChangeCopyContext()');
   assert.equal(app.includes('FLIGHT_CHANGE_NOTICE_MS'), false);
   assert.equal(app.includes('setTimeout(dismissFlightChangeNotice'), false);
-  assert.match(app, /dataset\.action = 'dismiss-flight-change'/);
+  assert.match(renderNotice, /dataset\.action = 'dismiss-flight-change'/);
+  assert.match(renderNotice, /className = 'flight-change-dismiss'/);
+  assert.doesNotMatch(renderNotice, /flight-change-dismiss button/);
+  assert.match(renderNotice, /'关闭航班变化提示'/);
+  assert.match(renderNotice, /'Dismiss flight change notice'/);
+  assert.match(renderNotice, /'Cerrar aviso de cambio de vuelo'/);
+  assert.match(renderNotice, /setAttribute\('aria-label', dismissLabel\)/);
+  assert.match(renderNotice, /title = dismissLabel/);
+  assert.match(renderNotice, /setAttribute\('aria-hidden', 'true'\)/);
+  assert.match(renderNotice, /textContent = '×'/);
+  assert.doesNotMatch(renderNotice, /localeText\('关闭提示', 'Dismiss', 'Cerrar'\)/);
 });
 
 test('one batch deduplicates matching changes before creating one speech text', () => {

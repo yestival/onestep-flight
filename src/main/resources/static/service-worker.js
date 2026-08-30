@@ -1,8 +1,8 @@
 'use strict';
 
 const CACHE_PREFIX = 'onestep-flight-shell-';
-const CACHE_NAME = CACHE_PREFIX + 'v41';
-const APP_SHELL = ['/', '/index.html', '/styles.css?v=41', '/locale.js?v=41', '/app.js?v=41',
+const CACHE_NAME = CACHE_PREFIX + 'v43';
+const APP_SHELL = ['/', '/index.html', '/styles.css?v=42', '/locale.js?v=42', '/app.js?v=43',
   '/share.html', '/share.css?v=33', '/share.js?v=33'];
 const APP_SHELL_CACHE_KEY = APP_SHELL.reduce((keys, path) => {
   keys[new URL(path, self.location.origin).pathname] = path;
@@ -47,6 +47,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/') || url.pathname.toLowerCase().endsWith('.pdf')) return;
+  if (url.pathname === '/demo-control' || url.pathname.startsWith('/demo-control.')) return;
 
   if (request.mode === 'navigate') {
     const fallbackPath = url.pathname.startsWith('/share/') ? '/share.html' : '/index.html';

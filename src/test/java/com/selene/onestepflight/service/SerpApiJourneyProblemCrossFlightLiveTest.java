@@ -74,7 +74,7 @@ class SerpApiJourneyProblemCrossFlightLiveTest {
 		// unless every selected flight independently resolves to a live project result.
 		for (Scenario scenario : scenarios) {
 			ResolveFlightRequest query = new ResolveFlightRequest(
-					scenario.flightNumber(), DEPARTURE_DATE, false, null, null, null, true);
+					scenario.flightNumber(), DEPARTURE_DATE, false, null, null, null, null, true);
 			List<Map<String, Object>> queryAttempts = new ArrayList<>();
 			ResolvedFlightContext result = null;
 			for (int attempt = 1; attempt <= 2 && result == null; attempt++) {

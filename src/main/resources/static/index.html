@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#1B2537">
   <title>OneStep Flight</title>
-  <link rel="stylesheet" href="styles.css?v=41">
+  <link rel="stylesheet" href="styles.css?v=42">
 </head>
 <body>
   <div class="app-shell">
@@ -159,7 +159,7 @@
           <div class="choice-actions two-choice-grid flight-correction-actions"><button class="button button-primary button-large" type="button" data-action="choose-other-file" data-i18n="chooseOtherFile">选择其他文件</button><button class="button button-secondary button-large" type="button" data-action="unusable-manual" data-i18n="manualFlightNumber">手动输入航班号</button></div>
         </section>
         <article class="flight-card" aria-label="Flight information">
-          <div class="flight-card-top confirm-flight-number-row"><span class="flight-number" data-flight-number>—</span></div>
+          <div class="flight-card-top confirm-flight-number-row"><span class="flight-number" data-flight-number>—</span><span class="demo-tag" data-demo-marker data-i18n="demoDisclaimer" hidden>Demo data</span></div>
           <div class="route-summary"><div><span class="airport-city" data-departure-name>—</span><strong class="airport-code" data-departure-airport>—</strong><span class="airport-time-label" data-route-departure-label>起飞 · 当地时间</span><time class="airport-local-time" data-route-departure-time>—</time></div><svg class="route-arrow" viewBox="0 0 32 20" aria-hidden="true" focusable="false"><path d="M2 10h26m-7-7 7 7-7 7"/></svg><div class="align-right"><span class="airport-city" data-arrival-name>—</span><strong class="airport-code" data-arrival-airport>—</strong><span class="airport-time-label" data-route-arrival-label>到达 · 当地时间</span><time class="airport-local-time" data-route-arrival-time>—</time></div></div>
           <div class="flight-details flight-details-core"><div><span data-i18n="terminal">航站楼</span><strong data-terminal>—</strong></div><div><span data-i18n="gate">登机口</span><strong data-gate>—</strong></div><div><span data-i18n="boardingTime">登机时间</span><strong data-boarding-time>—</strong></div><div><span data-i18n="checkInArea">值机/托运</span><strong data-check-in-area>—</strong></div></div>
         </article>
@@ -239,7 +239,7 @@
           <div class="step-actions answer-choice-grid"><button class="button button-secondary button-large icon-button answer-choice answer-yes" type="button" data-action="baggage" data-answer="yes" data-i18n-aria="baggageYesAria"><svg class="choice-icon icon-yes" viewBox="2.5 3 19 16.5" aria-hidden="true" focusable="false"><path d="M4.5 11.5 10 18 19.5 4.5"/></svg><span data-i18n="baggageYes">是</span></button><button class="button button-secondary button-large icon-button answer-choice answer-no" type="button" data-action="baggage" data-answer="no" data-i18n-aria="baggageNoAria"><svg class="choice-icon icon-no" viewBox="3.5 3.5 17 17" aria-hidden="true" focusable="false"><path d="M5.5 5.5 18.5 18.5M18.5 5.5 5.5 18.5"/></svg><span data-i18n="baggageNo">否</span></button><button class="button button-secondary button-large icon-button answer-choice answer-unsure" type="button" data-action="baggage" data-answer="unsure" data-i18n-aria="baggageUnsureAria"><svg class="choice-icon icon-unsure" viewBox="6.5 3.5 11 16.5" aria-hidden="true" focusable="false"><path d="M8.5 9a3.5 3.5 0 1 1 4.3 3.4c-1.1.3-1.8 1-1.8 2.1M11 18h.01"/></svg><span data-i18n="baggageUnsure">不确定</span></button></div>
         </div>
         <div class="action-result" data-step-result hidden>
-          <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="nextAction">现在要做的事</span></p><h1 id="action-title" data-action-title>—</h1></div>
+          <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span><span data-i18n="nextAction">现在要做的事</span><span class="demo-tag" data-demo-marker data-i18n="demoDisclaimer" hidden>Demo data</span></p><h1 id="action-title" data-action-title>—</h1></div>
           <div class="action-summary">
             <div class="action-destination" data-action-destination>
               <strong class="destination-primary" lang="zh-CN" data-destination-primary>—</strong>
@@ -298,7 +298,7 @@
 
       <section class="screen screen-complete" data-screen="complete" aria-labelledby="complete-title" hidden>
         <div class="complete-mark" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m6 12 4 4 8-9"/></svg></div>
-        <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span><span>ONESTEP FLIGHT</span></p><h1 id="complete-title" data-complete-title>指引已完成</h1><p class="lead" data-complete-description>你已到达机场出口，祝你旅途顺利。</p><p class="complete-flight" data-complete-flight>—</p></div>
+        <div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span><span>ONESTEP FLIGHT</span><span class="demo-tag" data-demo-marker data-i18n="demoDisclaimer" hidden>Demo data</span></p><h1 id="complete-title" data-complete-title>指引已完成</h1><p class="lead" data-complete-description>你已到达机场出口，祝你旅途顺利。</p><p class="complete-flight" data-complete-flight>—</p></div>
         <div class="confirm-assistance-actions complete-assistance-actions">
           <button class="support-button assistance-button" type="button" data-action="speak" aria-pressed="false" data-i18n-aria="speakAria"><svg class="speech-icon" viewBox="2 4 20 16" aria-hidden="true" focusable="false"><path d="M4 10v4h4l5 4V6l-5 4H4zm12 0a4 4 0 010 4m2-7a8 8 0 010 10"/></svg><span data-speech-label data-i18n="speak">朗读</span></button>
           <button class="support-button assistance-button family-help-button" type="button" data-action="family" data-share-entry hidden data-i18n-aria="familyAria"><svg class="family-share-icon" viewBox="1 0 22 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><circle class="family-share-node" cx="18" cy="5" r="2.4"/><circle class="family-share-node" cx="6" cy="12" r="2.4"/><circle class="family-share-node" cx="18" cy="19" r="2.4"/><path class="family-share-link" d="M8.1 10.8 15.9 6.2"/><path class="family-share-link" d="M8.1 13.2 15.9 17.8"/></svg><span data-i18n="shareShort">分享</span></button>
@@ -394,7 +394,7 @@
     <div class="visually-hidden" role="status" aria-live="assertive" aria-atomic="true" data-live-region></div>
     <div class="toast" role="status" aria-live="polite" data-toast></div>
   </div>
-  <script src="locale.js?v=41"></script>
-  <script src="app.js?v=41"></script>
+  <script src="locale.js?v=42"></script>
+  <script src="app.js?v=43"></script>
 </body>
 </html>
