@@ -19,6 +19,7 @@ test('recording mode is feature-gated and keeps every required session key names
     'onestep-flight-demo-offline-journey-v1:',
     'onestep-flight-demo-share-session-v1:',
     'onestep-flight-demo-share-pending-v1:',
+    'onestep-flight-demo-share-revocation-pending-v1:',
     'onestep-flight-demo-control-v1:'
   ]) assert.ok(app.includes(prefix) || control.includes(prefix), `missing ${prefix}`);
   assert.match(app, /fetchJson\('\/api\/demo-recording\/sessions\/'/);

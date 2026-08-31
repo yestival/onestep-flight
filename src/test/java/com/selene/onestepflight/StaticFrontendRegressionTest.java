@@ -833,7 +833,8 @@ class StaticFrontendRegressionTest {
         assertTrue(shareHtml.contains("Loading the shared journey"));
         assertTrue(index.contains("locale.js?v=42"));
         assertTrue(shareHtml.contains("/share.css?v=33"));
-        assertTrue(shareHtml.contains("/locale.js?v=33"));
+        assertTrue(shareHtml.contains("/locale.js?v=42"));
+        assertFalse(shareHtml.contains("/locale.js?v=33"));
         assertTrue(shareHtml.contains("/share.js?v=33"));
         assertFalse(index.contains("?v=35"));
         assertFalse(shareHtml.contains("?v=29"));
@@ -886,6 +887,7 @@ class StaticFrontendRegressionTest {
     @Test
     void compactActionGridsRetainEqualLocalizedTypographyAndSemanticIcons() throws IOException {
         String css = resource("styles.css");
+        String twoHundredPercent = css.substring(css.lastIndexOf("@media(max-width:220px)"));
 
         assertTrue(css.contains("--icon-yes:#188A50"));
         assertTrue(css.contains("--icon-no:#C83F4D"));
@@ -901,7 +903,22 @@ class StaticFrontendRegressionTest {
         assertTrue(css.contains("--multi-control-font-size:26px"));
         assertTrue(css.contains("html[lang=\"en\"]{--multi-control-font-size:25px}"));
         assertTrue(css.contains("html[lang=\"es\"]{--multi-control-font-size:25px}"));
-        assertTrue(css.contains(":root{--full-row-control-font-size:22px;--multi-control-font-size:18px;--action-control-icon-size:32px"));
+        assertTrue(css.contains(":root{--full-row-control-font-size:22px;--multi-control-font-size:20px;--action-control-icon-size:32px"));
+        assertTrue(css.contains("html[lang=\"en\"]{--multi-control-font-size:18px}"));
+        assertTrue(css.contains(".journey-problem-connection-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))"));
+        assertFalse(css.contains("@media(max-width:520px){.journey-problem-connection-actions"));
+        assertTrue(twoHundredPercent.contains(".journey-problem-connection-actions{grid-template-columns:minmax(0,1fr)}"));
+        assertFalse(css.contains(".airport-resource-actions{grid-template-columns:minmax(0,1fr)}"));
+        assertTrue(css.contains(".airport-resource-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:0}"));
+        assertTrue(css.contains(".airport-resource-button{min-height:104px;flex-direction:column;gap:4px;padding-inline:4px;font-size:20px"));
+        assertTrue(css.contains(".airport-resource-button{min-height:104px;padding:8px 0;font-size:20px"));
+        assertTrue(css.contains("html[lang=\"en\"] .airport-resource-button,html[lang=\"es\"] .airport-resource-button{font-size:18px}"));
+        assertTrue(css.contains(".airport-resource-button svg{width:32px;height:32px}"));
+        assertFalse(css.contains("letter-spacing:-.08em"));
+        assertFalse(css.contains(".scenario-actions button{font-size:13px}"));
+        assertFalse(css.contains(".screen h1,.screen h2,.screen-step h1,.departure-passed-confirmation h1,.airport-resource-qa h2{font-size:22px}"));
+        assertFalse(css.contains(".review-candidate span,.segment-option>span{font-size:16px}"));
+        assertTrue(css.contains(".welcome-speech-note{flex-direction:column;align-items:flex-start;gap:6px}"));
         assertTrue(css.contains(".screen-step.is-departure-exception .step-assistance-actions{grid-template-columns:minmax(0,1fr)}"));
         assertTrue(css.contains(".site-header{height:68px}"));
         assertTrue(css.contains(".screen:not(.screen-welcome),.screen-step,.screen-confirm{padding-top:20px}"));
@@ -914,7 +931,9 @@ class StaticFrontendRegressionTest {
         assertTrue(css.contains(".home-back-button,.back-button{min-height:48px;padding-block:8px;font-size:clamp(24px,4vw,26px)"));
         assertTrue(css.contains(".card-close,.text-button,.support-button,.journey-end-action .end-journey-link{min-height:48px;padding-block:8px;font-size:clamp(22px,3vw,24px)"));
         assertTrue(css.contains(".language-select{min-height:48px;font-size:clamp(22px,3vw,24px)"));
-        assertTrue(css.contains(".answer-choice-grid,.two-choice-grid,.confirm-assistance-actions,.short-action-grid,.step-assistance-actions,.family-actions,.manual-actions.is-partial-document,.journey-secondary-actions:not(.journey-secondary-actions-single){font-size:var(--multi-control-font-size)}"));
+        assertTrue(css.contains(".brand{min-width:44px}"));
+        assertTrue(css.contains(".answer-choice-grid,.two-choice-grid,.confirm-assistance-actions,.short-action-grid,.step-assistance-actions,.family-actions,.manual-actions.is-partial-document,.journey-secondary-actions:not(.journey-secondary-actions-single),.journey-problem-connection-actions{font-size:var(--multi-control-font-size)}"));
+        assertTrue(css.contains(".journey-problem-connection-actions .button{width:100%;max-width:none;font-size:inherit"));
         assertTrue(css.contains(".answer-choice-grid .button,.step-assistance-actions .assistance-button{min-width:44px;min-height:104px"));
         assertTrue(css.contains(".manual-actions.is-partial-document .button{width:100%;max-width:none;min-height:76px;padding:12px;font-size:inherit"));
         assertTrue(css.contains(".short-action-grid .action-full-row{min-height:72px;padding:14px 18px;font-size:var(--full-row-control-font-size)"));
@@ -1093,8 +1112,10 @@ class StaticFrontendRegressionTest {
 		assertFalse(helpTopbar.contains("viewAirportMap"));
 		assertTrue(css.contains(".staff-card-topbar{display:grid;grid-template-columns:minmax(0,1fr) 56px"));
 		assertTrue(css.contains(".staff-card-topbar{position:sticky;top:0"));
-		assertTrue(css.contains("@media(max-width:390px)"));
+		assertTrue(css.contains("@media(max-width:420px)"));
 		assertTrue(css.contains(".staff-card-topbar{grid-template-columns:minmax(0,1fr) 56px;gap:8px}"));
+		assertTrue(css.contains(".staff-card-topbar{grid-template-columns:minmax(0,1fr) 56px;gap:2px}"));
+		assertTrue(css.contains(".staff-contact-button{padding-left:2px;padding-right:2px;gap:4px;font-size:18px}"));
 		assertTrue(css.contains("html{min-width:0;overflow-x:hidden}"));
 		assertTrue(css.contains(".staff-contact-button{width:100%"));
 		assertTrue(css.contains(".staff-card .staff-overlay-close{display:block;grid-column:2"));
@@ -1331,5 +1352,33 @@ class StaticFrontendRegressionTest {
         assertTrue(html.contains("data-i18n-aria=\"baggageUnsureAria\""));
         assertTrue(html.contains("data-i18n-aria=\"yesContinueAria\""));
         assertFalse(html.contains("✓ 是，我已经完成值机"));
+    }
+
+    @Test
+    void journeyShortLabelsKeepFullAccessibleNamesAndShareDiscardQueuesServerRevocation() throws IOException {
+        String html = resource("index.html");
+        String js = resource("app.js");
+        String reset = js.substring(js.indexOf("function resetFamilyShareSession()"),
+                js.indexOf("function revokeDemoRecordingShare()"));
+        String productionSpanish = js.substring(js.indexOf("// Production-facing copy"));
+
+        assertTrue(html.contains("data-i18n=\"journeyProblemConnectionYes\" data-i18n-aria=\"journeyProblemConnectionYesAria\""));
+        assertTrue(html.contains("data-i18n=\"journeyProblemConnectionNo\" data-i18n-aria=\"journeyProblemConnectionNoAria\""));
+        assertTrue(html.contains("data-i18n=\"journeyAirportMap\""));
+        assertTrue(html.contains("data-i18n=\"journeyContactAirport\""));
+        assertTrue(js.contains("journeyProblemConnectionYes: 'Yes', journeyProblemConnectionYesAria: 'Yes, I have another flight after this one'"));
+        assertTrue(js.contains("journeyProblemConnectionNo: 'No', journeyProblemConnectionNoAria: 'No, this is my last flight'"));
+        assertTrue(js.contains("journeyProblemConnectionYes: 'Sí', journeyProblemConnectionYesAria: 'Sí, tengo otro vuelo después de este'"));
+        assertTrue(js.contains("journeyProblemConnectionNo: 'No', journeyProblemConnectionNoAria: 'No, este es mi último vuelo'"));
+        assertTrue(js.contains("journeyAirportMap: 'Ver mapa', journeyAirportMapAria: 'Ver mapa del aeropuerto'"));
+        assertTrue(js.contains("journeyContactAirport: 'Contactar', journeyContactAirportAria: 'Contactar con el aeropuerto'"));
+        assertTrue(productionSpanish.contains("shareShort: 'Familia', familyAria: 'Familia, compartir el viaje en directo'"));
+        assertFalse(productionSpanish.contains("shareShort: 'Compartir'"));
+        assertTrue(js.contains("SHARE_REVOCATION_PENDING_KEY"));
+        assertTrue(js.contains("function retryPendingShareRevocations()"));
+        assertTrue(reset.indexOf("revokeDiscardedShareSession(previousSession)") < reset.indexOf("shareSession = null"));
+        assertTrue(js.contains("response.ok || response.status === 404 || response.status === 410"));
+        assertTrue(js.indexOf("retryPendingShareRevocations();", js.indexOf("window.addEventListener('online'"))
+                < js.indexOf("retryPendingFamilyShare();", js.indexOf("window.addEventListener('online'")));
     }
 }

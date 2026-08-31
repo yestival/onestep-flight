@@ -44,12 +44,15 @@ function storageSandbox(overrides) {
     QA_OFFLINE_STORAGE_KEY: 'onestep-flight-qa-offline-journey-v1',
     SHARE_SESSION_KEY: 'onestep-flight-share-session-v1',
     SHARE_PENDING_KEY: 'onestep-flight-share-pending-v1',
+    SHARE_REVOCATION_PENDING_KEY: 'onestep-flight-share-revocation-pending-v1',
     QA_SHARE_SESSION_KEY: 'onestep-flight-qa-share-session-v1',
     QA_SHARE_PENDING_KEY: 'onestep-flight-qa-share-pending-v1',
+    QA_SHARE_REVOCATION_PENDING_KEY: 'onestep-flight-qa-share-revocation-pending-v1',
     DEMO_JOURNEY_PREFIX: 'onestep-flight-demo-journey-v1:',
     DEMO_OFFLINE_PREFIX: 'onestep-flight-demo-offline-journey-v1:',
     DEMO_SHARE_PREFIX: 'onestep-flight-demo-share-session-v1:',
     DEMO_SHARE_PENDING_PREFIX: 'onestep-flight-demo-share-pending-v1:',
+    DEMO_SHARE_REVOCATION_PENDING_PREFIX: 'onestep-flight-demo-share-revocation-pending-v1:',
     demoRecordingSessionId: null,
     OFFLINE_MAX_AGE_MS: 48 * 60 * 60 * 1000,
     qaJourneyEnabled: false,
@@ -82,17 +85,21 @@ test('ordinary, QA, and two recording sessions select completely separate journe
   const first = 'b9500530-069d-4f82-8ed9-0dbfe6b65e9f';
   const second = '1c1fb0d2-fded-4e40-bcec-bc42dbe406bf';
   const ordinary = [sandbox.activeJourneyStorageKey(), sandbox.activeOfflineJourneyStorageKey(),
-    sandbox.activeShareSessionStorageKey(), sandbox.activeSharePendingStorageKey()];
+    sandbox.activeShareSessionStorageKey(), sandbox.activeSharePendingStorageKey(),
+    sandbox.activeShareRevocationPendingStorageKey()];
 
   sandbox.qaJourneyEnabled = true;
   const qa = [sandbox.activeJourneyStorageKey(), sandbox.activeOfflineJourneyStorageKey(),
-    sandbox.activeShareSessionStorageKey(), sandbox.activeSharePendingStorageKey()];
+    sandbox.activeShareSessionStorageKey(), sandbox.activeSharePendingStorageKey(),
+    sandbox.activeShareRevocationPendingStorageKey()];
   sandbox.demoRecordingSessionId = first;
   const demoOne = [sandbox.activeJourneyStorageKey(), sandbox.activeOfflineJourneyStorageKey(),
-    sandbox.activeShareSessionStorageKey(), sandbox.activeSharePendingStorageKey()];
+    sandbox.activeShareSessionStorageKey(), sandbox.activeSharePendingStorageKey(),
+    sandbox.activeShareRevocationPendingStorageKey()];
   sandbox.demoRecordingSessionId = second;
   const demoTwo = [sandbox.activeJourneyStorageKey(), sandbox.activeOfflineJourneyStorageKey(),
-    sandbox.activeShareSessionStorageKey(), sandbox.activeSharePendingStorageKey()];
+    sandbox.activeShareSessionStorageKey(), sandbox.activeSharePendingStorageKey(),
+    sandbox.activeShareRevocationPendingStorageKey()];
 
   const all = [...ordinary, ...qa, ...demoOne, ...demoTwo];
   assert.equal(new Set(all).size, all.length);
@@ -100,7 +107,8 @@ test('ordinary, QA, and two recording sessions select completely separate journe
     `onestep-flight-demo-journey-v1:${first}`,
     `onestep-flight-demo-offline-journey-v1:${first}`,
     `onestep-flight-demo-share-session-v1:${first}`,
-    `onestep-flight-demo-share-pending-v1:${first}`
+    `onestep-flight-demo-share-pending-v1:${first}`,
+    `onestep-flight-demo-share-revocation-pending-v1:${first}`
   ]);
   assert.equal(sandbox.savedJourneyModeMatches({ demoSessionId: first }), false);
   sandbox.demoRecordingSessionId = first;

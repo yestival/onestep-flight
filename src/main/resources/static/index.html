@@ -281,8 +281,8 @@
         <div class="journey-end-time-stack">
           <div class="journey-end-action"><button class="end-journey-link icon-button" type="button" data-action="end-journey"><svg class="end-journey-icon" viewBox="1.5 1.5 21 21" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.6"/><path d="m9 9 6 6m0-6-6 6"/></svg><span data-i18n="endJourney">结束本次指引</span></button></div>
           <div class="airport-resource-actions" data-airport-resource-row hidden>
-            <button class="button button-secondary airport-resource-button" type="button" data-action="open-airport-map"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 5 5-2 8 3 5-2v15l-5 2-8-3-5 2V5Zm5-2v15m8-12v15"/></svg><span data-i18n="viewAirportMap">查看机场地图</span></button>
-            <button class="button button-secondary airport-resource-button" type="button" data-action="contact-airport-resource"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.2 3.5 10 8l-2.1 2.1a15.2 15.2 0 0 0 6 6L16 14l4.5 2.8-1.2 3.4c-.3.8-1.1 1.3-2 1.2C9.7 20.3 3.7 14.3 2.6 6.7c-.1-.9.4-1.7 1.2-2l3.4-1.2Z"/></svg><span data-i18n="contactAirport">联系机场</span></button>
+            <button class="button button-secondary airport-resource-button" type="button" data-action="open-airport-map" data-i18n-aria="journeyAirportMapAria"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 5 5-2 8 3 5-2v15l-5 2-8-3-5 2V5Zm5-2v15m8-12v15"/></svg><span data-i18n="journeyAirportMap">机场地图</span></button>
+            <button class="button button-secondary airport-resource-button" type="button" data-action="contact-airport-resource" data-i18n-aria="journeyContactAirportAria"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7.2 3.5 10 8l-2.1 2.1a15.2 15.2 0 0 0 6 6L16 14l4.5 2.8-1.2 3.4c-.3.8-1.1 1.3-2 1.2C9.7 20.3 3.7 14.3 2.6 6.7c-.1-.9.4-1.7 1.2-2l3.4-1.2Z"/></svg><span data-i18n="journeyContactAirport">联系机场</span></button>
           </div>
           <div class="time-status step-time-status" data-time-status hidden>
             <div><span data-i18n="airportLocalTime">机场当地时间</span><strong data-airport-local-time>—</strong></div>
@@ -373,8 +373,8 @@
         <section data-journey-problem-connection-step>
           <p class="journey-problem-question" data-i18n="journeyProblemConnectionQuestion">这班之后还要转机吗？</p>
           <div class="journey-problem-connection-actions">
-            <button class="button button-primary button-large" type="button" data-action="journey-problem-connection" data-connection="true" data-i18n="journeyProblemConnectionYes">要转机</button>
-            <button class="button button-secondary button-large" type="button" data-action="journey-problem-connection" data-connection="false" data-i18n="journeyProblemConnectionNo">不转机</button>
+            <button class="button button-primary button-large" type="button" data-action="journey-problem-connection" data-connection="true" data-i18n="journeyProblemConnectionYes" data-i18n-aria="journeyProblemConnectionYesAria">要转机</button>
+            <button class="button button-secondary button-large" type="button" data-action="journey-problem-connection" data-connection="false" data-i18n="journeyProblemConnectionNo" data-i18n-aria="journeyProblemConnectionNoAria">不转机</button>
           </div>
         </section>
         <form data-journey-problem-form hidden>

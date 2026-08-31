@@ -4,7 +4,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 
-const BASE_URL = process.env.ONESTEP_BASE_URL || 'http://localhost:8080';
+const BASE_URL = process.env.ONESTEP_BASE_URL || 'http://127.0.0.1:18080';
 const CHROME_CANDIDATES = [
   process.env.CHROME_PATH,
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -163,6 +163,9 @@ const FIXED_FLIGHTS = {
 
 const summary = {
   browser: 'Chrome DevTools Protocol (Node built-ins)',
+  testType: 'FIXED_RESPONSE_FRONTEND_CONTRACT',
+  apiInterception: true,
+  endToEnd: false,
   console: { errors: 0, warnings: 0, javascriptExceptions: 0 },
   locales: { zh: false, en: false, es: false },
   responsive: {
@@ -189,7 +192,7 @@ const summary = {
     secondIsNormal: false,
     resolverPayloadsPreserveAllSegments: false,
     staff: { count: 0, iconContract: false, speech: {}, lifecycle: false,
-      cardOrder: false, locator: false, extraAssistance: false, browserBack: false },
+      cardOrder: 'NOT_RUN', locator: 'NOT_RUN', extraAssistance: 'NOT_RUN', browserBack: 'NOT_RUN' },
     confirmSpeech: { text: null, displayedFacts: null, passed: false },
     journeyProblem: { requests: [], locales: {}, responsive: {}, historical: false, passed: false },
     family: { controls: null, responsive: {}, nativeLink: false, nativeFile: false,
@@ -212,7 +215,7 @@ function safeFailure(error) {
 }
 
 async function reservePort() {
-  return new Promise((resolve, reject) => {
+  const port = await new Promise((resolve, reject) => {
     const server = net.createServer();
     server.unref();
     server.once('error', reject);
@@ -221,6 +224,7 @@ async function reservePort() {
       server.close((error) => error ? reject(error) : resolve(port));
     });
   });
+  return port === 8080 ? reservePort() : port;
 }
 
 async function readJson(url, options = {}) {
@@ -819,20 +823,20 @@ async function verifyRepeatedSamples(page) {
 async function verifyFourItineraryStates(page) {
   await setValue(page, '#locale-select', 'zh');
   const cases = [
-    ['return', '所有航段均可查询', 'queryable'],
-    ['outbound', '所有航段均可查询', 'advisory'],
-    ['missing', '存在缺失字段', 'missing'],
-    ['conflict', '存在字段冲突', 'conflict']
+    ['return', '选择航段', 'queryable'],
+    ['outbound', '选择航段', 'advisory'],
+    ['missing', '补全航段', 'missing'],
+    ['conflict', '核对航段', 'conflict']
   ];
   const before = await evaluate(page, `window.__fixedAcceptance.resolveRequests.length`);
-  for (const [sample, expectedContext, summaryKey] of cases) {
+  for (const [sample, expectedTitle, summaryKey] of cases) {
     await uploadFixedDocument(page, sample, `state-${summaryKey}`);
     const state = await evaluate(page, `(() => ({
       context: document.querySelector('[data-segment-context]').textContent.trim(),
       title: document.querySelector('[data-segment-title]').textContent.trim(),
       resolverCount: window.__fixedAcceptance.resolveRequests.length
     }))()`);
-    requireAcceptance(state.context === expectedContext && state.title && state.resolverCount === before,
+    requireAcceptance(state.context === '' && state.title === expectedTitle && state.resolverCount === before,
       `itinerary state ${summaryKey} was inconsistent`, state);
     if (summaryKey === 'advisory') {
       const advisory = await evaluate(page, `(() => {
@@ -845,7 +849,7 @@ async function verifyFourItineraryStates(page) {
           label: second.innerText.trim().replace(/\\s+/g, ' ') };
       })()`);
       requireAcceptance(advisory && !advisory.conflict && !advisory.incomplete
-          && !advisory.pending && !advisory.disabled && advisory.label.includes('可以查询'),
+          && !advisory.pending && !advisory.disabled && advisory.label.includes('选择航段'),
         'single medium/supporting candidates were not queryable', advisory);
     }
     if (summaryKey === 'conflict') {
@@ -965,7 +969,7 @@ async function verifyStaffIconContract(page) {
       geometries
     };
   })`);
-  requireAcceptance(controls.length === 5, 'staff control count must be exactly five', controls.length);
+  requireAcceptance(controls.length === 6, 'staff control count must be exactly six', controls.length);
   for (const control of controls) {
     const person = control.geometries.filter((path) => path.className === 'staff-icon-person');
     const question = control.geometries.filter((path) => path.className === 'staff-icon-question');
@@ -992,9 +996,9 @@ async function verifyStaffIconContract(page) {
 
 async function verifyStaffSpeech(page) {
   const expected = {
-    zh: { text: '请把这个页面给工作人员看。需要时可联系机场。', lang: 'zh-CN' },
-    en: { text: 'Please show this screen to a member of staff. Contact the airport if needed.', lang: 'en-US' },
-    es: { text: 'Muestre esta pantalla a un miembro del personal. Contacte con el aeropuerto si lo necesita.', lang: 'es-ES' }
+    zh: { text: '请把这个页面给工作人员看。', lang: 'zh-CN' },
+    en: { text: 'Show this screen to a member of staff.', lang: 'en-US' },
+    es: { text: 'Muestre esta pantalla al personal.', lang: 'es-ES' }
   };
   let lifecyclePassed = true;
   for (const [locale, contract] of Object.entries(expected)) {
@@ -1188,9 +1192,9 @@ async function verifyCurrentStaffExperience(page) {
     && document.activeElement && document.activeElement.dataset.action === 'staff'`),
     'staff close did not cancel speech or restore focus');
   summary.deterministic.staff.cardOrder = true;
-  summary.deterministic.staff.locator = true;
-  summary.deterministic.staff.extraAssistance = true;
-  summary.deterministic.staff.browserBack = true;
+  summary.deterministic.staff.locator = 'NOT_APPLICABLE';
+  summary.deterministic.staff.extraAssistance = 'NOT_APPLICABLE';
+  summary.deterministic.staff.browserBack = 'NOT_APPLICABLE';
 }
 
 async function selectOutboundSegments(page) {
@@ -1513,7 +1517,7 @@ async function verifyJourneyProblem(page) {
     en: { question: 'Do you have another flight after this one?', mode: 'RECOVERY', statement: 'My flight is delayed. What should I do?',
       answer: 'Ask the airline desk whether you can still take this flight. Monitor the updated departure time.', confirmation: 'Please confirm with airline staff.', lang: 'en-US' },
     es: { question: '¿Tienes que hacer conexión después de este vuelo?', mode: 'FAIL', statement: 'Mi vuelo está retrasado. ¿Qué debo hacer?',
-      answer: 'No te preocupes. Conserva tu tarjeta de embarque y los datos del vuelo, y explica al personal de la aerolínea la situación que has descrito para que pueda confirmar el siguiente paso.', confirmation: 'Confírmalo con el personal de la aerolínea.', lang: 'es-ES' }
+      answer: 'Conserva la tarjeta de embarque y explica al personal de la aerolínea lo ocurrido para que confirme el siguiente paso.', confirmation: 'Confírmalo con el personal de la aerolínea.', lang: 'es-ES' }
   };
   const bannedJourneyCopy = /无法找到|没有找到|未找到|找不到|可靠的解决方案|could not find|cannot find|unable to find|no reliable solution|no se pudo encontrar|ninguna solución fiable/i;
   for (const [locale, contract] of Object.entries(localeContracts)) {
@@ -1567,7 +1571,7 @@ async function verifyJourneyProblem(page) {
   await waitFor(page, `document.querySelector('[data-journey-problem-statement]').value.includes('语音识别的完整情况')`, 'voice recognition success');
   await evaluate(page, `window.__fixedAcceptance.recognitionMode = 'failure'`);
   await click(page, '[data-action="journey-problem-voice"]');
-  await waitFor(page, `document.querySelector('[data-journey-problem-input-status]').textContent.trim() === '未识别成功'`, 'voice recognition failure');
+  await waitFor(page, `document.querySelector('[data-journey-problem-input-status]').textContent.trim() === '没有听清，请再说一次，或者打字告诉我。'`, 'voice recognition failure');
 
   const statement = '原文：AF1668 延误；下一班大概晚上八点，请完整保留。';
   await setValue(page, '[data-journey-problem-statement]', statement);
@@ -1718,6 +1722,8 @@ function safeRemoveTemp(directory, prefix) {
 async function main() {
   const chromePath = CHROME_CANDIDATES.find(existsSync);
   if (!chromePath) throw new Error('Google Chrome was not found; set CHROME_PATH');
+  const configuredBaseUrl = new URL(BASE_URL);
+  if (configuredBaseUrl.port === '8080') throw new Error('Port 8080 is forbidden for browser acceptance');
   await fetch(`${BASE_URL}/`, { signal: AbortSignal.timeout(5000) }).then((response) => {
     if (!response.ok) throw new Error(`Local application returned HTTP ${response.status}`);
   });

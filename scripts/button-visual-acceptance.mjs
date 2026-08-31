@@ -18,13 +18,13 @@ const CHROME_CANDIDATES = [
 ].filter(Boolean);
 
 const VIEWPORTS = [
-  { label: '320x800', width: 320, height: 800, deviceScaleFactor: 1 },
-  { label: '360x800', width: 360, height: 800, deviceScaleFactor: 1 },
-  { label: '375px', width: 375, height: 900, deviceScaleFactor: 1 },
-  { label: '390x844', width: 390, height: 844, deviceScaleFactor: 1 },
-  { label: '412px', width: 412, height: 900, deviceScaleFactor: 1 },
-  { label: 'desktop-1280', width: 1280, height: 900, deviceScaleFactor: 1 },
-  { label: '320px at 200%', width: 160, height: 900, deviceScaleFactor: 2 }
+  { label: '320x800', width: 320, height: 800, deviceScaleFactor: 1, pageScaleFactor: 1 },
+  { label: '360x800', width: 360, height: 800, deviceScaleFactor: 1, pageScaleFactor: 1 },
+  { label: '375px', width: 375, height: 900, deviceScaleFactor: 1, pageScaleFactor: 1 },
+  { label: '390x844', width: 390, height: 844, deviceScaleFactor: 1, pageScaleFactor: 1 },
+  { label: '412px', width: 412, height: 900, deviceScaleFactor: 1, pageScaleFactor: 1 },
+  { label: 'desktop-1280', width: 1280, height: 900, deviceScaleFactor: 1, pageScaleFactor: 1 },
+  { label: '390x844 at 200%', width: 195, height: 422, deviceScaleFactor: 2, pageScaleFactor: 2 }
 ];
 const LOCALES = ['zh', 'en', 'es'];
 const STOP_LABELS = { zh: '\u505c\u6b62', en: 'Stop', es: 'Detener' };
@@ -89,6 +89,10 @@ const summary = {
   externalRequests: [],
   expectedControlCount: 0,
   coveredControlCount: 0,
+  expectedControls: [],
+  coveredControls: [],
+  missingControls: [],
+  unexpectedControls: [],
   uncoveredControls: [],
   runs: [],
   failures: [],
@@ -98,7 +102,7 @@ const summary = {
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 async function reservePort() {
-  return new Promise((resolve, reject) => {
+  const port = await new Promise((resolve, reject) => {
     const server = net.createServer();
     server.unref();
     server.once('error', reject);
@@ -107,6 +111,7 @@ async function reservePort() {
       server.close((error) => error ? reject(error) : resolve(port));
     });
   });
+  return port === 8080 ? reservePort() : port;
 }
 
 async function readJson(url, options = {}) {
@@ -324,11 +329,34 @@ async function initializePage(page) {
         manualSegmentOptions.appendChild(item);
       });
     }
+    const reviewFields = document.querySelector('[data-review-candidate-fields]');
+    if (reviewFields && !reviewFields.querySelector('.review-candidate')) {
+      const list = document.createElement('div');
+      list.className = 'review-candidate-list';
+      ['BA117', 'BA171'].forEach((value, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'review-candidate';
+        button.dataset.action = 'select-review-candidate';
+        button.dataset.buttonVisualTestId = 'dynamic-review-candidate-' + index;
+        const candidateValue = document.createElement('strong');
+        candidateValue.textContent = value;
+        const details = document.createElement('span');
+        details.textContent = 'OCR · 78%';
+        button.append(candidateValue, details);
+        list.append(button);
+      });
+      reviewFields.append(list);
+    }
     document.querySelectorAll(${JSON.stringify(TARGET_SELECTOR)}).forEach((button, index) => {
-      button.dataset.buttonVisualTestId = 'control-' + index;
+      if (!button.dataset.buttonVisualTestId) button.dataset.buttonVisualTestId = 'control-' + index;
     });
     if (manualSegmentOptions) {
       manualSegmentOptions.dataset.buttonVisualControlIds = Array.from(manualSegmentOptions.children)
+        .map((button) => button.dataset.buttonVisualTestId || '').join(',');
+    }
+    if (reviewFields) {
+      reviewFields.dataset.buttonVisualReviewControlIds = Array.from(reviewFields.querySelectorAll('.review-candidate'))
         .map((button) => button.dataset.buttonVisualTestId || '').join(',');
     }
     return true;
@@ -375,8 +403,8 @@ function sceneMeasurementExpression(scene, stopLabel) {
         Array.from(container.children).forEach((child) => { child.hidden = false; });
       });
     }
-    function addGrid(selector, columns, singleRow = true, equalWidth = false) {
-      const responsiveColumns = innerWidth <= 220 ? 1 : columns;
+    function addGrid(selector, columns, singleRow = true, equalWidth = false, preserveAt200Percent = false) {
+      const responsiveColumns = innerWidth <= 220 && !preserveAt200Percent ? 1 : columns;
       grids.push({ selector, columns: responsiveColumns,
         singleRow: singleRow && responsiveColumns === columns, equalWidth });
     }
@@ -388,6 +416,13 @@ function sceneMeasurementExpression(scene, stopLabel) {
     hide('[data-complete-action], [data-departure-exception-actions], [data-action="journey-back"], [data-action="refresh-arrival"]');
     hide('[data-share-entry], [data-action="refresh-flight"]');
     hide('[data-scenario-panel]');
+    hide('[data-staff-card-view], [data-staff-locator-view], [data-staff-extra-view], [data-airport-resource-view]');
+    hide('[data-staff-guidance-loading], [data-staff-guidance-result], [data-staff-guidance-failure]');
+    const staffContactButton = document.querySelector('[data-staff-contact-button]');
+    if (staffContactButton) {
+      staffContactButton.hidden = true;
+      staffContactButton.disabled = false;
+    }
     show('[data-manual-flight-field], [data-manual-date-field]');
     elements('.step-assistance-actions, .confirm-assistance-actions')
       .forEach((group) => group.classList.remove('share-unavailable'));
@@ -403,6 +438,7 @@ function sceneMeasurementExpression(scene, stopLabel) {
     if (sceneName === 'welcome' || sceneName === 'upload' || sceneName === 'document-unusable'
         || sceneName === 'manual' || sceneName === 'error') {
       scope = showScreen(sceneName);
+      if (sceneName === 'manual') show('[data-action="demo-flight"]');
     } else if (sceneName === 'manual-partial') {
       scope = showScreen('manual');
       show('[data-manual-document-segments]');
@@ -429,6 +465,7 @@ function sceneMeasurementExpression(scene, stopLabel) {
       show('[data-review-candidates], [data-manual-flight-confirmation]');
       const reviewFields = document.querySelector('[data-review-candidate-fields]');
       if (reviewFields) {
+        const fixtureIds = (reviewFields.dataset.buttonVisualReviewControlIds || '').split(',');
         reviewFields.replaceChildren();
         const group = document.createElement('section');
         group.className = 'review-candidate-group';
@@ -440,11 +477,13 @@ function sceneMeasurementExpression(scene, stopLabel) {
           const button = document.createElement('button');
           button.type = 'button';
           button.className = 'review-candidate';
+          button.dataset.action = 'select-review-candidate';
+          button.dataset.buttonVisualTestId = fixtureIds[index] || 'dynamic-review-candidate-' + index;
           button.setAttribute('aria-pressed', String(index === 0));
           const candidateValue = document.createElement('strong');
           candidateValue.textContent = value;
           const details = document.createElement('span');
-          details.textContent = (index === 0 ? 'UNDERSTAND' : 'STRUCTURE') + ' · 78%';
+          details.textContent = 'OCR · 78%';
           button.append(candidateValue, details);
           list.append(button);
         });
@@ -520,6 +559,7 @@ function sceneMeasurementExpression(scene, stopLabel) {
         if (label) label.textContent = stopLabel;
       }
       addGrid('.step-assistance-actions', 3);
+      addGrid('.screen-step [data-airport-resource-row]', 2, true, false, true);
     } else if (sceneName === 'departure-exception') {
       scope = showScreen('step');
       step.classList.add('is-departure-exception');
@@ -553,9 +593,11 @@ function sceneMeasurementExpression(scene, stopLabel) {
         : document.querySelector(overlaySelectors[sceneName]);
       if (!scope) throw new Error('Unknown scene: ' + sceneName);
       scope.hidden = false;
+      if (['staff-dialog', 'staff-locator-dialog', 'staff-failure-dialog', 'staff-extra-dialog'].includes(sceneName)) {
+        show('[data-staff-contact-button]');
+      }
       if (sceneName === 'staff-dialog') {
         show('[data-staff-card-view], [data-action="find-staff"], [data-action="open-extra-assistance"]');
-        show('[data-staff-contact-button]');
         hide('[data-staff-locator-view], [data-staff-extra-view]');
       }
       if (sceneName === 'staff-locator-dialog') {
@@ -581,7 +623,7 @@ function sceneMeasurementExpression(scene, stopLabel) {
         show('[data-staff-extra-view]');
       }
       if (sceneName === 'airport-resource-result') {
-        hide('[data-staff-card-view]');
+        hide('[data-staff-card-view], [data-staff-contact-button]');
         show('[data-airport-resource-view], [data-airport-map-result], [data-airport-phone-result],'
           + ' [data-airport-contact-result], [data-action="retry-airport-resource"], [data-airport-resource-back]');
       }
@@ -593,7 +635,7 @@ function sceneMeasurementExpression(scene, stopLabel) {
       if (sceneName === 'journey-problem-first') {
         show('[data-journey-problem-connection-step]');
         hide('[data-journey-problem-form], [data-journey-problem-result]');
-        const connectionColumns = innerWidth <= 520 ? 1 : 2;
+        const connectionColumns = innerWidth <= 220 ? 1 : 2;
         addGrid('[data-journey-problem-overlay] .journey-problem-connection-actions', connectionColumns,
           connectionColumns === 2);
       }
@@ -652,12 +694,13 @@ function sceneMeasurementExpression(scene, stopLabel) {
     const uniqueControls = Array.from(new Set(controls));
     const measurements = [];
     for (const button of uniqueControls) {
-      const id = button.dataset.buttonVisualTestId || '(unassigned)';
+      const id = button.dataset.buttonVisualTestId || '';
       const label = button.innerText.trim().replace(/\\s+/g, ' ') || button.getAttribute('aria-label') || '(icon only)';
       const accessibleName = button.getAttribute('aria-label') || button.innerText.trim().replace(/\\s+/g, ' ');
       const buttonRect = button.getBoundingClientRect();
       const buttonStyle = getComputedStyle(button);
       const buttonFailures = [];
+      if (!id) buttonFailures.push('control has no stable visual-test ID');
       if (buttonRect.width < 43.5 || buttonRect.height < 43.5) buttonFailures.push('touch target is smaller than 44x44');
       if (button.dataset.action === 'open-journey-problem' && buttonRect.height < 71.5) {
         buttonFailures.push('gold journey-problem entry is shorter than 72px');
@@ -779,8 +822,12 @@ function sceneMeasurementExpression(scene, stopLabel) {
 
       const textFontSizes = Array.from(new Set(renderedTextRects.map((item) => +item.fontSize.toFixed(2))));
       if ((button.matches('.assistance-button') || button.matches('.dialog-speech-button')) && textFontSizes.length) {
-        const minimumExpected = innerWidth <= 220 ? 18 : innerWidth >= 768
-          ? 24 : Math.min(27, Math.max(21, innerWidth * 0.06));
+        const documentLanguage = String(document.documentElement.lang || '').toLowerCase();
+        const language = documentLanguage.startsWith('zh') ? 'zh'
+          : documentLanguage.startsWith('es') ? 'es' : 'en';
+        const minimumExpected = innerWidth <= 220
+          ? { zh: 20, en: 18, es: 18 }[language]
+          : { zh: 26, en: 25, es: 25 }[language];
         if (Math.min(...textFontSizes) < minimumExpected - 0.2) {
           buttonFailures.push('auxiliary label font is below its responsive minimum');
         }
@@ -843,6 +890,31 @@ function sceneMeasurementExpression(scene, stopLabel) {
         equalWidth: definition.equalWidth, widthDelta: +widthDelta.toFixed(2) });
     }
 
+    const staffTopbar = document.querySelector('.staff-card-topbar');
+    const staffCloseButton = document.querySelector('[data-action="close-staff"]');
+    let staffTopbarMeasurement = null;
+    if (staffTopbar && staffContactButton && staffCloseButton
+        && isRendered(staffTopbar) && isRendered(staffContactButton) && isRendered(staffCloseButton)) {
+      const topbarStyle = getComputedStyle(staffTopbar);
+      const contactStyle = getComputedStyle(staffContactButton);
+      const contactRect = staffContactButton.getBoundingClientRect();
+      staffTopbarMeasurement = {
+        rect: rectValue(staffTopbar.getBoundingClientRect()),
+        display: topbarStyle.display,
+        gridTemplateColumns: topbarStyle.gridTemplateColumns,
+        gap: topbarStyle.gap,
+        contact: {
+          rect: rectValue(contactRect),
+          fontSize: parseFloat(contactStyle.fontSize),
+          clientWidth: staffContactButton.clientWidth,
+          scrollWidth: staffContactButton.scrollWidth,
+          internalWidth: +(staffContactButton.clientWidth - parseFloat(contactStyle.paddingLeft)
+            - parseFloat(contactStyle.paddingRight)).toFixed(2)
+        },
+        close: { rect: rectValue(staffCloseButton.getBoundingClientRect()) }
+      };
+    }
+
     const scrollWidth = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth);
     const noHorizontalOverflow = scrollWidth <= innerWidth + 1;
     if (!noHorizontalOverflow) {
@@ -872,6 +944,7 @@ function sceneMeasurementExpression(scene, stopLabel) {
       noHorizontalOverflow,
       controls: measurements,
       grids: gridMeasurements,
+      staffTopbar: staffTopbarMeasurement,
       failures
     };
   })()`;
@@ -1002,9 +1075,9 @@ function validateSemanticIconContracts(run, expectedControls) {
     ...details
   });
 
-  if (expectedStaff.length !== 5) {
+  if (expectedStaff.length !== 6) {
     fail('semantic-icons', '(staff source count)', 'staff',
-      `expected exactly 5 data-action="staff" controls in the document but found ${expectedStaff.length}`);
+      `expected exactly 6 data-action="staff" controls in the document but found ${expectedStaff.length}`);
   }
   const staffWithoutClass = expectedStaff.filter((control) => !control.classes.split(/\s+/).includes('staff-help-button'));
   if (staffWithoutClass.length) {
@@ -1118,7 +1191,7 @@ function validateSemanticIconContracts(run, expectedControls) {
     staff: {
       expectedControls: expectedStaff.length,
       measuredControls: staffMeasurements.length,
-      exactRequiredCount: 5,
+      exactRequiredCount: 6,
       colors: Array.from(new Map(staffColors.map((colors) => [
         `${colors.person}:${colors.question}`, colors
       ])).values()),
@@ -1141,22 +1214,28 @@ async function runMeasurements(page) {
     .map((button) => ({ id: button.dataset.buttonVisualTestId, action: button.dataset.action || '',
       classes: button.className, svgCount: button.querySelectorAll('svg').length }))`);
   summary.expectedControlCount = expectedControls.length;
+  summary.expectedControls = expectedControls;
+  const expectedIds = new Set(expectedControls.map((control) => control.id).filter(Boolean));
   const covered = new Set();
+  const observedControls = new Map();
 
   for (const viewport of VIEWPORTS) {
-    await page.send('Emulation.setPageScaleFactor', { pageScaleFactor: 1 });
     await page.send('Emulation.setDeviceMetricsOverride', {
       width: viewport.width,
       height: viewport.height,
       deviceScaleFactor: viewport.deviceScaleFactor,
       mobile: viewport.width < 768
     });
+    await page.send('Emulation.setPageScaleFactor', { pageScaleFactor: viewport.pageScaleFactor });
+    const viewportInnerWidth = await evaluate(page, 'innerWidth');
     for (const locale of LOCALES) {
       await setLocale(page, locale);
       const run = {
         viewport: viewport.label,
         cssWidth: viewport.width,
+        innerWidth: viewportInnerWidth,
         deviceScaleFactor: viewport.deviceScaleFactor,
+        pageScaleFactor: viewport.pageScaleFactor,
         locale,
         scenes: [],
         measurements: [],
@@ -1166,10 +1245,16 @@ async function runMeasurements(page) {
       for (const scene of SCENES) {
         const result = await evaluate(page, sceneMeasurementExpression(scene, STOP_LABELS[locale]));
         result.controls.forEach((control) => {
-          covered.add(control.id);
+          if (control.id) {
+            covered.add(control.id);
+            if (!observedControls.has(control.id)) observedControls.set(control.id, {
+              id: control.id, action: control.action, classes: control.classes
+            });
+          }
           const specificallyRequested = control.svgs.length > 0
             || control.classes.includes('assistance-button')
             || control.classes.includes('dialog-speech-button')
+            || control.action === 'journey-problem-connection'
             || ['complete-action', 'journey-back', 'confirm-board', 'cancel-board',
               'confirm-landed', 'cancel-landed'].includes(control.action);
           if (specificallyRequested) {
@@ -1183,7 +1268,8 @@ async function runMeasurements(page) {
           scrollWidth: result.scrollWidth,
           noHorizontalOverflow: result.noHorizontalOverflow,
           controlCount: result.controls.length,
-          grids: result.grids
+          grids: result.grids,
+          staffTopbar: result.staffTopbar
         });
       }
       run.measurements = Array.from(representativeMeasurements.values());
@@ -1193,10 +1279,17 @@ async function runMeasurements(page) {
     }
   }
 
-  summary.coveredControlCount = covered.size;
-  summary.uncoveredControls = expectedControls.filter((control) => !covered.has(control.id));
-  for (const control of summary.uncoveredControls) {
+  summary.coveredControls = expectedControls.filter((control) => covered.has(control.id));
+  summary.coveredControlCount = summary.coveredControls.length;
+  summary.missingControls = expectedControls.filter((control) => !covered.has(control.id));
+  summary.uncoveredControls = summary.missingControls;
+  summary.unexpectedControls = Array.from(observedControls.values())
+    .filter((control) => !expectedIds.has(control.id));
+  for (const control of summary.missingControls) {
     summary.failures.push({ type: 'coverage', ...control, reason: 'control was never rendered by a visual test scene' });
+  }
+  for (const control of summary.unexpectedControls) {
+    summary.failures.push({ type: 'coverage', ...control, reason: 'rendered control was not present in the expected control inventory' });
   }
 }
 
@@ -1323,7 +1416,9 @@ function compactSummary(result) {
     return {
       viewport,
       cssWidth: runs[0].cssWidth,
+      innerWidth: runs[0].innerWidth,
       deviceScaleFactor: runs[0].deviceScaleFactor,
+      pageScaleFactor: runs[0].pageScaleFactor,
       auxiliaryFontSizes: uniqueNumbers(auxiliary.flatMap((measurement) => measurement.textFontSizes)),
       iconSizes: uniqueSizes(measurements.flatMap((measurement) => measurement.svgs.map((svg) => svg.box))),
       buttonSvgSafety: {
@@ -1350,10 +1445,17 @@ function compactSummary(result) {
     externalRequests: result.externalRequests,
     expectedControlCount: result.expectedControlCount,
     coveredControlCount: result.coveredControlCount,
+    expectedControls: result.expectedControls,
+    coveredControls: result.coveredControls,
+    missingControls: result.missingControls,
+    unexpectedControls: result.unexpectedControls,
     uncoveredControls: result.uncoveredControls,
     runCount: result.runs.length,
     runs: result.runs.map((run) => ({
       viewport: run.viewport,
+      innerWidth: run.innerWidth,
+      deviceScaleFactor: run.deviceScaleFactor,
+      pageScaleFactor: run.pageScaleFactor,
       locale: run.locale,
       passed: run.failures.length === 0,
       noHorizontalOverflow: run.scenes.every((scene) => scene.noHorizontalOverflow),
@@ -1372,6 +1474,28 @@ function compactSummary(result) {
       semanticIconsPassed: !run.failures.some((failure) => failure.type === 'icon-contract'),
       failures: run.failures
     })),
+    staffTopbarEvidence: result.runs
+      .filter((run) => run.viewport === '390x844 at 200%' && run.locale === 'es')
+      .flatMap((run) => run.scenes.filter((scene) => scene.staffTopbar)
+        .map((scene) => ({ scene: scene.scene, ...scene.staffTopbar }))),
+    failureControlGeometry: result.runs.flatMap((run) => run.failures
+      .filter((failure) => failure.type === 'control')
+      .map((failure) => {
+        const measurement = run.measurements.find((candidate) => candidate.id === failure.id
+          && candidate.scene === failure.scene && candidate.label === failure.label);
+        return measurement ? {
+          viewport: run.viewport,
+          locale: run.locale,
+          scene: failure.scene,
+          id: failure.id,
+          label: failure.label,
+          reason: failure.reason,
+          box: measurement.box,
+          computedFontSize: measurement.computedFontSize,
+          textFontSizes: measurement.textFontSizes,
+          textBoxes: measurement.textBoxes
+        } : null;
+      }).filter(Boolean)),
     viewportMetrics,
     buttonSvgSafety: {
       minimumRequiredClearanceCss: BUTTON_SVG_MIN_PAINTED_CLEARANCE_PX,

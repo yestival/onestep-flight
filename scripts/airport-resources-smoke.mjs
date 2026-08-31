@@ -290,10 +290,18 @@ async function main() {
       const row = document.querySelector('[data-airport-resource-row]');
       const controls = Array.from(row.querySelectorAll('button'));
       const rects = controls.map((item) => item.getBoundingClientRect());
+      const describe = (item) => {
+        const rect = item.getBoundingClientRect();
+        const style = getComputedStyle(item);
+        return { rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom,
+          width: rect.width, height: rect.height }, display: style.display, hidden: item.hidden,
+          gridTemplateColumns: style.gridTemplateColumns, fontSize: style.fontSize };
+      };
       return { journeyButtons: controls.length === 2
           && controls[0].dataset.action === 'open-airport-map'
           && controls[1].dataset.action === 'contact-airport-resource'
           && Math.abs(rects[0].top - rects[1].top) < 2,
+        journeyButtonDiagnostics: { innerWidth, row: describe(row), buttons: controls.map(describe) },
         noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth + 1 };
     })()`));
 

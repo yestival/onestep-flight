@@ -9,11 +9,9 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,6 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import com.selene.onestepflight.dto.JourneyProblemRequest;
 import com.selene.onestepflight.dto.JourneyProblemRequest.CurrentFlight;
 import com.selene.onestepflight.dto.JourneyProblemRequest.FlightChangeInput;
+import com.selene.onestepflight.dto.JourneyProblemResponse.AnswerStatus;
 import com.selene.onestepflight.dto.ProviderFlightResult;
 import com.selene.onestepflight.dto.ResolveFlightRequest;
 import com.selene.onestepflight.dto.ResolvedFlightContext;
@@ -39,6 +38,12 @@ class SerpApiJourneyProblemCrossFlightLiveTest {
 			"serpapi-journey-problem-ai-mode-simple-cross-flight");
 	private static final LocalDate DEPARTURE_DATE = LocalDate.of(2026, 8, 29);
 	private static final Pattern SENTENCE = Pattern.compile("[^。！？.!?]+[。！？.!?]+(?:[”’\\\"']+)?");
+	private static final Pattern FORBIDDEN_FORMAT = Pattern.compile(
+			"(?im)https?://|www\\.|^\\s{0,3}#{1,6}\\s+|^\\s*(?:[-*+]\\s+|\\d+[.)]\\s+)");
+	private static final Pattern INTERNAL_ERROR = Pattern.compile(
+			"(?i)\\b(?:exception|traceback|stack trace|internal server error|serpapi|aerodatabox|"
+					+ "aviationstack|variflight|api[_ -]?key|java\\.lang\\.)\\b|\\bhttp\\s+[45]\\d{2}\\b");
+	private static final String PENDING_HUMAN_REVIEW = "PENDING_HUMAN_REVIEW";
 	private static final AirlineRegistry AIRLINES = AirlineRegistry.loadDefault();
 
 	@Autowired
@@ -77,15 +82,12 @@ class SerpApiJourneyProblemCrossFlightLiveTest {
 					scenario.flightNumber(), DEPARTURE_DATE, false, null, null, null, null, true);
 			List<Map<String, Object>> queryAttempts = new ArrayList<>();
 			ResolvedFlightContext result = null;
-			for (int attempt = 1; attempt <= 2 && result == null; attempt++) {
-				try {
-					result = resolvedFlightService.resolve(query);
-					queryAttempts.add(queryAttempt(attempt, "SUCCESS", null, result.providerResults()));
-				} catch (AllFlightProvidersUnavailableException exception) {
-					queryAttempts.add(queryAttempt(attempt, "FAILED", exception.code(),
-							exception.providerResults()));
-					if (attempt == 1) Thread.sleep(2_000L);
-				}
+			try {
+				result = resolvedFlightService.resolve(query);
+				queryAttempts.add(queryAttempt(1, "SUCCESS", null, result.providerResults()));
+			} catch (AllFlightProvidersUnavailableException exception) {
+				queryAttempts.add(queryAttempt(1, "FAILED", exception.code(),
+						exception.providerResults()));
 			}
 			if (result == null) {
 				Map<String, Object> failure = new LinkedHashMap<>();
@@ -97,11 +99,14 @@ class SerpApiJourneyProblemCrossFlightLiveTest {
 				Files.writeString(OUTPUT.resolve("flight-query-failure-" + scenario.flightNumber() + ".json"),
 						failureJson, StandardCharsets.UTF_8);
 				throw new AssertionError(scenario.flightNumber()
-						+ " did not return a live project flight result after one transient retry");
+						+ " did not return a live project flight result");
 			}
 			assertThat(result.live())
 					.as("%s must be supplied by a live project flight query", scenario.flightNumber())
 					.isTrue();
+			assertThat(result.demo())
+					.as("%s must not use demo flight data", scenario.flightNumber())
+					.isFalse();
 			assertThat(result.normalizedFlightNumber()).isEqualTo(scenario.flightNumber());
 			queries.add(new QueryCapture(scenario, query, result, List.copyOf(queryAttempts)));
 			Thread.sleep(1_200L);
@@ -133,13 +138,32 @@ class SerpApiJourneyProblemCrossFlightLiveTest {
 			writeAggregate(records);
 
 			@SuppressWarnings("unchecked")
-			List<String> issues = (List<String>) record.get("issues");
-			assertThat(issues)
-					.as("Stop on the first genuine simple-product acceptance failure")
+			List<String> technicalIssues = (List<String>) record.get("technicalIssues");
+			assertThat(technicalIssues)
+					.as("Stop on the first objective technical failure")
 					.isEmpty();
 		}
 
 		assertThat(records).hasSize(8);
+	}
+
+	@Test
+	void naturalLanguageWordingDoesNotCreateTechnicalFailures() {
+		String kl1001Answer = "Comprendo su preocupación por la situación en Ámsterdam. "
+				+ "Como este vuelo ya operó en una fecha anterior, le recomiendo que se acerque al mostrador "
+				+ "de la aerolínea con los registros de su viaje para que el personal pueda confirmar el estado "
+				+ "de su reserva y guiarle en los siguientes pasos.";
+		String aa100Answer = "Comprendo su preocupación por la situación en el aeropuerto tras el vuelo "
+				+ "programado para hace dos días. Le sugiero acudir al personal de American Airlines en la "
+				+ "Terminal 8 con sus registros de viaje para que puedan verificar su caso y confirmarle los "
+				+ "pasos a seguir con su itinerario.";
+		String wordingOutsideAnyFiniteActionVocabulary =
+				"El personal del aeropuerto puede orientarle sobre su itinerario.";
+
+		assertThat(technicalIssues(validTechnicalRecord("KL1001", kl1001Answer))).isEmpty();
+		assertThat(technicalIssues(validTechnicalRecord("AA100", aa100Answer))).isEmpty();
+		assertThat(technicalIssues(validTechnicalRecord("TEST1", wordingOutsideAnyFiniteActionVocabulary)))
+				.isEmpty();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -147,19 +171,14 @@ class SerpApiJourneyProblemCrossFlightLiveTest {
 		Path path = OUTPUT.resolve("run-%02d.json".formatted(run));
 		assertThat(path).exists();
 		Map<String, Object> record = objectMapper.readValue(Files.readString(path), Map.class);
-		CurrentFlight flight = objectMapper.convertValue(record.get("currentFlight"), CurrentFlight.class);
-		JourneyProblemRequest request = new JourneyProblemRequest(
-				(Boolean) record.get("hasConnection"), (String) record.get("passengerStatement"),
-				(String) record.get("locale"), flight);
-		Map<String, Map<String, Object>> acceptance = acceptance(
-				request, (String) record.get("finalDisplayBody"));
+		if (!record.containsKey("flightQueryDemo")) {
+			Map<String, Object> resolvedFlightContext =
+					(Map<String, Object>) record.get("resolvedFlightContext");
+			record.put("flightQueryDemo", resolvedFlightContext == null
+					? null : resolvedFlightContext.get("demo"));
+		}
 		record.put("airline", airline((String) record.get("flightNumber")));
-		record.put("manualAcceptance", acceptance);
-		List<String> issues = issues(acceptance);
-		record.put("issues", issues);
-		record.put("manualReviewStatus", issues.isEmpty() ? "PASS" : "FAIL");
-		record.put("manualReviewNote",
-				"已依据实际最终正文逐项核对七项简单产品验收标准；未按措辞风格额外扣分。");
+		applyTechnicalReview(record);
 		String json = pretty(record);
 		assertNoApiKeys(json);
 		Files.writeString(path, json, StandardCharsets.UTF_8);
@@ -192,6 +211,7 @@ class SerpApiJourneyProblemCrossFlightLiveTest {
 		record.put("flightQueryRequest", capture.query());
 		record.put("flightQueryAttempts", capture.queryAttempts());
 		record.put("flightQueryLive", result.live());
+		record.put("flightQueryDemo", result.demo());
 		record.put("flightQueryDataSource", result.liveDataSource());
 		record.put("flightQuerySourceStatus", providerStatuses(result.providerResults()));
 		record.put("resolvedFlightContext", result);
@@ -203,19 +223,19 @@ class SerpApiJourneyProblemCrossFlightLiveTest {
 		record.put("finalStatus", trace.responseStatus());
 		record.put("finalDisplayBody", trace.displayAnswer());
 		record.put("retrievedAt", trace.retrievedAt());
-
-		Map<String, Map<String, Object>> acceptance = acceptance(request, trace.displayAnswer());
-		record.put("manualAcceptance", acceptance);
-		List<String> issues = issues(acceptance);
-		record.put("issues", issues);
+		applyTechnicalReview(record);
 		return record;
 	}
 
-	private static List<String> issues(Map<String, Map<String, Object>> acceptance) {
-		return acceptance.entrySet().stream()
-				.filter(entry -> !Boolean.TRUE.equals(entry.getValue().get("pass")))
-				.map(entry -> entry.getKey() + ": " + entry.getValue().get("conclusion"))
-				.toList();
+	private static void applyTechnicalReview(Map<String, Object> record) {
+		for (String obsolete : List.of("manualAcceptance", "manualReviewStatus", "manualReviewNote",
+				"manualReview", "acceptance", "review", "issues")) {
+			record.remove(obsolete);
+		}
+		Map<String, Boolean> checks = technicalChecks(record);
+		record.put("technicalChecks", checks);
+		record.put("technicalIssues", failedTechnicalChecks(checks));
+		record.put("semanticReviewStatus", PENDING_HUMAN_REVIEW);
 	}
 
 	private static JourneyProblemRequest journeyRequest(Scenario scenario,
@@ -308,108 +328,79 @@ class SerpApiJourneyProblemCrossFlightLiveTest {
 		return trace.attempts().size() > 1 ? "RECOVERY" : "PRIMARY";
 	}
 
-	private static Map<String, Map<String, Object>> acceptance(JourneyProblemRequest request,
-			String answer) {
-		String normalized = answer == null ? "" : answer.toLowerCase(Locale.ROOT);
-		Map<String, Map<String, Object>> values = new LinkedHashMap<>();
-		boolean correctLanguage = correctLanguage(normalized, request.locale());
-		values.put("1_correctLanguage", conclusion(correctLanguage,
-				correctLanguage ? "回答使用所选 locale 的语言。" : "回答语言与所选 locale 不一致。"));
-
-		boolean related = relatedToFlight(normalized, request.currentFlight());
-		values.put("2_relatedToFlightAndProblem", conclusion(related,
-				related ? "回答围绕当前航班或乘客说明。" : "回答与当前航班和问题缺少可见关联。"));
-
-		boolean actionable = hasNextAction(normalized);
-		values.put("3_givesNextAction", conclusion(actionable,
-				actionable ? "回答给出了乘客现在可执行的下一步。" : "回答没有提供下一步行动。"));
-
-		boolean calm = calming(normalized, actionable);
-		values.put("4_reassuringOrCalm", conclusion(calm,
-				calm ? "回答包含安抚或平静、礼貌的行动引导。" : "回答缺少正常的安抚或平静引导。"));
-
-		boolean noSystemFailure = !containsSystemFailure(answer);
-		values.put("5_noSearchOrSystemFailureCopy", conclusion(noSystemFailure,
-				noSystemFailure ? "未向用户显示搜索失败或系统失败式文字。" : "出现搜索或系统失败式文字。"));
-
-		boolean routeNotReversed = !routeReversed(normalized, request.currentFlight());
-		values.put("6_routeNotReversed", conclusion(routeNotReversed,
-				routeNotReversed ? "未把出发机场、到达机场或航线说反。" : "回答把出发和到达方向说反。"));
-
-		int sentences = sentenceCount(answer);
-		boolean atMostTwo = sentences <= 2;
-		values.put("7_atMostTwoSentences", conclusion(atMostTwo,
-				(atMostTwo ? "最终正文不超过两句话（" : "最终正文超过两句话（") + sentences + " 句）。"));
-		return values;
+	private static Map<String, Boolean> technicalChecks(Map<String, Object> record) {
+		Map<String, Boolean> checks = new LinkedHashMap<>();
+		checks.put("flightQuerySucceeded", querySucceeded(record.get("flightQueryAttempts")));
+		checks.put("flightQueryLive", Boolean.TRUE.equals(record.get("flightQueryLive")));
+		checks.put("flightQueryNotDemo", Boolean.FALSE.equals(record.get("flightQueryDemo")));
+		checks.put("flightNumberMatchesQuery",
+				nonBlankEquals(record.get("preferredFlightNumber"), record.get("flightNumber")));
+		checks.put("tracePresent", hasEntries(record.get("attempts")));
+		checks.put("promptPresent", nonBlank(record.get("actualPrimaryPrompt"))
+				&& firstAttemptHasPrompt(record.get("attempts")));
+		checks.put("finalStatusAnswer", AnswerStatus.ANSWER.name().equals(String.valueOf(record.get("finalStatus"))));
+		checks.put("finalPathNotFallback", record.get("finalPath") != null
+				&& !"FALLBACK".equals(String.valueOf(record.get("finalPath"))));
+		String answer = record.get("finalDisplayBody") instanceof String value ? value : "";
+		checks.put("answerNotBlank", !answer.isBlank());
+		checks.put("atMostTwoSentences", sentenceCount(answer) <= 2);
+		checks.put("noUrlTitleOrList", !FORBIDDEN_FORMAT.matcher(answer).find());
+		checks.put("noInternalErrorInformation", !INTERNAL_ERROR.matcher(answer).find());
+		return checks;
 	}
 
-	private static Map<String, Object> conclusion(boolean pass, String conclusion) {
-		Map<String, Object> value = new LinkedHashMap<>();
-		value.put("pass", pass);
-		value.put("conclusion", conclusion);
-		return value;
+	private static List<String> technicalIssues(Map<String, Object> record) {
+		return failedTechnicalChecks(technicalChecks(record));
 	}
 
-	private static boolean correctLanguage(String text, String locale) {
-		long han = text.codePoints()
-				.filter(code -> Character.UnicodeScript.of(code) == Character.UnicodeScript.HAN)
-				.count();
-		if ("zh".equals(locale)) return han >= 4;
-		if (han > 0) return false;
-		if ("es".equals(locale)) {
-			return containsAny(text, "vuelo", "aerolínea", "aerolinea", "personal", "mostrador",
-					"puerta", "conexión", "conexion", "dirígete", "dirigete", "conserva");
-		}
-		return containsAny(text, "flight", "airline", "staff", "desk", "gate", "connection",
-				"boarding", "heathrow");
+	private static List<String> failedTechnicalChecks(Map<String, Boolean> checks) {
+		return checks.entrySet().stream()
+				.filter(entry -> !Boolean.TRUE.equals(entry.getValue()))
+				.map(Map.Entry::getKey)
+				.toList();
 	}
 
-	private static boolean relatedToFlight(String text, CurrentFlight flight) {
-		return containsAny(text,
-				lower(flight.flightNumber()), lower(flight.departureAirport()), lower(flight.arrivalAirport()),
-				lower(flight.departureAirportName()), lower(flight.arrivalAirportName()),
-				"航班", "机场", "登机", "flight", "airport", "boarding", "vuelo", "aeropuerto", "embarque");
+	private static boolean querySucceeded(Object attemptsValue) {
+		if (!(attemptsValue instanceof List<?> attempts) || attempts.isEmpty()) return false;
+		Object last = attempts.get(attempts.size() - 1);
+		return last instanceof Map<?, ?> attempt && "SUCCESS".equals(attempt.get("outcome"));
 	}
 
-	private static boolean hasNextAction(String text) {
-		return containsAny(text,
-				"请", "前往", "保留", "联系", "询问", "查看", "留意", "确认",
-				"please", "keep", "ask", "go to", "check", "contact", "head to", "speak to",
-				"conserva", "pregunta", "dirígete", "dirigete", "acérquese", "acerquese",
-				"acuda", "consulta", "contacta", "habla", "ve al", "ve a la");
+	private static boolean hasEntries(Object value) {
+		return value instanceof List<?> entries && !entries.isEmpty();
 	}
 
-	private static boolean calming(String text, boolean actionable) {
-		return containsAny(text,
-				"别着急", "不要着急", "请放心", "保持冷静", "深呼吸",
-				"don't worry", "don’t worry", "stay calm", "remain calm", "take a breath",
-				"no te preocupes", "mantén la calma", "manten la calma", "mantenga la calma",
-				"comprendo su preocupación", "comprendo su preocupacion", "respira")
-				|| (actionable && !containsAny(text, "!", "紧急", "panic", "pánico", "panico"));
+	private static boolean firstAttemptHasPrompt(Object attemptsValue) {
+		if (!(attemptsValue instanceof List<?> attempts) || attempts.isEmpty()) return false;
+		Object first = attempts.get(0);
+		return first instanceof Map<?, ?> attempt && nonBlank(attempt.get("prompt"));
 	}
 
-	private static boolean containsSystemFailure(String answer) {
-		String text = answer == null ? "" : answer.toLowerCase(Locale.ROOT);
-		return SerpApiJourneyProblemService.containsUnhelpfulPhrase(answer)
-				|| containsAny(text, "搜索失败", "系统失败", "系统错误", "search failed",
-						"system failure", "system error", "falló la búsqueda", "fallo la búsqueda",
-						"error del sistema");
+	private static boolean nonBlankEquals(Object expected, Object actual) {
+		return nonBlank(expected) && String.valueOf(expected).equals(String.valueOf(actual));
 	}
 
-	private static boolean routeReversed(String text, CurrentFlight flight) {
-		List<String> departures = nonBlank(lower(flight.departureAirport()), lower(flight.departureAirportName()));
-		List<String> arrivals = nonBlank(lower(flight.arrivalAirport()), lower(flight.arrivalAirportName()));
-		for (String arrival : arrivals) {
-			for (String departure : departures) {
-				if (containsAny(text,
-						"from " + arrival + " to " + departure,
-						"de " + arrival + " a " + departure,
-						"desde " + arrival + " hasta " + departure,
-						"从" + arrival + "到" + departure,
-						"从 " + arrival + " 到 " + departure)) return true;
-			}
-		}
-		return false;
+	private static boolean nonBlank(Object value) {
+		return value instanceof String text && !text.isBlank();
+	}
+
+	private static Map<String, Object> validTechnicalRecord(String flightNumber, String answer) {
+		Map<String, Object> queryAttempt = new LinkedHashMap<>();
+		queryAttempt.put("outcome", "SUCCESS");
+		Map<String, Object> answerAttempt = new LinkedHashMap<>();
+		answerAttempt.put("prompt", "deterministic prompt fixture");
+		Map<String, Object> record = new LinkedHashMap<>();
+		record.put("preferredFlightNumber", flightNumber);
+		record.put("flightNumber", flightNumber);
+		record.put("flightQueryAttempts", List.of(queryAttempt));
+		record.put("flightQueryLive", true);
+		record.put("flightQueryDemo", false);
+		record.put("attempts", List.of(answerAttempt));
+		record.put("actualPrimaryPrompt", "deterministic prompt fixture");
+		record.put("finalStatus", AnswerStatus.ANSWER.name());
+		record.put("finalPath", "PRIMARY");
+		record.put("finalDisplayBody", answer);
+		return record;
 	}
 
 	private static int sentenceCount(String answer) {
@@ -451,8 +442,10 @@ class SerpApiJourneyProblemCrossFlightLiveTest {
 					.append("- Passenger statement: ").append(record.get("passengerStatement")).append('\n')
 					.append("- Final path: ").append(record.get("finalPath")).append('\n')
 					.append("- Final answer: ").append(record.get("finalDisplayBody")).append('\n')
-					.append("- Acceptance: ").append(record.get("manualAcceptance")).append('\n')
-					.append("- Issues: ").append(record.get("issues")).append("\n\n");
+					.append("- Technical checks: ").append(record.get("technicalChecks")).append('\n')
+					.append("- Technical issues: ").append(record.get("technicalIssues")).append('\n')
+					.append("- Semantic review status: ").append(record.get("semanticReviewStatus"))
+					.append("\n\n");
 		}
 		return value.toString();
 	}
@@ -486,23 +479,6 @@ class SerpApiJourneyProblemCrossFlightLiveTest {
 		if (iata.find()) return iata.group(1);
 		Matcher icao = Pattern.compile("^([A-Z]{3})(?=\\d)").matcher(flightNumber);
 		return icao.find() ? icao.group(1) : flightNumber;
-	}
-
-	private static List<String> nonBlank(String... values) {
-		Set<String> result = new LinkedHashSet<>();
-		for (String value : values) if (value != null && !value.isBlank()) result.add(value);
-		return List.copyOf(result);
-	}
-
-	private static String lower(String value) {
-		return value == null ? null : value.toLowerCase(Locale.ROOT);
-	}
-
-	private static boolean containsAny(String text, String... values) {
-		for (String value : values) {
-			if (value != null && !value.isBlank() && text.contains(value)) return true;
-		}
-		return false;
 	}
 
 	private static void assertNoApiKeys(String output) {

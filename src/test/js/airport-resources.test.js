@@ -31,7 +31,7 @@ test('journey has map and contact while the help-card top row has only contact a
   assert.doesNotMatch(topbar, /open-airport-map|viewAirportMap|airport map|机场地图|mapa del aeropuerto/i);
   assert.match(css, /\.airport-resource-actions\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(css, /\.staff-card-topbar\{display:grid;grid-template-columns:minmax\(0,1fr\) 56px/);
-  assert.match(css, /@media\(max-width:390px\)\{[\s\S]*\.staff-card-topbar\{grid-template-columns:minmax\(0,1fr\) 56px;gap:8px\}/);
+  assert.match(css, /@media\(max-width:420px\)\{[\s\S]*\.staff-card-topbar\{grid-template-columns:minmax\(0,1fr\) 56px;gap:8px\}/);
   assert.match(css, /html\{min-width:0;overflow-x:hidden\}/);
 });
 

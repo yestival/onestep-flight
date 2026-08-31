@@ -8,12 +8,15 @@
   var LOCALE_KEY = 'onestep-flight-locale';
   var SHARE_SESSION_KEY = 'onestep-flight-share-session-v1';
   var SHARE_PENDING_KEY = 'onestep-flight-share-pending-v1';
+  var SHARE_REVOCATION_PENDING_KEY = 'onestep-flight-share-revocation-pending-v1';
   var QA_SHARE_SESSION_KEY = 'onestep-flight-qa-share-session-v1';
   var QA_SHARE_PENDING_KEY = 'onestep-flight-qa-share-pending-v1';
+  var QA_SHARE_REVOCATION_PENDING_KEY = 'onestep-flight-qa-share-revocation-pending-v1';
   var DEMO_JOURNEY_PREFIX = 'onestep-flight-demo-journey-v1:';
   var DEMO_OFFLINE_PREFIX = 'onestep-flight-demo-offline-journey-v1:';
   var DEMO_SHARE_PREFIX = 'onestep-flight-demo-share-session-v1:';
   var DEMO_SHARE_PENDING_PREFIX = 'onestep-flight-demo-share-pending-v1:';
+  var DEMO_SHARE_REVOCATION_PENDING_PREFIX = 'onestep-flight-demo-share-revocation-pending-v1:';
   var DEMO_CONTROL_PREFIX = 'onestep-flight-demo-control-v1:';
   var OFFLINE_MAX_AGE_MS = 48 * 60 * 60 * 1000;
   var currentScreen = 'welcome';
@@ -134,7 +137,9 @@
   Object.assign(translations.zh, {
     journeyProblem: '航程出问题', journeyProblemCloseAria: '关闭航程问题卡片',
     journeyProblemConnectionQuestion: '这班之后还要转机吗？', journeyProblemConnectionYes: '要转机',
-    journeyProblemConnectionNo: '不转机', journeyProblemTransferPrompt: '请尽力说明下一班的起飞时间、航班号和目的地。',
+    journeyProblemConnectionYesAria: '要转机，这班之后我还有另一班航班',
+    journeyProblemConnectionNo: '不转机', journeyProblemConnectionNoAria: '不转机，这是我的最后一班航班',
+    journeyProblemTransferPrompt: '请尽力说明下一班的起飞时间、航班号和目的地。',
     journeyProblemStatementLabel: '请说明遇到的情况', journeyProblemPlaceholder: '请说明遇到的情况',
     journeyProblemVoice: '语音输入', journeyProblemVoiceAria: '使用语音说明情况', journeyProblemListening: '正在听',
     journeyProblemSpeechFailed: '未识别成功', journeyProblemSubmit: '提交情况', journeyProblemLoading: '正在寻找解决方案……',
@@ -146,7 +151,8 @@
   Object.assign(translations.en, {
     journeyProblem: 'Flight problem', journeyProblemCloseAria: 'Close flight problem card',
     journeyProblemConnectionQuestion: 'Do you have another flight after this one?',
-    journeyProblemConnectionYes: 'Yes, I have a connection', journeyProblemConnectionNo: 'No connection',
+    journeyProblemConnectionYes: 'Yes', journeyProblemConnectionYesAria: 'Yes, I have another flight after this one',
+    journeyProblemConnectionNo: 'No', journeyProblemConnectionNoAria: 'No, this is my last flight',
     journeyProblemTransferPrompt: 'Please give the next flight’s departure time, flight number, and destination as fully as possible.',
     journeyProblemStatementLabel: 'Describe what happened', journeyProblemPlaceholder: 'Describe what happened',
     journeyProblemVoice: 'Voice input', journeyProblemVoiceAria: 'Describe the problem by voice', journeyProblemListening: 'Listening',
@@ -159,7 +165,8 @@
   Object.assign(translations.es, {
     journeyProblem: 'Problema con el viaje', journeyProblemCloseAria: 'Cerrar la tarjeta del problema de viaje',
     journeyProblemConnectionQuestion: '¿Tienes que hacer conexión después de este vuelo?',
-    journeyProblemConnectionYes: 'Sí, tengo conexión', journeyProblemConnectionNo: 'No tengo conexión',
+    journeyProblemConnectionYes: 'Sí', journeyProblemConnectionYesAria: 'Sí, tengo otro vuelo después de este',
+    journeyProblemConnectionNo: 'No', journeyProblemConnectionNoAria: 'No, este es mi último vuelo',
     journeyProblemTransferPrompt: 'Indica lo mejor posible la hora de salida, el número de vuelo y el destino del siguiente vuelo.',
     journeyProblemStatementLabel: 'Describe lo ocurrido', journeyProblemPlaceholder: 'Describe lo ocurrido',
     journeyProblemVoice: 'Entrada por voz', journeyProblemVoiceAria: 'Describe el problema por voz', journeyProblemListening: 'Escuchando',
@@ -396,6 +403,8 @@
 
   Object.assign(translations.zh, {
     viewAirportMap: '查看机场地图', contactAirport: '联系机场', airportMapTitle: '机场地图', airportContactTitle: '联系机场',
+    journeyAirportMap: '机场地图', journeyAirportMapAria: '机场地图，查看机场官方地图或位置',
+    journeyContactAirport: '联系机场', journeyContactAirportAria: '联系机场，查找机场官方联系方式',
     findingAirportMap: '正在查找机场地图……', findingAirportContact: '正在查找机场联系方式……',
     airportResourceWaitHint: '可能需要等候近一分钟。',
     mapFound: '已找到机场地图。', openOfficialMap: '打开机场地图', mapPageOnly: '已找到机场官方导航页面。',
@@ -417,6 +426,8 @@
   });
   Object.assign(translations.en, {
     viewAirportMap: 'View airport map', contactAirport: 'Contact airport', airportMapTitle: 'Airport map', airportContactTitle: 'Contact airport',
+    journeyAirportMap: 'Airport map', journeyAirportMapAria: 'Airport map, view the official airport map or location',
+    journeyContactAirport: 'Contact airport', journeyContactAirportAria: 'Contact airport, find official airport contact details',
     findingAirportMap: 'Finding the airport map…', findingAirportContact: 'Finding airport contact details…',
     airportResourceWaitHint: 'This may take up to a minute.',
     mapFound: 'The airport map is ready.', openOfficialMap: 'Open airport map', mapPageOnly: 'An official airport navigation page is ready.',
@@ -438,6 +449,8 @@
   });
   Object.assign(translations.es, {
     viewAirportMap: 'Ver mapa del aeropuerto', contactAirport: 'Contactar con el aeropuerto', airportMapTitle: 'Mapa del aeropuerto', airportContactTitle: 'Contactar con el aeropuerto',
+    journeyAirportMap: 'Ver mapa', journeyAirportMapAria: 'Ver mapa del aeropuerto',
+    journeyContactAirport: 'Contactar', journeyContactAirportAria: 'Contactar con el aeropuerto',
     findingAirportMap: 'Buscando el mapa del aeropuerto…', findingAirportContact: 'Buscando los datos de contacto del aeropuerto…',
     airportResourceWaitHint: 'Esto puede tardar hasta un minuto.',
     mapFound: 'El mapa del aeropuerto está listo.', openOfficialMap: 'Abrir mapa del aeropuerto', mapPageOnly: 'Hay una página oficial de orientación del aeropuerto.',
@@ -696,7 +709,7 @@
     departureLocalTime: 'Salida · hora local', arrivalLocalTime: 'Llegada · hora local',
     checkInQuestion: '¿Ya has facturado?', checkInQuestionLead: 'Tener la tarjeta de embarque cuenta como facturar.',
     checkInUnsure: 'No lo sé', baggageUnsure: 'No lo sé',
-    shareShort: 'Compartir',
+    shareShort: 'Familia', familyAria: 'Familia, compartir el viaje en directo',
     familyLead: 'Los enlaces y las imágenes solo muestran los datos necesarios y son válidos durante 48 horas.',
     shareLinkAria: 'Usar el menú del móvil para compartir el enlace', sharePngAria: 'Usar el menú del móvil para compartir una imagen sin datos personales',
     journeyProblem: 'Problema con el viaje', journeyProblemCloseAria: 'Cerrar la tarjeta del problema del viaje',
@@ -2619,6 +2632,7 @@
     var requestedDepartureDate = lastLookupContext && lastLookupContext.departureDate;
     var requestedSegmentIndex = lastLookupContext && lastLookupContext.documentSegmentIndex;
     currentFlight = flight;
+    if (shareSession && !shareSessionMatchesFlight(shareSession, flight)) resetFamilyShareSession();
     lastLookupContext = {
       flightNumber: normalizeFlightNumber(flight.flightNumber),
       departureDate: requestedDepartureDate || flight.departureDate || null,
@@ -6660,6 +6674,79 @@
     }
   }
 
+  function shareSessionMatchesFlight(session, flight) {
+    if (!session || !flight) return false;
+    try {
+      return familyShareJourneyKey(JSON.parse(session.lastFingerprint || 'null'))
+        === familyShareJourneyKey(flight);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function pendingShareRevocations(storageKey) {
+    var stored = readStoredJson(storageKey);
+    var entries = Array.isArray(stored) ? stored : stored ? [stored] : [];
+    return entries.filter(function (entry) {
+      return entry && typeof entry.viewToken === 'string' && entry.viewToken
+        && typeof entry.updateToken === 'string' && entry.updateToken;
+    }).map(function (entry) {
+      return { demoSessionId: entry.demoSessionId || null,
+        viewToken: entry.viewToken, updateToken: entry.updateToken };
+    });
+  }
+
+  function writePendingShareRevocations(storageKey, entries) {
+    if (entries.length) localStorage.setItem(storageKey, JSON.stringify(entries));
+    else localStorage.removeItem(storageKey);
+  }
+
+  function queueShareRevocation(session) {
+    if (!session || !session.viewToken || !session.updateToken) return null;
+    var storageKey = activeShareRevocationPendingStorageKey();
+    var entry = { demoSessionId: session.demoSessionId || null,
+      viewToken: session.viewToken, updateToken: session.updateToken };
+    var entries = pendingShareRevocations(storageKey).filter(function (candidate) {
+      return candidate.viewToken !== entry.viewToken;
+    });
+    entries.push(entry);
+    writePendingShareRevocations(storageKey, entries);
+    return { storageKey: storageKey, entry: entry };
+  }
+
+  function completeShareRevocation(storageKey, entry) {
+    var entries = pendingShareRevocations(storageKey).filter(function (candidate) {
+      return candidate.viewToken !== entry.viewToken;
+    });
+    writePendingShareRevocations(storageKey, entries);
+  }
+
+  function attemptShareRevocation(storageKey, entry) {
+    if (!entry || !navigator.onLine) return Promise.resolve(false);
+    return fetch('/api/share-sessions/' + encodeURIComponent(entry.viewToken), {
+      method: 'DELETE', headers: { 'X-Share-Update-Token': entry.updateToken }
+    }).then(function (response) {
+      if (response.ok || response.status === 404 || response.status === 410) {
+        completeShareRevocation(storageKey, entry);
+        return true;
+      }
+      return false;
+    }).catch(function () { return false; });
+  }
+
+  function revokeDiscardedShareSession(session) {
+    var pending = queueShareRevocation(session);
+    return pending ? attemptShareRevocation(pending.storageKey, pending.entry) : Promise.resolve(false);
+  }
+
+  function retryPendingShareRevocations() {
+    var storageKey = activeShareRevocationPendingStorageKey();
+    if (!navigator.onLine) return Promise.resolve([]);
+    return Promise.all(pendingShareRevocations(storageKey).map(function (entry) {
+      return attemptShareRevocation(storageKey, entry);
+    }));
+  }
+
   function resetFamilyShareSession() {
     shareCreationGeneration += 1;
     shareCreationInFlight = false;
@@ -6668,14 +6755,12 @@
     window.clearTimeout(shareSyncTimer);
     shareSyncTimer = null;
     var previousSession = shareSession;
+    if (previousSession && previousSession.viewToken && previousSession.updateToken) {
+      revokeDiscardedShareSession(previousSession);
+    }
     shareSession = null;
     localStorage.removeItem(activeShareSessionStorageKey());
     localStorage.removeItem(activeSharePendingStorageKey());
-    if (demoRecordingSessionId && previousSession && previousSession.viewToken && previousSession.updateToken) {
-      fetch('/api/share-sessions/' + encodeURIComponent(previousSession.viewToken), {
-        method: 'DELETE', headers: { 'X-Share-Update-Token': previousSession.updateToken }
-      }).catch(function () {});
-    }
     publishDemoRecordingState();
   }
 
@@ -7180,6 +7265,13 @@
       return DEMO_SHARE_PENDING_PREFIX + demoRecordingSessionId;
     }
     return qaJourneyEnabled ? QA_SHARE_PENDING_KEY : SHARE_PENDING_KEY;
+  }
+
+  function activeShareRevocationPendingStorageKey() {
+    if (typeof demoRecordingSessionId !== 'undefined' && demoRecordingSessionId) {
+      return DEMO_SHARE_REVOCATION_PENDING_PREFIX + demoRecordingSessionId;
+    }
+    return qaJourneyEnabled ? QA_SHARE_REVOCATION_PENDING_KEY : SHARE_REVOCATION_PENDING_KEY;
   }
 
   function savedJourneyModeMatches(saved) {
@@ -7865,6 +7957,7 @@
   window.addEventListener('online', function () {
     if (refreshStatusState && refreshStatusState.code === 'OFFLINE_SNAPSHOT') setRefreshStatus(null);
     renderConnectivityStatus();
+    retryPendingShareRevocations();
     retryPendingFamilyShare();
     announce(localeText('网络已恢复。', 'You are back online.', 'La conexión se ha restablecido.'));
     resumeAutoRefresh();
@@ -7891,6 +7984,9 @@
     setupDemoRecordingChannel();
     updateLanguage();
     var restoredJourney = restoreJourney();
+    if (shareSession && (!restoredJourney
+        || !shareSessionMatchesPayload(shareSession, safeSharePayload()))) resetFamilyShareSession();
+    retryPendingShareRevocations();
     updateLanguage();
     if (qaJourneyEnabled && (!restoredJourney || !qaJourneyFlightIsUsable(currentFlight))) {
       startFlightLookup('BA117', qaJourneyDepartureDate(), true, null, 'NORMAL');

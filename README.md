@@ -20,12 +20,14 @@ Configure these environment variables before starting VS Code or the terminal. N
 Windows PowerShell:
 
 ```powershell
+$env:SERVER_ADDRESS = '127.0.0.1'
+$env:SERVER_PORT = '18080'
 .\mvnw.cmd spring-boot:run
 ```
 
-Open <http://localhost:8080/>. A safe readiness endpoint is available at <http://localhost:8080/api/integrations/status>; it returns only `READY`, `MISSING`, or `DISABLED`, never secret values. VariFlight is deliberately `DISABLED` unless `VARIFLIGHT_ENABLED=true` is explicitly set, even when an old key remains on the computer.
+Open <http://127.0.0.1:18080/>. A safe readiness endpoint is available at <http://127.0.0.1:18080/api/integrations/status>; it returns only `READY`, `MISSING`, or `DISABLED`, never secret values. VariFlight is deliberately `DISABLED` unless `VARIFLIGHT_ENABLED=true` is explicitly set, even when an old key remains on the computer.
 
-Local development uses an in-memory H2 database on port `8080`. Share sessions survive page reloads while that Spring Boot process is running, but all local share links stop working when the process restarts. The H2 console is a local-development aid only and is disabled by the production profile.
+Local development uses an in-memory H2 database and binds the application only to `127.0.0.1:18080`. Share sessions survive page reloads while that Spring Boot process is running, but all local share links stop working when the process restarts. The H2 console is a local-development aid only and is disabled by the production profile.
 
 ## Deploy on Render
 
@@ -103,21 +105,21 @@ Airport resource lookup first resolves IATA against the generated local OurAirpo
 
 The resolved journey response exposes `providerResults`, `fieldProvenance`, `conflicts`, `retrievedAt`, `freshestSourceUpdatedAt`, `stale`, `live`, and `demo` alongside normalized flight, route, times, terminal, gate, check-in area, any explicitly known dedicated bag-drop desk, and the independently modelled arrival baggage belt when published.
 
-For local testing, a generated family URL starts with `http://localhost:8080`; it opens only on the same computer running OneStep Flight. Use an HTTPS deployment (or an intentionally configured reachable host) before sending a link to another device. The view URL never contains the update token, and the update token stays only in the traveler's browser session.
+For local testing, a generated family URL starts with `http://127.0.0.1:18080`; it opens only on the same computer running OneStep Flight. Use an HTTPS deployment (or an intentionally configured reachable host) before sending a link to another device. The view URL never contains the update token, and the update token stays only in the traveler's browser session.
 
 The read-only family page is served at `/share/{viewToken}`. It needs no login, lets the viewer choose 中文/English/Español, and polls the safe snapshot every 13 seconds so meaningful updates can render within 15 seconds while the share remains active.
 
 ## Browser walkthrough
 
 1. Open the home page and choose **Upload booking confirmation, e-ticket, or boarding pass**.
-2. Select one file from `test-fixtures/documents/`, or enter `BA117` and `2026-08-24` manually for the real LHR → JFK lookup.
+2. Select one file from `test-fixtures/documents/`. For a live manual lookup, enter a currently operating flight number and its current departure date; do not reuse a dated example as evidence of a current flight.
 3. Confirm Nutrient-extracted fields one at a time. The confirmation page then merges the document with configured live providers.
 4. Check provider chips, terminal, gate, check-in area, airport-local time, countdown, freshness, conflicts, and expandable evidence.
 5. Confirm the flight. Answer whether checked baggage is present and complete one action at a time.
 6. Use **返回上一步 / Back one step** at the bottom of the journey; user-entered progress is restored while newer live updates remain intact.
 7. Use **朗读当前步骤 / Read this step aloud** to hear the action, destination, terminal, gate, counter/zone, and time.
 8. At the bottom of a normal journey step, use **查看机场地图 / View airport map** or **联系机场 / Contact airport**. The high-contrast help card keeps only **联系机场 / Contact airport** at the upper left and the close button at the upper right; it never shows a map entry. Calling still requires a second explicit tap on the displayed number.
-9. Use **分享行程给家属 / Share journey with family** to create a live link, preview it in a second tab, share/copy it, or save a privacy-safe PNG card. Meaningful journey changes update the same link; **Stop sharing** revokes it.
+9. Open the family-sharing dialog to create a live link. The dialog contains exactly two native share actions: **分享链接 / Share link** and **分享图片 / Share image**. Meaningful journey changes update the same link; ending, clearing, or replacing the journey revokes the server share session, with an offline-safe retry if revocation is temporarily unavailable.
 10. Switch 中文/English/Español, reload to verify session recovery, and repeat at 360×800, 390×844, and 200% zoom.
 
 For local airport-resource checks, `?qaAirport=1` shows the **Airport information lookup** card only on `localhost`, `127.0.0.1`, or `::1` while the flight-confirmation screen is active. Enter an IATA code and optional terminal; the single query action refreshes map and contact results together and presents only passenger-facing actions. Technical diagnostics remain in the live-test report and application logs, not in the query result UI.
@@ -126,7 +128,9 @@ For local airport-resource checks, `?qaAirport=1` shows the **Airport informatio
 
 Append `?demoScenarios=true` to the home URL to reveal `NORMAL`, `GATE_CHANGE`, `DELAY`, `CANCEL`, and `STALE`. Every scenario response has `demo=true`, uses a simulated source label, and is never presented as live. The stable BA117 fixture used by **Use BA 117 demo flight** is also explicitly labelled.
 
-For a same-day end-to-end state-machine check, open <http://localhost:8080/?qaJourney=true>. This hidden local QA route first requests the real `BA117 / 2026-08-24 / LHR → JFK` snapshot, labels the page as local journey QA, and lets a tester advance through check-in, bag drop, security, gate, onboard, baggage claim, and exit without waiting for the real flight clock. It never invents a gate, counter, or baggage belt that the live snapshot did not publish, and it does not appear in the ordinary home flow.
+For a same-day state-machine check, open <http://127.0.0.1:18080/?qaJourney=true>. This hidden local QA route uses a dynamically calculated departure date and the explicitly labelled `BA117` demo `NORMAL` scenario, then lets a tester advance through check-in, bag drop, security, gate, onboard, baggage claim, and exit without waiting for a real flight clock. It is test-only, does not claim a live provider result, and does not appear in the ordinary home flow.
+
+Keep this README synchronized with the implemented UI and verified test evidence before using it as video narration or promotional copy.
 
 ## Current prototype limitations
 
