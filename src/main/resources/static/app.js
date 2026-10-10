@@ -6004,11 +6004,10 @@
     document.querySelector('[data-error-message]').textContent = message;
     var details = document.querySelector('[data-error-technical]');
     var content = document.querySelector('[data-error-technical-content]');
-    var lines = currentError && currentError.technicalLines || [];
-    var showDebug = isLocalDebugEnvironment() && lines.length > 0;
-    details.hidden = !showDebug;
+    // Keep provider diagnostics out of the customer UI, including localhost/WebView.
+    details.hidden = true;
     details.open = false;
-    content.textContent = showDebug ? lines.join('\n') : '';
+    content.textContent = '';
   }
 
   function showError(error, retry) {

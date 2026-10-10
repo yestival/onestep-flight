@@ -48,10 +48,10 @@ class StaticFrontendRegressionTest {
         assertTrue(overlay.contains("data-journey-problem-result"));
         assertTrue(html.contains("styles.css?v=42"));
         assertTrue(html.contains("locale.js?v=42"));
-        assertTrue(html.contains("app.js?v=43"));
+        assertTrue(html.contains("app.js?v=45"));
         assertTrue(worker.contains("onestep-flight-shell-"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v43'"));
-        assertTrue(worker.contains("/app.js?v=43"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v45'"));
+        assertTrue(worker.contains("/app.js?v=45"));
         assertTrue(js.contains("POST") || js.contains("method: 'POST'"));
     }
 
@@ -530,7 +530,7 @@ class StaticFrontendRegressionTest {
     }
 
     @Test
-    void liveProviderFailuresUseSpecificCopyAndLocalhostOnlySanitizedDebugDetails() throws IOException {
+    void liveProviderFailuresUseSpecificCopyAndKeepDiagnosticsOutOfThePage() throws IOException {
         String html = resource("index.html");
         String js = resource("app.js");
         String errorScreen = html.substring(html.indexOf("data-screen=\"error\""),
@@ -583,8 +583,6 @@ class StaticFrontendRegressionTest {
         assertTrue(errorHandling.contains("Error code"));
         assertTrue(errorHandling.contains("Backend message (zh)"));
         assertTrue(errorHandling.contains("Backend message (en)"));
-        assertTrue(errorHandling.contains("details.hidden = !showDebug"));
-        assertTrue(errorHandling.contains("content.textContent = showDebug ? lines.join('\\n') : ''"));
         assertFalse(safeProviderDebug.contains("sourceUrl"));
         assertFalse(safeProviderDebug.toLowerCase().contains("apikey"));
         assertFalse(safeProviderDebug.toLowerCase().contains("authorization"));
@@ -803,11 +801,11 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("Solo se encontró parte de la información"));
         assertTrue(html.contains("styles.css?v=42"));
         assertTrue(html.contains("locale.js?v=42"));
-        assertTrue(html.contains("app.js?v=43"));
+        assertTrue(html.contains("app.js?v=45"));
         assertFalse(html.contains("?v=37"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v43'"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v45'"));
         assertFalse(worker.contains("CACHE_PREFIX + 'v37'"));
-        for (String asset : new String[] { "/styles.css?v=42", "/locale.js?v=42", "/app.js?v=43",
+        for (String asset : new String[] { "/styles.css?v=42", "/locale.js?v=42", "/app.js?v=45",
                 "/share.css?v=33", "/share.js?v=33" }) {
             assertTrue(worker.contains("'" + asset + "'"), asset);
         }

@@ -48,6 +48,32 @@ vm.runInContext([
 const api = sandbox.documentSegmentApi;
 const realFormatAtOffset = api.formatAtOffset;
 const realOffsetMinutesFromDateTime = api.offsetMinutesFromDateTime;
+
+for (const locale of ['zh', 'en', 'es']) {
+  test(`provider failures show only friendly ${locale} copy and clear previously visible diagnostics`, () => {
+    const diagnostic = 'HTTP status: 502 ALL_LIVE_FLIGHT_PROVIDERS_FAILED AERODATABOX_RESPONSE_NOT_ARRAY SERPAPI_ROUTE_INCOMPLETE';
+    const friendly = api.liveFlightErrorCopy({ status: 502, requestUrl: '/api/journeys/resolve-flight' }, {}, 'ALL_LIVE_FLIGHT_PROVIDERS_FAILED');
+    for (const origin of ['http://localhost:8080', 'capacitor://localhost', 'https://onestep-flight.onrender.com']) {
+      const title = { textContent: '' };
+      const message = { textContent: '' };
+      const details = { hidden: false, open: true };
+      const content = { textContent: diagnostic };
+      const nodes = { '[data-error-message]': message, '[data-error-technical]': details, '[data-error-technical-content]': content };
+      const page = vm.createContext({ currentLocale: locale, currentError: { ...friendly, technicalLines: [diagnostic] },
+        window: { location: new URL(origin) },
+        document: { getElementById: () => title, querySelector: selector => nodes[selector] } });
+      vm.runInContext(sourceBetween('  function errorTitleForLocale(errorState)', '  function showError(error, retry)'), page);
+      page.renderErrorMessage();
+      assert.equal(title.textContent, friendly['title' + locale[0].toUpperCase() + locale.slice(1)]);
+      assert.equal(message.textContent, friendly[locale]);
+      assert.equal(details.hidden, true, origin);
+      assert.equal(details.open, false, origin);
+      assert.equal(content.textContent, '', origin);
+      assert.doesNotMatch(title.textContent + message.textContent, /HTTP|AERODATABOX|SERPAPI|502/);
+    }
+  });
+}
+
 sandbox.confirmedDocumentFlightNumberIndexes = [];
 sandbox.documentRootReviewFields = [];
 sandbox.documentRootReviewIssues = [];
