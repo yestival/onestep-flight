@@ -166,3 +166,38 @@ test('Apple API errors are redacted and transient failures retry without publish
   assert.throws(() => createAppleClient({ ...credentials, APP_STORE_CONNECT_PRIVATE_KEY: 'secret-invalid-value' }),
     error => /ES256/.test(error.message) && !error.message.includes('secret-invalid-value'));
 });
+
+test('Apple integration accepts Codemagic @file and @env credentials without copying keys into artifacts', async () => {
+  for (const reference of ['@file:$HOME/private_keys/key.p8', '@file:${HOME}/private_keys/key.p8',
+    '@file:~/private_keys/key.p8', '@env:APPLE_KEY_CONTENTS']) {
+    let reads = 0;
+    let called = false;
+    const request = createAppleClient({ ...credentials, HOME: '/ci-home', APP_STORE_CONNECT_PRIVATE_KEY: reference,
+      APPLE_KEY_CONTENTS: credentials.APP_STORE_CONNECT_PRIVATE_KEY,
+      APP_STORE_CONNECT_KEY_IDENTIFIER: '@env:APPLE_KEY_ID', APPLE_KEY_ID: 'test-key' },
+    async (_url, options) => {
+      called = true;
+      const [header, payload, signature] = options.headers.Authorization.slice(7).split('.');
+      assert.equal(JSON.parse(Buffer.from(header, 'base64url')).kid, 'test-key');
+      assert.equal(verify('sha256', Buffer.from(`${header}.${payload}`), { key: publicKey, dsaEncoding: 'ieee-p1363' }, Buffer.from(signature, 'base64url')), true);
+      return new Response('{"data":[]}', { status: 200 });
+    }, noWait.wait, path => {
+      reads++;
+      assert.equal(path, '/ci-home/private_keys/key.p8');
+      return credentials.APP_STORE_CONNECT_PRIVATE_KEY;
+    });
+    await request('/v1/apps');
+    assert.equal(called, true);
+    assert.equal(reads, reference.startsWith('@file:') ? 1 : 0);
+  }
+});
+
+test('missing, cyclic and unreadable key references fail with redacted errors before network access', () => {
+  for (const reference of ['@file:/private/hidden-key.p8', '@env:UNDEFINED', '@env:APP_STORE_CONNECT_PRIVATE_KEY']) {
+    assert.throws(() => createAppleClient({ ...credentials, APP_STORE_CONNECT_PRIVATE_KEY: reference },
+      () => { assert.fail('Must not contact Apple with unresolved credentials'); }, noWait.wait,
+      () => { throw new Error('private-path-must-not-be-logged'); }),
+    error => /Cannot resolve APP_STORE_CONNECT_PRIVATE_KEY/.test(error.message)
+      && !error.message.includes('hidden-key') && !error.message.includes('private-path'));
+  }
+});

@@ -1,4 +1,4 @@
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
 import { createPrivateKey, sign } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -8,15 +8,33 @@ import { iosVersion, nextTestFlightBuildNumber } from './version.mjs';
 const apiOrigin = 'https://api.appstoreconnect.apple.com';
 const internalGroupName = 'OneStep Flight Internal';
 
+function integrationValue(name, env, readKeyFile) {
+  let value = env[name];
+  for (let depth = 0; depth < 5 && value; depth++) {
+    if (value.startsWith('@env:')) {
+      value = env[value.slice(5)];
+    } else if (value.startsWith('@file:')) {
+      // Match Codemagic CLI EnvironmentArgumentValue, including paths such as
+      // @file:$HOME/private_keys/AuthKey_....p8. Never print resolved values/paths.
+      const path = value.slice(6).replace(/^~(?=[/\\])/, env.HOME || '')
+        .replace(/\$(?:\{([^}]+)\}|([A-Za-z_][A-Za-z0-9_]*))/g, (match, braced, plain) => env[braced || plain] ?? match);
+      try { value = readKeyFile(path, 'utf8').trim(); } catch { break; }
+    } else return value;
+  }
+  throw new Error(`Cannot resolve ${name} from the existing Apple integration`);
+}
+
 // Codemagic injects these from the existing App Store Connect integration.
 // Keys and JWTs stay in memory and never enter artifacts or command-line arguments.
-export function createAppleClient(env = process.env, fetchImpl = fetch, wait = sleep) {
+export function createAppleClient(env = process.env, fetchImpl = fetch, wait = sleep, readKeyFile = readFileSync) {
+  const values = {};
   for (const name of ['APP_STORE_CONNECT_ISSUER_ID', 'APP_STORE_CONNECT_KEY_IDENTIFIER', 'APP_STORE_CONNECT_PRIVATE_KEY']) {
     if (!env[name]) throw new Error(`Existing Apple integration must provide ${name}`);
+    values[name] = integrationValue(name, env, readKeyFile);
   }
   let key;
   try {
-    key = createPrivateKey(env.APP_STORE_CONNECT_PRIVATE_KEY);
+    key = createPrivateKey(values.APP_STORE_CONNECT_PRIVATE_KEY);
     if (key.asymmetricKeyDetails?.namedCurve !== 'prime256v1') throw new Error();
   } catch {
     throw new Error('Existing Apple integration must provide a valid ES256 private key');
@@ -27,8 +45,8 @@ export function createAppleClient(env = process.env, fetchImpl = fetch, wait = s
     if (url.origin !== apiOrigin || !url.pathname.startsWith('/v1/')) throw new Error('Refusing a non-Apple API URL');
     for (let attempt = 0; attempt < 3; attempt++) {
       const now = Math.floor(Date.now() / 1000);
-      const unsigned = `${encode({ alg: 'ES256', kid: env.APP_STORE_CONNECT_KEY_IDENTIFIER, typ: 'JWT' })}.${encode({
-        iss: env.APP_STORE_CONNECT_ISSUER_ID, iat: now - 30, exp: now + 600, aud: 'appstoreconnect-v1'
+      const unsigned = `${encode({ alg: 'ES256', kid: values.APP_STORE_CONNECT_KEY_IDENTIFIER, typ: 'JWT' })}.${encode({
+        iss: values.APP_STORE_CONNECT_ISSUER_ID, iat: now - 30, exp: now + 600, aud: 'appstoreconnect-v1'
       })}`;
       const jwt = `${unsigned}.${sign('sha256', Buffer.from(unsigned), { key, dsaEncoding: 'ieee-p1363' }).toString('base64url')}`;
       let response;
