@@ -71,11 +71,34 @@ workflows:
       - mobile/build/DerivedData/Logs/Build/*.xcactivitylog
 
   ios-testflight:
-    name: OneStep Flight - manual TestFlight upload
+    name: OneStep Flight - main to internal TestFlight
     instance_type: mac_mini_m2
     max_build_duration: 60
-    # Start manually after configuring Apple membership, signing and the app record.
-    # No Git triggers, external beta review, App Store review or public release.
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
+      cancel_previous_builds: true
+    when:
+      changeset:
+        includes:
+          - 'mobile/'
+          - 'src/main/'
+          - 'src/test/'
+          - 'scripts/browser-acceptance.mjs'
+          - 'scripts/generate-airport-resources-report.mjs'
+          - '.mvn/'
+          - 'mvnw'
+          - 'mvnw.cmd'
+          - 'pom.xml'
+          - '.gitattributes'
+          - 'codemagic.yaml'
+        excludes:
+          - '**/*.md'
+    # This is the only workflow with Git triggers. Other workflows stay manual.
     integrations:
       app_store_connect: onestep_app_store_connect
     environment:
@@ -108,10 +131,15 @@ workflows:
         script: npm test --prefix mobile
       - name: Backend regression and CORS tests
         script: bash mvnw test
+      - name: Allocate unique build number and validate internal TestFlight group
+        script: node mobile/scripts/testflight.mjs prepare
       - name: Package bundled assets and sync SPM plugins and targets
         script: npm run sync --prefix mobile
       - name: Sign main App and Widget, archive and export App Store IPA
-        script: npm run ios:archive --prefix mobile
+        script: |
+          set -eu
+          npm run ios:archive --prefix mobile
+          touch mobile/build/testflight-ready
     artifacts:
       - mobile/build/ipa/*.ipa
       - mobile/build/OneStepFlight.xcarchive
@@ -120,6 +148,16 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        # Upload only; select internal testers manually in App Store Connect.
+        # This flag submits EXTERNAL beta review; internal distribution uses the API below.
         submit_to_testflight: false
         submit_to_app_store: false
+      scripts:
+        - name: Make processed build available to internal testers only
+          script: |
+            # YAML workflows do not expose CM_BUILD_STEP_STATUS. The marker is
+            # created only after every test and the signed archive have succeeded.
+            if [ -f mobile/build/testflight-ready ]; then
+              node mobile/scripts/testflight.mjs distribute
+            else
+              echo "Build failed; internal distribution skipped."
+            fi

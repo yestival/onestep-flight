@@ -15,3 +15,19 @@ export function iosVersion(env = process.env) {
   }
   return { version, buildNumber };
 }
+
+export function nextTestFlightBuildNumber(projectCounter, existingBuildNumbers) {
+  if (!/^\d+$/.test(projectCounter ?? '') || !Number.isSafeInteger(Number(projectCounter))) {
+    throw new Error('PROJECT_BUILD_NUMBER must be a nonnegative integer');
+  }
+  const counter = Number(projectCounter);
+  const major = Math.max(counter + 1, ...existingBuildNumbers.map(value => {
+    // Refuse unknown formats instead of guessing and risking a duplicate upload.
+    iosVersion({ APP_BUILD_NUMBER: value });
+    return Number(value.split('.')[0]) + 1;
+  }));
+  // The project counter disambiguates builds even when Apple's listing lags behind
+  // an upload or two builds read the same latest number. Canceled builds leave gaps.
+  const buildNumber = `${major}.${Math.floor(counter / 100)}.${counter % 100}`;
+  return iosVersion({ APP_BUILD_NUMBER: buildNumber }).buildNumber;
+}
