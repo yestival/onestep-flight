@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import xcode from 'xcode';
 import { appConfig, mobileRoot } from './config.mjs';
+import { iosVersion } from './version.mjs';
 
 export function configureIOS(env = process.env) {
   const projectPath = fileURLToPath(new URL('ios/App/App.xcodeproj/project.pbxproj', mobileRoot));
@@ -46,14 +47,13 @@ export function configureIOS(env = process.env) {
   member('FlightActivity/FlightActivityWidget.swift', widgetId, 'PBXSourcesBuildPhase');
   member('App/PrivacyInfo.xcprivacy', app.uuid, 'PBXResourcesBuildPhase');
   member('FlightActivity/PrivacyInfo.xcprivacy', widgetId, 'PBXResourcesBuildPhase');
-  const buildNumber = env.BUILD_NUMBER || '1';
-  if (!/^\d+(\.\d+){0,2}$/.test(buildNumber)) throw new Error('BUILD_NUMBER must be numeric');
+  const { version, buildNumber } = iosVersion(env);
   for (const [id, bundle] of [[app.uuid, appConfig.appId], [widgetId, appConfig.appId + appConfig.widgetSuffix]]) {
     for (const item of objects.XCConfigurationList[targets[id].buildConfigurationList].buildConfigurations) {
       const settings = objects.XCBuildConfiguration[item.value].buildSettings;
       Object.assign(settings, { IPHONEOS_DEPLOYMENT_TARGET: appConfig.minimumIOSVersion,
         TARGETED_DEVICE_FAMILY: '1', SUPPORTS_MACCATALYST: 'NO', SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: 'NO',
-        PRODUCT_BUNDLE_IDENTIFIER: bundle, MARKETING_VERSION: appConfig.version, CURRENT_PROJECT_VERSION: buildNumber,
+        PRODUCT_BUNDLE_IDENTIFIER: bundle, MARKETING_VERSION: version, CURRENT_PROJECT_VERSION: buildNumber,
         SWIFT_VERSION: '5.0', CODE_SIGN_STYLE: 'Automatic' });
       if (env.APPLE_TEAM_ID) settings.DEVELOPMENT_TEAM = env.APPLE_TEAM_ID;
       if (id === widgetId) Object.assign(settings, { INFOPLIST_FILE: 'FlightActivity/Info.plist',

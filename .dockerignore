@@ -9,7 +9,15 @@ output
 data
 test-fixtures
 scripts
+mobile
+funding-research
 .env
 .env.*
+*.p8
+*.pem
+*.key
+*.pfx
+*.p12
+*.mobileprovision
 *.log
 HELP.md

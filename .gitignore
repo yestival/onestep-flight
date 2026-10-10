@@ -8,6 +8,10 @@ data/
 .env
 .env.*
 
+# Personal research is archived outside the software repository.
+/funding-research/
+/scripts/social-media-screenshots.mjs
+
 # Reproducible iPhone build outputs and local tooling.
 mobile/node_modules/
 mobile/www/
@@ -28,3 +32,10 @@ mobile/playwright-report/
 *.xcarchive/
 *.p12
 *.mobileprovision
+*.p8
+*.pem
+*.key
+*.pfx
+npm-debug.log*
+hs_err_pid*.log
+replay_pid*.log

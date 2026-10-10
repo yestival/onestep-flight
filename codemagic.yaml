@@ -45,7 +45,7 @@ workflows:
         script: |
           set -eu
           : "${APPLE_TEAM_ID:?Set APPLE_TEAM_ID in secure environment group ios_signing}"
-          : "${BUILD_NUMBER:?Set a new BUILD_NUMBER for both targets}"
+          : "${PROJECT_BUILD_NUMBER:?Codemagic project-wide build counter is required}"
           : "${APP_PROFILE_PATH:?Add onestep_app_store provisioning profile}"
           : "${WIDGET_PROFILE_PATH:?Add onestep_widget_app_store provisioning profile}"
           test -f "$APP_PROFILE_PATH"
@@ -69,3 +69,57 @@ workflows:
       - mobile/build/ipa/*.ipa
       - mobile/build/OneStepFlight.xcarchive
       - mobile/build/DerivedData/Logs/Build/*.xcactivitylog
+
+  ios-testflight:
+    name: OneStep Flight - manual TestFlight upload
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    # Start manually after configuring Apple membership, signing and the app record.
+    # No Git triggers, external beta review, App Store review or public release.
+    integrations:
+      app_store_connect: onestep_app_store_connect
+    environment:
+      xcode: 26.3
+      node: 22.21.1
+      java: 17
+      groups:
+        - ios_signing
+      ios_signing:
+        provisioning_profiles:
+          - profile: onestep_app_store
+            environment_variable: APP_PROFILE_PATH
+          - profile: onestep_widget_app_store
+            environment_variable: WIDGET_PROFILE_PATH
+        certificates:
+          - onestep_distribution
+    scripts:
+      - name: Check signing inputs
+        script: |
+          set -eu
+          : "${APPLE_TEAM_ID:?Set APPLE_TEAM_ID in secure environment group ios_signing}"
+          : "${PROJECT_BUILD_NUMBER:?Codemagic project-wide build counter is required}"
+          : "${APP_PROFILE_PATH:?Add onestep_app_store provisioning profile}"
+          : "${WIDGET_PROFILE_PATH:?Add onestep_widget_app_store provisioning profile}"
+          test -f "$APP_PROFILE_PATH"
+          test -f "$WIDGET_PROFILE_PATH"
+      - name: Install locked dependencies
+        script: npm ci --prefix mobile
+      - name: Shared frontend and signing validation tests
+        script: npm test --prefix mobile
+      - name: Backend regression and CORS tests
+        script: bash mvnw test
+      - name: Package bundled assets and sync SPM plugins and targets
+        script: npm run sync --prefix mobile
+      - name: Sign main App and Widget, archive and export App Store IPA
+        script: npm run ios:archive --prefix mobile
+    artifacts:
+      - mobile/build/ipa/*.ipa
+      - mobile/build/OneStepFlight.xcarchive
+      - mobile/build/OneStepFlight.xcarchive/dSYMs/*.dSYM
+      - target/surefire-reports/*.xml
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Upload only; select internal testers manually in App Store Connect.
+        submit_to_testflight: false
+        submit_to_app_store: false

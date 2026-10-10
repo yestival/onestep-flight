@@ -27,7 +27,9 @@ if (action === 'init' || action === 'sync') {
     run('xcodebuild', [...base, '-configuration', 'Debug', '-sdk', 'iphonesimulator', '-destination', 'generic/platform=iOS Simulator', 'CODE_SIGNING_ALLOWED=NO', 'build']);
   } else if (action === 'archive') {
     if (!/^[A-Z0-9]{10}$/.test(process.env.APPLE_TEAM_ID || '')) throw new Error('Set APPLE_TEAM_ID in the secure Codemagic ios_signing environment group.');
-    if (!process.env.BUILD_NUMBER) throw new Error('Set a unique BUILD_NUMBER for the App and Widget.');
+    if (!process.env.APP_BUILD_NUMBER && process.env.PROJECT_BUILD_NUMBER === undefined) {
+      throw new Error('Set PROJECT_BUILD_NUMBER in Codemagic or a unique APP_BUILD_NUMBER for both targets.');
+    }
     validateSigning();
     configureIOS();
     run('xcode-project', ['use-profiles', '--project', 'ios/App/App.xcodeproj']);
