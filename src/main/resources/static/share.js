@@ -428,7 +428,7 @@
     if (!viewToken || !TOKEN_PATTERN.test(viewToken)) { renderError('invalid'); return Promise.resolve(); }
     if (requestInFlight) return Promise.resolve();
     requestInFlight = true;
-    return fetch('/api/share-sessions/' + encodeURIComponent(viewToken), { headers: { Accept: 'application/json' }, cache: 'no-store' })
+    return window.OneStepPlatform.apiFetch('/api/share-sessions/' + encodeURIComponent(viewToken), { headers: { Accept: 'application/json' }, cache: 'no-store' })
       .then(function (response) {
         if (response.ok) return response.json();
         if (response.status === 410) {

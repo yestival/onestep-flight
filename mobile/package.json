@@ -1,0 +1,34 @@
+{
+  "name": "onestep-flight-iphone",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.0.0" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/preview.mjs",
+    "test": "node scripts/test.mjs",
+    "test:browser": "playwright test",
+    "ios:init": "node scripts/ios.mjs init",
+    "sync": "npm run build && node scripts/ios.mjs sync",
+    "ios:simulator": "node scripts/ios.mjs simulator",
+    "ios:archive": "node scripts/ios.mjs archive",
+    "ios:upload": "node scripts/upload.mjs"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/network": "8.0.1",
+    "@capacitor/preferences": "8.0.1",
+    "@capacitor/share": "8.0.3",
+    "@capacitor/filesystem": "8.1.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3",
+    "@playwright/test": "1.64.0",
+    "esbuild": "0.28.2",
+    "sharp": "0.35.5",
+    "xcode": "3.0.1"
+  }
+}

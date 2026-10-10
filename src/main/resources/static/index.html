@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#1B2537">
   <title>OneStep Flight</title>
-  <link rel="stylesheet" href="styles.css?v=42">
+  <link rel="stylesheet" href="styles.css?v=44">
 </head>
 <body>
   <div class="app-shell">
@@ -293,6 +293,7 @@
         <p class="offline-status" data-offline-status role="status" aria-live="polite" hidden></p>
         <button class="button button-secondary arrival-refresh-button" type="button" data-action="refresh-arrival" data-i18n-aria="refreshArrivalAria" hidden><span data-i18n="refreshShort">刷新</span></button>
         <p class="refresh-status" data-refresh-status aria-live="polite"></p>
+        <button class="button button-secondary live-activity-button" type="button" data-action="toggle-live-activity" aria-pressed="false" hidden>Show journey on Lock Screen</button>
         <details class="timeline-panel"><summary data-i18n="journeyTimeline">查看本次行程记录</summary><ol data-journey-timeline></ol></details>
       </section>
 
@@ -395,6 +396,8 @@
     <div class="toast" role="status" aria-live="polite" data-toast></div>
   </div>
   <script src="locale.js?v=42"></script>
+  <script src="platform.js?v=44"></script>
+  <script src="live-activity.js?v=44"></script>
   <script src="app.js?v=45"></script>
 </body>
 </html>

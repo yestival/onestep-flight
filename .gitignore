@@ -7,3 +7,35 @@ output/
 data/
 .env
 .env.*
+
+# Personal research is archived outside the software repository.
+/funding-research/
+/scripts/social-media-screenshots.mjs
+
+# Reproducible iPhone build outputs and local tooling.
+mobile/node_modules/
+mobile/www/
+mobile/ios/App/App/public/
+mobile/ios/App/App/capacitor.config.json
+mobile/ios/App/App/config.xml
+# Capacitor detects SPM from this package; keep Package.swift and Sources tracked.
+mobile/ios/App/CapApp-SPM/.build/
+mobile/ios/App/CapApp-SPM/.swiftpm/
+mobile/ios/App/CapApp-SPM/README.md
+mobile/ios/capacitor-cordova-ios-plugins/
+mobile/build/
+mobile/test-results/
+mobile/playwright-report/
+**/DerivedData/
+**/xcuserdata/
+*.ipa
+*.xcarchive/
+*.p12
+*.mobileprovision
+*.p8
+*.pem
+*.key
+*.pfx
+npm-debug.log*
+hs_err_pid*.log
+replay_pid*.log

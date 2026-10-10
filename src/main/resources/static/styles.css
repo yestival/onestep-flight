@@ -953,7 +953,22 @@ body,button,input,select,textarea{word-break:normal;overflow-wrap:normal;hyphens
 .screen-confirm .airport-local-time{font-size:18px;line-height:1.35}
 
 /* Dialog cards scroll internally so their close control stays visible above safe areas. */
+.app-shell{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);min-height:100dvh}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top)}
+input,textarea,select{font-size:max(16px,1em)}
+.live-activity-button{width:100%;margin-top:20px;white-space:normal}
+@media(max-width:440px){
+  .app-shell *, .staff-overlay *, .confirm-overlay *{min-width:0}
+  .brand-copy{flex:1}
+  .brand-copy strong{white-space:normal}
+  .screen-welcome{min-height:calc(100dvh - 100px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
+  .button,.support-button,.end-journey-link,.language-select{min-height:44px}
+  .staff-card,.confirm-card{width:100%;min-width:0}
+}
 .staff-overlay,.confirm-overlay{
+  top:var(--visible-top,0px);
+  bottom:auto;
+  height:var(--visible-height,100dvh);
   padding-top:calc(12px + env(safe-area-inset-top));
   padding-right:calc(12px + env(safe-area-inset-right));
   padding-bottom:calc(12px + env(safe-area-inset-bottom));
@@ -961,7 +976,7 @@ body,button,input,select,textarea{word-break:normal;overflow-wrap:normal;hyphens
 }
 .staff-card,.confirm-card{
   max-height:calc(100vh - 24px);
-  max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+  max-height:calc(var(--visible-height,100dvh) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
   overflow-y:auto;
   overscroll-behavior:contain;
 }

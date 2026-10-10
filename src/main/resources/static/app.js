@@ -1,6 +1,18 @@
 (function () {
   'use strict';
 
+  var platform = window.OneStepPlatform;
+  var localStorage = platform ? platform.storage : window.localStorage;
+  var nativeApp = Boolean(platform && platform.isNative);
+  if (nativeApp) document.getElementById('main-content').inert = true;
+  var liveActivity = nativeApp ? window.OneStepLiveActivity(platform.live) : null;
+  var pageInitialized = false;
+  var lastRecheckAt = 0;
+
+  function apiFetch(url, options) {
+    return platform ? platform.apiFetch(url, options) : fetch(url, options);
+  }
+
   var STORAGE_KEY = 'onestep-flight-journey-v2';
   var OFFLINE_STORAGE_KEY = 'onestep-flight-offline-journey-v1';
   var QA_STORAGE_KEY = 'onestep-flight-qa-journey-v1';
@@ -42,6 +54,8 @@
   var clockTimer = null;
   var refreshStatusState = null;
   var restoredFromOffline = false;
+  var offlineSnapshotSavedAt = null;
+  var expiredJourneyDiscarded = false;
   var currentDestinationCopy = null;
   var shareSession = null;
   var shareSyncTimer = null;
@@ -980,7 +994,7 @@
     delete settings.onResponse;
     settings.headers = settings.headers || {};
     settings.headers.Accept = 'application/json';
-    return fetch(url, settings).then(function (response) {
+    return apiFetch(url, settings).then(function (response) {
       if (onResponse) onResponse(response);
       return response.json().catch(function () { return null; }).then(function (payload) {
         if (!response.ok) {
@@ -1699,6 +1713,12 @@
 
   function startFlightLookup(flightNumber, departureDate, demo, documentResult, demoScenario) {
     if (lookupInFlight) return;
+    if (!navigator.onLine) {
+      showToast(localeText('新航班需要联网查询。已保存的行程仍可查看。',
+        'Connect to look up a new flight. Your saved journey remains available.',
+        'Conéctate para buscar un vuelo nuevo. El viaje guardado sigue disponible.'));
+      return;
+    }
     var normalized = normalizeFlightNumber(flightNumber);
     var guardReason = lookupGuardReason(normalized, departureDate, demo, documentResult);
     if (guardReason) {
@@ -2598,6 +2618,13 @@
 
   function uploadDocument(file) {
     if (lookupInFlight) return;
+    if (/\.(heic|heif)$/i.test(file.name || '') || /image\/hei[cf]/i.test(file.type || '')) {
+      showToast(localeText('请将 HEIC 照片导出为 JPEG 或 PNG，或选择 PDF。',
+        'Export the HEIC photo as JPEG or PNG, or choose a PDF.',
+        'Exporta la foto HEIC como JPEG o PNG, o elige un PDF.'));
+      fileInput.value = '';
+      return;
+    }
     var activeRequest = ++requestSequence;
     var formData = new FormData();
     formData.append('file', file);
@@ -2629,6 +2656,10 @@
   }
 
   function beginFlight(flight, documentResult) {
+    restoredFromOffline = false;
+    if (liveActivity && currentFlight && familyShareJourneyKey(currentFlight) !== familyShareJourneyKey(flight)) {
+      liveActivity.end().catch(function () {});
+    }
     var requestedDepartureDate = lastLookupContext && lastLookupContext.departureDate;
     var requestedSegmentIndex = lastLookupContext && lastLookupContext.documentSegmentIndex;
     currentFlight = flight;
@@ -2723,7 +2754,7 @@
 
   function clearDemoRecordingBackendState() {
     if (!demoRecordingSessionId) return Promise.resolve();
-    return fetch('/api/demo-recording/sessions/' + encodeURIComponent(demoRecordingSessionId)
+    return apiFetch('/api/demo-recording/sessions/' + encodeURIComponent(demoRecordingSessionId)
       + '/scenario-state', { method: 'DELETE', cache: 'no-store' }).then(function (response) {
         if (!response.ok) throw new Error('无法清除当前录屏会话的场景状态。');
       });
@@ -2750,6 +2781,7 @@
     journeyContext.refreshRequested = false;
     return postFlightJson('/api/journeys/next-action', journeyContext).then(function (response) {
       currentFlight = response.flight;
+      restoredFromOffline = false;
       journeyContext.flightSnapshot = currentFlight;
       currentAction = response.nextAction;
       currentError = null;
@@ -3050,7 +3082,7 @@
       journeyContext: journeyContext,
       documentFallback: isDocumentFallbackFlight(currentFlight),
       online: includeTransientState ? navigator.onLine : true,
-      visible: includeTransientState ? !document.hidden : true,
+      visible: includeTransientState ? !document.hidden && (!platform || platform.isActive()) : true,
       requestInFlight: includeTransientState ? Boolean(flightRequestController || lookupInFlight) : false
     };
   }
@@ -3327,6 +3359,7 @@
     return request.then(function (flight) {
       if (activeRequest !== requestSequence) return null;
       currentFlight = flight;
+      restoredFromOffline = false;
       if (journeyContext) journeyContext.flightSnapshot = flight;
       recordLiveChanges(flight.latestChanges);
       var hasNewChangeBatch = updateRefreshChangeState(previousAction);
@@ -3396,6 +3429,7 @@
     }
     return postFlightJson('/api/journeys/refresh-flight', currentFlight).then(function (flight) {
       currentFlight = flight;
+      restoredFromOffline = false;
       journeyContext.flightSnapshot = flight;
       recordLiveChanges(flight.latestChanges);
       currentAction = buildPostBoardAction();
@@ -3549,6 +3583,7 @@
       if (activeRequest !== requestSequence) return;
       journeyContext.refreshRequested = false;
       currentFlight = response.flight;
+      restoredFromOffline = false;
       journeyContext.flightSnapshot = currentFlight;
       currentAction = response.nextAction;
       recordLiveChanges(currentFlight.latestChanges);
@@ -4192,6 +4227,7 @@
   }
 
   function ensureClockTimer() {
+    if (nativeApp && !platform.isActive()) return;
     if (!clockTimer) {
       clockTimer = window.setInterval(function () {
         renderTimeStatus();
@@ -4893,11 +4929,13 @@
   }
 
   function renderConnectivityStatus() {
-    var offline = !navigator.onLine;
+    var offline = !navigator.onLine || Boolean(platform && !platform.isOnline()) || restoredFromOffline;
     document.querySelectorAll('[data-offline-status]').forEach(function (status) {
       status.hidden = !offline;
       status.textContent = offline
-        ? localeText('当前离线，正在显示已保存的行程。', 'You are offline. Showing the saved journey.', 'Sin conexión. Mostrando el viaje guardado.')
+        ? localeText('显示最后保存的信息，请联网重新核验。', 'Showing saved information. Reconnect to verify.', 'Mostrando información guardada. Conéctate para verificar.')
+          + (currentFlight && (currentFlight.dataRetrievedAt || currentFlight.dataLastUpdatedAt)
+            ? ' ' + formatRetrieved(currentFlight.dataRetrievedAt || currentFlight.dataLastUpdatedAt) : '')
         : '';
     });
     updateRefreshControls();
@@ -5884,6 +5922,9 @@
 
   function returnToDocumentSegmentSelection() {
     if (!documentSegments.length || !pendingDocument) return false;
+    if (liveActivity) liveActivity.end().catch(function () {});
+    localStorage.removeItem(activeOfflineJourneyStorageKey());
+    resetFamilyShareSession();
     requestSequence += 1;
     if (flightRequestController) flightRequestController.abort();
     flightRequestController = null;
@@ -6350,7 +6391,7 @@
     var status = document.querySelector('[data-journey-problem-input-status]');
     var label = document.querySelector('[data-journey-problem-voice-label]');
     if (status) status.textContent = '';
-    var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var Recognition = nativeApp ? null : window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Recognition) {
       if (status) status.textContent = t('journeyProblemSpeechFailed');
       return;
@@ -6478,7 +6519,7 @@
     journeyProblemRequestController = controller;
     var generation = ++journeyProblemRequestGeneration;
     var timeout = window.setTimeout(function () { controller.abort(); }, 45000);
-    fetch('/api/assistance/journey-problem', {
+    apiFetch('/api/assistance/journey-problem', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload), signal: controller.signal
     }).then(function (response) {
@@ -6722,7 +6763,7 @@
 
   function attemptShareRevocation(storageKey, entry) {
     if (!entry || !navigator.onLine) return Promise.resolve(false);
-    return fetch('/api/share-sessions/' + encodeURIComponent(entry.viewToken), {
+    return apiFetch('/api/share-sessions/' + encodeURIComponent(entry.viewToken), {
       method: 'DELETE', headers: { 'X-Share-Update-Token': entry.updateToken }
     }).then(function (response) {
       if (response.ok || response.status === 404 || response.status === 410) {
@@ -6767,7 +6808,7 @@
     if (!demoRecordingSessionId || !shareSession || !shareSession.viewToken || !shareSession.updateToken) {
       return Promise.resolve();
     }
-    return fetch('/api/share-sessions/' + encodeURIComponent(shareSession.viewToken), {
+    return apiFetch('/api/share-sessions/' + encodeURIComponent(shareSession.viewToken), {
       method: 'DELETE', headers: { 'X-Share-Update-Token': shareSession.updateToken }
     }).then(function (response) {
       if (response.ok || response.status === 404 || response.status === 410) return;
@@ -6777,6 +6818,7 @@
 
   function shareViewUrl() {
     if (!shareSessionMatchesPayload(shareSession, safeSharePayload())) return '';
+    if (platform) return platform.publicShareUrl(shareSession.viewToken, shareSession.viewUrl);
     return new URL('/share/' + encodeURIComponent(shareSession.viewToken), window.location.origin).href;
   }
 
@@ -6788,7 +6830,7 @@
     if (expiry) expiry.textContent = active && shareSession.expiresAt
       ? localeText('有效至：', 'Active until: ', 'Activo hasta: ') + formatRetrieved(shareSession.expiresAt) : '';
     var warning = document.querySelector('[data-share-local-warning]');
-    if (warning) warning.hidden = !/^(localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname);
+    if (warning) warning.hidden = nativeApp || !/^(localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname);
   }
 
   function setShareStatus(message) {
@@ -6829,7 +6871,10 @@
     shareCreationJourneyKey = journeyKey;
     setShareStatus(localeText('正在创建分享链接…', 'Creating the share link…', 'Creando el enlace para compartir…'));
     shareCreationPromise = postJson('/api/share-sessions', payload).then(function (result) {
-      if (generation !== shareCreationGeneration || familyShareJourneyKey(safeSharePayload()) !== journeyKey) return null;
+      if (generation !== shareCreationGeneration || familyShareJourneyKey(safeSharePayload()) !== journeyKey) {
+        revokeDiscardedShareSession(result);
+        return null;
+      }
       shareSession = {
         demoSessionId: demoRecordingSessionId || null,
         viewToken: result.viewToken,
@@ -6866,7 +6911,7 @@
 
   function shareFamily() {
     var url = shareViewUrl();
-    if (!navigator.share) {
+    if (!nativeApp && !navigator.share) {
       setShareStatus(localeText('当前浏览器不支持手机分享菜单。', 'The mobile share menu is not supported in this browser.', 'Este navegador no admite el menú para compartir del móvil.'));
       return;
     }
@@ -6878,7 +6923,8 @@
       return;
     }
     try {
-      var result = navigator.share({ title: 'OneStep Flight', text: familyMessage(), url: url });
+      var shareData = { title: 'OneStep Flight', text: familyMessage(), url: url };
+      var result = nativeApp ? platform.shareLink(shareData) : navigator.share(shareData);
       if (result && typeof result.catch === 'function') result.catch(function (error) {
         if (error && error.name === 'AbortError') return;
         setShareStatus(localeText('手机分享菜单暂时无法打开。', 'The mobile share menu could not be opened.', 'No se pudo abrir el menú para compartir del móvil.'));
@@ -6900,7 +6946,7 @@
     }
     var fingerprint = JSON.stringify(payload);
     if (fingerprint === session.lastFingerprint) return;
-    if (!navigator.onLine) {
+    if (!navigator.onLine || nativeApp && !platform.isActive()) {
       localStorage.setItem(activeSharePendingStorageKey(), JSON.stringify({
         demoSessionId: demoRecordingSessionId || null,
         viewToken: session.viewToken, updateToken: session.updateToken, payload: payload
@@ -6928,6 +6974,7 @@
   function scheduleFamilyShareSync() {
     if (!shareSession) return;
     window.clearTimeout(shareSyncTimer);
+    if (nativeApp && !platform.isActive()) { syncFamilyShare(); return; }
     shareSyncTimer = window.setTimeout(syncFamilyShare, 500);
   }
 
@@ -7157,6 +7204,9 @@
   }
 
   function saveCachedPngFallback() {
+    if (nativeApp) return platform.sharePng(pngCardCache.file).catch(function (error) {
+      reportPngError(pngError('PNG_SHARE_FAILED', error));
+    });
     if (isIosBrowser()) {
       setShareStatus(localeText('iOS 当前无法通过此浏览器分享图片文件。',
         'This browser on iOS cannot share the image file.',
@@ -7181,6 +7231,7 @@
       return;
     }
     try {
+      if (nativeApp) { saveCachedPngFallback(); return; }
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [pngCardCache.file] })) {
         var shareResult = navigator.share({ files: [pngCardCache.file], title: 'OneStep Flight' });
         if (shareResult && typeof shareResult.catch === 'function') shareResult.catch(function (error) {
@@ -7292,6 +7343,7 @@
 
   function clearJourney() {
     stopAutoRefresh(true);
+    if (liveActivity) liveActivity.end().catch(function () {});
     sessionStorage.removeItem(activeJourneyStorageKey());
     localStorage.removeItem(activeOfflineJourneyStorageKey());
     resetFamilyShareSession();
@@ -7312,6 +7364,7 @@
     clockAnchor = null;
     refreshStatusState = null;
     restoredFromOffline = false;
+    offlineSnapshotSavedAt = null;
     currentDestinationCopy = null;
     checkInStatusAnswer = null;
     documentSegments = [];
@@ -7343,7 +7396,7 @@
   function persistJourney() {
     if (!currentFlight && !awaitingDocumentSelection && !partialDocumentEntry) return;
     try {
-      sessionStorage.setItem(activeJourneyStorageKey(), JSON.stringify({
+      if (!nativeApp) sessionStorage.setItem(activeJourneyStorageKey(), JSON.stringify({
         savedAt: Date.now(),
         demoSessionId: typeof demoRecordingSessionId !== 'undefined' ? demoRecordingSessionId || null : null,
         qaJourney: Boolean(qaJourneyEnabled),
@@ -7372,6 +7425,7 @@
       // The current page remains usable if private browsing blocks session storage.
     }
     persistOfflineJourney();
+    syncLiveActivity();
     scheduleFamilyShareSync();
     if (pngCardCache && pngCardCache.key !== pngCacheKey()) invalidatePngCard();
     var familyOverlay = document.querySelector('[data-family-overlay]');
@@ -7493,12 +7547,22 @@
   }
 
   function persistOfflineJourney() {
-    if (!currentAction || !journeyContext) return;
+    if (!currentFlight || ((!currentAction || !journeyContext) && !nativeApp)) return;
     try {
       var safeFlight = safeFlightSnapshot(currentFlight);
+      // Native snapshots also cover the confirmation screen. Preserve its stop condition
+      // without retaining OCR values or document contents from an unresolved conflict.
+      if (nativeApp && currentFlight.requiresUserConfirmation && !conflictsConfirmed) {
+        safeFlight.requiresUserConfirmation = true;
+        safeFlight.conflicts = [{ blocking: true,
+          messageZh: '航班信息仍有冲突，请与机场工作人员核对后再继续。',
+          messageEn: 'Flight details still conflict. Confirm with airport staff before continuing.' }];
+      }
       localStorage.setItem(activeOfflineJourneyStorageKey(), JSON.stringify({
         version: 1,
-        savedAt: Date.now(),
+        savedAt: Math.min(Date.now(), restoredFromOffline && offlineSnapshotSavedAt || Date.now(),
+          Date.parse(currentFlight && (currentFlight.dataRetrievedAt || currentFlight.retrievedAt
+            || currentFlight.timeContext && currentFlight.timeContext.dataRetrievedAt) || '') || Date.now()),
         demoSessionId: typeof demoRecordingSessionId !== 'undefined' ? demoRecordingSessionId || null : null,
         qaJourney: Boolean(qaJourneyEnabled),
         flight: safeFlight,
@@ -7582,6 +7646,7 @@
       : saved.checkInStatusAnswer === 'no' || saved.checkInStatusAnswer === 'unsure'
         ? saved.checkInStatusAnswer : null;
     restoredFromOffline = fromOfflineStorage;
+    offlineSnapshotSavedAt = fromOfflineStorage ? Number(saved.savedAt) : null;
     flightCorrectionOpen = false;
     lastLookupContext = currentFlight ? {
       flightNumber: normalizeFlightNumber(currentFlight.flightNumber),
@@ -7618,7 +7683,7 @@
   function restoreJourney() {
     var journeyStorageKey = activeJourneyStorageKey();
     try {
-      var saved = JSON.parse(sessionStorage.getItem(journeyStorageKey));
+      var saved = nativeApp ? null : JSON.parse(sessionStorage.getItem(journeyStorageKey));
       if (saved && savedJourneyModeMatches(saved) && !isLegacyQaJourneySnapshot(saved)
           && applySavedJourney(saved, false)) return true;
       if (saved) sessionStorage.removeItem(journeyStorageKey);
@@ -7628,8 +7693,10 @@
     var offlineJourneyStorageKey = activeOfflineJourneyStorageKey();
     try {
       var offline = JSON.parse(localStorage.getItem(offlineJourneyStorageKey));
-      if (!offline || !offline.savedAt || Date.now() - Number(offline.savedAt) > OFFLINE_MAX_AGE_MS
+      if (!offline || !Number.isFinite(Number(offline.savedAt)) || Number(offline.savedAt) <= 0
+          || Number(offline.savedAt) > Date.now() + 60000 || Date.now() - Number(offline.savedAt) > OFFLINE_MAX_AGE_MS
           || !savedJourneyModeMatches(offline) || isLegacyQaJourneySnapshot(offline)) {
+        if (nativeApp && offline && Date.now() - Number(offline.savedAt) > OFFLINE_MAX_AGE_MS) expiredJourneyDiscarded = true;
         localStorage.removeItem(offlineJourneyStorageKey);
         return false;
       }
@@ -7643,9 +7710,20 @@
   }
 
   document.addEventListener('click', function (event) {
+    if (nativeApp) {
+      var link = event.target.closest('a[href]');
+      if (link && !link.getAttribute('href').startsWith('#')) {
+        event.preventDefault();
+        platform.openExternal(link.href).catch(function () {
+          showToast(localeText('无法打开此链接。', 'Unable to open this link.', 'No se puede abrir este enlace.'));
+        });
+        return;
+      }
+    }
     var actionElement = event.target.closest('[data-action]');
     if (!actionElement) return;
     var action = actionElement.dataset.action;
+    if (action === 'toggle-live-activity') toggleLiveActivity();
     if (action === 'upload') {
       fileInput.value = '';
       fileInput.click();
@@ -7927,7 +8005,115 @@
   });
 
   function refreshAfterReturnToPage() {
+    if (nativeApp) { platform.resume(); return; }
     resumeAutoRefresh();
+  }
+
+  function liveActivityContent() {
+    if (!currentFlight || !currentAction || !journeyContext || journeyContext.exitedAirport
+        || currentAction.stepType === 'COMPLETE' || currentFlight.status === 'CANCELLED') return null;
+    var time = currentFlight.timeContext || {};
+    var updated = Date.parse(currentFlight.dataRetrievedAt || currentFlight.retrievedAt
+      || currentFlight.dataLastUpdatedAt || time.dataRetrievedAt || '');
+    if (!Number.isFinite(updated)) updated = 0;
+    var staleAt = updated + 10 * 60 * 1000;
+    var expiresAt = Math.min(updated + OFFLINE_MAX_AGE_MS, Date.now() + 8 * 60 * 60 * 1000);
+    var gate = currentFlight.requiresUserConfirmation && !conflictsConfirmed ? '' : currentFlight.gate || '';
+    return {
+      journeyKey: familyShareJourneyKey(currentFlight),
+      flightNumber: formatFlightNumber(currentFlight.flightNumber),
+      gate: gate,
+      boardingTime: currentFlight.requiresUserConfirmation && !conflictsConfirmed ? ''
+        : formatAtOffset(currentFlight.boardingTime || time.boardingTime || currentFlight.documentBoardingTime, false, departureOffsetMinutes()),
+      nextStep: currentAction['title' + (currentLocale === 'zh' ? 'Zh' : currentLocale === 'es' ? 'Es' : 'En')] || currentAction.titleEn || '',
+      updatedAt: updated,
+      updatedText: updated ? formatAtOffset(new Date(updated).toISOString(), true, departureOffsetMinutes()) : '—',
+      staleAt: staleAt,
+      expiresAt: expiresAt,
+      stale: restoredFromOffline || Boolean(currentFlight.stale || time.stale) || !platform.isOnline() || Date.now() >= staleAt,
+      locale: currentLocale,
+      gateLabel: localeText('登机口', 'Gate', 'Puerta'),
+      boardingLabel: localeText('登机时间（机场当地）', 'Boarding (airport local)', 'Embarque (hora local)'),
+      updatedLabel: localeText('最后核验（机场当地）', 'Last checked (airport local)', 'Última consulta (hora local)'),
+      staleLabel: localeText('信息已过期，请打开 App 核验', 'Information is old. Open app to verify.', 'Información antigua. Abre la app para verificar.'),
+      missingLabel: localeText('待确认', 'Unconfirmed', 'Sin confirmar')
+    };
+  }
+
+  function renderLiveActivityControl() {
+    var button = document.querySelector('[data-action="toggle-live-activity"]');
+    if (!button) return;
+    button.hidden = !nativeApp || !currentAction;
+    if (!nativeApp) return;
+    var state = liveActivity.current();
+    button.textContent = state.active ? localeText('关闭锁屏显示', 'Turn off Lock Screen display', 'Desactivar en pantalla bloqueada')
+      : localeText('在锁屏显示此行程', 'Show journey on Lock Screen', 'Mostrar viaje en pantalla bloqueada');
+    button.setAttribute('aria-pressed', String(Boolean(state.active)));
+  }
+
+  function syncLiveActivity() {
+    if (!liveActivity || !pageInitialized) return;
+    liveActivity.update(liveActivityContent()).then(renderLiveActivityControl).catch(renderLiveActivityControl);
+  }
+
+  function toggleLiveActivity() {
+    if (!liveActivity) return;
+    var button = document.querySelector('[data-action="toggle-live-activity"]');
+    button.disabled = true;
+    liveActivity.status().then(function (state) {
+      if (state.active) return liveActivity.end();
+      if (!state.supported || !state.enabled) throw new Error('Unavailable');
+      return liveActivity.start(liveActivityContent());
+    }).then(renderLiveActivityControl).catch(function () {
+      showToast(localeText('当前无法开启锁屏显示，请检查系统的实时活动设置及行程有效期。',
+        'Lock Screen display is unavailable. Check Live Activities settings and journey validity.',
+        'No se puede activar. Revisa los ajustes de actividades en directo y la vigencia del viaje.'));
+    }).finally(function () { button.disabled = false; });
+  }
+
+  function handleNativeRoute() {
+    if (!pageInitialized || !platform.takeRoute()) return;
+    // The URL carries no journey data; only navigate after persisted state has been restored.
+    if (currentAction) renderJourneyResponse();
+    else if (currentFlight) showScreen('confirm');
+  }
+
+  function handlePlatformEvent(type) {
+    if (!pageInitialized) return;
+    if (type === 'route') { handleNativeRoute(); return; }
+    if (type === 'pause') {
+      stopAutoRefresh(false);
+      window.clearInterval(clockTimer);
+      clockTimer = null;
+      window.clearTimeout(shareSyncTimer);
+      stopSpeech(false);
+      persistOfflineJourney();
+      return;
+    }
+    if (type === 'offline' || type === 'api-offline') {
+      setRefreshStatus('OFFLINE_SNAPSHOT');
+      renderConnectivityStatus();
+      syncLiveActivity();
+      return;
+    }
+    if (type === 'api-online') { renderConnectivityStatus(); return; }
+    if (type === 'storage-error') {
+      showToast(localeText('无法保存最新进度，请保留 App 并稍后重试。',
+        'Unable to save the latest progress. Keep the app open and try again.',
+        'No se pudo guardar el progreso. Mantén la app abierta e inténtalo de nuevo.'));
+      return;
+    }
+    if (type !== 'resume' || document.hidden || !platform.isActive() || Date.now() - lastRecheckAt < 1500) return;
+    lastRecheckAt = Date.now();
+    if (currentFlight) ensureClockTimer();
+    retryPendingShareRevocations();
+    retryPendingFamilyShare();
+    liveActivity.status().then(renderLiveActivityControl).catch(function () {});
+    if (!currentFlight || lookupInFlight || flightRequestController || qaJourneyEnabled) return;
+    var request = journeyContext && currentAction
+      ? requestNextAction({ refresh: true, silent: true, source: 'resume' })
+      : refreshFlight({ silent: true, source: 'resume' });
+    Promise.resolve(request).then(function () { renderConnectivityStatus(); syncLiveActivity(); });
   }
 
   window.addEventListener('focus', refreshAfterReturnToPage);
@@ -7954,6 +8140,7 @@
     persistJourney();
   });
   window.addEventListener('online', function () {
+    if (nativeApp) { platform.resume(); return; }
     if (refreshStatusState && refreshStatusState.code === 'OFFLINE_SNAPSHOT') setRefreshStatus(null);
     renderConnectivityStatus();
     retryPendingShareRevocations();
@@ -7962,7 +8149,7 @@
     resumeAutoRefresh();
   });
 
-  if ('serviceWorker' in navigator) {
+  if (!nativeApp && 'serviceWorker' in navigator) {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('/service-worker.js', { updateViaCache: 'none' }).catch(function () {
         // Offline support is optional; the online journey remains available.
@@ -7971,6 +8158,7 @@
   }
 
   function initializePage() {
+    currentLocale = detectInitialLocale();
     shareSession = readStoredJson(activeShareSessionStorageKey());
     document.querySelector('[data-scenario-panel]').hidden = !demoScenariosEnabled || Boolean(demoRecordingSessionId);
     document.querySelectorAll('[data-scenario-test-card], [data-qa-airport-panel]').forEach(function (element) {
@@ -7983,6 +8171,9 @@
     setupDemoRecordingChannel();
     updateLanguage();
     var restoredJourney = restoreJourney();
+    pageInitialized = true;
+    document.getElementById('main-content').inert = false;
+    if (nativeApp) document.querySelector('[data-action="journey-problem-voice"]').hidden = true;
     if (shareSession && (!restoredJourney
         || !shareSessionMatchesPayload(shareSession, safeSharePayload()))) resetFamilyShareSession();
     retryPendingShareRevocations();
@@ -7991,8 +8182,17 @@
       startFlightLookup('BA117', qaJourneyDepartureDate(), true, null, 'NORMAL');
     }
     publishDemoRecordingState();
+    if (nativeApp) {
+      if (expiredJourneyDiscarded) showToast(localeText('已保存的行程超过 48 小时，请联网重新查询。',
+        'The saved journey is older than 48 hours. Reconnect and look it up again.',
+        'El viaje guardado tiene más de 48 horas. Conéctate y vuelve a buscarlo.'));
+      liveActivity.status().then(function () { syncLiveActivity(); }).catch(function () {});
+      handleNativeRoute();
+      platform.resume();
+    }
   }
 
+  function startPage() {
   var demoSessionPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   if (demoSessionPattern.test(requestedDemoSessionId || '')) {
     fetchJson('/api/demo-recording/sessions/' + encodeURIComponent(requestedDemoSessionId), {
@@ -8007,4 +8207,26 @@
       initializePage();
     });
   } else initializePage();
+  }
+  if (nativeApp && window.visualViewport) {
+    var updateViewport = function () {
+      if (window.visualViewport.scale !== 1) return;
+      document.documentElement.style.setProperty('--visible-height', window.visualViewport.height + 'px');
+      document.documentElement.style.setProperty('--visible-top', window.visualViewport.offsetTop + 'px');
+    };
+    window.visualViewport.addEventListener('resize', updateViewport);
+    window.visualViewport.addEventListener('scroll', updateViewport);
+    updateViewport();
+  }
+  if (platform) {
+    platform.on(handlePlatformEvent);
+    platform.init().then(startPage).catch(function () {
+      document.getElementById('main-content').inert = true;
+      var retry = document.createElement('button');
+      retry.className = 'button button-primary';
+      retry.textContent = localeText('无法读取已保存的行程，点此重试', 'Cannot read your saved journey. Tap to retry.', 'No se puede leer el viaje guardado. Toca para reintentar.');
+      retry.onclick = function () { window.location.reload(); };
+      document.querySelector('.site-header').after(retry);
+    });
+  } else startPage();
 }());

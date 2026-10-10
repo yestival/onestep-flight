@@ -37,7 +37,7 @@ function revocationSandbox(options = {}) {
       const value = localStorage.getItem(key);
       return value ? JSON.parse(value) : null;
     },
-    fetch(url, init) {
+    apiFetch(url, init) {
       requests.push({ url, method: init.method, updateToken: init.headers['X-Share-Update-Token'] });
       if (options.reject) return Promise.reject(new Error('temporary network failure'));
       const status = options.status == null ? 204 : options.status;

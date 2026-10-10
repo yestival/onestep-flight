@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const BASE_URL = process.env.ONESTEP_BASE_URL || 'http://127.0.0.1:18080';
 const CHROME_CANDIDATES = [
@@ -508,7 +509,7 @@ function requireAcceptance(condition, message, details) {
   }
 }
 
-function deterministicInjectionSource() {
+export function deterministicInjectionSource() {
   return `(() => {
     const clone = (value) => JSON.parse(JSON.stringify(value));
     const samples = ${JSON.stringify(FIXED_DOCUMENT_SAMPLES)};
@@ -630,7 +631,7 @@ function deterministicInjectionSource() {
         return response({
           viewToken: 'fixed-view-token', updateToken: 'fixed-update-token',
           viewUrl: location.origin + '/share/fixed-view-token',
-          expiresAt: '2026-09-05T14:30:00Z'
+          expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
         });
       }
       if (url.pathname === '/api/share-sessions/fixed-view-token' && method === 'PUT') return response({ updated: true });
@@ -1762,7 +1763,7 @@ async function main() {
   if (!summary.passed) process.exitCode = 1;
 }
 
-main().catch((error) => {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((error) => {
   summary.failure = safeFailure(error);
   console.log(JSON.stringify(summary, null, 2));
   process.exitCode = 1;

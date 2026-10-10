@@ -1,0 +1,9 @@
+{
+  "appId": "com.selene.onestepflight",
+  "appName": "OneStep Flight",
+  "widgetSuffix": ".FlightActivity",
+  "minimumIOSVersion": "16.2",
+  "version": "1.0.0",
+  "API_BASE_URL": "https://onestep-flight.onrender.com",
+  "PUBLIC_WEB_BASE_URL": "https://onestep-flight.onrender.com"
+}
