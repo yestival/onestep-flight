@@ -7,3 +7,24 @@ output/
 data/
 .env
 .env.*
+
+# Reproducible iPhone build outputs and local tooling.
+mobile/node_modules/
+mobile/www/
+mobile/ios/App/App/public/
+mobile/ios/App/App/capacitor.config.json
+mobile/ios/App/App/config.xml
+# Capacitor detects SPM from this package; keep Package.swift and Sources tracked.
+mobile/ios/App/CapApp-SPM/.build/
+mobile/ios/App/CapApp-SPM/.swiftpm/
+mobile/ios/App/CapApp-SPM/README.md
+mobile/ios/capacitor-cordova-ios-plugins/
+mobile/build/
+mobile/test-results/
+mobile/playwright-report/
+**/DerivedData/
+**/xcuserdata/
+*.ipa
+*.xcarchive/
+*.p12
+*.mobileprovision

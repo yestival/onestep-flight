@@ -38,6 +38,10 @@ function memoryStorage(initial) {
 
 function storageSandbox(overrides) {
   const sandbox = Object.assign({
+    nativeApp: false,
+    restoredFromOffline: false,
+    offlineSnapshotSavedAt: null,
+    syncLiveActivity() {},
     STORAGE_KEY: 'onestep-flight-journey-v2',
     OFFLINE_STORAGE_KEY: 'onestep-flight-offline-journey-v1',
     QA_STORAGE_KEY: 'onestep-flight-qa-journey-v1',

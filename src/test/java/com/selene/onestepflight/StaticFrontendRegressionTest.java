@@ -46,7 +46,7 @@ class StaticFrontendRegressionTest {
         assertTrue(overlay.contains("data-action=\"journey-problem-voice\""));
         assertTrue(overlay.contains("data-journey-problem-submit"));
         assertTrue(overlay.contains("data-journey-problem-result"));
-        assertTrue(html.contains("styles.css?v=42"));
+        assertTrue(html.contains("styles.css?v=44"));
         assertTrue(html.contains("locale.js?v=42"));
         assertTrue(html.contains("app.js?v=45"));
         assertTrue(worker.contains("onestep-flight-shell-"));
@@ -799,14 +799,14 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("No se encontró información del vuelo"));
         assertTrue(js.contains("Only some information was found"));
         assertTrue(js.contains("Solo se encontró parte de la información"));
-        assertTrue(html.contains("styles.css?v=42"));
+        assertTrue(html.contains("styles.css?v=44"));
         assertTrue(html.contains("locale.js?v=42"));
         assertTrue(html.contains("app.js?v=45"));
         assertFalse(html.contains("?v=37"));
         assertTrue(worker.contains("CACHE_PREFIX + 'v45'"));
         assertFalse(worker.contains("CACHE_PREFIX + 'v37'"));
-        for (String asset : new String[] { "/styles.css?v=42", "/locale.js?v=42", "/app.js?v=45",
-                "/share.css?v=33", "/share.js?v=33" }) {
+        for (String asset : new String[] { "/styles.css?v=44", "/locale.js?v=42", "/app.js?v=45",
+                "/share.css?v=33", "/share.js?v=34" }) {
             assertTrue(worker.contains("'" + asset + "'"), asset);
         }
     }
@@ -833,7 +833,7 @@ class StaticFrontendRegressionTest {
         assertTrue(shareHtml.contains("/share.css?v=33"));
         assertTrue(shareHtml.contains("/locale.js?v=42"));
         assertFalse(shareHtml.contains("/locale.js?v=33"));
-        assertTrue(shareHtml.contains("/share.js?v=33"));
+        assertTrue(shareHtml.contains("/share.js?v=34"));
         assertFalse(index.contains("?v=35"));
         assertFalse(shareHtml.contains("?v=29"));
         assertTrue(app.contains("window.OneStepLocale.resolveLocalePreference(stored, navigator.languages, navigator.language)"));
@@ -1081,7 +1081,8 @@ class StaticFrontendRegressionTest {
         assertFalse(builder.contains("currentScreen === 'loading'"));
         assertTrue(html.split("data-action=\"speak\"", -1).length - 1 >= 6);
         assertTrue(html.split("data-action=\"speak\"", -1).length
-                == html.split("aria-pressed=\"false\"", -1).length);
+                == html.replace("data-action=\"toggle-live-activity\" aria-pressed=\"false\"", "")
+                    .split("aria-pressed=\"false\"", -1).length);
     }
 
     @Test

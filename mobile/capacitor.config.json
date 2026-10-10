@@ -1,0 +1,20 @@
+{
+  "appId": "com.selene.onestepflight",
+  "appName": "OneStep Flight",
+  "webDir": "www",
+  "server": {
+    "iosScheme": "capacitor",
+    "hostname": "localhost"
+  },
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": true,
+    "zoomEnabled": true,
+    "backgroundColor": "#F3F4F7"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": false
+    }
+  }
+}
