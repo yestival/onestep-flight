@@ -14,10 +14,14 @@ function run(command, args, options = {}) {
 if (process.platform !== 'darwin') throw new Error('Widget runtime verification requires macOS and an iOS Simulator.');
 const projectPath = new URL('ios/App/App.xcodeproj/project.pbxproj', mobileRoot);
 const scenePath = new URL('ios/App/App/SceneDelegate.swift', mobileRoot);
-const originals = [projectPath, scenePath].map(path => [path, readFileSync(path, 'utf8')]);
+const widgetPath = new URL('ios/App/FlightActivity/FlightActivityWidget.swift', mobileRoot);
+const originals = [projectPath, scenePath, widgetPath].map(path => [path, readFileSync(path, 'utf8')]);
 let device;
 mkdirSync(new URL('build/widget-smoke/', mobileRoot), { recursive: true });
 try {
+  if (process.env.SMOKE_WIDGET === 'minimal') {
+    writeFileSync(widgetPath, readFileSync(widgetPath, 'utf8').replace('FlightLockScreen(state: context.state, stale: context.isStale)', 'Text(context.state.nextStep).padding()'));
+  }
   const scene = readFileSync(scenePath, 'utf8').replace('FlightBridgeViewController()', 'FlightActivitySmokeController()');
   writeFileSync(scenePath, scene + '\n' + readFileSync(new URL('../test/ios/FlightActivitySmokeController.swift', import.meta.url), 'utf8'));
   const project = xcode.project(fileURLToPath(projectPath)); project.parseSync();
@@ -63,9 +67,10 @@ try {
   run('xcodebuild', ['-project', 'ios/App/App.xcodeproj', '-scheme', 'FlightActivitySmoke', '-destination', `platform=iOS Simulator,id=${device}`, '-derivedDataPath', 'build/SmokeDerivedData', '-resultBundlePath', 'build/widget-smoke/Result.xcresult', '-parallel-testing-enabled', 'NO', 'CODE_SIGNING_ALLOWED=YES', 'CODE_SIGN_IDENTITY=-', 'DEVELOPMENT_TEAM=', 'test'], { stdio: 'inherit' });
 } finally {
   if (device) {
-    const logs = spawnSync('xcrun', ['simctl', 'spawn', device, 'log', 'show', '--last', '15m', '--style', 'compact', '--info', '--debug', '--predicate', 'process == "FlightActivity" OR process == "liveactivitiesd" OR process == "chronod" OR process == "App"'], { encoding: 'utf8', timeout: 20000, maxBuffer: 32 * 1024 * 1024 });
+    const logs = spawnSync('xcrun', ['simctl', 'spawn', device, 'log', 'show', '--last', '15m', '--style', 'compact', '--info', '--debug', '--predicate', 'process == "FlightActivity" OR process == "liveactivitiesd" OR process == "chronod" OR process == "App" OR (process == "SpringBoard" AND (subsystem CONTAINS "chrono" OR subsystem CONTAINS "activity" OR subsystem CONTAINS "Widget" OR messageType == error OR eventMessage CONTAINS "onestepflight"))'], { encoding: 'utf8', timeout: 30000, maxBuffer: 64 * 1024 * 1024 });
     writeFileSync(new URL('build/widget-smoke/system.log', mobileRoot), logs.stdout || logs.stderr || 'No system logs');
     spawnSync('xcrun', ['simctl', 'io', device, 'screenshot', fileURLToPath(new URL('build/widget-smoke/screen.png', mobileRoot))], { timeout: 15000 });
   }
+  spawnSync('xcrun', ['xcresulttool', 'export', 'attachments', '--path', 'build/widget-smoke/Result.xcresult', '--output-path', 'build/widget-smoke/attachments'], { cwd: root, stdio: 'inherit', timeout: 30000 });
   for (const [path, content] of originals) writeFileSync(path, content);
 }

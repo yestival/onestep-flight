@@ -1,9 +1,12 @@
 import XCTest
 
 final class FlightActivityUITests: XCTestCase {
-    func testActivityRendersInSystemNotificationCenter() {
+    func testFreshActivityRenders() { verifyRender(fresh: true) }
+    func testStaleActivityRenders() { verifyRender(fresh: false) }
+    private func verifyRender(fresh: Bool) {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.selene.onestepflight")
+        if fresh { app.launchArguments = ["--fresh"] }
         app.launch()
         let status = app.staticTexts["activity-smoke-status"]
         XCTAssertTrue(status.waitForExistence(timeout: 30))

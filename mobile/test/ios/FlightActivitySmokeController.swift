@@ -34,6 +34,9 @@ final class FlightActivitySmokeController: UIViewController {
             state.updatedText = "14:05 更新"; state.locale = "zh"
             state.staleLabel = "可打开 App 刷新"
             state.updatedAt = now - 3600; state.staleAt = now - 3000
+            if ProcessInfo.processInfo.arguments.contains("--fresh") {
+                state.stale = false; state.updatedAt = now; state.staleAt = now + 600
+            }
             state.journeyEndsAt = now + 86400
             do {
                 try await FlightActivityCoordinator.shared.sync(state)
