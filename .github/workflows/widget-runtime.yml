@@ -1,7 +1,7 @@
 name: iOS Widget runtime verification
 on:
   push:
-    branches: ['codex/diagnose-lockscreen']
+    branches: ['main', 'codex/diagnose-lockscreen']
   workflow_dispatch:
 permissions:
   contents: read

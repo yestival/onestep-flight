@@ -37,6 +37,7 @@ final class FlightActivitySmokeController: UIViewController {
             if ProcessInfo.processInfo.arguments.contains("--fresh") {
                 state.stale = false; state.updatedAt = now; state.staleAt = now + 600
             }
+            if ProcessInfo.processInfo.arguments.contains("--ages") { state.staleAt = now + 25 }
             state.journeyEndsAt = now + 86400
             do {
                 var legacyID: String?

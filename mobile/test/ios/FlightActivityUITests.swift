@@ -4,11 +4,13 @@ final class FlightActivityUITests: XCTestCase {
     func testFreshActivityRenders() { verifyRender(fresh: true) }
     func testStaleActivityRenders() { verifyRender(fresh: false) }
     func testExistingInvisibleActivityRecovers() { verifyRender(fresh: false, recover: true) }
-    private func verifyRender(fresh: Bool, recover: Bool = false) {
+    func testFreshActivityBecomesStaleWhileAppIsBackgrounded() { verifyRender(fresh: true, ages: true) }
+    private func verifyRender(fresh: Bool, recover: Bool = false, ages: Bool = false) {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.selene.onestepflight")
         if fresh { app.launchArguments = ["--fresh"] }
         if recover { app.launchArguments = ["--recover"] }
+        if ages { app.launchArguments.append("--ages") }
         app.launch()
         let status = app.staticTexts["activity-smoke-status"]
         XCTAssertTrue(status.waitForExistence(timeout: 30))
@@ -38,6 +40,12 @@ final class FlightActivityUITests: XCTestCase {
         }
         if !fresh {
             XCTAssertTrue(system.staticTexts.containing(NSPredicate(format: "label CONTAINS '14:05 更新' AND label CONTAINS '可打开 App 刷新'")).firstMatch.exists)
+        }
+        if ages {
+            let staleFooter = system.staticTexts.containing(NSPredicate(format: "label CONTAINS '14:05 更新' AND label CONTAINS '可打开 App 刷新'")).firstMatch
+            XCTAssertTrue(staleFooter.waitForExistence(timeout: 40), "The system stale transition must preserve visible content while App is backgrounded")
+            XCTAssertTrue(heading.exists)
+            attach("stale-while-backgrounded")
         }
     }
     private func attach(_ name: String) {
