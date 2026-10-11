@@ -2,9 +2,9 @@ import ActivityKit
 import SwiftUI
 import WidgetKit
 
-// Resolve both sides of the contrast pair from SwiftUI's Widget environment.
-// UIKit dynamic colors can archive with the host app's light traits while the
-// system renders white text using the Widget's dark traits.
+// Resolve both sides of the contrast pair in the same archived SwiftUI view.
+// SpringBoard can use light traits for the surrounding activity surface while
+// rendering the content with dark traits, so a system tint alone is insufficient.
 private enum FlightPalette {
     static func background(_ scheme: ColorScheme) -> Color {
         scheme == .dark ? Color(red: 0.11, green: 0.13, blue: 0.17) : Color(red: 0.96, green: 0.97, blue: 0.98)
@@ -63,6 +63,7 @@ private struct FlightLockScreen: View {
         }
         .padding(10)
         .foregroundStyle(FlightPalette.ink(colorScheme))
+        .background(FlightPalette.background(colorScheme))
         .activityBackgroundTint(FlightPalette.background(colorScheme))
         .activitySystemActionForegroundColor(FlightPalette.ink(colorScheme))
     }
