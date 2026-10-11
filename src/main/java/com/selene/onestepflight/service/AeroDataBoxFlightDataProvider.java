@@ -255,7 +255,7 @@ public class AeroDataBoxFlightDataProvider implements OperationalFlightDataProvi
 			case 404 -> ProviderFlightResult.NOT_FOUND;
 			default -> ProviderFlightResult.UPSTREAM_ERROR;
 		};
-		return ProviderFlightResult.failure(providerName(), outcome, "AERODATABOX_HTTP_" + status, attemptedAt);
+		return ProviderFlightResult.failure(providerName(), outcome, ProviderRetryAfter.code("AERODATABOX_HTTP_" + status, exception, attemptedAt), attemptedAt);
 	}
 
 	private BadRequestClassification classifyBadRequest(String responseBody) {

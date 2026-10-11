@@ -28,7 +28,7 @@ class MobileCorsTests {
     @Test void existingWebsiteAndSameOriginFlightLookupRemainAvailable() throws Exception {
         mvc.perform(get("/index.html"))
             .andExpect(status().isOk())
-            .andExpect(content().string(org.hamcrest.Matchers.containsString("app.js?v=45")));
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("app.js?v=46")));
         mvc.perform(post("/api/journeys/resolve-flight")
                 .header("Origin", "http://localhost")
                 .contentType("application/json").content(FLIGHT_QUERY))

@@ -4,5 +4,5 @@ export default defineConfig({
   use: { baseURL: 'http://127.0.0.1:4173', viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true,
     screenshot: 'only-on-failure', trace: 'retain-on-failure', serviceWorkers: 'block' },
   projects: [{ name: 'chromium', use: { browserName: 'chromium' } }, { name: 'webkit', use: { browserName: 'webkit' } }],
-  webServer: { command: 'npm run build && npm run preview', url: 'http://127.0.0.1:4173', reuseExistingServer: false }
+  webServer: { command: `"${process.execPath}" scripts/build.mjs && "${process.execPath}" scripts/preview.mjs`, url: 'http://127.0.0.1:4173', reuseExistingServer: false }
 });

@@ -25,6 +25,7 @@
 		3460263E1CCB4670AFB65616 /* FlightActivity/FlightActivityWidget.swift */ = {isa = PBXBuildFile; fileRef = B042F98329A4482BB068633F /* FlightActivity/FlightActivityWidget.swift */; };
 		3AD81873CC1342D28B0DAB93 /* App/PrivacyInfo.xcprivacy */ = {isa = PBXBuildFile; fileRef = DD13C5126C5948F587C198B1 /* App/PrivacyInfo.xcprivacy */; };
 		21D59195198C49E884CD0DB6 /* FlightActivity/PrivacyInfo.xcprivacy */ = {isa = PBXBuildFile; fileRef = 8EE0DD1500E44F99989A0EC2 /* FlightActivity/PrivacyInfo.xcprivacy */; };
+		151A983F34F243FBAF4A607A /* App/FlightPushPlugin.swift */ = {isa = PBXBuildFile; fileRef = 26AF5AB11D2F4C8F86EE97F8 /* App/FlightPushPlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +48,7 @@
 		B042F98329A4482BB068633F /* FlightActivityWidget.swift */ = {isa = PBXFileReference; name = "FlightActivityWidget.swift"; path = "FlightActivity/FlightActivityWidget.swift"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; includeInIndex = 0; };
 		DD13C5126C5948F587C198B1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; name = "PrivacyInfo.xcprivacy"; path = "App/PrivacyInfo.xcprivacy"; sourceTree = "<group>"; lastKnownFileType = text.xml; includeInIndex = 0; };
 		8EE0DD1500E44F99989A0EC2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; name = "PrivacyInfo.xcprivacy"; path = "FlightActivity/PrivacyInfo.xcprivacy"; sourceTree = "<group>"; lastKnownFileType = text.xml; includeInIndex = 0; };
+		26AF5AB11D2F4C8F86EE97F8 /* FlightPushPlugin.swift */ = {isa = PBXFileReference; name = "FlightPushPlugin.swift"; path = "App/FlightPushPlugin.swift"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +115,7 @@
 				B042F98329A4482BB068633F /* FlightActivityWidget.swift */,
 				DD13C5126C5948F587C198B1 /* PrivacyInfo.xcprivacy */,
 				8EE0DD1500E44F99989A0EC2 /* PrivacyInfo.xcprivacy */,
+				26AF5AB11D2F4C8F86EE97F8 /* FlightPushPlugin.swift */,
 			);
 			name = FlightNative;
 			sourceTree = "<group>";
@@ -172,6 +175,17 @@
 						CreatedOnToolsVersion = 9.2;
 						LastSwiftMigration = 1100;
 						ProvisioningStyle = Automatic;
+						SystemCapabilities = {
+							com.apple.Push = {
+								enabled = 1;
+							};
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
+							com.apple.TimeSensitiveNotifications = {
+								enabled = 1;
+							};
+						};
 					};
 				};
 			};
@@ -233,6 +247,7 @@
 				C55AAF7FE9674ACEB96B28FC /* App/FlightNativePlugin.swift */,
 				45B7C481E68B42D18F75D619 /* App/FlightLiveActivityPlugin.swift */,
 				3567824297B04B139F3312C0 /* Shared/FlightActivityAttributes.swift */,
+				151A983F34F243FBAF4A607A /* App/FlightPushPlugin.swift */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -398,6 +413,9 @@
 				TARGETED_DEVICE_FAMILY = 1;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+				FLIGHT_APNS_ENVIRONMENT = development;
+				FLIGHT_PUSH_ENVIRONMENT = sandbox;
 			};
 			name = Debug;
 		};
@@ -422,6 +440,9 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				OTHER_SWIFT_FLAGS = "$(inherited)";
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+				FLIGHT_APNS_ENVIRONMENT = production;
+				FLIGHT_PUSH_ENVIRONMENT = production;
 			};
 			name = Release;
 		};

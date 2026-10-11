@@ -27,7 +27,7 @@ public class NextActionService {
 		this(Clock.systemUTC());
 	}
 
-	NextActionService(Clock clock) {
+	public NextActionService(Clock clock) {
 		this.clock = clock;
 	}
 

@@ -8,6 +8,9 @@
   var liveActivity = nativeApp ? window.OneStepLiveActivity(platform.live) : null;
   var pageInitialized = false;
   var lastRecheckAt = 0;
+  var lastLockState = null;
+  var pushSyncFingerprint = null;
+  var serverSnapshotVersion = 0;
 
   function apiFetch(url, options) {
     return platform ? platform.apiFetch(url, options) : fetch(url, options);
@@ -2662,6 +2665,7 @@
     }
     var requestedDepartureDate = lastLookupContext && lastLookupContext.departureDate;
     var requestedSegmentIndex = lastLookupContext && lastLookupContext.documentSegmentIndex;
+    if (currentFlight && familyShareJourneyKey(currentFlight) !== familyShareJourneyKey(flight) && nativeApp) platform.push.clearJourney({ journeyKey: familyShareJourneyKey(currentFlight) }).catch(function () {});
     currentFlight = flight;
     if (shareSession && !shareSessionMatchesFlight(shareSession, flight)) resetFamilyShareSession();
     lastLookupContext = {
@@ -5922,7 +5926,9 @@
 
   function returnToDocumentSegmentSelection() {
     if (!documentSegments.length || !pendingDocument) return false;
+    lastLockState = null; pushSyncFingerprint = null; serverSnapshotVersion = 0;
     if (liveActivity) liveActivity.end().catch(function () {});
+    if (nativeApp) platform.push.clearJourney({ journeyKey: familyShareJourneyKey(currentFlight) }).catch(function () {});
     localStorage.removeItem(activeOfflineJourneyStorageKey());
     resetFamilyShareSession();
     requestSequence += 1;
@@ -7343,6 +7349,8 @@
 
   function clearJourney() {
     stopAutoRefresh(true);
+    lastLockState = null; pushSyncFingerprint = null; serverSnapshotVersion = 0;
+    if (nativeApp) platform.push.clearJourney({ journeyKey: familyShareJourneyKey(currentFlight) }).catch(function () {});
     if (liveActivity) liveActivity.end().catch(function () {});
     sessionStorage.removeItem(activeJourneyStorageKey());
     localStorage.removeItem(activeOfflineJourneyStorageKey());
@@ -7554,7 +7562,7 @@
       // without retaining OCR values or document contents from an unresolved conflict.
       if (nativeApp && currentFlight.requiresUserConfirmation && !conflictsConfirmed) {
         safeFlight.requiresUserConfirmation = true;
-        safeFlight.conflicts = [{ blocking: true,
+        safeFlight.conflicts = [{ field: (currentFlight.conflicts || []).filter(function (c) { return c.blocking; })[0]?.field || 'flightNumber', blocking: true,
           messageZh: '航班信息仍有冲突，请与机场工作人员核对后再继续。',
           messageEn: 'Flight details still conflict. Confirm with airport staff before continuing.' }];
       }
@@ -7566,6 +7574,8 @@
         demoSessionId: typeof demoRecordingSessionId !== 'undefined' ? demoRecordingSessionId || null : null,
         qaJourney: Boolean(qaJourneyEnabled),
         flight: safeFlight,
+        lockState: lastLockState,
+        snapshotVersion: serverSnapshotVersion,
         action: safeActionSnapshot(currentAction),
         context: safeContextSnapshot(journeyContext, safeFlight),
         history: safeHistorySnapshot(journeyHistory, safeFlight),
@@ -7588,11 +7598,14 @@
     var restoringDocumentSelection = restoringDocumentWorkflow && Boolean(saved.awaitingDocumentSelection);
     if (!saved || !savedJourneyModeMatches(saved)
         || !saved.flight && !restoringDocumentWorkflow) return false;
-    if (saved.savedAt && Date.now() - Number(saved.savedAt) > OFFLINE_MAX_AGE_MS) return false;
+    if (saved.savedAt && Date.now() - Number(saved.savedAt) > OFFLINE_MAX_AGE_MS
+        && (!saved.lockState || saved.lockState.journeyEndsAt * 1000 <= Date.now())) return false;
     currentFlight = normalizeSavedFlight(saved.flight);
     activeDemoScenarioId = demoScenariosEnabled && currentFlight ? currentFlight.demoScenario || null : null;
     journeyContext = normalizeJourneyContext(saved.context, currentFlight);
     currentAction = saved.action || null;
+    lastLockState = saved.lockState || null;
+    serverSnapshotVersion = saved.snapshotVersion || 0;
     journeyHistory = (Array.isArray(saved.history) ? saved.history : []).map(function (entry) {
       return {
         context: normalizeJourneyContext(entry.context, currentFlight),
@@ -7723,7 +7736,7 @@
     var actionElement = event.target.closest('[data-action]');
     if (!actionElement) return;
     var action = actionElement.dataset.action;
-    if (action === 'toggle-live-activity') toggleLiveActivity();
+    if (action === 'open-live-settings' && nativeApp) platform.push.openSettings().catch(function () {});
     if (action === 'upload') {
       fileInput.value = '';
       fileInput.click();
@@ -8010,69 +8023,63 @@
   }
 
   function liveActivityContent() {
-    if (!currentFlight || !currentAction || !journeyContext || journeyContext.exitedAirport
-        || currentAction.stepType === 'COMPLETE' || currentFlight.status === 'CANCELLED') return null;
-    var time = currentFlight.timeContext || {};
-    var updated = Date.parse(currentFlight.dataRetrievedAt || currentFlight.retrievedAt
-      || currentFlight.dataLastUpdatedAt || time.dataRetrievedAt || '');
-    if (!Number.isFinite(updated)) updated = 0;
-    var staleAt = updated + 10 * 60 * 1000;
-    var expiresAt = Math.min(updated + OFFLINE_MAX_AGE_MS, Date.now() + 8 * 60 * 60 * 1000);
-    var gate = currentFlight.requiresUserConfirmation && !conflictsConfirmed ? '' : currentFlight.gate || '';
-    return {
-      journeyKey: familyShareJourneyKey(currentFlight),
-      flightNumber: formatFlightNumber(currentFlight.flightNumber),
-      gate: gate,
-      boardingTime: currentFlight.requiresUserConfirmation && !conflictsConfirmed ? ''
-        : formatAtOffset(currentFlight.boardingTime || time.boardingTime || currentFlight.documentBoardingTime, false, departureOffsetMinutes()),
-      nextStep: currentAction['title' + (currentLocale === 'zh' ? 'Zh' : currentLocale === 'es' ? 'Es' : 'En')] || currentAction.titleEn || '',
-      updatedAt: updated,
-      updatedText: updated ? formatAtOffset(new Date(updated).toISOString(), true, departureOffsetMinutes()) : '—',
-      staleAt: staleAt,
-      expiresAt: expiresAt,
-      stale: restoredFromOffline || Boolean(currentFlight.stale || time.stale) || !platform.isOnline() || Date.now() >= staleAt,
-      locale: currentLocale,
-      gateLabel: localeText('登机口', 'Gate', 'Puerta'),
-      boardingLabel: localeText('登机时间（机场当地）', 'Boarding (airport local)', 'Embarque (hora local)'),
-      updatedLabel: localeText('最后核验（机场当地）', 'Last checked (airport local)', 'Última consulta (hora local)'),
-      staleLabel: localeText('信息已过期，请打开 App 核验', 'Information is old. Open app to verify.', 'Información antigua. Abre la app para verificar.'),
-      missingLabel: localeText('待确认', 'Unconfirmed', 'Sin confirmar')
-    };
+    if (!currentFlight || !journeyContext || journeyContext.exitedAirport || currentAction && currentAction.stepType === 'COMPLETE') return null;
+    var identityConflict = (currentFlight.conflicts || []).some(function (c) {
+      return c.blocking && !c.field || ['flightNumber', 'departureDate', 'departureAirport', 'arrivalAirport'].indexOf(c.field) >= 0;
+    });
+    if (identityConflict && !conflictsConfirmed) return null;
+    var key = familyShareJourneyKey(currentFlight);
+    if (lastLockState && lastLockState.journeyKey !== key) lastLockState = null;
+    lastLockState = window.OneStepFlightDisplay.build(currentFlight, currentAction, journeyContext, {
+      previous: lastLockState, journeyKey: key, locale: currentLocale, conflictsConfirmed: conflictsConfirmed,
+      offline: !platform.isOnline(), stale: restoredFromOffline, snapshotVersion: 0
+    });
+    persistOfflineJourney();
+    return lastLockState;
   }
 
-  function renderLiveActivityControl() {
-    var button = document.querySelector('[data-action="toggle-live-activity"]');
-    if (!button) return;
-    button.hidden = !nativeApp || !currentAction;
-    if (!nativeApp) return;
+  function renderLiveActivityStatus() {
+    var notice = document.querySelector('[data-live-activity-status]');
+    if (!notice || !liveActivity) return;
     var state = liveActivity.current();
-    button.textContent = state.active ? localeText('关闭锁屏显示', 'Turn off Lock Screen display', 'Desactivar en pantalla bloqueada')
-      : localeText('在锁屏显示此行程', 'Show journey on Lock Screen', 'Mostrar viaje en pantalla bloqueada');
-    button.setAttribute('aria-pressed', String(Boolean(state.active)));
+    notice.hidden = !journeyContext || !state.supported || state.enabled;
+    notice.querySelector('span').textContent = localeText('实时活动已被系统禁用。', 'Live Activities are disabled in system settings.', 'Las actividades en directo están desactivadas en los ajustes.');
+    notice.querySelector('button').textContent = localeText('前往系统设置', 'Open system settings', 'Abrir ajustes');
   }
 
   function syncLiveActivity() {
     if (!liveActivity || !pageInitialized) return;
-    liveActivity.update(liveActivityContent()).then(renderLiveActivityControl).catch(renderLiveActivityControl);
-  }
-
-  function toggleLiveActivity() {
-    if (!liveActivity) return;
-    var button = document.querySelector('[data-action="toggle-live-activity"]');
-    button.disabled = true;
-    liveActivity.status().then(function (state) {
-      if (state.active) return liveActivity.end();
-      if (!state.supported || !state.enabled) throw new Error('Unavailable');
-      return liveActivity.start(liveActivityContent());
-    }).then(renderLiveActivityControl).catch(function () {
-      showToast(localeText('当前无法开启锁屏显示，请检查系统的实时活动设置及行程有效期。',
-        'Lock Screen display is unavailable. Check Live Activities settings and journey validity.',
-        'No se puede activar. Revisa los ajustes de actividades en directo y la vigencia del viaje.'));
-    }).finally(function () { button.disabled = false; });
+    var content = liveActivityContent();
+    if (!content) {
+      if (!journeyContext || journeyContext.exitedAirport || currentAction && currentAction.stepType === 'COMPLETE') {
+        liveActivity.end().catch(function () {});
+        platform.push.clearJourney({ journeyKey: familyShareJourneyKey(currentFlight) }).catch(function () {});
+      }
+      return;
+    }
+    liveActivity.sync(content).then(renderLiveActivityStatus).catch(renderLiveActivityStatus);
+    if (currentFlight.demo || qaJourneyEnabled || demoRecordingSessionId) return;
+    var progress = safeContextSnapshot(journeyContext, null);
+    delete progress.flightSnapshot;
+    var payload = { journeyKey: content.journeyKey, flight: Object.assign(safeFlightSnapshot(currentFlight), { conflicts: currentFlight.conflicts || [], fieldProvenance: currentFlight.fieldProvenance || {} }), progress: progress,
+      locale: currentLocale, snapshotVersion: serverSnapshotVersion };
+    var fingerprint = JSON.stringify(payload);
+    if (fingerprint === pushSyncFingerprint) return;
+    pushSyncFingerprint = fingerprint;
+    platform.push.syncJourney(payload).then(function (result) {
+      if (!result || !result.displayState || result.journeyKey !== familyShareJourneyKey(currentFlight)) return;
+      serverSnapshotVersion = Math.max(serverSnapshotVersion, result.snapshotVersion || 0);
+      lastLockState = Object.assign({}, result.displayState, { facts: lastLockState && lastLockState.facts });
+      liveActivity.sync(result.displayState).catch(function () {});
+    }).catch(function () { pushSyncFingerprint = null; });
   }
 
   function handleNativeRoute() {
-    if (!pageInitialized || !platform.takeRoute()) return;
+    if (!pageInitialized) return;
+    var route = platform.takeRoute();
+    if (!route) return;
+    if (route.journeyKey && route.journeyKey !== familyShareJourneyKey(currentFlight)) return;
+    if (journeyContext && currentFlight) requestNextAction({ refresh: true, silent: true, source: 'notification' });
     // The URL carries no journey data; only navigate after persisted state has been restored.
     if (currentAction) renderJourneyResponse();
     else if (currentFlight) showScreen('confirm');
@@ -8108,7 +8115,7 @@
     if (currentFlight) ensureClockTimer();
     retryPendingShareRevocations();
     retryPendingFamilyShare();
-    liveActivity.status().then(renderLiveActivityControl).catch(function () {});
+    liveActivity.status().then(renderLiveActivityStatus).catch(function () {});
     if (!currentFlight || lookupInFlight || flightRequestController || qaJourneyEnabled) return;
     var request = journeyContext && currentAction
       ? requestNextAction({ refresh: true, silent: true, source: 'resume' })

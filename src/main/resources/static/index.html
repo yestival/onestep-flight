@@ -293,7 +293,7 @@
         <p class="offline-status" data-offline-status role="status" aria-live="polite" hidden></p>
         <button class="button button-secondary arrival-refresh-button" type="button" data-action="refresh-arrival" data-i18n-aria="refreshArrivalAria" hidden><span data-i18n="refreshShort">刷新</span></button>
         <p class="refresh-status" data-refresh-status aria-live="polite"></p>
-        <button class="button button-secondary live-activity-button" type="button" data-action="toggle-live-activity" aria-pressed="false" hidden>Show journey on Lock Screen</button>
+        <p data-live-activity-status hidden><span></span> <button class="text-button" type="button" data-action="open-live-settings">Open system settings</button></p>
         <details class="timeline-panel"><summary data-i18n="journeyTimeline">查看本次行程记录</summary><ol data-journey-timeline></ol></details>
       </section>
 
@@ -397,7 +397,9 @@
   </div>
   <script src="locale.js?v=42"></script>
   <script src="platform.js?v=44"></script>
+  <script src="airport-timezones.js"></script>
+  <script src="flight-display.js"></script>
   <script src="live-activity.js?v=44"></script>
-  <script src="app.js?v=45"></script>
+  <script src="app.js?v=46"></script>
 </body>
 </html>

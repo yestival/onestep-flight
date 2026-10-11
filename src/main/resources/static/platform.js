@@ -55,7 +55,12 @@
     }, 250);
   }
   function route(url) {
-    if (/^onestepflight:\/\/journey\/?$/.test(url || '')) { routePending = true; emit('route'); }
+    try {
+      var parsed = new URL(url);
+      if (parsed.protocol === 'onestepflight:' && parsed.hostname === 'journey') {
+        routePending = { journeyKey: parsed.searchParams.get('journeyKey') }; emit('route');
+      }
+    } catch (_) {}
   }
   function init() {
     if (ready) return ready;
@@ -90,6 +95,10 @@
       await native.App.addListener('appUrlOpen', function (event) { route(event.url); });
       var launch = await native.App.getLaunchUrl();
       if (launch) route(launch.url);
+      if (native.FlightPush) {
+        await native.FlightPush.addListener('journeyRoute', function (event) { routePending = event; emit('route'); });
+        await native.FlightPush.initialize();
+      }
       await cleanShareFiles();
     }());
     return ready;
@@ -194,6 +203,7 @@
     isOnline: function () { return (!isNative || connected) && apiReachable && host.navigator.onLine !== false; },
     resume: resume,
     takeRoute: function () { var pending = routePending; routePending = false; return pending; },
+    push: native && native.FlightPush,
     live: native && native.FlightLiveActivity
   };
 }));

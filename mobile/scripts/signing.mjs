@@ -35,6 +35,10 @@ print(json.dumps({key: profile[key] for key in fields if key in profile}, defaul
     const profile = JSON.parse(converted.stdout);
     try {
       validateSigningProfile(profile, { teamId: env.APPLE_TEAM_ID, bundleId: bundle });
+      if (key === 'APP_PROFILE_PATH' && (profile.Entitlements?.['aps-environment'] !== 'production'
+          || profile.Entitlements?.['com.apple.developer.usernotifications.time-sensitive'] !== true)) {
+        throw new Error('App Store profile must enable Push Notifications and Time Sensitive Notifications');
+      }
     } catch (error) {
       throw new Error(`${key}: ${error.message}`);
     }

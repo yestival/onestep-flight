@@ -956,7 +956,7 @@ body,button,input,select,textarea{word-break:normal;overflow-wrap:normal;hyphens
 .app-shell{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);min-height:100dvh}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top)}
 input,textarea,select{font-size:max(16px,1em)}
-.live-activity-button{width:100%;margin-top:20px;white-space:normal}
+
 @media(max-width:440px){
   .app-shell *, .staff-overlay *, .confirm-overlay *{min-width:0}
   .brand-copy{flex:1}

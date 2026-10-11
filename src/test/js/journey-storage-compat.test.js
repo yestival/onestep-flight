@@ -39,6 +39,8 @@ function memoryStorage(initial) {
 function storageSandbox(overrides) {
   const sandbox = Object.assign({
     nativeApp: false,
+    lastLockState: null,
+    serverSnapshotVersion: 0,
     restoredFromOffline: false,
     offlineSnapshotSavedAt: null,
     syncLiveActivity() {},
@@ -159,6 +161,8 @@ test('persistJourney writes only the active session key and records its mode', (
     journeyContext: { securityCleared: false },
     journeyHistory: [],
     journeyEvents: [],
+    lastLockState: null,
+    serverSnapshotVersion: 0,
     currentScreen: 'step',
     currentLocale: 'zh',
     pendingDocument: null,

@@ -65,6 +65,7 @@ async function mockedNative(page, disk) {
       Share: { share:async p=>{await nativeCall('share',p);throw new Error('Share canceled')} },
       Filesystem: { readdir:async()=>({files:[]}),writeFile:async p=>{await nativeCall('write',p);return {uri:'file:///cache/card.png'}},deleteFile:async p=>nativeCall('delete',p) },
       FlightNative: {openExternal:async p=>nativeCall('openExternal',p)},
+      FlightPush: {addListener:async()=>{},initialize:async()=>({ready:true}),syncJourney:async p=>{await nativeCall('syncJourney',p);return {}},clearJourney:async()=>nativeCall('clearJourney'),openSettings:async()=>nativeCall('settings')},
       FlightLiveActivity: {status:async()=>activity,start:async p=>{await nativeCall('start',p);return activity={supported:true,enabled:true,active:true,journeyKey:p.journeyKey}},update:async p=>{await nativeCall('update',p);return activity},end:async()=>{await nativeCall('end');activity.active=false}}
     };` }));
   return calls;
@@ -82,11 +83,11 @@ test('native cold start waits for private storage; offline state survives a fres
   await expect(page.locator('html')).toHaveAttribute('lang', 'es');
   await expect(page.locator('[data-screen="step"] [data-offline-status]')).toBeVisible();
   await layout(page);
-  await page.locator('[data-action="toggle-live-activity"]').click();
+  await expect(page.locator('[data-action="toggle-live-activity"]')).toHaveCount(0);
   await expect.poll(() => calls.filter(call => call.name === 'start').length).toBe(1);
   expect(calls.find(call => call.name === 'start').payload.stale).toBe(true);
   expect(calls.find(call => call.name === 'start').payload.boardingTime).toBe('10:45');
-  await page.evaluate(() => { activity.active = false; nativeEvents.appStateChange({ isActive: false }); nativeEvents.appStateChange({ isActive: true }); });
+  await page.evaluate(() => { activity.active = false; activity.dismissedJourneyKey = activity.journeyKey; nativeEvents.appStateChange({ isActive: false }); nativeEvents.appStateChange({ isActive: true }); });
   await page.waitForTimeout(500);
   expect(calls.filter(call => call.name === 'start').length).toBe(1);
   await page.locator('[data-screen="step"] [data-action="family"]').click();

@@ -11,7 +11,7 @@ if ((await lstat(outputPath).catch(() => null))?.isSymbolicLink()) throw new Err
 await rm(outputPath, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 // Explicit allowlist: no server config, raw documents, fixtures, logs or source maps.
-for (const file of ['index.html', 'styles.css', 'locale.js', 'platform.js', 'live-activity.js', 'app.js']) {
+for (const file of ['index.html', 'styles.css', 'locale.js', 'platform.js', 'live-activity.js', 'flight-display.js', 'airport-timezones.js', 'app.js']) {
   await copyFile(new URL(file, source), new URL(file, output));
 }
 let html = await readFile(new URL('index.html', output), 'utf8');

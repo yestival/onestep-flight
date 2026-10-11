@@ -52,6 +52,9 @@ public class MultiSourceFlightService {
 	private final Executor executor;
 	private final Map<QueryKey, CachedSnapshot> cache = new ConcurrentHashMap<>();
 	private final Map<QueryKey, CompletableFuture<MultiSourceFlightSnapshot>> inFlight = new ConcurrentHashMap<>();
+	private ProviderCooldownService cooldowns;
+	@Autowired
+	void setCooldowns(ProviderCooldownService cooldowns) { this.cooldowns = cooldowns; }
 
 	@Autowired
 	public MultiSourceFlightService(List<OperationalFlightDataProvider> providers) {
@@ -406,8 +409,15 @@ public class MultiSourceFlightService {
 			LocalDate departureDate, String departureHint, String arrivalHint,
 			String scheduledDepartureHint, boolean refresh) {
 		try {
-			return provider.findFlight(flightNumber, departureDate, departureHint, arrivalHint,
+			long retryAt = cooldowns == null ? 0 : cooldowns.retryAt(provider.providerName());
+			if (retryAt > Instant.now().getEpochSecond()) {
+				return ProviderFlightResult.failure(provider.providerName(), ProviderFlightResult.RATE_LIMITED,
+						provider.providerName() + "_RETRY_AFTER;retryAt=" + retryAt, Instant.now());
+			}
+			ProviderFlightResult result = provider.findFlight(flightNumber, departureDate, departureHint, arrivalHint,
 					scheduledDepartureHint, refresh);
+			if (cooldowns != null && result != null) cooldowns.observe(result);
+			return result;
 		} catch (RuntimeException exception) {
 			return ProviderFlightResult.failure(provider.providerName(), "UPSTREAM_ERROR",
 					provider.providerName() + "_UNEXPECTED_ERROR", Instant.now());

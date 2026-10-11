@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import xcode from 'xcode';
-import { appConfig, mobileRoot } from './config.mjs';
+import { appConfig, mobileRoot, buildConfig } from './config.mjs';
 import { iosVersion } from './version.mjs';
 
 export function configureIOS(env = process.env) {
@@ -42,7 +42,7 @@ export function configureIOS(env = process.env) {
       phase.files.push({ value: id, comment: path });
     }
   }
-  for (const name of ['FlightBridgeViewController', 'FlightNativePlugin', 'FlightLiveActivityPlugin']) member(`App/${name}.swift`, app.uuid, 'PBXSourcesBuildPhase');
+  for (const name of ['FlightBridgeViewController', 'FlightNativePlugin', 'FlightLiveActivityPlugin', 'FlightPushPlugin']) member(`App/${name}.swift`, app.uuid, 'PBXSourcesBuildPhase');
   for (const id of [app.uuid, widgetId]) member('Shared/FlightActivityAttributes.swift', id, 'PBXSourcesBuildPhase');
   member('FlightActivity/FlightActivityWidget.swift', widgetId, 'PBXSourcesBuildPhase');
   member('App/PrivacyInfo.xcprivacy', app.uuid, 'PBXResourcesBuildPhase');
@@ -58,7 +58,13 @@ export function configureIOS(env = process.env) {
       if (env.APPLE_TEAM_ID) settings.DEVELOPMENT_TEAM = env.APPLE_TEAM_ID;
       if (id === widgetId) Object.assign(settings, { INFOPLIST_FILE: 'FlightActivity/Info.plist',
         APPLICATION_EXTENSION_API_ONLY: 'YES', GENERATE_INFOPLIST_FILE: 'NO', SKIP_INSTALL: 'YES' });
-      else settings.OTHER_SWIFT_FLAGS = '"$(inherited)"';
+      else {
+        settings.OTHER_SWIFT_FLAGS = '"$(inherited)"';
+        settings.CODE_SIGN_ENTITLEMENTS = 'App/App.entitlements';
+        const configuration = objects.XCBuildConfiguration[item.value].name.replaceAll('"', '');
+        settings.FLIGHT_APNS_ENVIRONMENT = configuration === 'Debug' ? 'development' : 'production';
+        settings.FLIGHT_PUSH_ENVIRONMENT = configuration === 'Debug' ? 'sandbox' : 'production';
+      }
     }
   }
   for (const value of Object.values(objects.XCBuildConfiguration)) {
@@ -79,6 +85,14 @@ export function configureIOS(env = process.env) {
       else clean(value[key]);
     }
   }
+  const attributes = project.getFirstProject().firstProject.attributes;
+  attributes.TargetAttributes ||= {};
+  attributes.TargetAttributes[app.uuid] ||= {};
+  attributes.TargetAttributes[app.uuid].SystemCapabilities = {
+    ...(attributes.TargetAttributes[app.uuid].SystemCapabilities || {}),
+    'com.apple.Push': { enabled: 1 }, 'com.apple.BackgroundModes': { enabled: 1 },
+    'com.apple.TimeSensitiveNotifications': { enabled: 1 }
+  };
   clean(objects);
   writeFileSync(projectPath, project.writeSync());
   // Pin the Filesystem plugin's otherwise open-ended native dependency as well.
@@ -102,6 +116,18 @@ export function configureIOS(env = process.env) {
   <key>NSCameraUsageDescription</key><string>Photograph a travel document to prepare your flight guidance.</string>
   <key>ITSAppUsesNonExemptEncryption</key><false/>
 </dict></plist>\n`);
+  function plistValue(key, value) {
+    const pattern = new RegExp(`<key>${key}</key>\\s*(?:<string>[\\s\\S]*?</string>|<array>[\\s\\S]*?</array>)`);
+    if (pattern.test(info)) info = info.replace(pattern, `<key>${key}</key>${value}`);
+    else info = info.replace(/<\/dict>\s*<\/plist>\s*$/, `<key>${key}</key>${value}\n</dict></plist>\n`);
+  }
+  plistValue('FlightAPIOrigin', `<string>${buildConfig(env).API_BASE_URL}</string>`);
+  plistValue('FlightAPNSEnvironment', '<string>$(FLIGHT_PUSH_ENVIRONMENT)</string>');
+  plistValue('UIBackgroundModes', '<array><string>fetch</string><string>remote-notification</string></array>');
+  plistValue('BGTaskSchedulerPermittedIdentifiers', '<array><string>com.selene.onestepflight.flight-sync</string></array>');
+  writeFileSync(new URL('ios/App/App/App.entitlements', mobileRoot), `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict><key>aps-environment</key><string>$(FLIGHT_APNS_ENVIRONMENT)</string><key>com.apple.developer.usernotifications.time-sensitive</key><true/></dict></plist>\n`);
   writeFileSync(infoPath, info);
   const schemes = new URL('ios/App/App.xcodeproj/xcshareddata/xcschemes/', mobileRoot);
   mkdirSync(schemes, { recursive: true });

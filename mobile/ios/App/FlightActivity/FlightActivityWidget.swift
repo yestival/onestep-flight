@@ -2,77 +2,89 @@ import ActivityKit
 import SwiftUI
 import WidgetKit
 
-private let flightBlue = Color(red: 44 / 255, green: 100 / 255, blue: 142 / 255)
-private let flightInk = Color(red: 27 / 255, green: 37 / 255, blue: 55 / 255)
-private let journeyURL = URL(string: "onestepflight://journey")!
+private func journeyURL(_ key: String) -> URL? {
+    var url = URLComponents(string: "onestepflight://journey")!
+    url.queryItems = [URLQueryItem(name: "journeyKey", value: key)]
+    return url.url
+}
 
 struct FlightActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: FlightActivityAttributes.self) { context in
-            FlightLockScreen(context: context)
-                .activityBackgroundTint(Color(red: 243 / 255, green: 244 / 255, blue: 247 / 255))
-                .activitySystemActionForegroundColor(flightInk)
-                .widgetURL(journeyURL)
+            FlightLockScreen(state: context.state, stale: context.isStale)
+                .activityBackgroundTint(Color(uiColor: .secondarySystemBackground))
+                .activitySystemActionForegroundColor(.primary)
+                .widgetURL(journeyURL(context.attributes.journeyKey))
         } dynamicIsland: { context in
-            let old = context.isStale || context.state.stale || context.state.expiresAt <= Date()
+            let state = context.state
             return DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    Label(context.state.flightNumber, systemImage: "airplane").font(.headline)
-                }
+                DynamicIslandExpandedRegion(.leading) { Label(state.flightNumber, systemImage: "airplane").font(.headline) }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(old ? "—" : (context.state.gate.isEmpty ? "—" : context.state.gate)).font(.headline)
+                    Text(state.dateText + " · " + state.departureAirport + " → " + state.arrivalAirport).font(.caption)
                 }
-                DynamicIslandExpandedRegion(.bottom) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(old ? context.state.staleLabel : context.state.nextStep).font(.subheadline)
-                        Text(context.state.updatedLabel + ": " + context.state.updatedText).font(.caption2)
-                    }
-                }
-            } compactLeading: {
-                Text(context.state.flightNumber).font(.caption2)
-            } compactTrailing: {
-                if old { Image(systemName: "clock.badge.exclamationmark") }
-                else { Text(context.state.gate.isEmpty ? "—" : context.state.gate).font(.caption) }
-            } minimal: {
-                Image(systemName: old ? "clock.badge.exclamationmark" : "airplane")
-            }
-            .widgetURL(journeyURL)
-            .keylineTint(flightBlue)
+                DynamicIslandExpandedRegion(.bottom) { FlightDetails(state: state, stale: context.isStale) }
+            } compactLeading: { Text(state.flightNumber).font(.caption) }
+              compactTrailing: { Text(state.phase == "DEPARTURE" ? state.gate : state.arrivalTime).font(.caption) }
+              minimal: { Image(systemName: "airplane") }
+              .widgetURL(journeyURL(context.attributes.journeyKey))
         }
     }
 }
 
 private struct FlightLockScreen: View {
-    let context: ActivityViewContext<FlightActivityAttributes>
+    let state: FlightActivityAttributes.ContentState
+    let stale: Bool
+    @Environment(\.dynamicTypeSize) private var typeSize
     var body: some View {
-        let state = context.state
-        let old = context.isStale || state.stale || state.expiresAt <= Date()
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label(state.flightNumber, systemImage: "airplane").font(.headline).foregroundStyle(flightBlue)
-                Spacer()
-                Text("OneStep Flight").font(.caption)
+        VStack(alignment: .leading, spacing: 4) {
+            if !typeSize.isAccessibilitySize { HStack(alignment: .firstTextBaseline) {
+                Label(state.flightNumber, systemImage: "airplane").font(.headline)
+                Spacer(minLength: 6)
+                Text(state.dateText + " · " + state.departureAirport + " → " + state.arrivalAirport)
+                    .font(.caption).multilineTextAlignment(.trailing)
+            } } else {
+                Text(state.flightNumber).font(.caption).accessibilityHidden(true)
             }
-            if old {
-                Label(state.staleLabel, systemImage: "clock.badge.exclamationmark").font(.subheadline)
-            } else {
-                Text(state.nextStep).font(.headline).fixedSize(horizontal: false, vertical: true)
-                HStack(alignment: .top, spacing: 20) {
-                    VStack(alignment: .leading) {
-                        Text(state.gateLabel).font(.caption)
-                        Text(state.gate.isEmpty ? state.missingLabel : state.gate).font(.title3.bold())
-                    }
-                    VStack(alignment: .leading) {
-                        Text(state.boardingLabel).font(.caption)
-                        Text(state.boardingTime.isEmpty || state.boardingTime == "—" ? state.missingLabel : state.boardingTime).font(.title3.bold())
-                    }
-                }
-            }
-            Text(state.updatedLabel + ": " + state.updatedText).font(.caption2)
+            FlightDetails(state: state, stale: stale)
         }
-        .foregroundStyle(flightInk)
-        .padding(16)
-        .accessibilityElement(children: .combine)
+        .padding(10)
+        .foregroundStyle(.primary)
+    }
+}
+
+private struct FlightDetails: View {
+    let state: FlightActivityAttributes.ContentState
+    let stale: Bool
+    @Environment(\.dynamicTypeSize) private var typeSize
+    private var freshness: String {
+        state.updatedText + (state.offline ? " · " + state.offlineLabel : stale || state.stale ? " · " + state.staleLabel : "")
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(state.nextStep).font(.headline).fixedSize(horizontal: false, vertical: true).layoutPriority(2)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityLabel(typeSize.isAccessibilitySize ? state.nextStep + ". " + state.flightNumber + ". " + state.dateText + ". " + state.departureAirport + " → " + state.arrivalAirport + ". " + state.timezoneText + ". " + freshness : state.nextStep)
+            HStack(alignment: .top, spacing: 8) {
+                metric(state.metricOneLabel, state.metricOneValue)
+                metric(state.metricTwoLabel, state.metricTwoValue)
+                metric(state.metricThreeLabel, state.metricThreeValue)
+            }.layoutPriority(1)
+            if !typeSize.isAccessibilitySize {
+                HStack(alignment: .top, spacing: 6) {
+                    Text(state.timezoneText)
+                    Spacer(minLength: 0)
+                    Text(freshness).multilineTextAlignment(.trailing)
+                }.font(.caption2)
+            }
+        }
+    }
+    private func metric(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if !typeSize.isAccessibilitySize { Text(label).font(.caption).foregroundStyle(.secondary) }
+            Text(value.isEmpty ? state.missingLabel : value).font(typeSize.isAccessibilitySize ? .body.weight(.semibold) : .subheadline.weight(.semibold))
+        }.frame(maxWidth: .infinity, alignment: .leading)
+         .accessibilityElement(children: .combine)
+         .accessibilityLabel(label + " " + (value.isEmpty ? state.missingLabel : value))
     }
 }
 

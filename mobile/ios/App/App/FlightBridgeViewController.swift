@@ -4,6 +4,7 @@ import UIKit
 final class FlightBridgeViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(FlightNativePlugin())
+        bridge?.registerPluginInstance(FlightPushPlugin())
         bridge?.registerPluginInstance(FlightLiveActivityPlugin())
         webView?.scrollView.contentInsetAdjustmentBehavior = .never
     }

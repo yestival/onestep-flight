@@ -119,19 +119,26 @@ test('PNG share uses a local file, cancellation is normal, and temporary files a
   for (const url of ['javascript:alert(1)', 'file:///etc/passwd', 'http://example.test', 'https://user:pass@airport.test']) assert.equal(platform.externalUrl(url), null);
   assert.equal(platform.externalUrl('tel:+44123456789'), 'tel:+44123456789');
 });
-test('live activity never recreates dismissed activities, ends on segment change, rejects expired start', async () => {
+test('live activity automatically starts once, respects dismissal, rebuilds normal ends and changes segments', async () => {
   let current = { active: false, enabled: true, supported: true };
   const calls = [];
   const live = createLiveActivity({
     status: async () => current,
-    start: async data => { calls.push('start'); return current = { active: true, journeyKey: data.journeyKey }; },
+    start: async data => { calls.push('start'); return current = { ...current, active: true, journeyKey: data.journeyKey }; },
     update: async () => { calls.push('update'); return current; },
-    end: async () => { calls.push('end'); current = { active: false }; }
+    end: async () => { calls.push('end'); current = { ...current, active: false }; }
   });
-  const data = { journeyKey: 'flight-one', expiresAt: Date.now() + 10000 };
-  await live.update(data); assert.deepEqual(calls, []);
-  await live.start(data); await live.update(data); await live.update({ ...data, journeyKey: 'flight-two' });
-  assert.deepEqual(calls, ['start', 'update', 'end']);
-  await live.update(data); assert.equal(calls.length, 3);
-  await assert.rejects(live.start({ ...data, expiresAt: 1 }));
+  const data = { journeyKey: 'flight-one', journeyEndsAt: Math.floor(Date.now()/1000) + 10000 };
+  await live.sync(data); await live.sync(data);
+  assert.deepEqual(calls, ['start','update']);
+  current = { ...current, active: false, dismissedJourneyKey: 'flight-one' };
+  await live.sync(data); assert.equal(calls.length, 2);
+  await live.sync({ ...data, journeyKey: 'flight-two' });
+  assert.equal(calls.at(-1), 'start');
+  current.active = false; // Normal system end is independently observed by native state handling.
+  await live.sync({ ...data, journeyKey: 'flight-two' });
+  assert.equal(calls.filter(c=>c==='start').length,3);
+  await live.sync({...data,journeyKey:'flight-three'}); assert.deepEqual(calls.slice(-2), ['end','start']);
+  await live.sync(null); assert.equal(calls.at(-1),'start');
+  await live.sync({ ...data, journeyEndsAt: 1 }); assert.equal(calls.at(-1),'start');
 });

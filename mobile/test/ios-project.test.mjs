@@ -1,10 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import xcode from 'xcode';
 import { appConfig, mobileRoot } from '../scripts/config.mjs';
+import { configureIOS } from '../scripts/configure-ios.mjs';
+
+test('push, background and Live Activity configuration is stable when applied twice', () => {
+  const paths = ['ios/App/App.xcodeproj/project.pbxproj', 'ios/App/App/Info.plist', 'ios/App/App/App.entitlements'];
+  configureIOS();
+  const first = paths.map(path => readFileSync(new URL(path, mobileRoot), 'utf8'));
+  configureIOS();
+  assert.deepEqual(paths.map(path => readFileSync(new URL(path, mobileRoot), 'utf8')), first);
+  assert.ok(first[1].includes('BGTaskSchedulerPermittedIdentifiers'));
+  assert.ok(first[2].includes('com.apple.developer.usernotifications.time-sensitive'));
+});
 test('Capacitor detects SPM before sync on a fresh checkout', () => {
   for (const file of ['Package.swift', 'Sources/CapApp-SPM/CapApp-SPM.swift']) {
     assert.ok(existsSync(new URL('ios/App/CapApp-SPM/' + file, mobileRoot)), `Missing SPM source: ${file}`);

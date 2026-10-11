@@ -358,6 +358,11 @@ public class ResolvedFlightService {
 		return merge(snapshot, null, previous, previous.demoScenario(), demoSessionId);
 	}
 
+	/** Merge an already verified operational snapshot without another provider call. */
+	public ResolvedFlightContext resolveOperational(MultiSourceFlightSnapshot snapshot, ResolvedFlightContext previous) {
+		return merge(snapshot, null, previous, null, null);
+	}
+
 	private MultiSourceFlightSnapshot loadFlight(String flightNumber, LocalDate departureDate, boolean demo,
 			String demoScenario, String demoSessionId, String departureHint, String arrivalHint,
 			String scheduledDepartureHint, boolean refresh) {

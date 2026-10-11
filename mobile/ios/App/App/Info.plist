@@ -63,4 +63,8 @@
   <key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string><string>es</string></array>
   <key>NSCameraUsageDescription</key><string>Photograph a travel document to prepare your flight guidance.</string>
   <key>ITSAppUsesNonExemptEncryption</key><false/>
+<key>FlightAPIOrigin</key><string>https://onestep-flight.onrender.com</string>
+<key>FlightAPNSEnvironment</key><string>$(FLIGHT_PUSH_ENVIRONMENT)</string>
+<key>UIBackgroundModes</key><array><string>fetch</string><string>remote-notification</string></array>
+<key>BGTaskSchedulerPermittedIdentifiers</key><array><string>com.selene.onestepflight.flight-sync</string></array>
 </dict></plist>

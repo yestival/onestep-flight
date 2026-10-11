@@ -8,5 +8,6 @@ import { Filesystem } from '@capacitor/filesystem';
 window.OneStepNative = {
   isNative: Capacitor.isNativePlatform(), App, Network, Preferences, Share, Filesystem,
   FlightNative: registerPlugin('FlightNative'),
+  FlightPush: registerPlugin('FlightPush'),
   FlightLiveActivity: registerPlugin('FlightLiveActivity')
 };

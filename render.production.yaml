@@ -1,0 +1,59 @@
+services:
+  - type: web
+    name: onestep-flight-production
+    runtime: docker
+    plan: 0.5c-512mb
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DB_HOST
+        fromDatabase:
+          name: onestep-flight-production-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: onestep-flight-production-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: onestep-flight-production-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: onestep-flight-production-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: onestep-flight-production-db
+          property: password
+      - key: MOBILE_MONITOR_ENABLED
+        value: "true"
+      - key: APNS_TEAM_ID
+        sync: false
+      - key: APNS_KEY_ID
+        sync: false
+      - key: APNS_BUNDLE_ID
+        value: com.selene.onestepflight
+      - key: APNS_PRIVATE_KEY_PATH
+        value: /etc/secrets/AuthKey.p8
+      - key: NUTRIENT_API_KEY
+        sync: false
+      - key: SERPAPI_API_KEY
+        sync: false
+      - key: AERODATABOX_RAPIDAPI_KEY
+        sync: false
+      - key: VARIFLIGHT_ENABLED
+        value: "false"
+
+databases:
+  - name: onestep-flight-production-db
+    databaseName: onestep_flight
+    user: onestep_flight
+    plan: 0.1c-256mb
+    region: frankfurt
+    ipAllowList: []

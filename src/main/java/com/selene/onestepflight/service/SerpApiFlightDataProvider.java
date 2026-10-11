@@ -173,7 +173,7 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 					response.getStatusCode().value(), correlationId);
 			return validateSerpResponse(response.getBody());
 		} catch (RestClientResponseException exception) {
-			String errorCode = httpErrorCode(exception);
+			String errorCode = ProviderRetryAfter.code(httpErrorCode(exception), exception, Instant.now());
 			LOGGER.warn("provider=SERPAPI httpStatus={} errorCode={} correlationId={}",
 					exception.getStatusCode().value(), errorCode, correlationId);
 			throw new ExternalServiceUnavailableException(errorCode);
@@ -212,7 +212,7 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 					response.getStatusCode().value(), correlationId);
 			return validateSerpResponse(response.getBody());
 		} catch (RestClientResponseException exception) {
-			String errorCode = httpErrorCode(exception);
+			String errorCode = ProviderRetryAfter.code(httpErrorCode(exception), exception, Instant.now());
 			LOGGER.warn("provider=SERPAPI httpStatus={} errorCode={} correlationId={}",
 					exception.getStatusCode().value(), errorCode, correlationId);
 			throw new ExternalServiceUnavailableException(errorCode);
@@ -850,6 +850,7 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 	}
 
 	private String outcomeFor(String code) {
+		if (code.contains(";retryAt=")) code = code.substring(0, code.indexOf(";retryAt="));
 		if (code.endsWith("_401") || code.contains("AUTHENTICATION_FAILED")) return ProviderFlightResult.AUTH_ERROR;
 		if (code.endsWith("_403") || code.contains("QUOTA_EXCEEDED") || code.endsWith("_429")) {
 			return ProviderFlightResult.RATE_LIMITED;
