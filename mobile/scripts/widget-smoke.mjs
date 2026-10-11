@@ -14,20 +14,10 @@ function run(command, args, options = {}) {
 if (process.platform !== 'darwin') throw new Error('Widget runtime verification requires macOS and an iOS Simulator.');
 const projectPath = new URL('ios/App/App.xcodeproj/project.pbxproj', mobileRoot);
 const scenePath = new URL('ios/App/App/SceneDelegate.swift', mobileRoot);
-const widgetPath = new URL('ios/App/FlightActivity/FlightActivityWidget.swift', mobileRoot);
-const coordinatorPath = new URL('ios/App/App/FlightLiveActivityPlugin.swift', mobileRoot);
-const originals = [projectPath, scenePath, widgetPath, coordinatorPath].map(path => [path, readFileSync(path, 'utf8')]);
+const originals = [projectPath, scenePath].map(path => [path, readFileSync(path, 'utf8')]);
 let device;
 mkdirSync(new URL('build/widget-smoke/', mobileRoot), { recursive: true });
 try {
-  if (process.env.SMOKE_STALE_DATE === 'omit-expired') {
-    writeFileSync(coordinatorPath, readFileSync(coordinatorPath, 'utf8').replace(
-      'staleDate: Date(timeIntervalSince1970: TimeInterval(state.staleAt))',
-      'staleDate: state.staleAt > Int64(Date().timeIntervalSince1970) ? Date(timeIntervalSince1970: TimeInterval(state.staleAt)) : nil'));
-  }
-  if (process.env.SMOKE_WIDGET === 'minimal') {
-    writeFileSync(widgetPath, readFileSync(widgetPath, 'utf8').replace('FlightLockScreen(state: context.state, stale: context.isStale)', 'Text(context.state.nextStep).padding()'));
-  }
   const scene = readFileSync(scenePath, 'utf8').replace('FlightBridgeViewController()', 'FlightActivitySmokeController()');
   writeFileSync(scenePath, scene + '\n' + readFileSync(new URL('../test/ios/FlightActivitySmokeController.swift', import.meta.url), 'utf8'));
   const project = xcode.project(fileURLToPath(projectPath)); project.parseSync();

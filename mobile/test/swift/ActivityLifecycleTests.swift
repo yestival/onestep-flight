@@ -18,6 +18,16 @@ import Foundation
         _ = try await (first, second)
         precondition(store.requests == 1, "Concurrent automatic sync must create only one activity")
         precondition(coordinator.current?.content.state.gate == "B24", "Stale state must preserve known facts")
+        precondition(coordinator.current?.content.staleDate == nil, "An elapsed initial system deadline suppresses the Lock Screen")
+        precondition(coordinator.current?.content.state.staleAt == flight.staleAt, "Do not invent a new freshness deadline")
+        let existingID = coordinator.current?.id
+        flight.stale = false // A cached state may only carry its original deadline.
+        try await coordinator.sync(flight)
+        precondition(coordinator.current?.content.state.stale == true, "Elapsed data must still display the stale footer")
+        precondition(coordinator.current?.id == existingID && store.requests == 1, "Repair must update the existing activity")
+        var fresh = flight; fresh.staleAt = Int64(Date().timeIntervalSince1970) + 600
+        try await coordinator.sync(fresh)
+        precondition(coordinator.current?.content.staleDate != nil, "Fresh data still needs the future system stale transition")
 
         // This is the regression: an old subscription clear arrives after the
         // new card was created. It must not end the card or erase its retry state.

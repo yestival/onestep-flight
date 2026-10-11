@@ -3,16 +3,19 @@ import XCTest
 final class FlightActivityUITests: XCTestCase {
     func testFreshActivityRenders() { verifyRender(fresh: true) }
     func testStaleActivityRenders() { verifyRender(fresh: false) }
-    private func verifyRender(fresh: Bool) {
+    func testExistingInvisibleActivityRecovers() { verifyRender(fresh: false, recover: true) }
+    private func verifyRender(fresh: Bool, recover: Bool = false) {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.selene.onestepflight")
         if fresh { app.launchArguments = ["--fresh"] }
+        if recover { app.launchArguments = ["--recover"] }
         app.launch()
         let status = app.staticTexts["activity-smoke-status"]
         XCTAssertTrue(status.waitForExistence(timeout: 30))
         let created = NSPredicate(format: "label CONTAINS 'created=1'")
         expectation(for: created, evaluatedWith: status)
         waitForExpectations(timeout: 30)
+        XCTAssertTrue(status.label.contains("reused=true"), "Recovery must reuse the existing activity")
         attach("native-created")
         XCUIDevice.shared.press(.home)
         let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
@@ -30,6 +33,12 @@ final class FlightActivityUITests: XCTestCase {
         attach("system-live-activity")
         print("WIDGET_SMOKE_SYSTEM_TREE\n\(system.debugDescription)")
         XCTAssertTrue(rendered, "ActivityKit creation alone is insufficient: the system must render the actual Widget heading.")
+        for fact in ["BA 117", "T5", "14:30", "15:20"] {
+            XCTAssertTrue(system.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", fact)).firstMatch.exists, "Missing known flight fact: \(fact)")
+        }
+        if !fresh {
+            XCTAssertTrue(system.staticTexts.containing(NSPredicate(format: "label CONTAINS '14:05 更新' AND label CONTAINS '可打开 App 刷新'")).firstMatch.exists)
+        }
     }
     private func attach(_ name: String) {
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())

@@ -118,8 +118,9 @@ final class FlightActivityCoordinator {
     }
     private func apply(_ proposed: FlightActivityAttributes.ContentState) async throws {
         restore()
-        let state = FlightPushCoordinator.shared.preferredState(proposed)
-        if state.journeyEndsAt <= Int64(Date().timeIntervalSince1970) {
+        var state = FlightPushCoordinator.shared.preferredState(proposed)
+        let now = Int64(Date().timeIntervalSince1970)
+        if state.journeyEndsAt <= now {
             defaults.removeObject(forKey: pendingStateKey)
             clearFailure()
             for activity in Activity<FlightActivityAttributes>.activities where activity.attributes.journeyKey == state.journeyKey {
@@ -128,9 +129,17 @@ final class FlightActivityCoordinator {
             }
             return
         }
+        // An activity born with an elapsed staleDate is accepted by ActivityKit,
+        // but iOS 26 does not add it to the Lock Screen. Preserve the original
+        // freshness deadline and facts in content-state; an already-stale card
+        // needs its explicit footer, not another system transition into stale.
+        // Updating the existing activity this way also repairs affected installs.
+        let freshnessElapsed = state.staleAt <= now
+        if freshnessElapsed { state.stale = true }
+        let staleDate: Date? = freshnessElapsed ? nil : Date(timeIntervalSince1970: TimeInterval(state.staleAt))
         if let data = try? JSONEncoder().encode(state) { defaults.set(data, forKey: pendingStateKey) }
         guard ActivityAuthorizationInfo().areActivitiesEnabled, dismissedKey != state.journeyKey else { clearFailure(); return }
-        let content = ActivityContent(state: state, staleDate: Date(timeIntervalSince1970: TimeInterval(state.staleAt)))
+        let content = ActivityContent(state: state, staleDate: staleDate)
         if let activity = Activity<FlightActivityAttributes>.activities.first(where: {
             $0.attributes.journeyKey == state.journeyKey && ($0.activityState == .active || $0.activityState == .stale)
         }) {

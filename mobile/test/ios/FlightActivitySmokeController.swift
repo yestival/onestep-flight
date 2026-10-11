@@ -39,9 +39,19 @@ final class FlightActivitySmokeController: UIViewController {
             }
             state.journeyEndsAt = now + 86400
             do {
+                var legacyID: String?
+                if ProcessInfo.processInfo.arguments.contains("--recover") {
+                    let legacy = try Activity<FlightActivityAttributes>.request(
+                        attributes: FlightActivityAttributes(journeyKey: state.journeyKey),
+                        content: ActivityContent(state: state, staleDate: Date(timeIntervalSince1970: TimeInterval(state.staleAt))),
+                        pushType: .token)
+                    legacyID = legacy.id
+                }
+                try await FlightActivityCoordinator.shared.sync(state)
                 try await FlightActivityCoordinator.shared.sync(state)
                 let activities = Activity<FlightActivityAttributes>.activities
-                status.text = "created=\(activities.count) state=\(String(describing: activities.first?.activityState))"
+                let reused = legacyID == nil || legacyID == activities.first?.id
+                status.text = "created=\(activities.count) reused=\(reused) state=\(String(describing: activities.first?.activityState))"
                 print("WIDGET_SMOKE \(status.text ?? "")")
             } catch { status.text = "error=\(error)"; print("WIDGET_SMOKE \(error)") }
         }
