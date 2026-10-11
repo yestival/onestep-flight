@@ -2661,11 +2661,10 @@
   function beginFlight(flight, documentResult) {
     restoredFromOffline = false;
     if (liveActivity && currentFlight && familyShareJourneyKey(currentFlight) !== familyShareJourneyKey(flight)) {
-      liveActivity.end().catch(function () {});
+      endLiveJourney(familyShareJourneyKey(currentFlight));
     }
     var requestedDepartureDate = lastLookupContext && lastLookupContext.departureDate;
     var requestedSegmentIndex = lastLookupContext && lastLookupContext.documentSegmentIndex;
-    if (currentFlight && familyShareJourneyKey(currentFlight) !== familyShareJourneyKey(flight) && nativeApp) platform.push.clearJourney({ journeyKey: familyShareJourneyKey(currentFlight) }).catch(function () {});
     currentFlight = flight;
     if (shareSession && !shareSessionMatchesFlight(shareSession, flight)) resetFamilyShareSession();
     lastLookupContext = {
@@ -5927,8 +5926,7 @@
   function returnToDocumentSegmentSelection() {
     if (!documentSegments.length || !pendingDocument) return false;
     lastLockState = null; pushSyncFingerprint = null; serverSnapshotVersion = 0;
-    if (liveActivity) liveActivity.end().catch(function () {});
-    if (nativeApp) platform.push.clearJourney({ journeyKey: familyShareJourneyKey(currentFlight) }).catch(function () {});
+    endLiveJourney(familyShareJourneyKey(currentFlight));
     localStorage.removeItem(activeOfflineJourneyStorageKey());
     resetFamilyShareSession();
     requestSequence += 1;
@@ -7350,8 +7348,7 @@
   function clearJourney() {
     stopAutoRefresh(true);
     lastLockState = null; pushSyncFingerprint = null; serverSnapshotVersion = 0;
-    if (nativeApp) platform.push.clearJourney({ journeyKey: familyShareJourneyKey(currentFlight) }).catch(function () {});
-    if (liveActivity) liveActivity.end().catch(function () {});
+    endLiveJourney(familyShareJourneyKey(currentFlight));
     sessionStorage.removeItem(activeJourneyStorageKey());
     localStorage.removeItem(activeOfflineJourneyStorageKey());
     resetFamilyShareSession();
@@ -8045,7 +8042,7 @@
     var disabled = state.supported && !state.enabled;
     var dismissed = state.dismissedJourneyKey === familyShareJourneyKey(currentFlight);
     var active = state.active && state.journeyKey === familyShareJourneyKey(currentFlight);
-    notice.hidden = !journeyContext || active && !disabled || !(disabled || dismissed || state.errorCode);
+    notice.hidden = !journeyContext || active && !disabled;
     var message = disabled
       ? localeText('实时活动已被系统禁用。', 'Live Activities are disabled in system settings.', 'Las actividades en directo están desactivadas en los ajustes.')
       : dismissed ? localeText('此行程的锁屏活动已被移除。', 'The Lock Screen activity for this journey was dismissed.', 'Se ha descartado la actividad de este viaje en la pantalla bloqueada.')
@@ -8056,31 +8053,42 @@
     notice.querySelector('button').textContent = localeText('前往系统设置', 'Open system settings', 'Abrir ajustes');
   }
 
+  function endLiveJourney(key) {
+    if (!liveActivity) return;
+    liveActivity.end(key, function () {
+      return platform.push.clearJourney({ journeyKey: key }).catch(function () { pushSyncFingerprint = null; });
+    }).then(renderLiveActivityStatus).catch(renderLiveActivityStatus);
+  }
+
   function syncLiveActivity() {
     if (!liveActivity || !pageInitialized) return;
     var content = liveActivityContent();
     if (!content) {
       if (!journeyContext || journeyContext.exitedAirport || currentAction && currentAction.stepType === 'COMPLETE') {
-        liveActivity.end().catch(function () {});
-        platform.push.clearJourney({ journeyKey: familyShareJourneyKey(currentFlight) }).catch(function () {});
+        endLiveJourney(familyShareJourneyKey(currentFlight));
       }
       return;
     }
-    liveActivity.sync(content).then(renderLiveActivityStatus).catch(renderLiveActivityStatus);
-    if (currentFlight.demo || qaJourneyEnabled || demoRecordingSessionId) return;
+    if (currentFlight.demo || qaJourneyEnabled || demoRecordingSessionId) {
+      liveActivity.sync(content).then(renderLiveActivityStatus).catch(renderLiveActivityStatus);
+      return;
+    }
     var progress = safeContextSnapshot(journeyContext, null);
     delete progress.flightSnapshot;
     var payload = { journeyKey: content.journeyKey, flight: Object.assign(safeFlightSnapshot(currentFlight), { conflicts: currentFlight.conflicts || [], fieldProvenance: currentFlight.fieldProvenance || {} }), progress: progress,
       locale: currentLocale, snapshotVersion: serverSnapshotVersion };
     var fingerprint = JSON.stringify(payload);
-    if (fingerprint === pushSyncFingerprint) return;
-    pushSyncFingerprint = fingerprint;
-    platform.push.syncJourney(payload).then(function (result) {
-      if (!result || !result.displayState || result.journeyKey !== familyShareJourneyKey(currentFlight)) return;
-      serverSnapshotVersion = Math.max(serverSnapshotVersion, result.snapshotVersion || 0);
-      lastLockState = Object.assign({}, result.displayState, { facts: lastLockState && lastLockState.facts });
-      liveActivity.sync(result.displayState).catch(function () {});
-    }).catch(function () { pushSyncFingerprint = null; });
+    liveActivity.sync(content, function () {
+      if (fingerprint === pushSyncFingerprint) return;
+      pushSyncFingerprint = fingerprint;
+      // Native sync persists identity/progress and schedules URLSession work;
+      // it returns without waiting for the backend or notification permission.
+      return platform.push.syncJourney(payload).then(function (result) {
+        if (!result || !result.displayState || result.journeyKey !== familyShareJourneyKey(currentFlight)) return;
+        serverSnapshotVersion = Math.max(serverSnapshotVersion, result.snapshotVersion || 0);
+        lastLockState = Object.assign({}, result.displayState, { facts: lastLockState && lastLockState.facts });
+      }).catch(function () { pushSyncFingerprint = null; });
+    }).then(renderLiveActivityStatus).catch(renderLiveActivityStatus);
   }
 
   function handleNativeRoute() {

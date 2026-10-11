@@ -59,6 +59,7 @@ async function mockedNative(page, disk, options = {}) {
   await page.route('**/native.js', route => route.fulfill({ contentType: 'text/javascript', body: `
     window.nativeEvents = {}; window.activity = { supported:true, enabled:true, active:false };
     window.activityFailure = ${JSON.stringify(options.activityFailure || null)};
+    window.holdJourneyPreparation = ${Boolean(options.holdJourneyPreparation)};
     window.OneStepNative = { isNative:true,
       Preferences: { get:async({key})=>({value:await nativeStorage('get',key)}),set:({key,value})=>nativeStorage('set',key,value),remove:({key})=>nativeStorage('remove',key) },
       App: { addListener:async(k,f)=>{nativeEvents[k]=f}, getState:async()=>({isActive:true}),getLaunchUrl:async()=>({url:'onestepflight://journey'}) },
@@ -66,11 +67,61 @@ async function mockedNative(page, disk, options = {}) {
       Share: { share:async p=>{await nativeCall('share',p);throw new Error('Share canceled')} },
       Filesystem: { readdir:async()=>({files:[]}),writeFile:async p=>{await nativeCall('write',p);return {uri:'file:///cache/card.png'}},deleteFile:async p=>nativeCall('delete',p) },
       FlightNative: {openExternal:async p=>nativeCall('openExternal',p)},
-      FlightPush: {addListener:async()=>{},initialize:async()=>({ready:true}),syncJourney:async p=>{await nativeCall('syncJourney',p);return {}},clearJourney:async()=>nativeCall('clearJourney'),openSettings:async()=>nativeCall('settings')},
+      FlightPush: {addListener:async()=>{},initialize:async()=>({ready:true}),syncJourney:async p=>{
+        await nativeCall('syncJourney',p);
+        if (holdJourneyPreparation) {
+          await new Promise(resolve=>window.finishJourneyPreparation=resolve);
+          activity.active=false;
+          holdJourneyPreparation=false;
+          await nativeCall('previousJourneyCleared');
+        }
+        return {};
+      },clearJourney:async()=>nativeCall('clearJourney'),openSettings:async()=>nativeCall('settings')},
       FlightLiveActivity: {status:async()=>activity,start:async p=>{await nativeCall('start',p);return activity={supported:true,enabled:true,active:!activityFailure,journeyKey:p.journeyKey,...(activityFailure || {})}},update:async p=>{await nativeCall('update',p);return activity},end:async()=>{await nativeCall('end');activity.active=false}}
     };` }));
   return calls;
 }
+
+test('native journey switch finishes before automatic creation even when flight APIs are offline', async ({ page }) => {
+  const now = Date.parse('2026-09-05T07:00:00Z');
+  const disk = new Map([['onestep-flight-offline-journey-v1', JSON.stringify(snapshot(now))]]);
+  const calls = await mockedNative(page, disk, { holdJourneyPreparation: true });
+  await page.clock.setFixedTime(new Date(now));
+  await page.route('**/api/**', route => route.abort());
+  await page.goto('/');
+  await expect(page.locator('[data-screen="step"]')).toBeVisible();
+  await expect.poll(() => calls.filter(call => call.name === 'syncJourney').length).toBe(1);
+  await expect.poll(() => page.evaluate(() => typeof window.finishJourneyPreparation)).toBe('function');
+  expect(calls.filter(call => call.name === 'start')).toHaveLength(0);
+  await page.evaluate(() => finishJourneyPreparation());
+  await expect.poll(() => calls.filter(call => call.name === 'start').length).toBe(1);
+  expect(calls.findIndex(call => call.name === 'previousJourneyCleared')).toBeLessThan(calls.findIndex(call => call.name === 'start'));
+  await expect.poll(() => page.evaluate(() => activity.active)).toBe(true);
+  await page.locator('[data-locale-select]').selectOption('zh');
+  await expect.poll(() => calls.filter(call => call.name === 'update').length).toBeGreaterThan(0);
+  expect(calls.filter(call => call.name === 'start')).toHaveLength(1);
+});
+
+test('confirming a flight creates its activity automatically when push synchronization fails', async ({ page }) => {
+  const now = Date.parse('2026-09-05T07:00:00Z');
+  const saved = snapshot(now);
+  saved.context = null; saved.action = null; saved.screen = 'confirm';
+  const disk = new Map([['onestep-flight-offline-journey-v1', JSON.stringify(saved)]]);
+  const calls = await mockedNative(page, disk);
+  await page.clock.setFixedTime(new Date(now));
+  await page.route('**/api/**', route => route.abort());
+  await page.goto('/');
+  await expect(page.locator('[data-screen="confirm"]')).toBeVisible();
+  expect(calls.filter(call => call.name === 'start')).toHaveLength(0);
+  await page.evaluate(() => {
+    OneStepNative.FlightPush.syncJourney = async () => { throw new Error('Push registration unavailable'); };
+  });
+  await page.locator('[data-action="continue"]').click();
+  await expect(page.locator('[data-screen="step"]')).toBeVisible();
+  await expect.poll(() => calls.filter(call => call.name === 'start').length).toBe(1);
+  await expect(page.locator('[data-live-activity-status]')).toBeHidden();
+  expect(calls.find(call => call.name === 'start').payload.gate).toBe('B12');
+});
 
 test('native activity creation failure is visible and foreground recovery precedes a stalled API request', async ({ page }) => {
   const now = Date.parse('2026-09-05T07:00:00Z');

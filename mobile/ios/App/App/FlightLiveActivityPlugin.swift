@@ -1,18 +1,21 @@
+import Foundation
+#if !FLIGHT_ACTIVITY_TEST
 import ActivityKit
 import Capacitor
-import Foundation
 import UIKit
+#endif
 
 @MainActor
 final class FlightActivityCoordinator {
     static let shared = FlightActivityCoordinator()
     private var observers: [String: [Task<Void, Never>]] = [:]
     private var ended = Set<String>()
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
     private var operation: Task<Void, Error>?
     private var errorCode = ""
     private var errorReference = ""
     private let pendingStateKey = "flight.pendingActivityState"
+    init(defaults: UserDefaults = .standard) { self.defaults = defaults }
     var dismissedKey: String { defaults.string(forKey: "flight.dismissedJourney") ?? "" }
     var current: Activity<FlightActivityAttributes>? {
         Activity<FlightActivityAttributes>.activities.first { $0.activityState == .active || $0.activityState == .stale }
@@ -95,14 +98,15 @@ final class FlightActivityCoordinator {
             Task { await FlightPushCoordinator.shared.bind(activity: activity.id, journeyKey: key, token: token.map { String(format: "%02x", $0) }.joined(), state: "active") }
         }
     }
-    func end() async {
-        try? await serialize { await self.endActivities() }
+    func end(journeyKey: String? = nil) async {
+        try? await serialize { await self.endActivities(journeyKey: journeyKey) }
     }
-    private func endActivities(clearPending: Bool = true) async {
-        if clearPending { defaults.removeObject(forKey: pendingStateKey) }
-        clearFailure()
-        defaults.removeObject(forKey: "flight.dismissedJourney")
-        for activity in Activity<FlightActivityAttributes>.activities {
+    private func endActivities(clearPending: Bool = true, journeyKey: String? = nil) async {
+        let pending = defaults.data(forKey: pendingStateKey).flatMap { try? JSONDecoder().decode(FlightActivityAttributes.ContentState.self, from: $0) }
+        if clearPending && (journeyKey == nil || pending?.journeyKey == journeyKey) { defaults.removeObject(forKey: pendingStateKey) }
+        if journeyKey == nil || current?.attributes.journeyKey == journeyKey { clearFailure() }
+        if journeyKey == nil || dismissedKey == journeyKey { defaults.removeObject(forKey: "flight.dismissedJourney") }
+        for activity in Activity<FlightActivityAttributes>.activities where journeyKey == nil || activity.attributes.journeyKey == journeyKey {
             ended.insert(activity.id)
             defaults.set("ended", forKey: "flight.activityReason." + activity.id)
             await activity.end(nil, dismissalPolicy: .immediate)
@@ -166,6 +170,7 @@ final class FlightActivityCoordinator {
     }
 }
 
+#if !FLIGHT_ACTIVITY_TEST
 @objc(FlightLiveActivityPlugin)
 public class FlightLiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "FlightLiveActivityPlugin"
@@ -190,5 +195,10 @@ public class FlightLiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
     }
     @objc func start(_ call: CAPPluginCall) { sync(call) }
     @objc func update(_ call: CAPPluginCall) { sync(call) }
-    @objc func end(_ call: CAPPluginCall) { Task { @MainActor in await FlightActivityCoordinator.shared.end(); call.resolve(FlightActivityCoordinator.shared.status()) } }
+    @objc func end(_ call: CAPPluginCall) { Task { @MainActor in
+        let key = call.getString("journeyKey")
+        await FlightActivityCoordinator.shared.end(journeyKey: key?.isEmpty == false ? key : nil)
+        call.resolve(FlightActivityCoordinator.shared.status())
+    } }
 }
+#endif

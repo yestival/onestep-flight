@@ -48,10 +48,10 @@ class StaticFrontendRegressionTest {
         assertTrue(overlay.contains("data-journey-problem-result"));
         assertTrue(html.contains("styles.css?v=44"));
         assertTrue(html.contains("locale.js?v=42"));
-        assertTrue(html.contains("app.js?v=47"));
+        assertTrue(html.contains("app.js?v=48"));
         assertTrue(worker.contains("onestep-flight-shell-"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v47'"));
-        assertTrue(worker.contains("/app.js?v=47"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v48'"));
+        assertTrue(worker.contains("/app.js?v=48"));
         assertTrue(js.contains("POST") || js.contains("method: 'POST'"));
     }
 
@@ -801,11 +801,11 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("Solo se encontró parte de la información"));
         assertTrue(html.contains("styles.css?v=44"));
         assertTrue(html.contains("locale.js?v=42"));
-        assertTrue(html.contains("app.js?v=47"));
+        assertTrue(html.contains("app.js?v=48"));
         assertFalse(html.contains("?v=37"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v47'"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v48'"));
         assertFalse(worker.contains("CACHE_PREFIX + 'v37'"));
-        for (String asset : new String[] { "/styles.css?v=44", "/locale.js?v=42", "/app.js?v=47",
+        for (String asset : new String[] { "/styles.css?v=44", "/locale.js?v=42", "/app.js?v=48",
                 "/share.css?v=33", "/share.js?v=34" }) {
             assertTrue(worker.contains("'" + asset + "'"), asset);
         }

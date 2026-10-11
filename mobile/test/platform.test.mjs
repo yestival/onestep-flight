@@ -165,3 +165,35 @@ test('a rejected native bridge call exposes failure without poisoning subsequent
   assert.equal(live.current().active,true);
   assert.equal(live.current().errorCode,undefined);
 });
+
+test('native journey preparation completes before creating a card and old cleanup is scoped', async () => {
+  const calls = [];
+  let current = { supported: true, enabled: true, active: false };
+  let release;
+  const preparing = new Promise(resolve => { release = resolve; });
+  const live = createLiveActivity({
+    status: async () => current,
+    start: async data => { calls.push('start'); return current = { ...current, active: true, journeyKey: data.journeyKey }; },
+    update: async () => current,
+    end: async options => {
+      calls.push(['end', options.journeyKey]);
+      if (current.journeyKey === options.journeyKey) current.active = false;
+      return current;
+    }
+  });
+  const data = { journeyKey: 'new-flight', journeyEndsAt: Math.floor(Date.now()/1000) + 86400 };
+  const started = live.sync(data, async () => {
+    calls.push('prepare');
+    await preparing;
+    current.active = false;
+    calls.push('prepared');
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(calls, ['prepare']);
+  release();
+  await started;
+  assert.deepEqual(calls, ['prepare', 'prepared', 'start']);
+  await live.end('old-flight');
+  assert.equal(live.current().active, true);
+  assert.deepEqual(calls.at(-1), ['end', 'old-flight']);
+});

@@ -139,7 +139,7 @@ final class FlightPushCoordinator: NSObject, UNUserNotificationCenterDelegate {
                 await bind(activity: activity.id, journeyKey: key, token: token.map { String(format: "%02x", $0) }.joined(), state: "active")
             }
         }
-        await drain()
+        Task { await drain() }
         return snapshot()
     }
     func clearJourney(expectedKey: String? = nil, preserveIntent: Bool = false) async {
@@ -155,8 +155,8 @@ final class FlightPushCoordinator: NSObject, UNUserNotificationCenterDelegate {
         defaults.removeObject(forKey: "flight.currentJourney"); defaults.removeObject(forKey: "flight.progressFingerprint")
         defaults.removeObject(forKey: "flight.localProgress"); defaults.removeObject(forKey: "flight.progressGate"); defaults.removeObject(forKey: "flight.progressTerminal")
         latest = nil; defaults.removeObject(forKey: "flight.serverState")
-        await FlightActivityCoordinator.shared.end()
-        await drain()
+        await FlightActivityCoordinator.shared.end(journeyKey: key)
+        Task { await drain() }
     }
     func bind(activity: String, journeyKey: String, token: String?, state: String) async {
         guard identity != nil, journeyKey == currentJourney else { return }
@@ -164,7 +164,8 @@ final class FlightPushCoordinator: NSObject, UNUserNotificationCenterDelegate {
         if storedId != activity { defaults.set(activity, forKey: "flight.boundActivity"); defaults.set(defaults.integer(forKey: "flight.activityGeneration") + 1, forKey: "flight.activityGeneration") }
         var body: [String: Any] = ["journeyKey": journeyKey, "activityId": activity, "state": state, "generation": defaults.integer(forKey: "flight.activityGeneration")]
         if let token { body["token"] = token }
-        enqueue("PUT", basePath + "/journey/activity", body); await drain()
+        enqueue("PUT", basePath + "/journey/activity", body)
+        Task { await drain() }
     }
     func preferredState(_ state: FlightActivityAttributes.ContentState) -> FlightActivityAttributes.ContentState {
         var result = state

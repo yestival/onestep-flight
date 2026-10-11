@@ -10,17 +10,25 @@
     catch (error) { state = Object.assign({}, state, {errorCode: 'LIVE_ACTIVITY_BRIDGE_FAILED'}); throw error; }
   }
   function status() { return serialize(function () { return invoke(function () { return bridge.status(); }); }); }
-  function sync(content) {
+  function sync(content, prepareJourney) {
     return serialize(async function () {
       if (!content) return state;
+      // Commit the native journey intent before creating its activity. A late
+      // clear of the previous subscription must not end the newly created card.
+      if (prepareJourney) await prepareJourney();
       await invoke(function () { return bridge.status(); });
       if (content.journeyEndsAt <= Math.floor(Date.now() / 1000)) return state;
-      if (state.active && state.journeyKey !== content.journeyKey) await bridge.end();
+      if (state.active && state.journeyKey !== content.journeyKey) await bridge.end({ journeyKey: state.journeyKey });
       if (state.dismissedJourneyKey === content.journeyKey || !state.enabled) return state;
       await invoke(function () { return state.active && state.journeyKey === content.journeyKey ? bridge.update(content) : bridge.start(content); });
       return state;
     });
   }
   return { status: status, current: function () { return state; }, sync: sync, start: sync, update: sync,
-    end: function () { return serialize(async function () { await bridge.end(); state = await bridge.status(); return state; }); } };
+    end: function (journeyKey, clearJourney) { return serialize(async function () {
+      if (clearJourney) await clearJourney();
+      await bridge.end({ journeyKey: journeyKey || '' });
+      await invoke(function () { return bridge.status(); });
+      return state;
+    }); } };
 }));
