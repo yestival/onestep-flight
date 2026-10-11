@@ -8042,10 +8042,11 @@
     var disabled = state.supported && !state.enabled;
     var dismissed = state.dismissedJourneyKey === familyShareJourneyKey(currentFlight);
     var active = state.active && state.journeyKey === familyShareJourneyKey(currentFlight);
-    notice.hidden = !journeyContext || active && !disabled;
+    notice.hidden = !journeyContext;
     var message = disabled
       ? localeText('实时活动已被系统禁用。', 'Live Activities are disabled in system settings.', 'Las actividades en directo están desactivadas en los ajustes.')
       : dismissed ? localeText('此行程的锁屏活动已被移除。', 'The Lock Screen activity for this journey was dismissed.', 'Se ha descartado la actividad de este viaje en la pantalla bloqueada.')
+      : active && !state.errorCode ? localeText('锁屏行程已交给系统，可锁屏查看。', 'Journey sent to iOS. Lock your screen to view it.', 'Viaje enviado a iOS. Bloquea la pantalla para verlo.')
       : localeText('锁屏行程暂未显示，回到 App 后会自动重试。', 'The Lock Screen journey is unavailable. Returning to the app retries automatically.', 'El viaje no aparece en la pantalla bloqueada. Se reintentará al volver a la app.');
     if (!disabled && !dismissed && state.errorCode) message += ' (' + (state.errorReference || state.errorCode) + ')';
     notice.querySelector('span').textContent = message;
@@ -8062,11 +8063,18 @@
 
   function syncLiveActivity() {
     if (!liveActivity || !pageInitialized) return;
-    var content = liveActivityContent();
+    var content;
+    try { content = liveActivityContent(); }
+    catch (_) {
+      liveActivity.reportFailure('LIVE_ACTIVITY_DISPLAY_FAILED');
+      renderLiveActivityStatus();
+      return;
+    }
     if (!content) {
       if (!journeyContext || journeyContext.exitedAirport || currentAction && currentAction.stepType === 'COMPLETE') {
         endLiveJourney(familyShareJourneyKey(currentFlight));
       }
+      renderLiveActivityStatus();
       return;
     }
     if (currentFlight.demo || qaJourneyEnabled || demoRecordingSessionId) {

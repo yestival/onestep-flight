@@ -126,7 +126,7 @@ test('live activity automatically starts once, respects dismissal, rebuilds norm
     status: async () => current,
     start: async data => { calls.push('start'); return current = { ...current, active: true, journeyKey: data.journeyKey }; },
     update: async () => { calls.push('update'); return current; },
-    end: async () => { calls.push('end'); current = { ...current, active: false }; }
+    end: async () => { calls.push('end'); return current = { ...current, active: false }; }
   });
   const data = { journeyKey: 'flight-one', journeyEndsAt: Math.floor(Date.now()/1000) + 10000 };
   await live.sync(data); await live.sync(data);
@@ -166,7 +166,7 @@ test('a rejected native bridge call exposes failure without poisoning subsequent
   assert.equal(live.current().errorCode,undefined);
 });
 
-test('native journey preparation completes before creating a card and old cleanup is scoped', async () => {
+test('a stalled push sync cannot block local creation and late old cleanup stays scoped', async () => {
   const calls = [];
   let current = { supported: true, enabled: true, active: false };
   let release;
@@ -185,15 +185,48 @@ test('native journey preparation completes before creating a card and old cleanu
   const started = live.sync(data, async () => {
     calls.push('prepare');
     await preparing;
-    current.active = false;
+    if (current.journeyKey === 'old-flight') current.active = false;
     calls.push('prepared');
   });
   await new Promise(resolve => setImmediate(resolve));
-  assert.deepEqual(calls, ['prepare']);
+  assert.deepEqual(calls, ['prepare', 'start']);
+  assert.equal(live.current().active, true);
   release();
   await started;
-  assert.deepEqual(calls, ['prepare', 'prepared', 'start']);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(calls, ['prepare', 'start', 'prepared']);
   await live.end('old-flight');
   assert.equal(live.current().active, true);
   assert.deepEqual(calls.at(-1), ['end', 'old-flight']);
+});
+
+test('a native callback timeout is reported and does not hold every future sync', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let hang = true, starts = 0;
+  let current = { supported: true, enabled: true, active: false };
+  const live = createLiveActivity({
+    status: () => hang ? new Promise(() => {}) : Promise.resolve(current),
+    start: async data => { starts++; return current = { ...current, active: true, journeyKey: data.journeyKey }; },
+    update: async () => current
+  });
+  const data = { journeyKey: 'flight', journeyEndsAt: Math.floor(Date.now()/1000) + 86400 };
+  const attempt = assert.rejects(live.sync(data), { code: 'LIVE_ACTIVITY_BRIDGE_TIMEOUT' });
+  await new Promise(resolve => setImmediate(resolve));
+  t.mock.timers.tick(10001);
+  await attempt;
+  assert.equal(live.current().errorReference, 'LIVE_ACTIVITY_BRIDGE_TIMEOUT:status');
+  hang = false;
+  await live.sync(data);
+  assert.equal(starts, 1);
+  assert.equal(live.current().active, true);
+});
+
+test('a stalled push revocation cannot prevent local removal', async () => {
+  let active = true;
+  const live = createLiveActivity({
+    end: async options => { assert.equal(options.journeyKey, 'flight'); active = false; return { active }; },
+    status: async () => ({ active })
+  });
+  await live.end('flight', () => new Promise(() => {}));
+  assert.equal(active, false);
 });

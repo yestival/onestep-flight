@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { deterministicInjectionSource } from '../../../scripts/browser-acceptance.mjs';
 
 async function layout(page) {
@@ -49,6 +50,63 @@ const snapshot = (now, age = 0) => ({
   history: [], events: [], screen: 'step', locale: 'en'
 });
 
+test('bundled Capacitor iOS bridge starts a confirmed journey with an unanswered push callback', async ({ page }) => {
+  const now = Date.parse('2026-09-05T07:00:00Z');
+  const saved = snapshot(now);
+  saved.flight.flightNumber = 'BA117'; saved.context.flightNumber = 'BA117';
+  saved.flight.departureAirport = 'LHR'; saved.flight.arrivalAirport = 'JFK';
+  saved.flight.terminal = 'T5'; saved.flight.gate = 'B32';
+  const bridge = readFileSync(new URL('../../node_modules/@capacitor/ios/Capacitor/Capacitor/assets/native-bridge.js', import.meta.url), 'utf8');
+  // Keep native.js, registerPlugin and the installed Capacitor bridge untouched.
+  // Only the WKWebView message port is doubled; Swift/ActivityKit still need iOS.
+  await page.addInitScript({ content: `
+    window.bridgeCalls = [];
+    window.bridgeDisk = new Map([['onestep-flight-offline-journey-v1', ${JSON.stringify(JSON.stringify(saved))}]]);
+    window.bridgeActivity = {supported:true,enabled:true,active:false};
+    window.webkit = {messageHandlers:{bridge:{postMessage(call) {
+      if (call.type !== 'message') return;
+      bridgeCalls.push(JSON.parse(JSON.stringify(call)));
+      if (call.methodName === 'addListener' || call.pluginId === 'FlightPush' && call.methodName === 'syncJourney') return;
+      let data = {}, o = call.options || {};
+      if (call.pluginId === 'Preferences') {
+        if (call.methodName === 'get') data = {value:bridgeDisk.get(o.key) || null};
+        if (call.methodName === 'set') bridgeDisk.set(o.key, o.value);
+        if (call.methodName === 'remove') bridgeDisk.delete(o.key);
+      }
+      if (call.pluginId === 'App' && call.methodName === 'getState') data = {isActive:true};
+      if (call.pluginId === 'Network') data = {connected:true};
+      if (call.pluginId === 'Filesystem') data = {files:[]};
+      if (call.pluginId === 'FlightLiveActivity') {
+        if (call.methodName === 'start') bridgeActivity = {...bridgeActivity,active:true,journeyKey:o.journeyKey};
+        if (call.methodName === 'end' && bridgeActivity.journeyKey === o.journeyKey) bridgeActivity.active = false;
+        data = {...bridgeActivity};
+      }
+      queueMicrotask(() => Capacitor.fromNative({callbackId:call.callbackId,pluginId:call.pluginId,methodName:call.methodName,success:true,data,save:false}));
+    }}}};
+    ${bridge}
+    Capacitor.PluginHeaders = Object.entries({
+      Preferences:['get','set','remove'], App:['getState','getLaunchUrl'], Network:['getStatus'], Filesystem:['readdir','deleteFile'],
+      FlightPush:['initialize','syncJourney','status','clearJourney','openSettings'], FlightLiveActivity:['status','start','update','end'],
+      FlightNative:['openExternal'], Share:['share']
+    }).map(([name, methods]) => ({name, methods: [...methods.map(name => ({name,rtype:'promise'})), {name:'addListener'},{name:'removeListener'}]}));
+  ` });
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.clock.setFixedTime(new Date(now));
+  await page.route('**/api/**', route => route.abort());
+  await page.goto('/');
+  await expect(page.locator('[data-screen="step"]')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => bridgeCalls.filter(c => c.pluginId === 'FlightLiveActivity' && c.methodName === 'start').length)).toBe(1);
+  const start = await page.evaluate(() => bridgeCalls.find(c => c.pluginId === 'FlightLiveActivity' && c.methodName === 'start').options);
+  expect(start.flightNumber).toBe('BA 117');
+  expect(start.gate).toBe('B32');
+  expect(Number.isInteger(start.journeyEndsAt)).toBe(true);
+  await page.locator('[data-locale-select]').selectOption('zh');
+  await expect.poll(() => page.evaluate(() => bridgeCalls.filter(c => c.pluginId === 'FlightLiveActivity' && c.methodName === 'update').length)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => bridgeCalls.filter(c => c.pluginId === 'FlightLiveActivity' && c.methodName === 'start').length)).toBe(1);
+  expect(errors).toEqual([]);
+});
+
 async function mockedNative(page, disk, options = {}) {
   const calls = [];
   await page.exposeFunction('nativeStorage', async (op, key, value) => {
@@ -70,8 +128,9 @@ async function mockedNative(page, disk, options = {}) {
       FlightPush: {addListener:async()=>{},initialize:async()=>({ready:true}),syncJourney:async p=>{
         await nativeCall('syncJourney',p);
         if (holdJourneyPreparation) {
-          await new Promise(resolve=>window.finishJourneyPreparation=resolve);
-          activity.active=false;
+          window.journeyPreparation ||= new Promise(resolve=>window.finishJourneyPreparation=resolve);
+          await window.journeyPreparation;
+          if (activity.journeyKey === 'old-flight') activity.active=false;
           holdJourneyPreparation=false;
           await nativeCall('previousJourneyCleared');
         }
@@ -82,7 +141,7 @@ async function mockedNative(page, disk, options = {}) {
   return calls;
 }
 
-test('native journey switch finishes before automatic creation even when flight APIs are offline', async ({ page }) => {
+test('automatic activity creation proceeds while push sync is stalled and late old cleanup is harmless', async ({ page }) => {
   const now = Date.parse('2026-09-05T07:00:00Z');
   const disk = new Map([['onestep-flight-offline-journey-v1', JSON.stringify(snapshot(now))]]);
   const calls = await mockedNative(page, disk, { holdJourneyPreparation: true });
@@ -90,12 +149,13 @@ test('native journey switch finishes before automatic creation even when flight 
   await page.route('**/api/**', route => route.abort());
   await page.goto('/');
   await expect(page.locator('[data-screen="step"]')).toBeVisible();
-  await expect.poll(() => calls.filter(call => call.name === 'syncJourney').length).toBe(1);
+  await expect.poll(() => calls.filter(call => call.name === 'syncJourney').length).toBeGreaterThan(0);
   await expect.poll(() => page.evaluate(() => typeof window.finishJourneyPreparation)).toBe('function');
-  expect(calls.filter(call => call.name === 'start')).toHaveLength(0);
+  await expect.poll(() => calls.filter(call => call.name === 'start').length).toBe(1);
+  await expect(page.locator('[data-live-activity-status]')).toContainText('Journey sent to iOS');
   await page.evaluate(() => finishJourneyPreparation());
   await expect.poll(() => calls.filter(call => call.name === 'start').length).toBe(1);
-  expect(calls.findIndex(call => call.name === 'previousJourneyCleared')).toBeLessThan(calls.findIndex(call => call.name === 'start'));
+  expect(calls.findIndex(call => call.name === 'previousJourneyCleared')).toBeGreaterThan(calls.findIndex(call => call.name === 'start'));
   await expect.poll(() => page.evaluate(() => activity.active)).toBe(true);
   await page.locator('[data-locale-select]').selectOption('zh');
   await expect.poll(() => calls.filter(call => call.name === 'update').length).toBeGreaterThan(0);
@@ -119,7 +179,7 @@ test('confirming a flight creates its activity automatically when push synchroni
   await page.locator('[data-action="continue"]').click();
   await expect(page.locator('[data-screen="step"]')).toBeVisible();
   await expect.poll(() => calls.filter(call => call.name === 'start').length).toBe(1);
-  await expect(page.locator('[data-live-activity-status]')).toBeHidden();
+  await expect(page.locator('[data-live-activity-status]')).toContainText('Journey sent to iOS');
   expect(calls.find(call => call.name === 'start').payload.gate).toBe('B12');
 });
 
@@ -147,7 +207,7 @@ test('native activity creation failure is visible and foreground recovery preced
     nativeEvents.appStateChange({ isActive: true });
   });
   await expect.poll(() => calls.filter(call => call.name === 'start').length).toBeGreaterThan(attempts);
-  await expect(notice).toBeHidden();
+  await expect(notice).toContainText('Journey sent to iOS');
   expect(calls.find(call => call.name === 'start').payload.gate).toBe('B12');
   if (releaseRequest) releaseRequest();
 });
