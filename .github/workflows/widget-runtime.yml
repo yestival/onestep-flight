@@ -42,4 +42,6 @@ jobs:
         if: always()
         with:
           name: widget-runtime-evidence-${{ matrix.ios }}-${{ matrix.widget }}
-          path: mobile/build/widget-smoke/
+          path: |
+            mobile/build/widget-smoke/system.log
+            mobile/build/widget-smoke/attachments/

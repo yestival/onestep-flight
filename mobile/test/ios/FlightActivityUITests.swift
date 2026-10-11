@@ -16,8 +16,15 @@ final class FlightActivityUITests: XCTestCase {
         attach("native-created")
         XCUIDevice.shared.press(.home)
         let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        system.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.01))
-            .press(forDuration: 0.2, thenDragTo: system.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8)))
+        let coverSheet = system.otherElements["lockscreen-date-view"]
+        for _ in 0..<3 {
+            // The centre top edge is the physical notch on iPhone 14. Start left of it.
+            system.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.005))
+                .press(forDuration: 0.05, thenDragTo: system.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.85)))
+            if coverSheet.waitForExistence(timeout: 5) { break }
+        }
+        attach("notification-center-open")
+        XCTAssertTrue(coverSheet.exists, "Notification Center must be open before evaluating Widget rendering.")
         let heading = system.staticTexts.containing(NSPredicate(format: "label CONTAINS '请前往 B32 登机口'")).firstMatch
         let rendered = heading.waitForExistence(timeout: 30)
         attach("system-live-activity")
