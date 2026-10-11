@@ -302,7 +302,7 @@ public class FlightPushPlugin: CAPPlugin, CAPBridgedPlugin {
         FlightPushCoordinator.shared.onRoute = { [weak self] route in self?.notifyListeners("journeyRoute", data: route) }
         call.resolve(await FlightPushCoordinator.shared.initialize())
     } }
-    @objc func syncJourney(_ call: CAPPluginCall) { Task { @MainActor in call.resolve(await FlightPushCoordinator.shared.syncJourney(call.options)) } }
+    @objc func syncJourney(_ call: CAPPluginCall) { Task { @MainActor in call.resolve(await FlightPushCoordinator.shared.syncJourney(call.jsObjectRepresentation)) } }
     @objc func status(_ call: CAPPluginCall) { Task { @MainActor in call.resolve(FlightPushCoordinator.shared.snapshot()) } }
     @objc func clearJourney(_ call: CAPPluginCall) { Task { @MainActor in await FlightPushCoordinator.shared.clearJourney(expectedKey: call.getString("journeyKey")); call.resolve() } }
     @objc func openSettings(_ call: CAPPluginCall) { Task { @MainActor in

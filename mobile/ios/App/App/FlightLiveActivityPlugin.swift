@@ -122,7 +122,7 @@ public class FlightLiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
     private func sync(_ call: CAPPluginCall) {
         Task { @MainActor in
             do {
-                let data = try JSONSerialization.data(withJSONObject: call.options)
+                let data = try JSONSerialization.data(withJSONObject: call.jsObjectRepresentation)
                 let state = try JSONDecoder().decode(FlightActivityAttributes.ContentState.self, from: data)
                 guard !state.journeyKey.isEmpty, !state.flightNumber.isEmpty, !state.nextStep.isEmpty else { throw NSError(domain: "FlightActivity", code: 1) }
                 try await FlightActivityCoordinator.shared.sync(state)
