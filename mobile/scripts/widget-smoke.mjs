@@ -30,6 +30,7 @@ try {
   // addTarget incorrectly makes App depend on its tests. Tests depend on App instead.
   o.PBXNativeTarget[app.uuid].dependencies = o.PBXNativeTarget[app.uuid].dependencies.filter(ref => o.PBXTargetDependency[ref.value]?.target !== test.uuid);
   project.addTargetDependency(test.uuid, [app.uuid]);
+  project.getFirstProject().firstProject.attributes.TargetAttributes[test.uuid] = { TestTargetID: app.uuid };
   project.addBuildPhase(['../../test/ios/FlightActivityUITests.swift'], 'PBXSourcesBuildPhase', 'Sources', test.uuid);
   project.addBuildPhase([], 'PBXFrameworksBuildPhase', 'Frameworks', test.uuid);
   project.addBuildPhase([], 'PBXResourcesBuildPhase', 'Resources', test.uuid);
@@ -48,20 +49,21 @@ try {
 <Scheme LastUpgradeVersion="2600" version="1.3"><BuildAction buildImplicitDependencies="YES"><BuildActionEntries>
 <BuildActionEntry buildForTesting="YES" buildForRunning="NO" buildForProfiling="NO" buildForArchiving="NO" buildForAnalyzing="YES">${reference(test.uuid, 'FlightActivityUITests', 'FlightActivityUITests.xctest')}</BuildActionEntry>
 </BuildActionEntries></BuildAction><TestAction buildConfiguration="Debug" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.IDEFoundation.Launcher.LLDB"><Testables><TestableReference skipped="NO">${reference(test.uuid, 'FlightActivityUITests', 'FlightActivityUITests.xctest')}</TestableReference></Testables></TestAction></Scheme>`);
-  const available = JSON.parse(run('xcrun', ['simctl', 'list', 'devices', 'available', '-j']));
-  const candidates = Object.entries(available.devices).filter(([runtime]) => runtime.includes('iOS')).flatMap(([runtime, devices]) => devices.filter(d => d.name.includes('iPhone')).map(d => ({ ...d, runtime })));
-  const choice = candidates.find(d => d.name.includes('iPhone 17 Pro')) || candidates.find(d => d.name.includes('Pro')) || candidates[0];
-  if (!choice) throw new Error('No available iPhone Simulator');
-  device = choice.udid;
-  console.log(`Testing actual App + Widget on ${choice.name}, ${choice.runtime}`);
-  if (choice.state !== 'Booted') run('xcrun', ['simctl', 'boot', device]);
-  run('xcrun', ['simctl', 'bootstatus', device, '-b']);
+  const runtimes = JSON.parse(run('xcrun', ['simctl', 'list', 'runtimes', '-j'])).runtimes;
+  const runtime = runtimes.find(r => r.isAvailable && r.identifier.endsWith('iOS-' + (process.env.SMOKE_IOS || '18-6')));
+  const types = JSON.parse(run('xcrun', ['simctl', 'list', 'devicetypes', '-j'])).devicetypes;
+  const type = types.find(t => t.name === 'iPhone 14');
+  if (!runtime || !type) throw new Error('Requested iPhone 14 Simulator runtime unavailable');
+  device = run('xcrun', ['simctl', 'create', 'OneStep Widget Verification', type.identifier, runtime.identifier]).trim();
+  console.log(`Testing actual App + Widget on ${type.name}, ${runtime.name}`);
+  run('xcrun', ['simctl', 'boot', device], { stdio: 'inherit', timeout: 60000 });
+  run('xcrun', ['simctl', 'bootstatus', device, '-b'], { stdio: 'inherit', timeout: 240000 });
   run('xcodebuild', ['-project', 'ios/App/App.xcodeproj', '-scheme', 'FlightActivitySmoke', '-destination', `platform=iOS Simulator,id=${device}`, '-derivedDataPath', 'build/SmokeDerivedData', '-resultBundlePath', 'build/widget-smoke/Result.xcresult', '-parallel-testing-enabled', 'NO', 'CODE_SIGNING_ALLOWED=NO', 'test'], { stdio: 'inherit' });
 } finally {
   if (device) {
-    const logs = spawnSync('xcrun', ['simctl', 'spawn', device, 'log', 'show', '--last', '15m', '--style', 'compact', '--info', '--debug', '--predicate', 'process == "FlightActivity" OR process == "liveactivitiesd" OR process == "chronod" OR process == "App"'], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+    const logs = spawnSync('xcrun', ['simctl', 'spawn', device, 'log', 'show', '--last', '15m', '--style', 'compact', '--info', '--debug', '--predicate', 'process == "FlightActivity" OR process == "liveactivitiesd" OR process == "chronod" OR process == "App"'], { encoding: 'utf8', timeout: 20000, maxBuffer: 32 * 1024 * 1024 });
     writeFileSync(new URL('build/widget-smoke/system.log', mobileRoot), logs.stdout || logs.stderr || 'No system logs');
-    spawnSync('xcrun', ['simctl', 'io', device, 'screenshot', fileURLToPath(new URL('build/widget-smoke/screen.png', mobileRoot))]);
+    spawnSync('xcrun', ['simctl', 'io', device, 'screenshot', fileURLToPath(new URL('build/widget-smoke/screen.png', mobileRoot))], { timeout: 15000 });
   }
   for (const [path, content] of originals) writeFileSync(path, content);
 }
