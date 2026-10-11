@@ -32,7 +32,15 @@ final class FlightActivityUITests: XCTestCase {
         attach("notification-center-open")
         XCTAssertTrue(coverSheet.exists, "Notification Center must be open before evaluating Widget rendering.")
         let heading = system.staticTexts.containing(NSPredicate(format: "label CONTAINS '请前往 B32 登机口'")).firstMatch
-        let rendered = heading.waitForExistence(timeout: 30)
+        var rendered = heading.waitForExistence(timeout: 30)
+        // A fresh Simulator first presents the system's Allow/Don't Allow row.
+        // Verify the real ongoing card after consent, not only its prompt preview.
+        let allow = system.buttons["Allow"].firstMatch
+        if allow.exists {
+            allow.tap()
+            rendered = heading.waitForExistence(timeout: 10)
+            XCTAssertFalse(allow.exists)
+        }
         attach("system-live-activity")
         print("WIDGET_SMOKE_SYSTEM_TREE\n\(system.debugDescription)")
         XCTAssertTrue(rendered, "ActivityKit creation alone is insufficient: the system must render the actual Widget heading.")
