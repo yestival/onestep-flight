@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 
 final class FlightActivityUITests: XCTestCase {
     func testFreshActivityRenders() { verifyRender(fresh: true) }
@@ -49,6 +50,7 @@ final class FlightActivityUITests: XCTestCase {
         for fact in ["BA 117", "T5", "14:30", "15:20"] {
             XCTAssertTrue(system.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", fact)).firstMatch.exists, "Missing known flight fact: \(fact)")
         }
+        assertReadableHeading(heading, system: system)
         if !fresh {
             XCTAssertTrue(system.staticTexts.containing(NSPredicate(format: "label CONTAINS '14:05 更新' AND label CONTAINS '可打开 App 刷新'")).firstMatch.exists)
         }
@@ -66,6 +68,33 @@ final class FlightActivityUITests: XCTestCase {
             }
             attach("past-deadline-while-backgrounded")
         }
+    }
+    private func assertReadableHeading(_ heading: XCUIElement, system: XCUIApplication) {
+        // AX text can exist even when a broken archive paints white on white.
+        // Check actual pixels in the heading, after the system consent UI closes.
+        guard let image = XCUIScreen.main.screenshot().image.cgImage else { XCTFail("Missing screenshot"); return }
+        let scale = CGFloat(image.width) / system.frame.width
+        let frame = heading.frame
+        let region = CGRect(x: frame.minX * scale, y: frame.minY * scale,
+                            width: frame.width * scale, height: frame.height * scale).integral
+        guard let crop = image.cropping(to: region) else { XCTFail("Heading outside screenshot"); return }
+        var pixels = [UInt8](repeating: 0, count: crop.width * crop.height * 4)
+        pixels.withUnsafeMutableBytes { bytes in
+            let context = CGContext(data: bytes.baseAddress, width: crop.width, height: crop.height,
+                                    bitsPerComponent: 8, bytesPerRow: crop.width * 4,
+                                    space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+            context.draw(crop, in: CGRect(x: 0, y: 0, width: crop.width, height: crop.height))
+        }
+        func linear(_ byte: UInt8) -> Double {
+            let c = Double(byte) / 255
+            return c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4)
+        }
+        var darkest = 1.0, lightest = 0.0
+        for offset in stride(from: 0, to: pixels.count, by: 4) {
+            let light = 0.2126 * linear(pixels[offset]) + 0.7152 * linear(pixels[offset + 1]) + 0.0722 * linear(pixels[offset + 2])
+            darkest = min(darkest, light); lightest = max(lightest, light)
+        }
+        XCTAssertGreaterThanOrEqual((lightest + 0.05) / (darkest + 0.05), 4.5, "Visible heading pixels must contrast with the actual card background")
     }
     private func attach(_ name: String) {
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
