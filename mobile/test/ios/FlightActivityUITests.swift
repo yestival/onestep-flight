@@ -35,11 +35,13 @@ final class FlightActivityUITests: XCTestCase {
         var rendered = heading.waitForExistence(timeout: 30)
         // A fresh Simulator first presents the system's Allow/Don't Allow row.
         // Verify the real ongoing card after consent, not only its prompt preview.
-        let allow = system.buttons["Allow"].firstMatch
-        if allow.exists {
-            allow.tap()
-            rendered = heading.waitForExistence(timeout: 10)
-            XCTAssertFalse(allow.exists)
+        for title in ["Allow", "Always Allow"] {
+            let allow = system.buttons[title].firstMatch
+            if allow.exists {
+                allow.tap()
+                rendered = heading.waitForExistence(timeout: 10)
+                XCTAssertFalse(allow.exists)
+            }
         }
         attach("system-live-activity")
         print("WIDGET_SMOKE_SYSTEM_TREE\n\(system.debugDescription)")

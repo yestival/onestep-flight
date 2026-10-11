@@ -58,6 +58,7 @@ try {
   console.log(`Testing actual App + Widget on ${type.name}, ${runtime.name}`);
   run('xcrun', ['simctl', 'boot', device], { stdio: 'inherit', timeout: 60000 });
   run('xcrun', ['simctl', 'bootstatus', device, '-b'], { stdio: 'inherit', timeout: 240000 });
+  run('xcrun', ['simctl', 'ui', device, 'appearance', process.env.SMOKE_APPEARANCE || 'light']);
   // ActivityKit validates aps-environment even in the Simulator for pushType: .token.
   // Ad-hoc signing embeds the production target's entitlements without Apple credentials.
   run('xcodebuild', ['-project', 'ios/App/App.xcodeproj', '-scheme', 'FlightActivitySmoke', '-destination', `platform=iOS Simulator,id=${device}`, '-derivedDataPath', 'build/SmokeDerivedData', '-resultBundlePath', 'build/widget-smoke/Result.xcresult', '-parallel-testing-enabled', 'NO', 'CODE_SIGNING_ALLOWED=YES', 'CODE_SIGN_IDENTITY=-', 'DEVELOPMENT_TEAM=', 'test'], { stdio: 'inherit' });
