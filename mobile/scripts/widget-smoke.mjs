@@ -15,10 +15,16 @@ if (process.platform !== 'darwin') throw new Error('Widget runtime verification 
 const projectPath = new URL('ios/App/App.xcodeproj/project.pbxproj', mobileRoot);
 const scenePath = new URL('ios/App/App/SceneDelegate.swift', mobileRoot);
 const widgetPath = new URL('ios/App/FlightActivity/FlightActivityWidget.swift', mobileRoot);
-const originals = [projectPath, scenePath, widgetPath].map(path => [path, readFileSync(path, 'utf8')]);
+const coordinatorPath = new URL('ios/App/App/FlightLiveActivityPlugin.swift', mobileRoot);
+const originals = [projectPath, scenePath, widgetPath, coordinatorPath].map(path => [path, readFileSync(path, 'utf8')]);
 let device;
 mkdirSync(new URL('build/widget-smoke/', mobileRoot), { recursive: true });
 try {
+  if (process.env.SMOKE_STALE_DATE === 'omit-expired') {
+    writeFileSync(coordinatorPath, readFileSync(coordinatorPath, 'utf8').replace(
+      'staleDate: Date(timeIntervalSince1970: TimeInterval(state.staleAt))',
+      'staleDate: state.staleAt > Int64(Date().timeIntervalSince1970) ? Date(timeIntervalSince1970: TimeInterval(state.staleAt)) : nil'));
+  }
   if (process.env.SMOKE_WIDGET === 'minimal') {
     writeFileSync(widgetPath, readFileSync(widgetPath, 'utf8').replace('FlightLockScreen(state: context.state, stale: context.isStale)', 'Text(context.state.nextStep).padding()'));
   }
