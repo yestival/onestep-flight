@@ -49,7 +49,7 @@ const snapshot = (now, age = 0) => ({
   history: [], events: [], screen: 'step', locale: 'en'
 });
 
-async function mockedNative(page, disk) {
+async function mockedNative(page, disk, options = {}) {
   const calls = [];
   await page.exposeFunction('nativeStorage', async (op, key, value) => {
     if (op === 'get') { await new Promise(resolve => setTimeout(resolve, 120)); return disk.get(key) ?? null; }
@@ -58,6 +58,7 @@ async function mockedNative(page, disk) {
   await page.exposeFunction('nativeCall', async (name, payload) => { calls.push({ name, payload }); });
   await page.route('**/native.js', route => route.fulfill({ contentType: 'text/javascript', body: `
     window.nativeEvents = {}; window.activity = { supported:true, enabled:true, active:false };
+    window.activityFailure = ${JSON.stringify(options.activityFailure || null)};
     window.OneStepNative = { isNative:true,
       Preferences: { get:async({key})=>({value:await nativeStorage('get',key)}),set:({key,value})=>nativeStorage('set',key,value),remove:({key})=>nativeStorage('remove',key) },
       App: { addListener:async(k,f)=>{nativeEvents[k]=f}, getState:async()=>({isActive:true}),getLaunchUrl:async()=>({url:'onestepflight://journey'}) },
@@ -66,10 +67,39 @@ async function mockedNative(page, disk) {
       Filesystem: { readdir:async()=>({files:[]}),writeFile:async p=>{await nativeCall('write',p);return {uri:'file:///cache/card.png'}},deleteFile:async p=>nativeCall('delete',p) },
       FlightNative: {openExternal:async p=>nativeCall('openExternal',p)},
       FlightPush: {addListener:async()=>{},initialize:async()=>({ready:true}),syncJourney:async p=>{await nativeCall('syncJourney',p);return {}},clearJourney:async()=>nativeCall('clearJourney'),openSettings:async()=>nativeCall('settings')},
-      FlightLiveActivity: {status:async()=>activity,start:async p=>{await nativeCall('start',p);return activity={supported:true,enabled:true,active:true,journeyKey:p.journeyKey}},update:async p=>{await nativeCall('update',p);return activity},end:async()=>{await nativeCall('end');activity.active=false}}
+      FlightLiveActivity: {status:async()=>activity,start:async p=>{await nativeCall('start',p);return activity={supported:true,enabled:true,active:!activityFailure,journeyKey:p.journeyKey,...(activityFailure || {})}},update:async p=>{await nativeCall('update',p);return activity},end:async()=>{await nativeCall('end');activity.active=false}}
     };` }));
   return calls;
 }
+
+test('native activity creation failure is visible and foreground recovery precedes a stalled API request', async ({ page }) => {
+  const now = Date.parse('2026-09-05T07:00:00Z');
+  const disk = new Map([['onestep-flight-offline-journey-v1', JSON.stringify(snapshot(now))]]);
+  const calls = await mockedNative(page, disk, { activityFailure: { errorCode:'LIVE_ACTIVITY_REQUEST_FAILED', errorReference:'ActivityKit:7' } });
+  await page.clock.setFixedTime(new Date(now));
+  await page.route('**/api/**', route => route.abort());
+  await page.goto('/');
+  const notice = page.locator('[data-live-activity-status]');
+  await expect(notice).toBeVisible();
+  await expect(notice).toContainText('ActivityKit:7');
+  await expect(notice.locator('button')).toBeHidden();
+  const attempts = calls.filter(call => call.name === 'start').length;
+  let releaseRequest;
+  await page.route('**/api/journeys/next-action', async route => {
+    await new Promise(resolve => { releaseRequest = resolve; });
+    await route.abort();
+  });
+  await page.clock.setFixedTime(new Date(now + 3000));
+  await page.evaluate(() => {
+    activityFailure = null;
+    nativeEvents.appStateChange({ isActive: false });
+    nativeEvents.appStateChange({ isActive: true });
+  });
+  await expect.poll(() => calls.filter(call => call.name === 'start').length).toBeGreaterThan(attempts);
+  await expect(notice).toBeHidden();
+  expect(calls.find(call => call.name === 'start').payload.gate).toBe('B12');
+  if (releaseRequest) releaseRequest();
+});
 
 test('native cold start waits for private storage; offline state survives a fresh page and share cancellation', async ({ page, context }) => {
   const now = Date.parse('2026-09-05T07:00:00Z');

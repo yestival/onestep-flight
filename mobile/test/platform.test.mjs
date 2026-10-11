@@ -142,3 +142,26 @@ test('live activity automatically starts once, respects dismissal, rebuilds norm
   await live.sync(null); assert.equal(calls.at(-1),'start');
   await live.sync({ ...data, journeyEndsAt: 1 }); assert.equal(calls.at(-1),'start');
 });
+
+test('a rejected native bridge call exposes failure without poisoning subsequent automatic recovery', async () => {
+  let current = { active: false, enabled: true, supported: true };
+  let fail = true, starts = 0;
+  const live = createLiveActivity({
+    status: async () => current,
+    start: async data => {
+      if (fail) throw new Error('Native plugin unavailable');
+      starts++;
+      return current = { ...current, active: true, journeyKey: data.journeyKey };
+    },
+    update: async () => current
+  });
+  const data = {journeyKey:'BA117|2026-10-12|LHR|JFK',journeyEndsAt:Math.floor(Date.now()/1000)+86400};
+  await assert.rejects(live.sync(data));
+  assert.equal(live.current().errorCode,'LIVE_ACTIVITY_BRIDGE_FAILED');
+  fail = false;
+  await live.sync(data);
+  await live.sync(data);
+  assert.equal(starts,1);
+  assert.equal(live.current().active,true);
+  assert.equal(live.current().errorCode,undefined);
+});

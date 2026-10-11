@@ -14,7 +14,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
     }
 
-    func sceneDidBecomeActive(_ scene: UIScene) { Task { await FlightPushCoordinator.shared.recover() } }
+    func sceneDidBecomeActive(_ scene: UIScene) { Task { await FlightActivityCoordinator.shared.resume(); await FlightPushCoordinator.shared.recover() } }
     func sceneDidEnterBackground(_ scene: UIScene) { FlightPushCoordinator.shared.scheduleRefresh() }
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {

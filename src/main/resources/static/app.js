@@ -8042,8 +8042,17 @@
     var notice = document.querySelector('[data-live-activity-status]');
     if (!notice || !liveActivity) return;
     var state = liveActivity.current();
-    notice.hidden = !journeyContext || !state.supported || state.enabled;
-    notice.querySelector('span').textContent = localeText('实时活动已被系统禁用。', 'Live Activities are disabled in system settings.', 'Las actividades en directo están desactivadas en los ajustes.');
+    var disabled = state.supported && !state.enabled;
+    var dismissed = state.dismissedJourneyKey === familyShareJourneyKey(currentFlight);
+    var active = state.active && state.journeyKey === familyShareJourneyKey(currentFlight);
+    notice.hidden = !journeyContext || active && !disabled || !(disabled || dismissed || state.errorCode);
+    var message = disabled
+      ? localeText('实时活动已被系统禁用。', 'Live Activities are disabled in system settings.', 'Las actividades en directo están desactivadas en los ajustes.')
+      : dismissed ? localeText('此行程的锁屏活动已被移除。', 'The Lock Screen activity for this journey was dismissed.', 'Se ha descartado la actividad de este viaje en la pantalla bloqueada.')
+      : localeText('锁屏行程暂未显示，回到 App 后会自动重试。', 'The Lock Screen journey is unavailable. Returning to the app retries automatically.', 'El viaje no aparece en la pantalla bloqueada. Se reintentará al volver a la app.');
+    if (!disabled && !dismissed && state.errorCode) message += ' (' + (state.errorReference || state.errorCode) + ')';
+    notice.querySelector('span').textContent = message;
+    notice.querySelector('button').hidden = !disabled;
     notice.querySelector('button').textContent = localeText('前往系统设置', 'Open system settings', 'Abrir ajustes');
   }
 
@@ -8115,7 +8124,7 @@
     if (currentFlight) ensureClockTimer();
     retryPendingShareRevocations();
     retryPendingFamilyShare();
-    liveActivity.status().then(renderLiveActivityStatus).catch(function () {});
+    syncLiveActivity();
     if (!currentFlight || lookupInFlight || flightRequestController || qaJourneyEnabled) return;
     var request = journeyContext && currentAction
       ? requestNextAction({ refresh: true, silent: true, source: 'resume' })
@@ -8193,7 +8202,7 @@
       if (expiredJourneyDiscarded) showToast(localeText('已保存的行程超过 48 小时，请联网重新查询。',
         'The saved journey is older than 48 hours. Reconnect and look it up again.',
         'El viaje guardado tiene más de 48 horas. Conéctate y vuelve a buscarlo.'));
-      liveActivity.status().then(function () { syncLiveActivity(); }).catch(function () {});
+      liveActivity.status().then(function () { syncLiveActivity(); }).catch(renderLiveActivityStatus);
       handleNativeRoute();
       platform.resume();
     }
