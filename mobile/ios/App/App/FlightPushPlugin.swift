@@ -297,7 +297,7 @@ final class FlightPushCoordinator: NSObject, UNUserNotificationCenterDelegate {
 public class FlightPushPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "FlightPushPlugin"
     public let jsName = "FlightPush"
-    public let pluginMethods = ["initialize","syncJourney","status","clearJourney","openSettings"].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
+    public let pluginMethods: [CAPPluginMethod] = ["initialize","syncJourney","status","clearJourney","openSettings"].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     @objc func initialize(_ call: CAPPluginCall) { Task { @MainActor in
         FlightPushCoordinator.shared.onRoute = { [weak self] route in self?.notifyListeners("journeyRoute", data: route) }
         call.resolve(await FlightPushCoordinator.shared.initialize())
