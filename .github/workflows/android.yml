@@ -36,44 +36,29 @@ jobs:
           MIGRATION_POSTGRES_USER: postgres
           MIGRATION_POSTGRES_PASSWORD: test-only
   android:
-    # API 36's Linux x86_64 VM exits during DocumentsUI on hosted AMD/KVM
-    # runners. Use a different CPU/hypervisor; keep every native/UI assertion.
-    runs-on: macos-15-intel
-    timeout-minutes: 55
+    # Hosted Intel Macs force this emulator to one guest CPU even with -cores.
+    # Use the Ubuntu 22.04 KVM host and retain the full API 36 native/UI suite.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: '22', cache: npm, cache-dependency-path: mobile/package-lock.json}
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '21'}
-      - name: Install verified Android SDK tools for Intel macOS
+      - uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '15859902'
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0 emulator'
+          log-accepted-android-sdk-licenses: false
+      - name: Use the pinned Android SDK device catalog
         run: |
-          # SDK 22 separates Intel/ARM archives. setup-android v3 still requests
-          # the removed, architecture-independent mac filename for this version.
-          export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
-          export ANDROID_SDK_ROOT="$ANDROID_HOME"
-          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
-          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
-          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
-          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
-          archive="$RUNNER_TEMP/onestep-sdk-tools.zip"
-          curl --fail --location --retry 3 --output "$archive" \
-            https://dl.google.com/android/repository/commandlinetools-mac_x86_64-15859902_latest.zip
-          echo "c5a6378ab5cf7e0d5701921405115befff13e9ff7417fb588389338f8bd050f3  $archive" | shasum -a 256 -c -
-          unzip -q "$archive" -d "$RUNNER_TEMP/onestep-sdk-tools"
-          mkdir -p "$ANDROID_HOME/cmdline-tools"
-          mv "$RUNNER_TEMP/onestep-sdk-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/15859902"
           # emulator-runner prepends cmdline-tools/latest to PATH. Point that
           # location at the installed tools instead of the runner's old catalog.
           if [ -e "$ANDROID_HOME/cmdline-tools/latest" ]; then
             mv "$ANDROID_HOME/cmdline-tools/latest" "$ANDROID_HOME/cmdline-tools/preinstalled-latest"
           fi
           ln -s "$ANDROID_HOME/cmdline-tools/15859902" "$ANDROID_HOME/cmdline-tools/latest"
-          # Bounded input avoids a successful license check failing on SIGPIPE
-          # under GitHub's default bash -e -o pipefail shell.
-          printf 'y\n%.0s' {1..100} | sdkmanager --licenses > "$RUNNER_TEMP/onestep-sdk-licenses.txt"
-          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0' 'emulator'
           "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" list device | tee "$RUNNER_TEMP/onestep-devices.txt"
           grep -q '"pixel_9"' "$RUNNER_TEMP/onestep-devices.txt"
       - run: npm ci --prefix mobile
@@ -88,10 +73,17 @@ jobs:
             sdkmanager --uninstall "$package"
           done < <(awk '$1 ~ /^ndk;/ {print $1}' "$RUNNER_TEMP/onestep-sdk-packages.txt")
           df -h "$HOME"
-      - name: Check macOS emulator acceleration and command deadlines
+      - name: Configure and verify nested KVM acceleration
         run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          # Android's x86 guest probes MSRs that nested AMD/KVM may not expose.
+          # Handle unsupported probes in the disposable VM, rather than crashing
+          # its emulator. Application assertions and Android security stay on.
+          echo 1 | sudo tee /sys/module/kvm/parameters/ignore_msrs
+          lscpu
           "$ANDROID_HOME/emulator/emulator" -accel-check
-          command -v gtimeout || brew install coreutils
           adb start-server
           (adb wait-for-device && adb logcat -v threadtime) > android-boot-logcat.txt 2>&1 &
       - name: Native notification lifecycle on Google APIs Android 16
@@ -107,43 +99,29 @@ jobs:
           disk-size: 4096M
           ram-size: 4096M
           cores: 4
-          emulator-boot-timeout: 900
+          emulator-boot-timeout: 600
           # Use a supported explicit renderer. Emulator 37 does not list "off"
           # as a GPU mode and falls back to ANGLE. Keep host output out of the
           # action's completed boot pipe and retain it for crash diagnosis.
           # Supply numeric RAM/CPU flags too: the runner writes RAM with an M
           # suffix to config.ini, while this emulator parses hw.ramSize as MB.
           # Capture kernel/early Android logs even if system boot does not finish.
-          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -memory 4096 -cores 2 -skin 720x1600 -no-snapshot -noaudio -no-boot-anim -camera-back none -show-kernel > emulator-host.log 2>&1
+          emulator-options: -no-window -gpu swiftshader_indirect -feature -Vulkan -memory 4096 -cores 4 -skin 720x1600 -no-snapshot -noaudio -no-boot-anim -camera-back none -show-kernel > emulator-host.log 2>&1
           script: |
             adb logcat -v threadtime > android-logcat.txt &
-            gtimeout 4m npm run android:test:emulator --prefix mobile -- ready
-            gtimeout 10m npm run android:test:native --prefix mobile
-            gtimeout 12m npm run android:test:emulator --prefix mobile
+            timeout 4m npm run android:test:emulator --prefix mobile -- ready
+            timeout 10m npm run android:test:native --prefix mobile
+            timeout 12m npm run android:test:emulator --prefix mobile
       - name: Capture emulator host diagnostics
         if: always()
         run: |
           {
             date -u
             df -h
-            vm_stat
-            sysctl hw.memsize
-            ps -axo pid,ppid,stat,rss,comm | sort -nrk4 | sed -n '1,25p'
+            free -m
+            ps -eo pid,ppid,stat,rss,comm --sort=-rss | head -25
+            sudo dmesg | tail -100
           } > emulator-host-diagnostics.txt
-          python3 - <<'PY' >> emulator-host-diagnostics.txt
-          import glob
-          import json
-          import os
-          for filename in glob.glob(os.path.expanduser('~/Library/Logs/DiagnosticReports/*')):
-              if ('qemu' not in filename and 'emulator' not in filename) or not filename.endswith('.ips'):
-                  continue
-              with open(filename) as source:
-                  metadata = json.loads(source.readline())
-                  report = json.load(source)
-              print('Executable: ' + str(report.get('procPath', metadata.get('app_name'))))
-              for key in ['exception', 'termination', 'asi']:
-                  print(key + ': ' + str(report.get(key, 'unavailable')))
-          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
