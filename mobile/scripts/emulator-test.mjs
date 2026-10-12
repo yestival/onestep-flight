@@ -12,6 +12,19 @@ const app='com.selene.onestepflight';
 console.log('Emulator host memory (MiB)',{free:Math.round(os.freemem()/1048576),total:Math.round(os.totalmem()/1048576)});
 if(process.argv[2]==='environment') process.exit(0);
 const output=path.join(root,'build/emulator-tests');mkdirSync(output,{recursive:true});
+process.on('uncaughtException',async error=>{
+  console.error(error);
+  try {
+    capture('failure');writeFileSync(path.join(output,'failure-ui.xml'),ui());
+    const state=await page.evaluate(()=>({url:location.href,screen:document.querySelector('.screen.is-active')?.dataset.screen,
+      initializing:document.getElementById('main-content')?.inert,body:document.body.innerText.slice(0,1800),
+      files:[...document.getElementById('ticket-file').files].map(f=>({name:f.name,type:f.type,size:f.size})),
+      readBytes:window.__selectedDocument?.length}));
+    console.error('WebView failure state',JSON.stringify({...state,uploadCount:uploads.length}));
+    writeFileSync(path.join(output,'failure-state.json'),JSON.stringify({...state,uploadCount:uploads.length},null,2));
+  } catch(diagnosticError) {console.error('Failure capture:',diagnosticError.message);}
+  process.exit(1);
+});
 const adb=(...args)=>execFileSync(adbPath,args,{encoding:'utf8',timeout:45000,maxBuffer:8*1024*1024}).trim();
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function connectivity(enabled) {
@@ -25,11 +38,14 @@ async function connect() {
   adb('forward','tcp:9222','localabstract:'+socket.split('@')[1].trim());
   const browser=await chromium.connectOverCDP('http://127.0.0.1:9222',{noDefaults:true});
   const page=browser.contexts()[0].pages()[0];
+  page.on('pageerror',error=>console.error('WebView page error:',error.message));
+  page.on('requestfailed',request=>console.error('WebView request failed:',new URL(request.url()).pathname,request.failure()?.errorText));
   try { await page.waitForFunction(()=>window.OneStepNative && window.OneStepPlatform,null,{timeout:90000,polling:250}); }
   catch(error) {
     console.error('WebView initialization diagnostic',await page.evaluate(()=>({url:location.href,ready:document.readyState,title:document.title,body:document.body?.innerText.slice(0,250),native:!!window.OneStepNative,platform:!!window.OneStepPlatform,scripts:[...document.scripts].map(s=>s.src)})));
     throw error;
   }
+  await page.waitForFunction(()=>document.getElementById('main-content')?.inert===false,null,{timeout:30000});
   return {browser,context:browser.contexts()[0],page:browser.contexts()[0].pages()[0]};
 }
 function capture(name) {writeFileSync(path.join(output,name+'.png'),execFileSync(adbPath,['exec-out','screencap','-p'],{timeout:30000,maxBuffer:8*1024*1024}));}
@@ -135,8 +151,8 @@ for(const [extension,bytes] of [['png',png],['jpg',jpeg],['pdf',pdf]]) {
     await tap(/text="Downloads"/);
   }
   await tap(new RegExp('text="'+name.replace('.','\\.')+'"'));
-  await expect.poll(()=>uploads.length,{timeout:15000}).toBe(['png','jpg','pdf'].indexOf(extension)+1);
   await expect.poll(()=>page.evaluate(()=>window.__selectedDocument),{timeout:15000}).toBe(bytes.toString('base64'));
+  await expect.poll(()=>uploads.length,{timeout:15000}).toBe(['png','jpg','pdf'].indexOf(extension)+1);
   expect(uploads.at(-1).toString()).toContain(name);
   await expect(page.locator('[data-screen="confirm"]')).toBeVisible();
   await page.reload();await page.waitForFunction(()=>window.OneStepNative && window.OneStepPlatform);

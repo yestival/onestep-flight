@@ -61,7 +61,17 @@ try {
   run('xcrun', ['simctl', 'ui', device, 'appearance', process.env.SMOKE_APPEARANCE || 'light']);
   // ActivityKit validates aps-environment even in the Simulator for pushType: .token.
   // Ad-hoc signing embeds the production target's entitlements without Apple credentials.
-  run('xcodebuild', ['-project', 'ios/App/App.xcodeproj', '-scheme', 'FlightActivitySmoke', '-destination', `platform=iOS Simulator,id=${device}`, '-derivedDataPath', 'build/SmokeDerivedData', '-resultBundlePath', 'build/widget-smoke/Result.xcresult', '-parallel-testing-enabled', 'NO', 'CODE_SIGNING_ALLOWED=YES', 'CODE_SIGN_IDENTITY=-', 'DEVELOPMENT_TEAM=', 'test'], { stdio: 'inherit' });
+  const buildArguments = ['-project', 'ios/App/App.xcodeproj', '-scheme', 'FlightActivitySmoke', '-destination', `platform=iOS Simulator,id=${device}`, '-derivedDataPath', 'build/SmokeDerivedData', '-parallel-testing-enabled', 'NO', 'CODE_SIGNING_ALLOWED=YES', 'CODE_SIGN_IDENTITY=-', 'DEVELOPMENT_TEAM='];
+  run('xcodebuild', [...buildArguments, 'build-for-testing'], { stdio: 'inherit' });
+  run('xcrun', ['simctl', 'install', device, 'build/SmokeDerivedData/Build/Products/Debug-iphonesimulator/App.app']);
+  // First-boot extension discovery can leave chronod unable to obtain activity
+  // payloads even after ActivityKit accepts them. Boot with the installed Widget
+  // before starting the tests; retain the cold App launch and every render assertion.
+  run('xcrun', ['simctl', 'shutdown', device], { timeout: 60000 });
+  run('xcrun', ['simctl', 'boot', device], { timeout: 60000 });
+  run('xcrun', ['simctl', 'bootstatus', device, '-b'], { stdio: 'inherit', timeout: 240000 });
+  run('xcrun', ['simctl', 'ui', device, 'appearance', process.env.SMOKE_APPEARANCE || 'light']);
+  run('xcodebuild', [...buildArguments, '-resultBundlePath', 'build/widget-smoke/Result.xcresult', 'test-without-building'], { stdio: 'inherit' });
 } finally {
   if (device) {
     // Unfiltered chronod debug output can exceed the buffer during first boot and
@@ -69,6 +79,7 @@ try {
     const logs = spawnSync('xcrun', ['simctl', 'spawn', device, 'log', 'show', '--last', '15m', '--style', 'compact', '--info', '--predicate', 'process CONTAINS "WidgetRenderer" OR process == "FlightActivity" OR process == "App" OR ((process == "liveactivitiesd" OR process == "chronod" OR process == "SpringBoard") AND (eventMessage CONTAINS "onestepflight" OR eventMessage CONTAINS "FlightActivity" OR messageType == error))'], { encoding: 'utf8', timeout: 30000, maxBuffer: 64 * 1024 * 1024 });
     writeFileSync(new URL('build/widget-smoke/system.log', mobileRoot), logs.stdout || logs.stderr || 'No system logs');
     spawnSync('xcrun', ['simctl', 'io', device, 'screenshot', fileURLToPath(new URL('build/widget-smoke/screen.png', mobileRoot))], { timeout: 15000 });
+    spawnSync('xcrun', ['simctl', 'shutdown', device], { timeout: 30000 });
   }
   spawnSync('xcrun', ['xcresulttool', 'export', 'attachments', '--path', 'build/widget-smoke/Result.xcresult', '--output-path', 'build/widget-smoke/attachments'], { cwd: root, stdio: 'inherit', timeout: 30000 });
   for (const [path, content] of originals) writeFileSync(path, content);
