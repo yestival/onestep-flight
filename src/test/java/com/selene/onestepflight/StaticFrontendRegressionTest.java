@@ -46,12 +46,12 @@ class StaticFrontendRegressionTest {
         assertTrue(overlay.contains("data-action=\"journey-problem-voice\""));
         assertTrue(overlay.contains("data-journey-problem-submit"));
         assertTrue(overlay.contains("data-journey-problem-result"));
-        assertTrue(html.contains("styles.css?v=44"));
+        assertTrue(html.contains("styles.css?v=45"));
         assertTrue(html.contains("locale.js?v=42"));
-        assertTrue(html.contains("app.js?v=49"));
+        assertTrue(html.contains("app.js?v=50"));
         assertTrue(worker.contains("onestep-flight-shell-"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v49'"));
-        assertTrue(worker.contains("/app.js?v=49"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v50'"));
+        assertTrue(worker.contains("/app.js?v=50"));
         assertTrue(js.contains("POST") || js.contains("method: 'POST'"));
     }
 
@@ -799,13 +799,13 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("No se encontró información del vuelo"));
         assertTrue(js.contains("Only some information was found"));
         assertTrue(js.contains("Solo se encontró parte de la información"));
-        assertTrue(html.contains("styles.css?v=44"));
+        assertTrue(html.contains("styles.css?v=45"));
         assertTrue(html.contains("locale.js?v=42"));
-        assertTrue(html.contains("app.js?v=49"));
+        assertTrue(html.contains("app.js?v=50"));
         assertFalse(html.contains("?v=37"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v49'"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v50'"));
         assertFalse(worker.contains("CACHE_PREFIX + 'v37'"));
-        for (String asset : new String[] { "/styles.css?v=44", "/locale.js?v=42", "/app.js?v=49",
+        for (String asset : new String[] { "/styles.css?v=45", "/locale.js?v=42", "/app.js?v=50",
                 "/share.css?v=33", "/share.js?v=34" }) {
             assertTrue(worker.contains("'" + asset + "'"), asset);
         }

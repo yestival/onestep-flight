@@ -56,6 +56,31 @@ test('Android share retains content until a later cache sweep', async () => {
   assert.equal(calls.filter(c=>c.path && !c.data).length,0);
   assert.deepEqual(calls[1].files,['file:///cache/card.png']);
 });
+
+test('unanswered App and Network callbacks have one deadline and preserve the local journey', async context => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const { platform, native, disk, events } = fixture();
+  const key = 'onestep-flight-offline-journey-v1';
+  disk.set(key, 'saved-journey');
+  const registrations = [];
+  native.App.addListener = (key, fn) => { registrations.push(key); events[key] = fn; return new Promise(() => {}); };
+  native.Network.addListener = (key, fn) => { registrations.push(key); events[key] = fn; return new Promise(() => {}); };
+  native.App.getState = native.App.getLaunchUrl = native.Network.getStatus = () => new Promise(() => {});
+  let initialized = false;
+  const loading = platform.init().then(() => { initialized = true; });
+  await new Promise(resolve => setImmediate(resolve));
+  context.mock.timers.tick(4999);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(initialized, false);
+  context.mock.timers.tick(1);
+  await loading;
+  assert.equal(platform.storage.getItem(key), 'saved-journey');
+  assert.equal(platform.isOnline(), true);
+  events.appStateChange({ isActive: false });
+  assert.equal(platform.isActive(), false);
+  await platform.init();
+  assert.deepEqual(registrations.sort(), ['appStateChange', 'appUrlOpen', 'networkStatusChange']);
+});
 test('empty push acknowledgements and older snapshots retain recovered native facts', async () => {
   const {native,host}=fixture();
   const latest={journeyKey:'flight',displayState:{snapshotVersion:20,clientRevision:4,facts:{gate:'B40'}}};

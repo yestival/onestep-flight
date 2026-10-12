@@ -22,10 +22,12 @@ const sandbox = {
   AUTO_REFRESH_BOUNDARY_MS: 90 * 60 * 1000,
   qaJourneyEnabled: false
 };
+sandbox.calibratedNowMs = () => Date.parse('2026-08-27T00:00:00Z');
 vm.createContext(sandbox);
 vm.runInContext([
   sourceBetween('  var DEMO_SCENARIO_METADATA = [', '  var statusLabels = {'),
   sourceBetween('  function autoRefreshDelayMs(flight, nowMs)', '  function runtimeAutoRefreshState('),
+  sourceBetween('  function timestampAgeMinutes()', '  function renderConflictCard()'),
   sourceBetween('  var PRESENTABLE_FLIGHT_CHANGE_TYPES = [', '  function retainFlightChangeBatch('),
   sourceBetween('  function retainFlightChangeBatch(', '  function flightChangesSignature('),
   sourceBetween('  function flightChangesSignature(', '  function initialDelayAnnouncement('),
@@ -34,6 +36,7 @@ vm.runInContext([
   sourceBetween('  function flightChangeSpeechText(', '  function presentNewFlightChangeBatch('),
   sourceBetween('  function localizedAlertText(', '  function displayChangeValue('),
   'this.autoRefreshApi = { autoRefreshDelayMs, autoRefreshEligible, flightChangeAlertCopy, ' +
+    'timestampAgeMinutes, ' +
     'flightChangeSpeechText, retainFlightChangeBatch, presentableFlightChanges, buildFlightChangeGroups, ' +
     'initialDelayAnnouncement, isUnseenFlightChangeSignature, unseenFlightChangeBatch, ' +
     'DEMO_SCENARIO_METADATA };'
@@ -41,6 +44,17 @@ vm.runInContext([
 
 const api = sandbox.autoRefreshApi;
 const now = Date.parse('2026-08-27T00:00:00Z');
+
+test('freshness rejects malformed timestamps, uses valid fallbacks and never shows negative ages', () => {
+  assert.equal(api.timestampAgeMinutes('invalid', '2026-08-26T23:43:00Z'), 17);
+  assert.equal(api.timestampAgeMinutes(null, ''), null);
+  assert.equal(api.timestampAgeMinutes('2026-08-27T01:00:00Z'), 0);
+});
+
+test('checking now does not make an older source update appear fresh', () => {
+  assert.equal(api.timestampAgeMinutes('2026-08-26T22:00:00Z', '2026-08-27T00:00:00Z'), 120);
+  assert.equal(api.timestampAgeMinutes('2026-08-27T00:00:00Z'), 0);
+});
 
 function flightAt(minutes) {
   return { timeContext: { effectiveDeparture: new Date(now + minutes * 60000).toISOString() } };

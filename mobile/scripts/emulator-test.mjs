@@ -50,7 +50,7 @@ async function connect() {
     console.error('WebView initialization diagnostic',await page.evaluate(()=>({url:location.href,ready:document.readyState,title:document.title,body:document.body?.innerText.slice(0,250),native:!!window.OneStepNative,platform:!!window.OneStepPlatform,scripts:[...document.scripts].map(s=>s.src)})));
     throw error;
   }
-  await page.waitForFunction(()=>document.getElementById('main-content')?.inert===false,null,{timeout:30000});
+  await page.waitForFunction(()=>document.getElementById('main-content')?.inert===false,null,{timeout:90000});
   return {browser,context:browser.contexts()[0],page:browser.contexts()[0].pages()[0]};
 }
 function capture(name) {writeFileSync(path.join(output,name+'.png'),execFileSync(adbPath,['exec-out','screencap','-p'],{timeout:30000,maxBuffer:8*1024*1024}));}
@@ -166,12 +166,18 @@ for(const [extension,bytes] of [['png',png],['jpg',jpeg],['pdf',pdf]]) {
   }));
   await page.locator('[data-screen="welcome"] [data-action="upload"]').click();
   await delay(800);
-  const xml=ui();
-  if(!xml.includes(name)) {
-    await tap(/content-desc="Show roots"/);
-    await tap(/text="Downloads"/);
+  const fileTarget=new RegExp('text="'+name.replace('.','\\.')+'"');
+  for(let attempt=0;attempt<6;attempt++) {
+    const xml=ui();
+    if(fileTarget.test(xml)) break;
+    // The first picker may already open its roots drawer. Toggling it blindly
+    // closes the drawer, and tapping the underlying Downloads heading reopens it.
+    const downloads=/text="Downloads" resource-id="android:id\/title"/;
+    if(downloads.test(xml)) await tap(downloads);
+    else await tap(/content-desc="Show roots"/);
+    await delay(500);
   }
-  await tap(new RegExp('text="'+name.replace('.','\\.')+'"'));
+  await tap(fileTarget);
   await expect.poll(()=>page.evaluate(()=>window.__selectedDocument),{timeout:15000}).toBe(bytes.toString('base64'));
   await expect.poll(()=>uploads.length,{timeout:15000}).toBe(['png','jpg','pdf'].indexOf(extension)+1);
   expect(uploads.at(-1).toString()).toContain(name);

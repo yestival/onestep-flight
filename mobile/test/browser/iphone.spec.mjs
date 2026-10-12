@@ -51,6 +51,70 @@ const snapshot = (now, age = 0) => ({
   history: [], events: [], screen: 'step', locale: 'en'
 });
 
+for (const [platform, cadence, departureMinutes] of [['ios', 5, 145], ['android', 2, 60]]) {
+  test(platform + ' actually auto-checks flights and separates source age from successful checks', async ({ page }) => {
+    const now = Date.parse('2026-09-05T07:00:00Z'), saved = snapshot(now);
+    saved.locale = 'zh';
+    saved.flight.timeContext.effectiveDeparture = new Date(now + departureMinutes * 60000).toISOString();
+    saved.flight.lastUpdated = new Date(now - 30 * 60000).toISOString();
+    saved.flight.dataLastUpdatedAt = saved.flight.lastUpdated;
+    saved.flight.timeContext.dataLastUpdatedAt = saved.flight.lastUpdated;
+    const key = 'onestep-flight-offline-journey-v1';
+    const disk = new Map([[key, JSON.stringify(saved)], ['onestep-flight-locale', 'zh']]);
+    await mockedNative(page, disk, { platform, launchUrl: null });
+    await page.clock.install({ time: new Date(now) });
+    let fail = false;
+    const checks = [];
+    await page.route('**/api/journeys/next-action', async route => {
+      checks.push(route.request().postDataJSON());
+      if (fail) return route.fulfill({ status: 503, json: { message: 'temporary outage' } });
+      const checkedAt = await page.evaluate(() => new Date().toISOString());
+      return route.fulfill({ json: { flight: { ...saved.flight, dataRetrievedAt: checkedAt,
+        timeContext: { ...saved.flight.timeContext, serverNow: checkedAt, dataRetrievedAt: checkedAt } }, nextAction: saved.action } });
+    });
+    await page.goto('/');
+    await expect(page.locator('[data-screen="step"]')).toBeVisible();
+    await page.clock.pauseAt(new Date(now + 1000));
+    const freshness = page.locator('[data-screen="step"] [data-data-freshness]');
+    await expect(freshness).toContainText('刚刚核对');
+    await expect(freshness).toContainText('来源 30 分钟前更新（数据较旧）');
+    await expect(freshness).toContainText('自动核对约每 ' + cadence + ' 分钟一次');
+    await expect(freshness).not.toContainText('请刷新');
+    // WebKit can emit a foreground event when its window first receives focus.
+    // Let that legitimate initial verification finish before timing the cadence.
+    await page.clock.runFor(2000);
+    await expect(freshness).toContainText('自动核对约每 ' + cadence + ' 分钟一次');
+    const initialChecks = checks.length;
+    await page.clock.fastForward(cadence * 60000 + 1000);
+    await expect.poll(() => checks.length).toBe(initialChecks + 1);
+    expect(checks.at(-1).refreshRequested).toBe(true);
+    await expect(freshness).toContainText('刚刚核对');
+    await expect(freshness).toContainText('数据较旧');
+    await expect(page.locator('[data-screen="step"] [data-time-status]')).toHaveClass(/is-stale/);
+    expect(JSON.parse(disk.get(key)).flight.gate).toBe('B12');
+    // A failed automatic check must not claim new data or erase known facts.
+    fail = true;
+    await page.clock.fastForward(cadence * 60000 + 1000);
+    await expect.poll(() => checks.length).toBe(initialChecks + 2);
+    await expect(freshness).toContainText('核对失败，保留已知信息');
+    expect(JSON.parse(disk.get(key)).flight.gate).toBe('B12');
+    // Native background suspends the WebView timer; returning retries once.
+    await page.evaluate(() => nativeEvents.appStateChange({ isActive: false }));
+    await page.clock.fastForward(10 * 60000);
+    expect(checks).toHaveLength(initialChecks + 2);
+    fail = false;
+    await page.evaluate(() => nativeEvents.appStateChange({ isActive: true }));
+    await page.clock.fastForward(2000);
+    await expect.poll(() => checks.length).toBe(initialChecks + 3);
+    await expect(freshness).toContainText('刚刚核对');
+    await expect(freshness).not.toContainText('核对失败');
+    await page.locator('[data-locale-select]').selectOption('en');
+    await expect(freshness).toContainText('Just checked');
+    await page.locator('[data-locale-select]').selectOption('es');
+    await expect(freshness).toContainText('Comprobado ahora');
+  });
+}
+
 test('bundled Capacitor iOS bridge starts a confirmed journey with an unanswered push callback', async ({ page }) => {
   const now = Date.parse('2026-09-05T07:00:00Z');
   const saved = snapshot(now);
@@ -121,7 +185,7 @@ async function mockedNative(page, disk, options = {}) {
     window.holdJourneyPreparation = ${Boolean(options.holdJourneyPreparation)};
     window.OneStepNative = { isNative:true, platform:${JSON.stringify(options.platform || 'ios')},
       Preferences: { get:async({key})=>({value:await nativeStorage('get',key)}),set:({key,value})=>nativeStorage('set',key,value),remove:({key})=>nativeStorage('remove',key) },
-      App: { addListener:async(k,f)=>{nativeEvents[k]=f}, getState:async()=>({isActive:true}),getLaunchUrl:async()=>({url:'onestepflight://journey'}) },
+      App: { addListener:async(k,f)=>{nativeEvents[k]=f}, getState:async()=>({isActive:true}),getLaunchUrl:async()=>(${JSON.stringify(Object.hasOwn(options,'launchUrl') ? options.launchUrl : {url:'onestepflight://journey'})}) },
       Network: { addListener:async(k,f)=>{nativeEvents[k]=f},getStatus:async()=>({connected:true}) },
       Share: { share:async p=>{await nativeCall('share',p);throw new Error('Share canceled')} },
       Filesystem: { readdir:async()=>({files:[]}),writeFile:async p=>{await nativeCall('write',p);return {uri:'file:///cache/card.png'}},deleteFile:async p=>nativeCall('delete',p) },

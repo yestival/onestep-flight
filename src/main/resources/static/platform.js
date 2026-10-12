@@ -100,32 +100,35 @@
       await Promise.all(keys.map(async function (key) {
       // First-launch bridge delivery can be delayed while Android initializes
       // WebView. Allow a bounded local read without treating it as empty storage.
-      var result = await bounded(function () { return native.Preferences.get({ key: key }); }, 15000);
+        var result = await bounded(function () { return native.Preferences.get({ key: key }); }, 15000);
         var value = result.value;
         if (value == null) {
           try { value = host.localStorage.getItem(key); } catch (_) { value = null; }
-          if (value != null) await native.Preferences.set({ key: key, value: value });
+          if (value != null) await bounded(function () { return native.Preferences.set({ key: key, value: value }); });
         }
         if (value != null) cache.set(key, value);
         try { host.localStorage.removeItem(key); } catch (_) { /* Native storage is authoritative. */ }
       }));
-      await native.App.addListener('appStateChange', function (state) {
+      bounded(function () { return native.App.addListener('appStateChange', function (state) {
         if (active === state.isActive) return;
         active = state.isActive;
         if (active) resume(); else { clearTimeout(resumeTimer); emit('pause'); }
-      });
-      await native.Network.addListener('networkStatusChange', function (state) {
+      }); }).catch(function () {});
+      bounded(function () { return native.Network.addListener('networkStatusChange', function (state) {
         if (connected === state.connected) return;
         connected = state.connected;
         if (connected) resume(); else emit('offline');
-      });
-      connected = (await native.Network.getStatus()).connected;
-      active = (await native.App.getState()).isActive;
-      await native.App.addListener('appUrlOpen', function (event) { route(event.url); });
-      var launch = await native.App.getLaunchUrl();
-      if (launch) route(launch.url);
+      }); }).catch(function () {});
+      bounded(function () { return native.App.addListener('appUrlOpen', function (event) { route(event.url); }); }).catch(function () {});
+      // Optional system callbacks run together and have a deadline. Local journey
+      // hydration must still finish when one plugin never answers on cold start.
+      await Promise.all([
+        bounded(function () { return native.Network.getStatus(); }).then(function (state) { connected = state.connected; }).catch(function () {}),
+        bounded(function () { return native.App.getState(); }).then(function (state) { active = state.isActive; }).catch(function () {}),
+        bounded(function () { return native.App.getLaunchUrl(); }).then(function (launch) { if (launch) route(launch.url); }).catch(function () {})
+      ]);
       if (nativePlatform === 'android') {
-        native.App.addListener('backButton', function () { emit('back'); }).catch(function () {});
+        bounded(function () { return native.App.addListener('backButton', function () { emit('back'); }); }).catch(function () {});
       }
       if (native.FlightPush) {
         // Push registration, permission prompts and network callbacks cannot hold hydration.

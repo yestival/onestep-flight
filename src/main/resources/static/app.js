@@ -57,6 +57,7 @@
   var clockTimer = null;
   var refreshStatusState = null;
   var restoredFromOffline = false;
+  var flightRefreshFailed = false;
   var offlineSnapshotSavedAt = null;
   var expiredJourneyDiscarded = false;
   var currentDestinationCopy = null;
@@ -3361,6 +3362,7 @@
       : postFlightJson('/api/journeys/refresh-flight', currentFlight);
     return request.then(function (flight) {
       if (activeRequest !== requestSequence) return null;
+      flightRefreshFailed = false;
       currentFlight = flight;
       restoredFromOffline = false;
       if (journeyContext) journeyContext.flightSnapshot = flight;
@@ -3383,6 +3385,7 @@
       return flight;
     }).catch(function (error) {
       if (activeRequest !== requestSequence) return null;
+      flightRefreshFailed = true;
       if (!silent) {
         setRefreshStatus(documentFallback ? 'DOCUMENT_FALLBACK_RETAINED' : 'REFRESH_FAILED_LATEST_RETAINED');
         announce(documentFallback ? t('liveStatusUnavailable') : localeText(
@@ -3394,6 +3397,7 @@
     }).finally(function () {
       if (!silent) updateRefreshControls();
       scheduleAutoRefresh(true);
+      renderTimeStatus();
     });
   }
 
@@ -3584,6 +3588,7 @@
 
     return postFlightJson('/api/journeys/next-action', journeyContext).then(function (response) {
       if (activeRequest !== requestSequence) return;
+      flightRefreshFailed = false;
       journeyContext.refreshRequested = false;
       currentFlight = response.flight;
       restoredFromOffline = false;
@@ -3605,6 +3610,7 @@
     }).catch(function (error) {
       if (activeRequest !== requestSequence) return;
       journeyContext.refreshRequested = false;
+      flightRefreshFailed = true;
       if (silent) return null;
       if (refreshRequested && currentAction) {
         setRefreshStatus('REFRESH_FAILED_STEP_RETAINED');
@@ -3620,6 +3626,7 @@
         updateRefreshControls();
       }
       scheduleAutoRefresh(true);
+      renderTimeStatus();
     });
   }
 
@@ -4298,26 +4305,48 @@
         : t('timeUntilDeparture');
     });
 
-    var ageReference = time.dataLastUpdatedAt || time.dataRetrievedAt;
-    var ageMinutes = ageReference
-      ? Math.max(0, Math.floor((calibratedNowMs() - Date.parse(ageReference)) / 60000))
-      : null;
+    // A successful check need not change the provider's last update timestamp.
+    // Keep that age truthful and separate it from when data was last retrieved.
+    var sourceAge = timestampAgeMinutes(time.dataLastUpdatedAt, currentFlight.lastUpdated, currentFlight.dataLastUpdatedAt);
+    var checkedAge = timestampAgeMinutes(time.dataRetrievedAt, currentFlight.dataRetrievedAt);
+    var ageMinutes = sourceAge == null ? checkedAge : sourceAge;
     var stale = !arrivalPhase && ageMinutes != null && ageMinutes > 10;
-    var ageText = ageMinutes == null
-      ? localeText('更新时间缺失', 'Update time unavailable', 'Hora de actualización no disponible')
-      : ageMinutes < 1
-        ? localeText('刚刚更新', 'Just updated', 'Actualizado ahora')
-        : localeText(ageMinutes + ' 分钟前更新', 'Updated ' + ageMinutes + ' minutes ago', 'Actualizado hace ' + ageMinutes + ' minutos');
+    var checkedText = checkedAge == null
+      ? localeText('核对时间未知', 'Check time unavailable', 'Hora de comprobación no disponible')
+      : checkedAge < 1
+        ? localeText('刚刚核对', 'Just checked', 'Comprobado ahora')
+        : localeText(checkedAge + ' 分钟前核对', 'Checked ' + checkedAge + ' minutes ago', 'Comprobado hace ' + checkedAge + ' minutos');
+    var sourceText = sourceAge == null
+      ? localeText('来源更新时间未提供', 'Source update time unavailable', 'Hora de actualización de la fuente no disponible')
+      : sourceAge < 1
+        ? localeText('来源刚刚更新', 'Source just updated', 'Fuente actualizada ahora')
+        : localeText('来源 ' + sourceAge + ' 分钟前更新', 'Source updated ' + sourceAge + ' minutes ago', 'Fuente actualizada hace ' + sourceAge + ' minutos');
+    if (stale) sourceText += localeText('（数据较旧）', ' (older data)', ' (datos antiguos)');
+    var ageText = checkedText + ' · ' + sourceText;
+    if (flightRefreshFailed) ageText += localeText(' · 核对失败，保留已知信息，稍后重试', ' · Check failed; keeping known information and retrying later', ' · No se pudo comprobar; se conserva la información y se reintentará');
+    else if (!platform.isOnline()) ageText += localeText(' · 离线，保留已知信息', ' · Offline; keeping known information', ' · Sin conexión; se conserva la información conocida');
+    else if (flightRequestController) ageText += localeText(' · 正在核对', ' · Checking', ' · Comprobando');
+    else if (autoRefreshEligible(runtimeAutoRefreshState(true))) {
+      var cadence = autoRefreshDelayMs(currentFlight, calibratedNowMs()) <= AUTO_REFRESH_NEAR_MS ? 2 : 5;
+      ageText += localeText(' · 自动核对约每 ' + cadence + ' 分钟一次', ' · Auto-check about every ' + cadence + ' minutes', ' · Comprobación automática aproximadamente cada ' + cadence + ' minutos');
+    }
     if (arrivalPhase) {
       ageText = navigator.onLine
         ? localeText('正在使用登机前保存的行程；下飞机后可按需刷新到达信息。', 'Using the saved pre-departure journey; refresh arrival information after landing if needed.', 'Se usa el viaje guardado antes de la salida; actualiza la llegada después de aterrizar si hace falta.')
         : localeText('当前离线，正在显示已保存的行程。', 'Offline · showing the saved journey.', 'Sin conexión · mostrando el viaje guardado.');
     }
-    if (stale) ageText = localeText('数据较旧，请刷新 · ', 'Data is old — refresh now · ', 'Los datos son antiguos; actualiza · ') + ageText;
     setAll('[data-data-freshness]', ageText);
     document.querySelectorAll('[data-time-status]').forEach(function (panel) {
       panel.classList.toggle('is-stale', stale);
     });
+  }
+
+  function timestampAgeMinutes() {
+    for (var i = 0; i < arguments.length; i += 1) {
+      var ms = Date.parse(arguments[i] || '');
+      if (Number.isFinite(ms)) return Math.max(0, Math.floor((calibratedNowMs() - ms) / 60000));
+    }
+    return null;
   }
 
   function renderConflictCard() {
@@ -7349,6 +7378,7 @@
   }
 
   function clearJourney() {
+    flightRefreshFailed = false;
     stopAutoRefresh(true);
     lastLockState = null; pushSyncFingerprint = null; serverSnapshotVersion = 0;
     endLiveJourney(familyShareJourneyKey(currentFlight));
