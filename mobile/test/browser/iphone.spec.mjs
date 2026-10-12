@@ -62,7 +62,10 @@ for (const [platform, cadence, departureMinutes] of [['ios', 5, 145], ['android'
     const key = 'onestep-flight-offline-journey-v1';
     const disk = new Map([[key, JSON.stringify(saved)], ['onestep-flight-locale', 'zh']]);
     await mockedNative(page, disk, { platform, launchUrl: null });
-    await page.clock.install({ time: new Date(now) });
+    // Freeze before navigation. Pausing at now+1s after navigation races slower
+    // hosted WebKit starts, which can already be past that instant.
+    await page.clock.install({ time: new Date(now - 3600000) });
+    await page.clock.pauseAt(new Date(now));
     let fail = false;
     const checks = [];
     await page.route('**/api/journeys/next-action', async route => {
@@ -74,7 +77,6 @@ for (const [platform, cadence, departureMinutes] of [['ios', 5, 145], ['android'
     });
     await page.goto('/');
     await expect(page.locator('[data-screen="step"]')).toBeVisible();
-    await page.clock.pauseAt(new Date(now + 1000));
     const freshness = page.locator('[data-screen="step"] [data-data-freshness]');
     await expect(freshness).toContainText('刚刚核对');
     await expect(freshness).toContainText('来源 30 分钟前更新（数据较旧）');
