@@ -203,8 +203,16 @@ const inputs=await page.locator('[data-screen="manual"] input').evaluateAll(es=>
 console.log('Manual inputs',inputs);
 await page.locator('#flight-input').fill('BA117');
 const dateInput=page.locator('[data-screen="manual"] input[type="date"]');if(await dateInput.count()) await dateInput.fill(date);
-await page.locator('[data-screen="manual"] input').first().focus();
-adb('shell','input','keyevent','4');await delay(300);
+// DOM focus through DevTools does not reliably show Android's IME. Tap the
+// actual input and verify the keyboard before testing the system Back action.
+const inputBounds=await page.locator('#flight-input').boundingBox();
+if(!inputBounds) throw new Error('Manual flight input has no visible bounds');
+adb('shell','input','tap',String(Math.round(inputBounds.x+inputBounds.width/2)),String(Math.round(inputBounds.y+inputBounds.height/2)));
+const keyboardVisible=()=>/mInputShown=true/.test(adb('shell','dumpsys','input_method'));
+await expect.poll(keyboardVisible,{timeout:15000}).toBe(true);
+adb('shell','input','keyevent','4');
+await expect.poll(keyboardVisible,{timeout:15000}).toBe(false);
+await expect(page.locator('[data-screen="manual"]')).toBeVisible();
 await page.locator('[data-screen="manual"] button[type="submit"]').click();
 await expect(page.locator('[data-screen="confirm"]')).toBeVisible();
 await page.locator('[data-action="continue"]').click();

@@ -49,6 +49,16 @@ jobs:
           cmdline-tools-version: '15859902'
           packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
           log-accepted-android-sdk-licenses: false
+      - name: Use the pinned SDK tools throughout emulator setup
+        run: |
+          # emulator-runner prepends cmdline-tools/latest to PATH. Point that
+          # location at the installed tools instead of the runner's old catalog.
+          if [ -e "$ANDROID_HOME/cmdline-tools/latest" ]; then
+            mv "$ANDROID_HOME/cmdline-tools/latest" "$ANDROID_HOME/cmdline-tools/preinstalled-latest"
+          fi
+          ln -s "$ANDROID_HOME/cmdline-tools/15859902" "$ANDROID_HOME/cmdline-tools/latest"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" list device | tee "$RUNNER_TEMP/onestep-devices.txt"
+          grep -q '"pixel_9"' "$RUNNER_TEMP/onestep-devices.txt"
       - run: npm ci --prefix mobile
       - run: npm test --prefix mobile
       - run: npm run android:check --prefix mobile
