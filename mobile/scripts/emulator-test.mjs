@@ -15,7 +15,6 @@ const output=path.join(root,'build/emulator-tests');mkdirSync(output,{recursive:
 process.on('uncaughtException',async error=>{
   console.error(error);
   try {
-    capture('failure');writeFileSync(path.join(output,'failure-ui.xml'),ui());
     const state=await page.evaluate(()=>({url:location.href,screen:document.querySelector('.screen.is-active')?.dataset.screen,
       initializing:document.getElementById('main-content')?.inert,body:document.body.innerText.slice(0,1800),
       files:[...document.getElementById('ticket-file').files].map(f=>({name:f.name,type:f.type,size:f.size})),
@@ -23,6 +22,8 @@ process.on('uncaughtException',async error=>{
     console.error('WebView failure state',JSON.stringify({...state,uploadCount:uploads.length}));
     writeFileSync(path.join(output,'failure-state.json'),JSON.stringify({...state,uploadCount:uploads.length},null,2));
   } catch(diagnosticError) {console.error('Failure capture:',diagnosticError.message);}
+  try {writeFileSync(path.join(output,'failure-ui.xml'),ui());} catch(error) {console.error('Android hierarchy capture:',error.message);}
+  try {capture('failure');} catch(error) {console.error('Android screenshot capture:',error.message);}
   process.exit(1);
 });
 const adb=(...args)=>execFileSync(adbPath,args,{encoding:'utf8',timeout:45000,maxBuffer:8*1024*1024}).trim();
