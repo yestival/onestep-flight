@@ -37,6 +37,7 @@ jobs:
           MIGRATION_POSTGRES_PASSWORD: test-only
   android:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -61,12 +62,20 @@ jobs:
           api-level: 36
           target: google_apis
           arch: x86_64
+          disk-size: 4096M
+          ram-size: 2048M
+          emulator-boot-timeout: 300
           script: |
-            npm run android:test:native --prefix mobile
-            npm run android:test:emulator --prefix mobile
+            adb logcat -v threadtime > android-logcat.txt &
+            timeout 10m npm run android:test:native --prefix mobile
+            timeout 12m npm run android:test:emulator --prefix mobile
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: android-debug
           path: |
             mobile/android/app/build/outputs/apk/debug/*.apk
             mobile/android/app/build/reports/
+            mobile/android/app/build/outputs/androidTest-results/
+            mobile/build/emulator-tests/
+            android-logcat.txt
