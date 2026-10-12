@@ -79,7 +79,7 @@
       metricThreeLabel:phase === 'DEPARTURE' ? depLabel : arrLabel,metricThreeValue:conflict(phase === 'DEPARTURE' ? v('estimatedDeparture') ? 'estimatedDeparture' : 'scheduledDeparture' : v('estimatedArrival') ? 'estimatedArrival' : 'scheduledArrival') ? uncertain : clock(phase === 'DEPARTURE' ? dep : arr),
       timezoneText:phase === 'DEPARTURE' ? l('时间为出发机场当地时间','Departure airport local time','Hora local del aeropuerto de salida') : l('时间为目的地当地时间','Destination local time','Hora local del destino'),
       updatedText:updated ? clock(new Date(updated*1000).toISOString())+l(' 更新',' updated',' actualizado') : l('尚未核验','Not verified','Sin verificar'),
-      staleLabel:l('可打开 App 刷新','Open app to refresh','Abre la app para actualizar'),offlineLabel:l('联网后可刷新','Refresh when online','Actualiza al conectarte'),missingLabel:missing,
+      staleLabel:l('数据可能已过期 · 打开 App 刷新','Data may be out of date · Open app to refresh','Datos posiblemente desactualizados · Abre la app'),offlineLabel:l('离线 · 联网后可刷新','Offline · Refresh when online','Sin conexión · Actualiza al conectarte'),missingLabel:missing,
       stale:!!(f.stale || o.stale || f.timeContext && f.timeContext.stale || o.offline || Date.now()/1000 >= freshness+600),offline:!!o.offline,
       updatedAt:updated,staleAt:freshness+600,journeyEndsAt:ends,snapshotVersion:o.snapshotVersion || 0,clientRevision:o.clientRevision || 0,facts:facts };
   }

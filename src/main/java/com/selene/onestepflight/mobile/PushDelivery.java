@@ -9,7 +9,7 @@ public class PushDelivery {
     @Column(name = "event_id", nullable = false) public String eventId;
     public String subscriptionId;
     public String channel;
-    @Column(length = 512) public String token;
+    @Column(length = 4096) public String token;
     public String environment;
     @Column(columnDefinition = "text") public String payload;
     public boolean finalMessage;

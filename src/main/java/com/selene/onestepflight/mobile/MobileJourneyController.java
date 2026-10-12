@@ -11,8 +11,8 @@ import org.springframework.http.*;
 public class MobileJourneyController {
     private final MobileJourneyService service;
     public MobileJourneyController(MobileJourneyService service) { this.service=service; }
-    public record Registration(String id) {}
-    @PostMapping public Map<String,Object> register(@RequestHeader(value="Authorization",required=false) String auth,@RequestBody Registration request) { return service.register(request.id(),auth); }
+    public record Registration(String id,String platform) {}
+    @PostMapping public Map<String,Object> register(@RequestHeader(value="Authorization",required=false) String auth,@RequestBody Registration request) { return service.register(request.id(),auth,request.platform()); }
     @PutMapping("/{id}") public Map<String,Object> update(@PathVariable String id,@RequestHeader(value="Authorization",required=false) String auth,@RequestBody MobileJourneyService.InstallationUpdate request) { return service.update(id,auth,request); }
     @PutMapping("/{id}/journey") public Map<String,Object> sync(@PathVariable String id,@RequestHeader(value="Authorization",required=false) String auth,@RequestBody MobileJourneyService.JourneySync request) { return service.sync(id,auth,request); }
     @PutMapping("/{id}/journey/activity") public Map<String,Object> bind(@PathVariable String id,@RequestHeader(value="Authorization",required=false) String auth,@RequestBody MobileJourneyService.ActivityBinding request) { return service.bind(id,auth,request); }

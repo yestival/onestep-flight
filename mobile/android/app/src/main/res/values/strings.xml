@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">OneStep Flight</string>
+    <string name="title_activity_main">OneStep Flight</string>
+    <string name="package_name">com.selene.onestepflight</string>
+    <string name="custom_url_scheme">com.selene.onestepflight</string>
+</resources>

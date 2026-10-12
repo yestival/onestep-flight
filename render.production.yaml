@@ -33,6 +33,10 @@ services:
           property: password
       - key: MOBILE_MONITOR_ENABLED
         value: "true"
+      - key: FCM_PROJECT_ID
+        sync: false
+      - key: FCM_CREDENTIALS_PATH
+        value: /etc/secrets/firebase-service-account.json
       - key: APNS_TEAM_ID
         sync: false
       - key: APNS_KEY_ID

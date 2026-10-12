@@ -36,13 +36,15 @@ class MobileMonitoringTest {
     @Autowired PlatformTransactionManager manager;
     @MockitoBean MultiSourceFlightService source;
     @MockitoBean ApnsClient apns;
+    @MockitoBean FcmClient fcm;
     String installation,auth;
     Instant at;
     OffsetDateTime departure,arrival;
     final String device="a1".repeat(32), activity="b2".repeat(32);
     @BeforeEach void prepare() {
         deliveries.deleteAll(); events.deleteAll(); subscriptions.deleteAll(); installations.deleteAll(); watches.deleteAll();
-        reset(source,apns); when(apns.ready()).thenReturn(true); when(apns.send(any())).thenReturn(new ApnsClient.Result(200,"ACCEPTED",0));
+        reset(source,apns,fcm); when(apns.ready()).thenReturn(true); when(apns.send(any())).thenReturn(new ApnsClient.Result(200,"ACCEPTED",0));
+        when(fcm.ready()).thenReturn(true); when(fcm.send(any())).thenReturn(new ApnsClient.Result(200,"ACCEPTED",0));
         installation=UUID.randomUUID().toString(); auth="Bearer "+Base64.getEncoder().encodeToString(new byte[32]);
         at=Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS); departure=at.atOffset(ZoneOffset.ofHours(1)).plusMinutes(100); arrival=departure.plusHours(7);
     }
@@ -50,6 +52,39 @@ class MobileMonitoringTest {
         Instant updated=at.plusSeconds(seconds);
         FlightResponse f=new FlightResponse("BA117",departure.toLocalDate(),"LHR","London Heathrow","JFK","New York",departure,departure.plusMinutes(10),null,arrival,arrival.plusMinutes(10),null,departure.minusMinutes(40),"T5","T8",gate,null,status,10,10,updated,updated,"TEST_LIVE",null,null,true,false,false);
         return new MultiSourceFlightSnapshot(f,null,"7",Map.of(),Map.of(),List.of(),updated,updated);
+    }
+    @Test void androidUsesFcmTokensDataMessagesAndPlatformReadiness() {
+        when(apns.ready()).thenReturn(false);
+        assertEquals(true,journeys.register(installation,auth,"android").get("pushReady"));
+        String token="fcm-registration-token:with_non_hex-characters123456789";
+        journeys.update(installation,auth,new MobileJourneyService.InstallationUpdate(token,"production","authorized","es","android","fcm"));
+        var flight=resolver.resolveOperational(snapshot("B24","ON_TIME",0),null);
+        journeys.sync(installation,auth,new MobileJourneyService.JourneySync("android-flight",flight,progress(true,false),"es",1,0));
+        assertThrows(ResponseStatusException.class,()->journeys.bind(installation,auth,new MobileJourneyService.ActivityBinding("android-flight","invalid",activity,"active",1)));
+        verifySnapshot(snapshot("B24","ON_TIME",1)); verifySnapshot(snapshot("B32","ON_TIME",2));
+        var s=subscriptions.findByInstallationId(installation).orElseThrow();
+        var pending=deliveries.findBySubscriptionIdAndStatus(s.id,"PENDING");
+        assertTrue(pending.stream().allMatch(d->d.channel.startsWith("FCM_")));
+        var alert=pending.stream().filter(d->"FCM_ALERT".equals(d.channel)).findFirst().orElseThrow();
+        assertEquals(10,alert.priority); assertTrue(alert.payload.contains("displayState")); assertFalse(alert.payload.contains("\"aps\""));
+        assertTrue(alert.payload.getBytes(java.nio.charset.StandardCharsets.UTF_8).length<=3800);
+        verifySnapshot(snapshot("B32","ON_TIME",3));
+        assertTrue(deliveries.findById(alert.id).orElseThrow().status.equals("PENDING"));
+        when(fcm.send(any())).thenReturn(new ApnsClient.Result(410,"FCM_UNREGISTERED",0)); sender.tick();
+        assertNull(installations.findById(installation).orElseThrow().deviceToken); verify(apns,never()).send(any());
+    }
+    @Test void tokenRotationAndMissingFirebaseDoNotDependOnApns() {
+        when(fcm.ready()).thenReturn(false);
+        var result=journeys.register(installation,auth,"android"); assertEquals("FCM_NOT_CONFIGURED",result.get("pushStatus"));
+        journeys.update(installation,auth,new MobileJourneyService.InstallationUpdate("old-token-with-nonhex:1234567890","production","denied","en","android","fcm"));
+        var flight=resolver.resolveOperational(snapshot("B24","ON_TIME",0),null);
+        journeys.sync(installation,auth,new MobileJourneyService.JourneySync("android-flight",flight,progress(true,false),"en",1,0));
+        verifySnapshot(snapshot("B24","ON_TIME",1)); verifySnapshot(snapshot("B32","ON_TIME",2));
+        var s=subscriptions.findByInstallationId(installation).orElseThrow();
+        journeys.update(installation,auth,new MobileJourneyService.InstallationUpdate("new-token-with-nonhex:1234567890","production","authorized","en","android","fcm"));
+        assertTrue(deliveries.findBySubscriptionIdAndStatus(s.id,"PENDING").isEmpty());
+        assertEquals("new-token-with-nonhex:1234567890",installations.findById(installation).orElseThrow().deviceToken);
+        assertThrows(ResponseStatusException.class,()->journeys.update(installation,auth,new MobileJourneyService.InstallationUpdate("short","production","authorized","en","android","fcm")));
     }
     MobileFlightLogic.Progress progress(boolean security,boolean atGate) { return new MobileFlightLogic.Progress(true,false,false,security,atGate,false,false,false,false,false,null,null,false); }
     MobileSubscription subscribe(String id,String secret,boolean security,boolean atGate) {

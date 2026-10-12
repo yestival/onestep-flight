@@ -12,7 +12,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class MobileJourneyService {
-    public record InstallationUpdate(String deviceToken,String environment,String authorization,String language) {}
+    public record InstallationUpdate(String deviceToken,String environment,String authorization,String language,String platform,String pushProvider) {
+        public InstallationUpdate(String deviceToken,String environment,String authorization,String language) { this(deviceToken,environment,authorization,language,null,null); }
+    }
     public record JourneySync(String journeyKey,ResolvedFlightContext flight,MobileFlightLogic.Progress progress,String locale,long clientRevision,long snapshotVersion) {}
     public record ActivityBinding(String journeyKey,String activityId,String token,String state,long generation) {}
     private final MobileInstallationRepository installations;
@@ -21,20 +23,25 @@ public class MobileJourneyService {
     private final PushDeliveryRepository deliveries;
     private final MobileFlightLogic logic;
     private final ApnsClient apns;
-    public MobileJourneyService(MobileInstallationRepository installations,MobileSubscriptionRepository subscriptions,FlightWatchRepository watches,PushDeliveryRepository deliveries,MobileFlightLogic logic,ApnsClient apns) {
-        this.installations=installations; this.subscriptions=subscriptions; this.watches=watches; this.deliveries=deliveries; this.logic=logic; this.apns=apns;
+    private final FcmClient fcm;
+    public MobileJourneyService(MobileInstallationRepository installations,MobileSubscriptionRepository subscriptions,FlightWatchRepository watches,PushDeliveryRepository deliveries,MobileFlightLogic logic,ApnsClient apns,FcmClient fcm) {
+        this.installations=installations; this.subscriptions=subscriptions; this.watches=watches; this.deliveries=deliveries; this.logic=logic; this.apns=apns; this.fcm=fcm;
     }
     @Transactional
-    public Map<String,Object> register(String id,String authorization) {
+    public Map<String,Object> register(String id,String authorization) { return register(id,authorization,null); }
+    @Transactional
+    public Map<String,Object> register(String id,String authorization,String platform) {
+        if(platform!=null && !Set.of("ios","android").contains(platform)) throw error(HttpStatus.BAD_REQUEST,"INVALID_PLATFORM");
         try { UUID.fromString(id); } catch(Exception ex) { throw error(HttpStatus.BAD_REQUEST,"INVALID_INSTALLATION"); }
         String secret=secret(authorization);
         var existing=installations.findById(id);
         if(existing.isPresent()) authenticate(id,authorization);
         else {
             MobileInstallation i=new MobileInstallation(); i.id=id; i.secretHash=hash(secret); i.environment="production"; i.language="en"; i.authorization="notDetermined";
+            i.platform=platform==null ? "ios" : platform; i.pushProvider="android".equals(i.platform) ? "fcm" : "apns";
             installations.saveAndFlush(i);
         }
-        return Map.of("id",id,"pushReady",apns.ready(),"pushStatus",apns.ready() ? "READY" : "APNS_NOT_CONFIGURED");
+        var result=new LinkedHashMap<String,Object>(readiness(installations.findById(id).orElseThrow())); result.put("id",id); return result;
     }
     MobileInstallation authenticate(String id,String authorization) {
         var i=installations.lock(id).orElseThrow(()->error(HttpStatus.UNAUTHORIZED,"INSTALLATION_AUTH_REQUIRED"));
@@ -53,13 +60,19 @@ public class MobileJourneyService {
     static void token(String token) { if(token!=null && !token.isEmpty() && !token.matches("[a-fA-F0-9]{32,512}")) throw error(HttpStatus.BAD_REQUEST,"INVALID_PUSH_TOKEN"); }
     @Transactional
     public Map<String,Object> update(String id,String auth,InstallationUpdate input) {
-        var i=authenticate(id,auth); token(input.deviceToken());
+        var i=authenticate(id,auth);
+        String platform=input.platform()==null ? i.platform : input.platform();
+        String provider=input.pushProvider()==null ? "android".equals(platform) ? "fcm" : "apns" : input.pushProvider();
+        if(!Objects.equals(platform,i.platform) || !("android".equals(platform) && "fcm".equals(provider) || "ios".equals(platform) && "apns".equals(provider))) throw error(HttpStatus.BAD_REQUEST,"INVALID_PLATFORM");
+        if("android".equals(platform)) {
+            if(input.deviceToken()!=null && !input.deviceToken().isEmpty() && !input.deviceToken().matches("[A-Za-z0-9_:.\\-]{20,4096}")) throw error(HttpStatus.BAD_REQUEST,"INVALID_PUSH_TOKEN");
+        } else token(input.deviceToken());
         if(!Set.of("sandbox","production").contains(Objects.toString(input.environment(),"")) || !Set.of("zh","en","es").contains(Objects.toString(input.language(),"")) || !Set.of("notDetermined","denied","authorized","provisional","ephemeral").contains(Objects.toString(input.authorization(),""))) throw error(HttpStatus.BAD_REQUEST,"INVALID_INSTALLATION_SETTINGS");
         if(!Objects.equals(i.deviceToken,input.deviceToken()) || !Objects.equals(i.environment,input.environment())) {
-            subscriptions.findByInstallationId(id).ifPresent(s->deliveries.findBySubscriptionIdAndStatus(s.id,"PENDING").stream().filter(d->"ALERT".equals(d.channel)).forEach(d->{d.status="OBSOLETE"; deliveries.save(d);}));
+            subscriptions.findByInstallationId(id).ifPresent(s->deliveries.findBySubscriptionIdAndStatus(s.id,"PENDING").stream().filter(d->!"ACTIVITY".equals(d.channel)).forEach(d->{d.status="OBSOLETE"; deliveries.save(d);}));
         }
-        i.deviceToken=input.deviceToken(); i.environment=input.environment(); i.authorization=input.authorization(); i.language=input.language(); installations.save(i);
-        return Map.of("pushReady",apns.ready(),"pushStatus",apns.ready() ? "READY" : "APNS_NOT_CONFIGURED");
+        i.deviceToken=input.deviceToken(); i.environment=input.environment(); i.authorization=input.authorization(); i.language=input.language(); i.pushProvider=provider; installations.save(i);
+        return readiness(i);
     }
     @Transactional
     public Map<String,Object> sync(String id,String auth,JourneySync input) {
@@ -102,7 +115,7 @@ public class MobileJourneyService {
         boolean guidanceObsolete=p.exitedAirport() || p.boarded() && (previousProgress==null || !previousProgress.boarded())
                 || p.needsAssistance() && (previousProgress==null || !previousProgress.needsAssistance());
         for(var pending:deliveries.findBySubscriptionIdAndStatus(s.id,"PENDING")) {
-            if("ACTIVITY".equals(pending.channel) || guidanceObsolete) { pending.status="OBSOLETE"; deliveries.save(pending); }
+            if("ACTIVITY".equals(pending.channel) || "FCM_SYNC".equals(pending.channel) || guidanceObsolete) { pending.status="OBSOLETE"; deliveries.save(pending); }
         }
         var savedFlight=logic.read(s.facts,ResolvedFlightContext.class);
         // A cached atGate check-in refers to that cached gate, never a new server gate.
@@ -115,7 +128,8 @@ public class MobileJourneyService {
     }
     @Transactional
     public Map<String,Object> bind(String id,String auth,ActivityBinding input) {
-        authenticate(id,auth); var s=subscriptions.findByInstallationId(id).orElseThrow(()->error(HttpStatus.CONFLICT,"NO_CURRENT_JOURNEY"));
+        if("android".equals(authenticate(id,auth).platform)) throw error(HttpStatus.BAD_REQUEST,"ACTIVITYKIT_IOS_ONLY");
+        var s=subscriptions.findByInstallationId(id).orElseThrow(()->error(HttpStatus.CONFLICT,"NO_CURRENT_JOURNEY"));
         if(!Objects.equals(s.journeyKey,input.journeyKey()) || input.generation()<s.activityGeneration) throw error(HttpStatus.CONFLICT,"OLD_ACTIVITY_BINDING");
         token(input.token());
         if(input.activityId()==null || input.activityId().length()>255 || !Set.of("active","ended","dismissed").contains(Objects.toString(input.state(),""))) throw error(HttpStatus.BAD_REQUEST,"INVALID_ACTIVITY_BINDING");
@@ -125,7 +139,7 @@ public class MobileJourneyService {
         return response(s);
     }
     @Transactional
-    public Map<String,Object> get(String id,String auth) { authenticate(id,auth); return subscriptions.findByInstallationId(id).map(this::response).orElseGet(()->Map.of("active",false,"pushReady",apns.ready())); }
+    public Map<String,Object> get(String id,String auth) { var i=authenticate(id,auth); return subscriptions.findByInstallationId(id).map(this::response).orElseGet(()->{ var r=new LinkedHashMap<String,Object>(readiness(i)); r.put("active",false); return r; }); }
     @Transactional
     public void clear(String id,String auth,long revision,String journeyKey) {
         var i=authenticate(id,auth);
@@ -138,7 +152,11 @@ public class MobileJourneyService {
     }
     public void invalidate(MobileSubscription s) { for(var d:deliveries.findBySubscriptionIdAndStatus(s.id,"PENDING")) { d.status="OBSOLETE"; deliveries.save(d); } }
     Map<String,Object> response(MobileSubscription s) {
-        Map<String,Object> r=new LinkedHashMap<>(); r.put("subscriptionId",s.id); r.put("journeyKey",s.journeyKey); r.put("active",s.active); r.put("clientRevision",s.clientRevision); r.put("snapshotVersion",s.snapshotVersion); r.put("pushReady",apns.ready()); r.put("pushStatus",apns.ready() ? "READY" : "APNS_NOT_CONFIGURED");
-        if(s.displayState!=null) r.put("displayState",logic.read(s.displayState,FlightDisplayState.class)); return r;
+        Map<String,Object> r=new LinkedHashMap<>(readiness(installations.findById(s.installationId).orElseThrow())); r.put("subscriptionId",s.id); r.put("journeyKey",s.journeyKey); r.put("active",s.active); r.put("clientRevision",s.clientRevision); r.put("snapshotVersion",s.snapshotVersion);
+        if(s.displayState!=null) r.put("displayState",logic.wireDisplay(logic.read(s.displayState,FlightDisplayState.class),logic.read(s.facts,ResolvedFlightContext.class))); return r;
+    }
+    private Map<String,Object> readiness(MobileInstallation i) {
+        boolean android="android".equals(i.platform), ready=android ? fcm.ready() : apns.ready();
+        return Map.of("pushReady",ready,"pushStatus",ready ? "READY" : android ? "FCM_NOT_CONFIGURED" : "APNS_NOT_CONFIGURED","platform",i.platform,"pushProvider",i.pushProvider);
     }
 }

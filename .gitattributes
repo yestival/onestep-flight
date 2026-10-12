@@ -5,6 +5,7 @@
 /src/test/resources/fixtures/airport-resources-new-seven-golden.json -text
 # Keep generated native project text stable after sync on Windows and macOS.
 /mobile/** text=auto eol=lf
+/mobile/android/gradlew.bat text eol=crlf
 /codemagic.yaml text eol=lf
 /src/test/resources/fixtures/airport-resources-architecture-live-20260829/*.json -text whitespace=cr-at-eol
 /src/test/resources/fixtures/airport-resources-live-20260829/*.json -text whitespace=cr-at-eol

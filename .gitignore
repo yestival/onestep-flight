@@ -24,6 +24,15 @@ mobile/ios/App/CapApp-SPM/.swiftpm/
 mobile/ios/App/CapApp-SPM/README.md
 mobile/ios/capacitor-cordova-ios-plugins/
 mobile/build/
+mobile/android/.gradle/
+mobile/android/.kotlin/
+mobile/android/local.properties
+mobile/android/**/build/
+mobile/android/capacitor-cordova-android-plugins/
+mobile/android/app/src/main/assets/
+mobile/android/app/google-services.json
+*.keystore
+*.jks
 mobile/test-results/
 mobile/playwright-report/
 **/DerivedData/

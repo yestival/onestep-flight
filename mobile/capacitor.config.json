@@ -4,6 +4,7 @@
   "webDir": "www",
   "server": {
     "iosScheme": "capacitor",
+    "androidScheme": "https",
     "hostname": "localhost"
   },
   "ios": {
@@ -13,6 +14,10 @@
     "backgroundColor": "#F3F4F7"
   },
   "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "LIGHT"
+    },
     "CapacitorHttp": {
       "enabled": false
     }

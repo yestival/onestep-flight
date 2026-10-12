@@ -26,6 +26,16 @@ public class MobileFlightLogic {
     public MobileFlightLogic(ObjectMapper mapper, NextActionService actions) { this.mapper=mapper; this.actions=actions; }
     public String json(Object value) { return mapper.writeValueAsString(value); }
     public <T> T read(String value, Class<T> type) { return mapper.readValue(value,type); }
+    public ObjectNode wireDisplay(FlightDisplayState display,ResolvedFlightContext flight) {
+        ObjectNode state=(ObjectNode)mapper.valueToTree(display), source=(ObjectNode)mapper.valueToTree(flight);
+        ObjectNode facts=state.putObject("facts");
+        for(String field:List.of("gate","terminal","arrivalTerminal","arrivalBaggageBelt","status","documentBoardingTime","documentScheduledDeparture","scheduledDeparture","estimatedDeparture","actualDeparture","scheduledArrival","estimatedArrival","actualArrival")) {
+            var value=source.get(field);if(value!=null && !value.isNull()) facts.set(field,value);
+        }
+        var boarding=flight.timeContext()==null ? flight.documentBoardingTime() : first(flight.timeContext().boardingTime(),flight.documentBoardingTime());
+        if(boarding!=null) facts.put("boardingTime",boarding.toString());
+        return state;
+    }
     public ResolvedFlightContext minimal(ResolvedFlightContext f) {
         ObjectNode n=(ObjectNode)mapper.valueToTree(f);
         n.putObject("providerResults"); n.putObject("documentEvidence"); n.putNull("seat"); n.putNull("sourceUrl");
@@ -151,7 +161,7 @@ public class MobileFlightLogic {
                 departure ? boardingLabel : t.l("行李转盘","Baggage belt","Cinta de equipaje"),departure ? boarding : field(f,"arrivalBaggageBelt",f.arrivalBaggageBelt(),t),
                 departure ? depLabel : arrivalLabel,field(f,departure ? f.estimatedDeparture()!=null ? "estimatedDeparture" : "scheduledDeparture" : f.estimatedArrival()!=null ? "estimatedArrival" : "scheduledArrival",clock(departure ? dep : arr,zone),t),
                 departure ? t.l("时间为出发机场当地时间","Departure airport local time","Hora local del aeropuerto de salida") : t.l("时间为目的地当地时间","Destination local time","Hora local del destino"),updatedText,
-                t.l("可打开 App 刷新","Open app to refresh","Abre la app para actualizar"),t.l("联网后可刷新","Refresh when online","Actualiza al conectarte"),t.missing(),f.stale() || pendingVerification(f),false,updated,(f.dataLastUpdatedAt()==null ? updated : f.dataLastUpdatedAt().getEpochSecond())+600,ends,version,revision);
+                t.l("数据可能已过期 · 打开 App 刷新","Data may be out of date · Open app to refresh","Datos posiblemente desactualizados · Abre la app"),t.l("离线 · 联网后可刷新","Offline · Refresh when online","Sin conexión · Actualiza al conectarte"),t.missing(),f.stale() || pendingVerification(f),false,updated,(f.dataLastUpdatedAt()==null ? updated : f.dataLastUpdatedAt().getEpochSecond())+600,ends,version,revision);
     }
     private boolean pendingVerification(ResolvedFlightContext f) {
         return f.fieldProvenance()!=null && f.fieldProvenance().values().stream().filter(Objects::nonNull)

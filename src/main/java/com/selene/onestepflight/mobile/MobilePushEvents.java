@@ -41,20 +41,31 @@ public class MobilePushEvents {
         if(events.existsBySubscriptionIdAndSnapshotVersionAndEventType(s.id,s.snapshotVersion,type)) return;
         // A newer complete card replaces pending cards. Alerts survive pure freshness checks.
         for(var d:deliveries.findBySubscriptionIdAndStatus(s.id,"PENDING")) {
-            if("ACTIVITY".equals(d.channel) || !changes.isEmpty() || end) { d.status="OBSOLETE"; deliveries.save(d); }
+            if("ACTIVITY".equals(d.channel) || "FCM_SYNC".equals(d.channel) || end) { d.status="OBSOLETE"; deliveries.save(d); }
         }
         PushEvent event=new PushEvent(); event.id=UUID.randomUUID().toString(); event.subscriptionId=s.id; event.snapshotVersion=s.snapshotVersion; event.eventType=type; event.createdAt=now; events.saveAndFlush(event);
         boolean urgent=!changes.isEmpty() && ("BOARDING".equals(fresh.status()) || criticalSoon(changes,fresh,now));
+        if("android".equals(i.platform)) {
+            if(i.deviceToken==null || i.deviceToken.isBlank()) return;
+            boolean important=!changes.isEmpty();
+            var payload=new LinkedHashMap<String,String>();
+            payload.put("eventId",event.id); payload.put("journeyKey",s.journeyKey); payload.put("snapshotVersion",Long.toString(s.snapshotVersion)); payload.put("clientRevision",Long.toString(s.clientRevision));
+            payload.put("end",Boolean.toString(end)); payload.put("expiresAt",Long.toString(end ? now+900 : Math.min(s.endsAt,now+900)));
+            payload.put("displayState",logic.json(logic.wireDisplay(display,fresh))); payload.put("important",Boolean.toString(important));
+            if(important) { var alert=alert(changes,fresh,display,logic.read(s.progress,MobileFlightLogic.Progress.class),i.language); payload.put("title",alert.get("title")); payload.put("body",alert.get("body")); }
+            delivery(event,s,important ? "FCM_ALERT" : "FCM_SYNC",i.deviceToken,i.environment,payload,important ? 10 : 5,end ? now+900 : Math.min(s.endsAt,now+900),now,end);
+            return;
+        }
         if(!changes.isEmpty() && i.deviceToken!=null && !i.deviceToken.isBlank() && Set.of("authorized","provisional").contains(Objects.toString(i.authorization,""))) {
             var alert=alert(changes,fresh,display,logic.read(s.progress,MobileFlightLogic.Progress.class),i.language);
             Map<String,Object> aps=Map.of("alert",alert,"sound","default","interruption-level",urgent ? "time-sensitive" : "active");
-            Map<String,Object> payload=Map.of("aps",aps,"eventId",event.id,"subscriptionId",s.id,"journeyKey",s.journeyKey,"snapshotVersion",s.snapshotVersion);
+            Map<String,Object> payload=Map.of("aps",aps,"eventId",event.id,"subscriptionId",s.id,"journeyKey",s.journeyKey,"snapshotVersion",s.snapshotVersion,"clientRevision",s.clientRevision);
             long lifetime="BOARDING".equals(fresh.status()) ? 300 : 900;
             delivery(event,s,"ALERT",i.deviceToken,i.environment,payload,10,Math.min(s.endsAt,now+lifetime),now,end);
         }
         if(s.activityToken!=null && !s.activityToken.isBlank() && "active".equals(s.activityState)) {
             Map<String,Object> aps=new LinkedHashMap<>(); aps.put("timestamp",now); aps.put("event",end ? "end" : "update");
-            aps.put("content-state",display); aps.put("stale-date",display.staleAt());
+            aps.put("content-state",logic.wireDisplay(display,fresh)); aps.put("stale-date",display.staleAt());
             if(end) aps.put("dismissal-date","CANCELLED".equals(fresh.status()) ? now+1800 : now);
             delivery(event,s,"ACTIVITY",s.activityToken,i.environment,Map.of("aps",aps),urgent ? 10 : 5,end ? now+900 : Math.min(s.endsAt,now+900),now,end);
         }
@@ -101,7 +112,8 @@ public class MobilePushEvents {
     }
     private void delivery(PushEvent event,MobileSubscription s,String channel,String token,String env,Object payload,int priority,long expiry,long now,boolean end) {
         PushDelivery d=new PushDelivery(); d.id=UUID.nameUUIDFromBytes((event.id+channel).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString(); d.eventId=event.id; d.subscriptionId=s.id; d.channel=channel; d.token=token; d.environment=env; d.payload=logic.json(payload); d.finalMessage=end; d.priority=priority; d.expiresAt=expiry; d.dueAt=now; d.status="PENDING";
-        if(d.payload.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>4096) { d.status="FAILED"; d.reason="PAYLOAD_TOO_LARGE"; }
+        int bytes=channel.startsWith("FCM_") ? FcmClient.dataBytes((Map<?,?>)payload) : d.payload.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+        if(bytes>(channel.startsWith("FCM_") ? 3800 : 4096)) { d.status="FAILED"; d.reason="PAYLOAD_TOO_LARGE"; }
         deliveries.save(d);
     }
 }

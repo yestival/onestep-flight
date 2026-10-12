@@ -12,9 +12,10 @@ public class MobilePushSender {
     private final MobileSubscriptionRepository subscriptions;
     private final MobileInstallationRepository installations;
     private final ApnsClient apns;
+    private final FcmClient fcm;
     private final TransactionTemplate tx;
     @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
-    public MobilePushSender(PushDeliveryRepository deliveries,MobileSubscriptionRepository subscriptions,MobileInstallationRepository installations,ApnsClient apns,PlatformTransactionManager manager) { this.deliveries=deliveries; this.subscriptions=subscriptions; this.installations=installations; this.apns=apns; tx=new TransactionTemplate(manager); }
+    public MobilePushSender(PushDeliveryRepository deliveries,MobileSubscriptionRepository subscriptions,MobileInstallationRepository installations,ApnsClient apns,FcmClient fcm,PlatformTransactionManager manager) { this.deliveries=deliveries; this.subscriptions=subscriptions; this.installations=installations; this.apns=apns; this.fcm=fcm; tx=new TransactionTemplate(manager); }
     public void tick() {
         long now=Instant.now().getEpochSecond();
         for(var candidate:deliveries.findTop100ByStatusAndDueAtLessThanEqualAndLeaseUntilLessThanOrderByDueAt("PENDING",now,now)) {
@@ -33,7 +34,9 @@ public class MobilePushSender {
                 s=subscriptions.findById(d.subscriptionId).orElse(null);
                 String currentToken="ACTIVITY".equals(d.channel) ? s==null ? null : s.activityToken : i.deviceToken;
                 if(s==null || !s.active && !d.finalMessage || !Objects.equals(currentToken,d.token) || !Objects.equals(i.environment,d.environment) || d.expiresAt<=now) { d.status="OBSOLETE"; deliveries.save(d); return; }
-                var result=apns.send(d); d.attempts++; d.reason=result.reason();
+                boolean android="android".equals(i.platform);
+                if(android != d.channel.startsWith("FCM_")) { d.status="OBSOLETE"; deliveries.save(d); return; }
+                var result=android ? fcm.send(d) : apns.send(d); d.attempts++; d.reason=result.reason();
                 if(result.status()==200) d.status="ACCEPTED";
                 else if(result.status()==410 || result.status()==400 && Set.of("BadDeviceToken","DeviceTokenNotForTopic").contains(result.reason())) {
                     d.status="TOKEN_INVALID";

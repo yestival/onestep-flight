@@ -11,7 +11,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class MobileCorsConfiguration implements WebMvcConfigurer {
     private final String[] origins;
 
-    public MobileCorsConfiguration(@Value("${app.cors.allowed-origins:capacitor://localhost}") String origins) {
+    public MobileCorsConfiguration(@Value("${app.cors.allowed-origins:capacitor://localhost,https://localhost}") String origins) {
         this.origins = Arrays.stream(origins.split(",")).map(String::trim)
                 .filter(value -> !value.isEmpty()).peek(MobileCorsConfiguration::validate).toArray(String[]::new);
     }
@@ -30,7 +30,7 @@ public class MobileCorsConfiguration implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**").allowedOrigins(origins)
                 .allowedMethods("OPTIONS", "GET", "POST", "PUT", "DELETE")
-                .allowedHeaders("Content-Type", "Accept", "X-Share-Update-Token")
+                .allowedHeaders("Content-Type", "Accept", "Authorization", "X-Share-Update-Token")
                 .allowCredentials(false).maxAge(3600);
     }
 }

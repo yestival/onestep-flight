@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22.0.0" },
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "build": "node scripts/build.mjs",
     "preview": "node scripts/preview.mjs",
@@ -11,18 +13,29 @@
     "test:browser": "playwright test",
     "ios:init": "node scripts/ios.mjs init",
     "sync": "npm run build && node scripts/ios.mjs sync",
+    "sync:ios": "npm run sync",
+    "sync:android": "node scripts/android.mjs sync",
+    "sync:all": "npm run sync && npm run sync:android",
+    "android:debug": "node scripts/android.mjs debug",
+    "android:check": "node scripts/android.mjs check",
+    "android:release": "node scripts/android.mjs release",
+    "android:emulator": "node scripts/android.mjs emulator",
+    "android:install": "node scripts/android.mjs install",
+    "android:test:native": "node scripts/android.mjs native-test",
+    "android:test:emulator": "node scripts/emulator-test.mjs",
     "ios:simulator": "node scripts/ios.mjs simulator",
     "ios:archive": "node scripts/ios.mjs archive",
     "ios:upload": "node scripts/upload.mjs"
   },
   "dependencies": {
-    "@capacitor/core": "8.5.3",
-    "@capacitor/ios": "8.5.3",
+    "@capacitor/android": "8.5.3",
     "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/filesystem": "8.1.4",
+    "@capacitor/ios": "8.5.3",
     "@capacitor/network": "8.0.1",
     "@capacitor/preferences": "8.0.1",
-    "@capacitor/share": "8.0.3",
-    "@capacitor/filesystem": "8.1.4"
+    "@capacitor/share": "8.0.3"
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.3",

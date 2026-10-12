@@ -93,7 +93,7 @@ final class FlightPushCoordinator: NSObject, UNUserNotificationCenterDelegate {
         }
         Task { await drain() }
         if let route = pendingRoute { onRoute?(route); pendingRoute = nil }
-        return status()
+        return snapshot()
     }
     func status() -> [String: Any] { ["ready": origin != nil && identity != nil, "pendingOperations": queue.count, "journeyKey": currentJourney, "clientRevision": revision, "snapshotVersion": latest?.snapshotVersion ?? 0, "pushReady": defaults.bool(forKey: "flight.pushReady"), "pushStatus": defaults.string(forKey: "flight.pushStatus") ?? "APNS_NOT_CONFIGURED"] }
     func setDeviceToken(_ token: Data) {
@@ -110,7 +110,12 @@ final class FlightPushCoordinator: NSObject, UNUserNotificationCenterDelegate {
     }
     func syncJourney(_ input: [String: Any]) async -> [String: Any] {
         guard let key = input["journeyKey"] as? String, !key.isEmpty else { return status() }
+        if let flight = input["flight"] as? [String: Any], flight["demo"] as? Bool == true {
+            await clearJourney(expectedKey: currentJourney)
+            return status()
+        }
         journeyIntent += 1; let intent = journeyIntent
+        let replacing = currentJourney != key
         if currentJourney != key {
             if !currentJourney.isEmpty { await clearJourney(expectedKey: currentJourney, preserveIntent: true) }
             guard intent == journeyIntent else { return snapshot() }
@@ -123,6 +128,7 @@ final class FlightPushCoordinator: NSObject, UNUserNotificationCenterDelegate {
         if defaults.data(forKey: "flight.progressFingerprint") != fingerprint {
             _ = nextRevision(); defaults.set(fingerprint, forKey: "flight.progressFingerprint")
         }
+        if replacing { defaults.set(revision, forKey: "flight.journeyGeneration") }
         defaults.set(input["locale"] as? String ?? "en", forKey: "flight.language")
         if let progress = input["progress"] as? [String: Any], let data = try? JSONSerialization.data(withJSONObject: progress) {
             defaults.set(data, forKey: "flight.localProgress")
@@ -156,6 +162,21 @@ final class FlightPushCoordinator: NSObject, UNUserNotificationCenterDelegate {
         defaults.removeObject(forKey: "flight.localProgress"); defaults.removeObject(forKey: "flight.progressGate"); defaults.removeObject(forKey: "flight.progressTerminal")
         latest = nil; defaults.removeObject(forKey: "flight.serverState")
         await FlightActivityCoordinator.shared.end(journeyKey: key)
+        Task {
+            let center = UNUserNotificationCenter.current()
+            func belongsToClearedJourney(_ request: UNNotificationRequest, allowLegacy: Bool) -> Bool {
+                let info = request.content.userInfo
+                guard info["journeyKey"] as? String == key else { return false }
+                if let sent = info["clientRevision"] as? NSNumber { return sent.int64Value <= rev }
+                return allowLegacy
+            }
+            let delivered = await center.deliveredNotifications()
+            let deliveredLegacyAllowed = currentJourney != key || revision <= rev
+            center.removeDeliveredNotifications(withIdentifiers: delivered.map(\.request).filter { belongsToClearedJourney($0, allowLegacy: deliveredLegacyAllowed) }.map(\.identifier))
+            let pending = await center.pendingNotificationRequests()
+            let pendingLegacyAllowed = currentJourney != key || revision <= rev
+            center.removePendingNotificationRequests(withIdentifiers: pending.filter { belongsToClearedJourney($0, allowLegacy: pendingLegacyAllowed) }.map(\.identifier))
+        }
         Task { await drain() }
     }
     func bind(activity: String, journeyKey: String, token: String?, state: String) async {
@@ -169,7 +190,8 @@ final class FlightPushCoordinator: NSObject, UNUserNotificationCenterDelegate {
     }
     func preferredState(_ state: FlightActivityAttributes.ContentState) -> FlightActivityAttributes.ContentState {
         var result = state
-        if let latest, latest.journeyKey == state.journeyKey, latest.snapshotVersion >= state.snapshotVersion { result = latest }
+        if let latest, latest.journeyKey == state.journeyKey, latest.snapshotVersion >= state.snapshotVersion,
+           latest.clientRevision >= state.clientRevision { result = latest }
         let language = result.journeyKey == currentJourney ? defaults.string(forKey: "flight.language") ?? state.locale : state.locale
         if result.journeyKey == currentJourney, let data = defaults.data(forKey: "flight.localProgress"),
            let progress = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
@@ -178,7 +200,8 @@ final class FlightPushCoordinator: NSObject, UNUserNotificationCenterDelegate {
         return result.localized(to: language)
     }
     func acceptActivityState(_ state: FlightActivityAttributes.ContentState) {
-        guard state.journeyKey == currentJourney, state.snapshotVersion >= (latest?.snapshotVersion ?? 0) else { return }
+        guard state.journeyKey == currentJourney, state.clientRevision >= revision,
+              state.snapshotVersion >= (latest?.snapshotVersion ?? 0) else { return }
         latest = state
         if let data = try? JSONEncoder().encode(state) { defaults.set(data, forKey: "flight.serverState") }
     }
@@ -276,6 +299,10 @@ final class FlightPushCoordinator: NSObject, UNUserNotificationCenterDelegate {
     }
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
         await MainActor.run {
+            let info = notification.request.content.userInfo
+            guard let key = info["journeyKey"] as? String, key == currentJourney else { return [] }
+            if let sentRevision = info["clientRevision"] as? NSNumber,
+               sentRevision.int64Value < Int64(defaults.integer(forKey: "flight.journeyGeneration")) { return [] }
             let event = notification.request.content.userInfo["eventId"] as? String ?? notification.request.identifier
             var seen = defaults.stringArray(forKey: "flight.seenEvents") ?? []
             if seen.contains(event) { return [] }
@@ -287,6 +314,8 @@ final class FlightPushCoordinator: NSObject, UNUserNotificationCenterDelegate {
         await MainActor.run {
             let info = response.notification.request.content.userInfo
             guard let key = info["journeyKey"] as? String, key == currentJourney else { return }
+            if let sentRevision = info["clientRevision"] as? NSNumber,
+               sentRevision.int64Value < Int64(defaults.integer(forKey: "flight.journeyGeneration")) { return }
             let route: [String: Any] = ["journeyKey": key, "subscriptionId": info["subscriptionId"] ?? ""]
             pendingRoute = route; onRoute?(route)
             Task { await recover() }

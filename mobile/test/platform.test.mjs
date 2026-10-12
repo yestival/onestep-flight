@@ -40,6 +40,37 @@ test('web stays same-origin; every API verb including multipart uses native API 
   assert.equal(calls.at(-1)[1].headers['Content-Type'], undefined);
   assert.throws(() => platform.apiUrl('/styles.css'));
 });
+test('hanging push initialization cannot block native hydration or local activity', async () => {
+  const {native,host}=fixture();
+  native.platform='android';
+  native.FlightPush={addListener:async()=>{},initialize:()=>new Promise(()=>{})};
+  const platform=createPlatform(host,native,{});
+  await platform.init();
+  assert.equal(platform.nativePlatform,'android');
+  assert.equal(platform.storageHealthy(),true);
+});
+test('Android share retains content until a later cache sweep', async () => {
+  const {native,host,calls}=fixture();native.platform='android';
+  const platform=createPlatform(host,native,{});
+  await platform.sharePng(new Blob(['png']));
+  assert.equal(calls.filter(c=>c.path && !c.data).length,0);
+  assert.deepEqual(calls[1].files,['file:///cache/card.png']);
+});
+test('empty push acknowledgements and older snapshots retain recovered native facts', async () => {
+  const {native,host}=fixture();
+  const latest={journeyKey:'flight',displayState:{snapshotVersion:20,clientRevision:4,facts:{gate:'B40'}}};
+  let result=latest;
+  native.FlightPush={addListener:async()=>{},initialize:async()=>latest,status:async()=>result,syncJourney:async()=>({})};
+  const platform=createPlatform(host,native,{});
+  await platform.init();await new Promise(resolve=>setImmediate(resolve));
+  await platform.push.syncJourney({journeyKey:'flight'});
+  assert.equal(platform.push.current().displayState.facts.gate,'B40');
+  result={journeyKey:'flight',displayState:{snapshotVersion:19,clientRevision:5,facts:{gate:'B12'}}};
+  await platform.push.status();
+  assert.equal(platform.push.current().displayState.facts.gate,'B40');
+  result={journeyKey:''};await platform.push.status();
+  assert.equal(platform.push.current().journeyKey,'');
+});
 test('relative and unsafe server share URLs resolve only to the canonical public link', () => {
   const { platform } = fixture();
   for (const supplied of ['/share/view_token', 'capacitor://localhost/share/view_token', 'https://evil.test/share/view_token?updateToken=secret', 'https://[malformed']) {
@@ -229,4 +260,22 @@ test('a stalled push revocation cannot prevent local removal', async () => {
   });
   await live.end('flight', () => new Promise(() => {}));
   assert.equal(active, false);
+});
+
+test('Android persists a disabled or dismissed card locally without claiming it is visible', async () => {
+  let current = { supported: true, enabled: false, active: false, localPersistenceSupported: true };
+  const saved = [];
+  const live = createLiveActivity({
+    status: async () => current,
+    start: async data => { saved.push(data); return current; }
+  });
+  const display = { journeyKey: 'disabled-flight', gate: 'B32', journeyEndsAt: Math.floor(Date.now()/1000)+600 };
+  await live.sync(display);
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].gate, 'B32');
+  assert.equal(live.current().active, false);
+  current = { ...current, enabled: true, dismissedJourneyKey: display.journeyKey };
+  await live.sync({ ...display, gate: 'B40' });
+  assert.equal(saved[1].gate, 'B40');
+  assert.equal(live.current().active, false);
 });

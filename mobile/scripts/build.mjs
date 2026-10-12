@@ -26,4 +26,4 @@ cap.appId = appConfig.appId;
 cap.appName = appConfig.appName;
 if (cap.server.url || cap.server.allowNavigation) throw new Error('Packaged startup must not allow remote navigation');
 await writeFile(capPath, JSON.stringify(cap, null, 2) + '\n');
-console.log('Packaged frontend built in mobile/www (native compilation requires macOS/Xcode).');
+console.log('Packaged shared frontend built in mobile/www.');

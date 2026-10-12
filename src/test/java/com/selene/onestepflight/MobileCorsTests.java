@@ -60,6 +60,12 @@ class MobileCorsTests {
                 .andExpect(header().doesNotExist("Access-Control-Allow-Credentials"));
         }
     }
+    @Test void androidHttpsOriginCanSendInstallationAuthentication() throws Exception {
+        mvc.perform(options("/api/mobile/installations/fixture/journey")
+                .header("Origin","https://localhost").header("Access-Control-Request-Method","PUT")
+                .header("Access-Control-Request-Headers","Authorization,Content-Type,Accept"))
+            .andExpect(status().isOk()).andExpect(header().string("Access-Control-Allow-Origin","https://localhost"));
+    }
 
     @Test void rejectsUnconfiguredAndNullOrigins() throws Exception {
         for (String origin : new String[]{"null", "https://evil.example", "http://localhost:4173"}) {

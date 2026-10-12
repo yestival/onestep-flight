@@ -22,4 +22,8 @@ let legacy = try JSONDecoder().decode(FlightDisplayState.self, from: Data("{\"fl
 precondition(legacy.journeyEndsAt == 813330000 + 978307200)
 precondition(legacy.metricOneValue == "B24")
 precondition(legacy.snapshotVersion == 0)
+let withFacts = try JSONDecoder().decode(FlightDisplayState.self, from: Data("{\"gate\":\"B40\",\"facts\":{\"gate\":\"B40\",\"boardingTime\":\"2026-09-05T11:20:00+02:00\"}}".utf8))
+precondition(withFacts.facts?["gate"] == "B40")
+let recovered = try JSONDecoder().decode(FlightDisplayState.self, from: JSONEncoder().encode(withFacts))
+precondition(recovered.facts == withFacts.facts)
 print("Swift shared-state Unix seconds, legacy reference epoch and missing fields verified")

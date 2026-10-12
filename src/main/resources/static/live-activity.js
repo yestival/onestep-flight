@@ -38,7 +38,7 @@
         var previousKey = state.journeyKey;
         await invoke(function () { return bridge.end({ journeyKey: previousKey }); }, 'end');
       }
-      if (state.dismissedJourneyKey === content.journeyKey || !state.enabled) return state;
+      if (!state.localPersistenceSupported && (state.dismissedJourneyKey === content.journeyKey || !state.enabled)) return state;
       var updating = state.active && state.journeyKey === content.journeyKey;
       await invoke(function () { return updating ? bridge.update(content) : bridge.start(content); }, updating ? 'update' : 'start');
       return state;

@@ -5,6 +5,7 @@
 }(typeof window !== 'undefined' ? window : this, function (host, native, config) {
   'use strict';
   var isNative = Boolean(native && native.isNative);
+  var nativePlatform = isNative ? native.platform || 'ios' : 'web';
   var cache = new Map();
   var writes = Promise.resolve();
   var ready;
@@ -16,10 +17,36 @@
   var lastResume = 0;
   var storageHealthy = true;
   var routePending = false;
+  var pushSnapshot = null;
+  function rememberPush(result) {
+    // An empty acknowledgement has no snapshot. In particular, a completed
+    // subscription write must not erase the state recovered during startup.
+    if (result && Object.prototype.hasOwnProperty.call(result, 'journeyKey')) {
+      var previous = pushSnapshot && pushSnapshot.displayState, incoming = result.displayState;
+      if (previous && incoming && pushSnapshot.journeyKey === result.journeyKey
+          && (incoming.snapshotVersion < previous.snapshotVersion || incoming.clientRevision < previous.clientRevision)) {
+        pushSnapshot = Object.assign({}, result, { displayState: previous });
+      } else pushSnapshot = result;
+    }
+    return result;
+  }
+  var push = native && native.FlightPush ? {
+    current: function () { return pushSnapshot; },
+    status: function () { return bounded(function () { return native.FlightPush.status(); }).then(rememberPush); },
+    syncJourney: function (data) { return bounded(function () { return native.FlightPush.syncJourney(data); }).then(rememberPush); },
+    clearJourney: function (data) { return bounded(function () { return native.FlightPush.clearJourney(data); }).then(rememberPush); },
+    openSettings: function () { return native.FlightPush.openSettings(); }
+  } : null;
   // Credentials live in separate private keys, never in the display snapshot.
   var durable = /^onestep-flight-(locale|offline-journey-v1|share-(session|pending|revocation-pending)-v1)$/;
 
   function emit(type) { listeners.forEach(function (fn) { fn(type); }); }
+  function bounded(operation, ms) {
+    var timer;
+    return Promise.race([Promise.resolve().then(operation), new Promise(function (_, reject) {
+      timer = setTimeout(function () { reject(new Error('Native initialization timed out')); }, ms || 5000);
+    })]).finally(function () { clearTimeout(timer); });
+  }
   function enqueue(operation) {
     var result = writes.then(operation);
     writes = result.catch(function () { storageHealthy = false; emit('storage-error'); });
@@ -71,7 +98,7 @@
         'onestep-flight-share-revocation-pending-v1'];
       // Do not interpret a failed native read as an empty journey, or revoke its link.
       await Promise.all(keys.map(async function (key) {
-        var result = await native.Preferences.get({ key: key });
+      var result = await bounded(function () { return native.Preferences.get({ key: key }); });
         var value = result.value;
         if (value == null) {
           try { value = host.localStorage.getItem(key); } catch (_) { value = null; }
@@ -95,11 +122,16 @@
       await native.App.addListener('appUrlOpen', function (event) { route(event.url); });
       var launch = await native.App.getLaunchUrl();
       if (launch) route(launch.url);
-      if (native.FlightPush) {
-        await native.FlightPush.addListener('journeyRoute', function (event) { routePending = event; emit('route'); });
-        await native.FlightPush.initialize();
+      if (nativePlatform === 'android') {
+        native.App.addListener('backButton', function () { emit('back'); }).catch(function () {});
       }
-      await cleanShareFiles();
+      if (native.FlightPush) {
+        // Push registration, permission prompts and network callbacks cannot hold hydration.
+        bounded(function () { return native.FlightPush.addListener('journeyRoute', function (event) { routePending = event; emit('route'); }); }).catch(function () {});
+        bounded(function () { return native.FlightPush.addListener('journeyStatus', function (event) { rememberPush(event); emit('push-status'); }); }).catch(function () {});
+        bounded(function () { return native.FlightPush.initialize(); }).then(function (result) { rememberPush(result); emit('push-status'); }).catch(function () { emit('push-status'); });
+      }
+      bounded(cleanShareFiles).catch(function () {});
     }());
     return ready;
   }
@@ -161,7 +193,10 @@
   async function cleanShareFiles() {
     try {
       var entries = await native.Filesystem.readdir({ path: 'onestep-share', directory: 'CACHE' });
-      await Promise.all(entries.files.map(function (file) {
+      await Promise.all(entries.files.filter(function (file) {
+        var created = /^card-(\d+)\.png$/.exec(file.name);
+        return created && Date.now() - Number(created[1]) > 86400000;
+      }).map(function (file) {
         return native.Filesystem.deleteFile({ path: 'onestep-share/' + file.name, directory: 'CACHE' });
       }));
     } catch (_) { /* First launch has no share directory. */ }
@@ -178,7 +213,9 @@
       var file = await native.Filesystem.writeFile({ path: path, data: host.btoa(binary), directory: 'CACHE', recursive: true });
       return await shareLink({ title: 'OneStep Flight', files: [file.uri] });
     } finally {
-      await native.Filesystem.deleteFile({ path: path, directory: 'CACHE' }).catch(function () {});
+      // Android targets may read a content URI after the chooser returns. Clean
+      // files older than 24 hours on later launches; native WorkManager also sweeps.
+      if (nativePlatform !== 'android') await native.Filesystem.deleteFile({ path: path, directory: 'CACHE' }).catch(function () {});
       sharingImage = false;
     }
   }
@@ -192,7 +229,12 @@
     return null;
   }
   return {
-    isNative: isNative, storage: storage, init: init, apiUrl: apiUrl, apiFetch: apiFetch,
+    isNative: isNative, nativePlatform: nativePlatform, storage: storage, init: init, apiUrl: apiUrl, apiFetch: apiFetch,
+    exitApp: function () { return native.App.exitApp(); },
+    dismissKeyboard: function () {
+      if (nativePlatform !== 'android' || !native.FlightNative || typeof native.FlightNative.dismissKeyboard !== 'function') return Promise.resolve(false);
+      return bounded(function () { return native.FlightNative.dismissKeyboard(); }, 1000).then(function (result) { return Boolean(result && result.dismissed); }).catch(function () { return false; });
+    },
     publicShareUrl: publicShareUrl, shareLink: shareLink, sharePng: sharePng,
     cancelled: cancelled, externalUrl: externalUrl,
     openExternal: function (url) { var allowed = externalUrl(url); return allowed ? native.FlightNative.openExternal({ url: allowed }) : Promise.reject(new Error('Unsupported URL')); },
@@ -203,7 +245,7 @@
     isOnline: function () { return (!isNative || connected) && apiReachable && host.navigator.onLine !== false; },
     resume: resume,
     takeRoute: function () { var pending = routePending; routePending = false; return pending; },
-    push: native && native.FlightPush,
+    push: push,
     live: native && native.FlightLiveActivity
   };
 }));

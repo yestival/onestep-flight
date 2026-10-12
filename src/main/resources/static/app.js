@@ -1398,7 +1398,7 @@
     document.querySelector('[data-route-arrival-label]').textContent = t('arrivalLocalTime');
     document.querySelector('[data-route-arrival-time]').textContent = formatAtArrival(arrivalLocal.value, true);
     document.querySelector('[data-boarding-time]').textContent = formatAtDeparture(
-      flight.documentBoardingTime || (flight.timeContext && flight.timeContext.boardingTime), false);
+      flight.boardingTime || (flight.timeContext && flight.timeContext.boardingTime) || flight.documentBoardingTime, false);
     document.querySelector('[data-terminal]').textContent = formatTerminalValue(
       flight.terminal || (documentFallback ? flight.documentTerminal : null)) || '—';
     document.querySelector('[data-gate]').textContent = formatGateValue(
@@ -8025,14 +8025,42 @@
       return c.blocking && !c.field || ['flightNumber', 'departureDate', 'departureAirport', 'arrivalAirport'].indexOf(c.field) >= 0;
     });
     if (identityConflict && !conflictsConfirmed) return null;
-    var key = familyShareJourneyKey(currentFlight);
+    var key = nativeJourneyKey(currentFlight);
     if (lastLockState && lastLockState.journeyKey !== key) lastLockState = null;
+    var nativeSnapshot = platform.push && platform.push.current();
+    var nativeDisplay = nativeSnapshot && nativeSnapshot.displayState;
+    var retrieved = Math.floor(Date.parse(currentFlight.dataRetrievedAt || currentFlight.retrievedAt || '') / 1000) || 0;
+    if (nativeDisplay && nativeSnapshot.journeyKey === key && nativeDisplay.snapshotVersion >= serverSnapshotVersion
+        && nativeDisplay.updatedAt >= retrieved) {
+      serverSnapshotVersion = nativeDisplay.snapshotVersion;
+      var facts = Object.assign({}, lastLockState && lastLockState.facts, nativeDisplay.facts);
+      var factsChanged = false;
+      ['gate','terminal','arrivalTerminal','arrivalBaggageBelt','status','boardingTime','documentBoardingTime','documentScheduledDeparture',
+        'scheduledDeparture','estimatedDeparture','actualDeparture','scheduledArrival','estimatedArrival','actualArrival'].forEach(function (field) {
+        if (facts[field]) { if (currentFlight[field] !== facts[field]) factsChanged = true; currentFlight[field] = facts[field]; }
+      });
+      if (facts.boardingTime) currentFlight.timeContext = Object.assign({}, currentFlight.timeContext, { boardingTime: facts.boardingTime });
+      if (nativeDisplay.updatedAt > 0) currentFlight.dataRetrievedAt = new Date(nativeDisplay.updatedAt * 1000).toISOString();
+      if (nativeDisplay.staleAt > 600) currentFlight.dataLastUpdatedAt = new Date((nativeDisplay.staleAt - 600) * 1000).toISOString();
+      lastLockState = Object.assign({}, nativeDisplay, { facts: facts });
+      if (factsChanged) {
+        renderFlight(currentFlight, { silent: true, skipChanges: true });
+        if (currentScreen === 'step' && currentAction) renderJourneyResponse({ silent: true });
+      }
+    }
     lastLockState = window.OneStepFlightDisplay.build(currentFlight, currentAction, journeyContext, {
       previous: lastLockState, journeyKey: key, locale: currentLocale, conflictsConfirmed: conflictsConfirmed,
-      offline: !platform.isOnline(), stale: restoredFromOffline, snapshotVersion: 0
+      offline: !platform.isOnline(), stale: restoredFromOffline, snapshotVersion: serverSnapshotVersion,
+      clientRevision: lastLockState && lastLockState.clientRevision || 0
     });
+    lastLockState.demo = Boolean(currentFlight.demo || qaJourneyEnabled || demoRecordingSessionId);
     persistOfflineJourney();
     return lastLockState;
+  }
+
+  function nativeJourneyKey(flight) {
+    var key = familyShareJourneyKey(flight);
+    return key && flight && (flight.demo || qaJourneyEnabled || demoRecordingSessionId) ? 'demo:' + key : key;
   }
 
   function renderLiveActivityStatus() {
@@ -8040,15 +8068,17 @@
     if (!notice || !liveActivity) return;
     var state = liveActivity.current();
     var disabled = state.supported && !state.enabled;
-    var dismissed = state.dismissedJourneyKey === familyShareJourneyKey(currentFlight);
-    var active = state.active && state.journeyKey === familyShareJourneyKey(currentFlight);
+    var dismissed = state.dismissedJourneyKey === nativeJourneyKey(currentFlight);
+    var active = state.active && state.journeyKey === nativeJourneyKey(currentFlight);
     notice.hidden = !journeyContext;
     var message = disabled
-      ? localeText('实时活动已被系统禁用。', 'Live Activities are disabled in system settings.', 'Las actividades en directo están desactivadas en los ajustes.')
+      ? platform.nativePlatform === 'android' ? localeText('通知权限或行程渠道已关闭。', 'Notifications or the journey channel are disabled.', 'Las notificaciones o el canal del viaje están desactivados.') : localeText('实时活动已被系统禁用。', 'Live Activities are disabled in system settings.', 'Las actividades en directo están desactivadas en los ajustes.')
       : dismissed ? localeText('此行程的锁屏活动已被移除。', 'The Lock Screen activity for this journey was dismissed.', 'Se ha descartado la actividad de este viaje en la pantalla bloqueada.')
-      : active && !state.errorCode ? localeText('锁屏行程已交给系统，可锁屏查看。', 'Journey sent to iOS. Lock your screen to view it.', 'Viaje enviado a iOS. Bloquea la pantalla para verlo.')
+      : active && !state.errorCode ? platform.nativePlatform === 'android' ? localeText('行程通知已发布；锁屏内容由系统设置决定。', 'Journey notification posted. Lock Screen visibility follows system settings.', 'Notificación del viaje publicada. La pantalla bloqueada depende de los ajustes.') : localeText('锁屏行程已交给系统，可锁屏查看。', 'Journey sent to iOS. Lock your screen to view it.', 'Viaje enviado a iOS. Bloquea la pantalla para verlo.')
       : localeText('锁屏行程暂未显示，回到 App 后会自动重试。', 'The Lock Screen journey is unavailable. Returning to the app retries automatically.', 'El viaje no aparece en la pantalla bloqueada. Se reintentará al volver a la app.');
     if (!disabled && !dismissed && state.errorCode) message += ' (' + (state.errorReference || state.errorCode) + ')';
+    if (platform.nativePlatform === 'android' && state.pushStatus === 'FIREBASE_NOT_CONFIGURED') message += ' ' + localeText('后台推送尚未配置。', 'Background push is not configured.', 'Las notificaciones en segundo plano no están configuradas.');
+    if (platform.nativePlatform === 'android' && state.pushStatus === 'GOOGLE_SERVICES_UNAVAILABLE') message += ' ' + localeText('此设备的 Google 服务不可用。', 'Google services are unavailable on this device.', 'Los servicios de Google no están disponibles en este dispositivo.');
     notice.querySelector('span').textContent = message;
     notice.querySelector('button').hidden = !disabled;
     notice.querySelector('button').textContent = localeText('前往系统设置', 'Open system settings', 'Abrir ajustes');
@@ -8056,6 +8086,7 @@
 
   function endLiveJourney(key) {
     if (!liveActivity) return;
+    if (key === familyShareJourneyKey(currentFlight)) key = nativeJourneyKey(currentFlight);
     liveActivity.end(key, function () {
       return platform.push.clearJourney({ journeyKey: key }).catch(function () { pushSyncFingerprint = null; });
     }).then(renderLiveActivityStatus).catch(renderLiveActivityStatus);
@@ -8078,7 +8109,13 @@
       return;
     }
     if (currentFlight.demo || qaJourneyEnabled || demoRecordingSessionId) {
-      liveActivity.sync(content).then(renderLiveActivityStatus).catch(renderLiveActivityStatus);
+      liveActivity.sync(content, function () {
+        var marker = 'demo:' + content.journeyKey;
+        if (pushSyncFingerprint === marker) return;
+        pushSyncFingerprint = marker;
+        return platform.push.syncJourney({ journeyKey: content.journeyKey, flight: { demo: true } })
+          .catch(function () { pushSyncFingerprint = null; });
+      }).then(renderLiveActivityStatus).catch(renderLiveActivityStatus);
       return;
     }
     var progress = safeContextSnapshot(journeyContext, null);
@@ -8094,7 +8131,7 @@
       return platform.push.syncJourney(payload).then(function (result) {
         if (!result || !result.displayState || result.journeyKey !== familyShareJourneyKey(currentFlight)) return;
         serverSnapshotVersion = Math.max(serverSnapshotVersion, result.snapshotVersion || 0);
-        lastLockState = Object.assign({}, result.displayState, { facts: lastLockState && lastLockState.facts });
+        lastLockState = Object.assign({}, result.displayState, { facts: Object.assign({}, lastLockState && lastLockState.facts, result.displayState.facts) });
       }).catch(function () { pushSyncFingerprint = null; });
     }).then(renderLiveActivityStatus).catch(renderLiveActivityStatus);
   }
@@ -8103,7 +8140,7 @@
     if (!pageInitialized) return;
     var route = platform.takeRoute();
     if (!route) return;
-    if (route.journeyKey && route.journeyKey !== familyShareJourneyKey(currentFlight)) return;
+    if (route.journeyKey && route.journeyKey !== nativeJourneyKey(currentFlight)) return;
     if (journeyContext && currentFlight) requestNextAction({ refresh: true, silent: true, source: 'notification' });
     // The URL carries no journey data; only navigate after persisted state has been restored.
     if (currentAction) renderJourneyResponse();
@@ -8112,6 +8149,20 @@
 
   function handlePlatformEvent(type) {
     if (!pageInitialized) return;
+    if (type === 'back') {
+      platform.dismissKeyboard().then(function (dismissed) {
+        var input = document.activeElement;
+        if (input && /^(INPUT|TEXTAREA|SELECT)$/.test(input.tagName)) input.blur();
+        if (dismissed) return;
+        var overlay = Array.from(document.querySelectorAll('[data-overlay], [role="dialog"]')).find(function (el) { return !el.hidden && el.getClientRects().length; });
+        if (overlay) { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return; }
+        var screen = document.querySelector('[data-screen].is-active');
+        var back = screen && screen.querySelector('[data-action="back"], [data-action="home"]');
+        if (back) { back.click(); return; }
+        platform.exitApp();
+      }); return;
+    }
+    if (type === 'push-status') { syncLiveActivity(); return; }
     if (type === 'route') { handleNativeRoute(); return; }
     if (type === 'pause') {
       stopAutoRefresh(false);
@@ -8137,6 +8188,7 @@
     }
     if (type !== 'resume' || document.hidden || !platform.isActive() || Date.now() - lastRecheckAt < 1500) return;
     lastRecheckAt = Date.now();
+    if (platform.push) platform.push.status().then(syncLiveActivity).catch(function () {});
     if (currentFlight) ensureClockTimer();
     retryPendingShareRevocations();
     retryPendingFamilyShare();

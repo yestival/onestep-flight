@@ -28,8 +28,8 @@ struct FlightDisplayState: Codable, Hashable {
         var metricTwoLabel: String = "Boarding"
         var metricThreeLabel: String = "Scheduled departure"
         var timezoneText: String = "Departure airport local time"
-        var staleLabel: String = "Open app to refresh"
-        var offlineLabel: String = "Refresh when online"
+        var staleLabel: String = "Data may be out of date · Open app to refresh"
+        var offlineLabel: String = "Offline · Refresh when online"
         var missingLabel: String = "To be announced"
         var headingIncludesGate: Bool = false
         var stale: Bool = true
@@ -39,6 +39,7 @@ struct FlightDisplayState: Codable, Hashable {
         var journeyEndsAt: Int64 = 0
         var snapshotVersion: Int64 = 0
         var clientRevision: Int64 = 0
+        var facts: [String: String]?
         var expiresAt: Date { Date(timeIntervalSince1970: TimeInterval(journeyEndsAt)) }
         init() {}
         func localized(to language: String, regenerate: Bool = false) -> Self {
@@ -84,8 +85,8 @@ struct FlightDisplayState: Codable, Hashable {
                 else { result.metricThreeLabel = arrivalTimeType == "ESTIMATED" ? l("原预计到达", "Former estimated arrival", "Anterior llegada estimada") : l("原计划到达", "Original scheduled arrival", "Llegada prevista original") }
             }
             result.timezoneText = departure ? l("时间为出发机场当地时间", "Departure airport local time", "Hora local del aeropuerto de salida") : l("时间为目的地当地时间", "Destination local time", "Hora local del destino")
-            result.staleLabel = l("可打开 App 刷新", "Open app to refresh", "Abre la app para actualizar")
-            result.offlineLabel = l("联网后可刷新", "Refresh when online", "Actualiza al conectarte")
+            result.staleLabel = l("数据可能已过期 · 打开 App 刷新", "Data may be out of date · Open app to refresh", "Datos posiblemente desactualizados · Abre la app")
+            result.offlineLabel = l("离线 · 联网后可刷新", "Offline · Refresh when online", "Sin conexión · Actualiza al conectarte")
             result.updatedText = updatedAt > 0 ? String(updatedText.prefix(5)) + l(" 更新", " updated", " actualizado") : l("尚未核验", "Not verified", "Sin verificar")
             let date = DateFormatter(); date.locale = Locale(identifier: "en_US_POSIX"); date.timeZone = TimeZone(secondsFromGMT: 0); date.dateFormat = "yyyy-MM-dd"
             if let parsed = date.date(from: flightDate) { date.locale = Locale(identifier: language); date.dateFormat = language == "zh" ? "M月d日" : "MMM d"; result.dateText = date.string(from: parsed) }
@@ -113,7 +114,7 @@ struct FlightDisplayState: Codable, Hashable {
             return result.localized(to: language, regenerate: true)
         }
         enum CodingKeys: String, CodingKey {
-            case journeyKey, flightNumber, flightDate, departureAirport, arrivalAirport, dateText, nextStep, terminal, gate, boardingTime, departureTime, arrivalTime, arrivalTerminal, baggageBelt, metricOneValue, metricTwoValue, metricThreeValue, updatedText, phase, actionCode, departureTimeType, arrivalTimeType, locale, metricOneLabel, metricTwoLabel, metricThreeLabel, timezoneText, staleLabel, offlineLabel, missingLabel, headingIncludesGate, stale, offline, updatedAt, staleAt, journeyEndsAt, snapshotVersion, clientRevision
+            case journeyKey, flightNumber, flightDate, departureAirport, arrivalAirport, dateText, nextStep, terminal, gate, boardingTime, departureTime, arrivalTime, arrivalTerminal, baggageBelt, metricOneValue, metricTwoValue, metricThreeValue, updatedText, phase, actionCode, departureTimeType, arrivalTimeType, locale, metricOneLabel, metricTwoLabel, metricThreeLabel, timezoneText, staleLabel, offlineLabel, missingLabel, headingIncludesGate, stale, offline, updatedAt, staleAt, journeyEndsAt, snapshotVersion, clientRevision, facts
         }
         private struct LegacyKey: CodingKey {
             var stringValue: String
@@ -162,6 +163,7 @@ struct FlightDisplayState: Codable, Hashable {
             journeyEndsAt = try c.decodeIfPresent(Int64.self, forKey: .journeyEndsAt) ?? 0
             snapshotVersion = try c.decodeIfPresent(Int64.self, forKey: .snapshotVersion) ?? 0
             clientRevision = try c.decodeIfPresent(Int64.self, forKey: .clientRevision) ?? 0
+            facts = try c.decodeIfPresent([String: String].self, forKey: .facts)
             if journeyEndsAt == 0 {
                 let legacy = try decoder.container(keyedBy: LegacyKey.self)
                 if let value = try legacy.decodeIfPresent(Double.self, forKey: LegacyKey(stringValue: "expiresAt")!) {

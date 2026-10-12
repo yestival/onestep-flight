@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { deterministicInjectionSource } from '../../../scripts/browser-acceptance.mjs';
 
 async function layout(page) {
@@ -118,14 +119,14 @@ async function mockedNative(page, disk, options = {}) {
     window.nativeEvents = {}; window.activity = { supported:true, enabled:true, active:false };
     window.activityFailure = ${JSON.stringify(options.activityFailure || null)};
     window.holdJourneyPreparation = ${Boolean(options.holdJourneyPreparation)};
-    window.OneStepNative = { isNative:true,
+    window.OneStepNative = { isNative:true, platform:${JSON.stringify(options.platform || 'ios')},
       Preferences: { get:async({key})=>({value:await nativeStorage('get',key)}),set:({key,value})=>nativeStorage('set',key,value),remove:({key})=>nativeStorage('remove',key) },
       App: { addListener:async(k,f)=>{nativeEvents[k]=f}, getState:async()=>({isActive:true}),getLaunchUrl:async()=>({url:'onestepflight://journey'}) },
       Network: { addListener:async(k,f)=>{nativeEvents[k]=f},getStatus:async()=>({connected:true}) },
       Share: { share:async p=>{await nativeCall('share',p);throw new Error('Share canceled')} },
       Filesystem: { readdir:async()=>({files:[]}),writeFile:async p=>{await nativeCall('write',p);return {uri:'file:///cache/card.png'}},deleteFile:async p=>nativeCall('delete',p) },
-      FlightNative: {openExternal:async p=>nativeCall('openExternal',p)},
-      FlightPush: {addListener:async()=>{},initialize:async()=>({ready:true}),syncJourney:async p=>{
+      FlightNative: {openExternal:async p=>nativeCall('openExternal',p),dismissKeyboard:async()=>{const dismissed=!!window.keyboardOpen;window.keyboardOpen=false;await nativeCall('dismissKeyboard');return {dismissed}}},
+      FlightPush: {addListener:async()=>{},status:async()=>(${JSON.stringify(options.nativeState || {})}),initialize:async()=>${options.hangInitialization ? 'new Promise(()=>{})' : '('+JSON.stringify(options.nativeState || {ready:true})+')'},syncJourney:async p=>{
         await nativeCall('syncJourney',p);
         if (holdJourneyPreparation) {
           window.journeyPreparation ||= new Promise(resolve=>window.finishJourneyPreparation=resolve);
@@ -140,6 +141,58 @@ async function mockedNative(page, disk, options = {}) {
     };` }));
   return calls;
 }
+
+test('Android startup survives stalled push initialization and uses Android copy and back handling',async({page})=>{
+  const now=Date.parse('2026-09-05T07:00:00Z');
+  const disk=new Map([['onestep-flight-offline-journey-v1',JSON.stringify(snapshot(now))]]);
+  const calls=await mockedNative(page,disk,{platform:'android',hangInitialization:true});
+  await page.clock.setFixedTime(new Date(now));
+  await page.route('**/api/**',route=>route.abort());
+  await page.goto('/');
+  await expect(page.locator('[data-screen="step"]')).toBeVisible();
+  await expect.poll(()=>calls.filter(c=>c.name==='start').length).toBe(1);
+  await expect(page.locator('[data-live-activity-status]')).toContainText('Journey notification posted');
+  await expect(page.locator('[data-live-activity-status]')).not.toContainText('iOS');
+  await page.locator('[data-screen="step"] [data-action="staff"]:visible').click();
+  await page.evaluate(()=>nativeEvents.backButton({canGoBack:false}));
+  await expect(page.locator('[data-staff-overlay]')).toBeHidden();
+  await page.addStyleTag({content:'html{font-size:24px} body{font-size:24px}'});
+  await page.setViewportSize({width:360,height:800});
+  await page.locator('[data-locale-select]').selectOption('es');
+  await layout(page);
+});
+
+test('newer native operational facts survive cold restoration and offline progress changes',async({page})=>{
+  const now=Date.parse('2026-09-05T07:00:00Z'), saved=snapshot(now);
+  const key=JSON.stringify({flightNumber:'AF1668',departureDate:'2026-09-05',departureAirport:'CDG',arrivalAirport:'MAN'});
+  const {build}=createRequire(import.meta.url)('../../../src/main/resources/static/flight-display.js');
+  const displayState=build({...saved.flight,gate:'B40',estimatedDeparture:'2026-09-05T12:00:00+02:00',boardingTime:'2026-09-05T11:20:00+02:00'},saved.action,saved.context,{journeyKey:key,locale:'en',snapshotVersion:20,clientRevision:4});
+  const disk=new Map([['onestep-flight-offline-journey-v1',JSON.stringify(saved)]]);
+  const calls=await mockedNative(page,disk,{platform:'android',nativeState:{journeyKey:key,snapshotVersion:20,clientRevision:4,displayState}});
+  await page.clock.setFixedTime(new Date(now));await page.route('**/api/**',route=>route.abort());await page.goto('/');
+  await expect(page.locator('[data-screen="step"]')).toBeVisible();
+  await expect.poll(()=>calls.filter(c=>c.name==='start').length).toBe(1);
+  // Initialization is deliberately independent of local rendering. Its recovered
+  // state must win as soon as it arrives, even if local creation ran first.
+  await expect.poll(()=>calls.filter(c=>c.name==='start'||c.name==='update').at(-1)?.payload.gate).toBe('B40');
+  const started=calls.filter(c=>c.name==='start'||c.name==='update').at(-1).payload;
+  expect(started.gate).toBe('B40');expect(started.boardingTime).toBe('11:20');expect(started.departureTime).toBe('12:00');expect(started.snapshotVersion).toBe(20);
+  await expect.poll(()=>JSON.parse(disk.get('onestep-flight-offline-journey-v1')).flight.gate).toBe('B40');
+  await expect(page.locator('[data-gate]')).toHaveText('Gate B40');
+  await expect(page.locator('[data-boarding-time]')).toContainText('11:20');
+});
+
+test('Android back dismisses the keyboard once, then returns from the focused input page',async({page})=>{
+  await mockedNative(page,new Map(),{platform:'android'});
+  await page.goto('/');await expect(page.locator('[data-screen="welcome"]')).toBeVisible();
+  await page.locator('[data-screen="welcome"] [data-action="manual"]').click();
+  await page.locator('#flight-input').focus();
+  await page.evaluate(()=>{window.keyboardOpen=true;nativeEvents.backButton({canGoBack:false})});
+  await expect.poll(()=>page.evaluate(()=>window.keyboardOpen)).toBe(false);
+  await expect(page.locator('[data-screen="manual"]')).toBeVisible();
+  await page.evaluate(()=>nativeEvents.backButton({canGoBack:false}));
+  await expect(page.locator('[data-screen="welcome"]')).toBeVisible();
+});
 
 test('automatic activity creation proceeds while push sync is stalled and late old cleanup is harmless', async ({ page }) => {
   const now = Date.parse('2026-09-05T07:00:00Z');

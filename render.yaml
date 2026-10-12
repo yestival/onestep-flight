@@ -11,6 +11,9 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+      # Free instances sleep: this profile does not provide continuous monitoring.
+      - key: MOBILE_MONITOR_ENABLED
+        value: "false"
       - key: DB_HOST
         fromDatabase:
           name: onestep-flight-db

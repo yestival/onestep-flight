@@ -148,7 +148,8 @@ final class FlightActivityCoordinator {
                 defaults.set("ended", forKey: "flight.activityReason." + duplicate.id)
                 await duplicate.end(nil, dismissalPolicy: .immediate)
             }
-            guard state.snapshotVersion >= activity.content.state.snapshotVersion else { return }
+            guard state.snapshotVersion >= activity.content.state.snapshotVersion,
+                  state.clientRevision >= activity.content.state.clientRevision else { return }
             if state.actionCode == "CANCELLED" {
                 ended.insert(activity.id)
                 defaults.set("ended", forKey: "flight.activityReason." + activity.id)

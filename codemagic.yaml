@@ -1,4 +1,46 @@
 workflows:
+  android-debug:
+    name: OneStep Flight - Android debug, tests and lint
+    instance_type: linux_x2
+    max_build_duration: 60
+    environment:
+      node: 22.21.1
+      java: 21
+    scripts:
+      - name: Locked dependencies and shared regressions
+        script: npm ci --prefix mobile && npm test --prefix mobile
+      - name: Android tests, lint and debug APK
+        script: npm run android:check --prefix mobile
+    artifacts:
+      - mobile/android/app/build/outputs/apk/debug/*.apk
+      - mobile/android/app/build/reports/lint-results-debug.html
+      - mobile/android/app/build/test-results/testDebugUnitTest/*.xml
+  android-release:
+    name: OneStep Flight - signed Android APK and AAB
+    instance_type: linux_x2
+    max_build_duration: 60
+    environment:
+      node: 22.21.1
+      java: 21
+      groups:
+        - android_signing
+        - android_firebase
+      vars:
+        REQUIRE_FCM: "true"
+    scripts:
+      - name: Locked dependencies and regressions
+        script: npm ci --prefix mobile && npm test --prefix mobile
+      - name: Decode securely injected signing key
+        script: |
+          set -eu
+          : "${ANDROID_KEYSTORE_BASE64:?Set ANDROID_KEYSTORE_BASE64}"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$CM_BUILD_DIR/mobile/build-release.jks"
+          echo "ANDROID_KEYSTORE_PATH=$CM_BUILD_DIR/mobile/build-release.jks" >> "$CM_ENV"
+      - name: Validate Firebase and build signed APK and AAB
+        script: npm run android:check --prefix mobile && npm run android:release --prefix mobile
+    artifacts:
+      - mobile/android/app/build/outputs/apk/release/*.apk
+      - mobile/android/app/build/outputs/bundle/release/*.aab
   iphone-simulator:
     name: OneStep Flight - unsigned iPhone Simulator
     instance_type: mac_mini_m2

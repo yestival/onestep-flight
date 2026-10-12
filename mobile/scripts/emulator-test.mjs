@@ -1,0 +1,260 @@
+import { chromium, expect } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync,writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+import sharp from 'sharp';
+import os from 'node:os';
+const root=fileURLToPath(new URL('../',import.meta.url));
+const sdk=process.env.ANDROID_HOME || path.join(root,'build/toolchain/sdk');
+const adbPath=path.join(sdk,'platform-tools',process.platform==='win32'?'adb.exe':'adb');
+const app='com.selene.onestepflight';
+console.log('Emulator host memory (MiB)',{free:Math.round(os.freemem()/1048576),total:Math.round(os.totalmem()/1048576)});
+if(process.argv[2]==='environment') process.exit(0);
+const output=path.join(root,'build/emulator-tests');mkdirSync(output,{recursive:true});
+const adb=(...args)=>execFileSync(adbPath,args,{encoding:'utf8',timeout:45000,maxBuffer:8*1024*1024}).trim();
+const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+function connectivity(enabled) {
+  adb('shell','svc','wifi',enabled?'enable':'disable');
+  if(adb('shell','service','check','phone').includes(': found')) adb('shell','svc','data',enabled?'enable':'disable');
+}
+async function connect() {
+  let socket;
+  for(let i=0;i<40;i++) {let pid='';try {pid=adb('shell','pidof',app);} catch {} if(pid) socket=adb('shell','cat','/proc/net/unix').split('\n').find(s=>s.includes('webview_devtools_remote_'+pid));if(socket) break;await delay(500);}
+  if(!socket) throw new Error('App WebView debug socket unavailable');
+  adb('forward','tcp:9222','localabstract:'+socket.split('@')[1].trim());
+  const browser=await chromium.connectOverCDP('http://127.0.0.1:9222',{noDefaults:true});
+  const page=browser.contexts()[0].pages()[0];
+  try { await page.waitForFunction(()=>window.OneStepNative && window.OneStepPlatform,null,{timeout:90000,polling:250}); }
+  catch(error) {
+    console.error('WebView initialization diagnostic',await page.evaluate(()=>({url:location.href,ready:document.readyState,title:document.title,body:document.body?.innerText.slice(0,250),native:!!window.OneStepNative,platform:!!window.OneStepPlatform,scripts:[...document.scripts].map(s=>s.src)})));
+    throw error;
+  }
+  return {browser,context:browser.contexts()[0],page:browser.contexts()[0].pages()[0]};
+}
+function capture(name) {writeFileSync(path.join(output,name+'.png'),execFileSync(adbPath,['exec-out','screencap','-p'],{timeout:30000,maxBuffer:8*1024*1024}));}
+function ui() {
+  adb('shell','uiautomator','dump','/sdcard/flight-ui.xml');
+  let xml=adb('shell','cat','/sdcard/flight-ui.xml');
+  // On a memory constrained host System UI can time out during emulator boot.
+  // Record that environment failure and close only its dialog. App ANRs remain
+  // visible and fail the test; they must never be dismissed by this recovery.
+  if(xml.includes('System UI isn\'t responding')) {
+    capture('system-ui-anr');console.warn('ENVIRONMENT: Android System UI ANR; restarting System UI');
+    const node=(xml.match(/<node\b[^>]+>/g)||[]).find(n=>n.includes('text="Close app"'));
+    const b=node && /bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);
+    if(b) adb('shell','input','tap',String((+b[1]+ +b[3])/2),String((+b[2]+ +b[4])/2));
+  const dumped=adb('shell','uiautomator','dump','/sdcard/flight-ui.xml');
+  xml=dumped.includes('ERROR:') ? '' : adb('shell','cat','/sdcard/flight-ui.xml');
+  }
+  return xml;
+}
+async function tap(text) {
+  for(let attempt=0;attempt<12;attempt++) {
+    const nodes=ui().match(/<node\b[^>]+>/g)||[];
+    const node=nodes.find(n=>text.test(n));
+    const b=node && /bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);
+    if(b) {adb('shell','input','tap',String((+b[1]+ +b[3])/2),String((+b[2]+ +b[4])/2));return;}
+    await delay(500);
+  }
+  throw new Error('Android UI target missing: '+text);
+}
+if(process.argv[2]==='inspect') {
+  const {browser,page}=await connect();
+  console.log(await page.evaluate(async()=>({url:location.href,platform:OneStepNative.platform,native:OneStepNative.isNative,screen:document.querySelector('.screen.is-active')?.dataset.screen,push:await OneStepNative.FlightPush.status(),testDocument:window.__selectedDocument,inputFiles:[...document.getElementById('ticket-file').files].map(f=>({name:f.name,type:f.type,size:f.size}))})));
+  capture('startup');await browser.close();process.exit(0);
+}
+let booted=false;
+for(let n=0;n<180;n++) {try {if(adb('shell','getprop','sys.boot_completed')==='1') {booted=true;break;}} catch {} await delay(1000);}
+if(!booted) throw new Error('Android Emulator did not finish booting within three minutes');
+adb('shell','input','keyevent','224');adb('shell','wm','dismiss-keyguard');
+connectivity(true);
+adb('shell','wm','size','720x1600');adb('shell','wm','density','280');
+ui();
+adb('install','-r',path.join(root,'android/app/build/outputs/apk/debug/app-debug.apk'));
+adb('shell','pm','clear',app);adb('shell','am','start','-n',app+'/.MainActivity');
+let {browser,context,page}=await connect();
+adb('shell','am','start','-n',app+'/.MainActivity');
+await expect.poll(()=>page.evaluate(()=>OneStepNative.Network.getStatus()).then(s=>s.connected),{timeout:15000}).toBe(true);
+adb('shell','am','broadcast','-a',app+'.DEBUG_MESSAGE','-n',app+'/.DebugMessageReceiver','--ez','localTest','true');
+await expect(page.locator('[data-screen="welcome"]')).toBeVisible();
+expect(await page.evaluate(()=>location.origin)).toBe('https://localhost');
+expect(await page.evaluate(()=>OneStepNative.platform)).toBe('android');
+capture('cold-start');console.log('PASS actual WebView cold start, bundled HTTPS origin, Android plugins');
+const uploads=[];
+const now=Date.now(), departure=new Date(now+2*3600000).toISOString(), date=departure.slice(0,10);
+const flight={flightNumber:'BA117',departureDate:date,departureAirport:'LHR',arrivalAirport:'JFK',terminal:'T5',gate:'B32',status:'SCHEDULED',live:true,demo:false,
+  scheduledDeparture:departure,estimatedDeparture:departure,scheduledArrival:new Date(now+9*3600000).toISOString(),
+  dataRetrievedAt:new Date(now).toISOString(),dataLastUpdatedAt:new Date(now).toISOString(),conflicts:[],
+  timeContext:{serverNow:new Date(now).toISOString(),departureUtcOffset:'+00:00',effectiveDeparture:departure,boardingTime:new Date(now+90*60000).toISOString()}};
+await context.route('**/api/**',async route=>{
+  const headers={'Access-Control-Allow-Origin':'https://localhost','Access-Control-Allow-Headers':'content-type,accept','Access-Control-Allow-Methods':'GET,POST,PUT,DELETE,OPTIONS'};
+  if(route.request().method()==='OPTIONS') return route.fulfill({status:204,headers});
+  if(route.request().url().includes('/documents/travel-document')) {
+    uploads.push(route.request().postDataBuffer());
+    return route.fulfill({headers,json:{documentType:'ITINERARY',dataSource:'LOCAL_TEST',extractedAt:new Date(now).toISOString(),fields:{},needsReviewFields:[],segments:[{...flight,flightNumberConfidence:'HIGH',requiresFlightNumberConfirmation:false,flightNumberConfirmedByUser:false}]}});
+  }
+  if(route.request().url().includes('resolve-flight')) return route.fulfill({json:flight,headers});
+  if(route.request().url().includes('next-action')) {
+    const request=route.request().postDataJSON();const p=request.context || request.journeyContext || request;
+    const question=!p.checkedIn?'CHECK_IN_QUESTION':p.hasCheckedBaggage==null?'BAGGAGE_QUESTION':null;
+    return route.fulfill({headers,json:{flight,nextAction:{stepType:question || 'ACTION',actionCode:question || (p.securityCleared?'GO_TO_GATE':'SECURITY'),titleEn:question || (p.securityCleared?'Go to gate B32':'Go to security'),destination:p.securityCleared?'B32':'Security',urgency:'NORMAL'}}});
+  }
+  return route.abort();
+});
+const png=await sharp({create:{width:300,height:200,channels:3,background:'#ffffff'}}).png().toBuffer();
+const jpeg=await sharp(png).jpeg().toBuffer();
+const pdf=Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF');
+for(const [extension,bytes] of [['png',png],['jpg',jpeg],['pdf',pdf]]) {
+  const name='onestep-test.'+extension, file=path.join(output,name);writeFileSync(file,bytes);adb('push',file,'/sdcard/Download/'+name);
+  await page.evaluate(()=>document.getElementById('ticket-file').addEventListener('change',async event=>{
+    const file=event.target.files[0];if(file) window.__selectedDocument=btoa(String.fromCharCode(...new Uint8Array(await file.arrayBuffer())));
+  }));
+  await page.locator('[data-screen="welcome"] [data-action="upload"]').click();
+  await delay(800);
+  const xml=ui();
+  if(!xml.includes(name)) {
+    await tap(/content-desc="Show roots"/);
+    await tap(/text="Downloads"/);
+  }
+  await tap(new RegExp('text="'+name.replace('.','\\.')+'"'));
+  await expect.poll(()=>uploads.length,{timeout:15000}).toBe(['png','jpg','pdf'].indexOf(extension)+1);
+  await expect.poll(()=>page.evaluate(()=>window.__selectedDocument),{timeout:15000}).toBe(bytes.toString('base64'));
+  expect(uploads.at(-1).toString()).toContain(name);
+  await expect(page.locator('[data-screen="confirm"]')).toBeVisible();
+  await page.reload();await page.waitForFunction(()=>window.OneStepNative && window.OneStepPlatform);
+  await page.evaluate(()=>OneStepPlatform.init());
+  await expect(page.locator('[data-screen="welcome"]')).toBeVisible();
+}
+await page.locator('[data-screen="welcome"] [data-action="upload"]').click();await delay(600);adb('shell','input','keyevent','4');
+await expect(page.locator('[data-screen="welcome"]')).toBeVisible();expect(uploads.length).toBe(3);
+console.log('PASS real Android document picker content URI PNG, JPEG, PDF bytes and cancellation (extraction mocked)');
+await page.locator('[data-screen="welcome"] [data-action="manual"]').click();
+const inputs=await page.locator('[data-screen="manual"] input').evaluateAll(es=>es.map(e=>({id:e.id,type:e.type,name:e.name})));
+console.log('Manual inputs',inputs);
+await page.locator('#flight-input').fill('BA117');
+const dateInput=page.locator('[data-screen="manual"] input[type="date"]');if(await dateInput.count()) await dateInput.fill(date);
+await page.locator('[data-screen="manual"] input').first().focus();
+adb('shell','input','keyevent','4');await delay(300);
+await page.locator('[data-screen="manual"] button[type="submit"]').click();
+await expect(page.locator('[data-screen="confirm"]')).toBeVisible();
+await page.locator('[data-action="continue"]').click();
+await expect(page.locator('[data-screen="step"]')).toBeVisible();
+await tap(/text="(?:Don.t allow|不允许)"/);
+await expect(page.locator('[data-live-activity-status]')).toContainText(/disabled|关闭/);
+expect((await page.evaluate(()=>OneStepNative.FlightPush.status())).enabled).toBe(false);
+capture('permission-denied');console.log('PASS first confirmation permission prompt, denial preserves guidance');
+await page.locator('[data-action="checkin-status"][data-answer="yes"]').click();
+await page.locator('[data-action="baggage"][data-answer="no"]').click();
+await page.locator('[data-complete-action]').click();
+await expect.poll(()=>page.evaluate(()=>OneStepNative.FlightPush.status()).then(s=>s.displayState.actionCode)).toBe('GO_TO_GATE');
+console.log('PASS check-in, baggage choice and security step advance while notifications are denied');
+await page.evaluate(()=>OneStepNative.FlightPush.openSettings());
+await tap(/text="(?:All OneStep Flight notifications|Allow notifications|允许通知)"/);
+adb('shell','input','keyevent','4');await delay(600);
+// Grant via shell as a fallback only if this system image exposes a different settings layout.
+expect((await page.evaluate(()=>OneStepNative.FlightPush.status())).enabled).toBe(true);
+await expect.poll(()=>page.evaluate(async()=> (await OneStepNative.FlightLiveActivity.status()).active)).toBe(true);
+capture('permission-restored');console.log('PASS notification settings recovery and automatic journey card');
+await page.evaluate(()=>OneStepPlatform.openExternal('https://example.com'));
+await delay(600);expect(adb('shell','dumpsys','activity','activities')).toMatch(/chrome|browser/i);
+adb('shell','am','start','-n',app+'/.MainActivity');await delay(400);
+expect(await page.evaluate(()=>location.origin)).toBe('https://localhost');
+await page.evaluate(()=>OneStepPlatform.openExternal('tel:+442079460000'));
+await delay(600);expect(adb('shell','dumpsys','activity','activities')).toMatch(/dialer|ACTION_DIAL/i);
+adb('shell','am','start','-n',app+'/.MainActivity');await delay(400);
+const rejected=await page.evaluate(()=>OneStepPlatform.openExternal('javascript:alert(1)').then(()=>false,()=>true));expect(rejected).toBe(true);
+console.log('PASS HTTPS uses system browser, telephone uses dialer, unsupported URL rejected');
+await page.evaluate(data=>{window.__shareDone=false;OneStepPlatform.sharePng(new Blob([Uint8Array.from(atob(data),c=>c.charCodeAt(0))],{type:'image/png'})).catch(e=>window.__shareError=e.message).finally(()=>window.__shareDone=true);},png.toString('base64'));
+await expect.poll(()=>adb('shell','dumpsys','activity','activities').includes('ChooserActivity'),{timeout:15000}).toBe(true);
+capture('share-chooser');
+const sharedFiles=adb('shell','run-as',app,'ls','cache/onestep-share');expect(sharedFiles).toMatch(/card-\d+\.png/);
+adb('shell','input','keyevent','4');await expect.poll(()=>page.evaluate(()=>window.__shareDone)).toBe(true);
+expect(adb('shell','run-as',app,'ls','cache/onestep-share')).toBe(sharedFiles);
+console.log('PASS native image share chooser and cache retained after chooser cancellation');
+await page.locator('[data-screen="step"] [data-action="staff"]:visible').click();adb('shell','input','keyevent','4');
+await expect(page.locator('[data-staff-overlay]')).toBeHidden();console.log('PASS native Android back closes dialog');
+let status=await page.evaluate(()=>OneStepNative.FlightPush.status());
+const display={...status.displayState,gate:'B40',nextStep:status.displayState.nextStep.replace(/B32/g,'B40'),
+  metricOneValue:status.displayState.metricOneValue.replace(/B32/g,'B40'),snapshotVersion:20,clientRevision:status.clientRevision,
+  facts:{...status.displayState.facts,gate:'B40'}};
+const message={eventId:'emulator-injected-gate',journeyKey:status.journeyKey,snapshotVersion:'20',clientRevision:String(status.clientRevision),important:'true',end:'false',expiresAt:String(Math.floor(Date.now()/1000)+900),displayState:JSON.stringify(display),title:'Gate changed',body:'B32 → B40'};
+function inject(data) {
+  const file=path.join(output,'message.json');writeFileSync(file,JSON.stringify(data));adb('push',file,'/data/local/tmp/flight-message.json');
+  adb('shell','run-as',app,'cp','/data/local/tmp/flight-message.json','files/debug-message.json');
+  adb('shell','am','broadcast','-a',app+'.DEBUG_MESSAGE','-n',app+'/.DebugMessageReceiver');
+}
+adb('shell','input','keyevent','3');inject(message);inject(message);
+const nativeNotifications=adb('shell','dumpsys','notification','--noredact');
+expect(nativeNotifications).toContain(display.nextStep);expect(nativeNotifications).toContain('B40');expect(nativeNotifications).toContain('Gate changed');
+adb('shell','cmd','statusbar','expand-notifications');capture('background-notifications');adb('shell','cmd','statusbar','collapse');
+console.log('PASS background local injection updates real card and important alert, duplicate event');
+await tapNotification();
+await expect(page.locator('[data-screen="step"]')).toBeVisible();
+console.log('PASS warm notification click returns to the saved journey');
+async function tapNotification() {
+  const title=display.nextStep.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  adb('shell','cmd','statusbar','expand-notifications');await delay(600);await tap(new RegExp('text="'+title+'"'));await delay(800);
+}
+adb('shell','input','keyevent','3');await delay(700);await browser.close();adb('shell','am','kill',app);
+await delay(500);expect(adb('shell','dumpsys','notification','--noredact')).toContain(display.nextStep);
+await tapNotification();({browser,context,page}=await connect());
+await expect(page.locator('[data-screen="step"]')).toBeVisible();
+expect((await page.evaluate(()=>OneStepNative.FlightPush.status())).displayState.gate).toBe('B40');
+console.log('PASS process recreation and cold notification click restore local journey before network');
+const silentLockSetting=adb('shell','settings','get','secure','lock_screen_show_silent_notifications');
+try {
+  // The test explicitly allows silent cards on its own emulator. Product code
+  // never writes system visibility settings or overrides the user's choice.
+  adb('shell','settings','put','secure','lock_screen_show_silent_notifications','1');
+  adb('shell','locksettings','set-disabled','false');
+  adb('shell','input','keyevent','223');await delay(500);adb('shell','input','keyevent','224');await delay(1000);
+  expect(adb('shell','dumpsys','window','policy')).toMatch(/(?:showing=true|isKeyguardShowing=true|mShowingLockscreen=true)/);
+  await expect.poll(()=>ui().includes(display.nextStep),{timeout:15000}).toBe(true);capture('lockscreen');
+  console.log('PASS actual keyguard shows journey card when system allows silent notifications');
+} finally {
+  if(silentLockSetting==='null') adb('shell','settings','delete','secure','lock_screen_show_silent_notifications');
+  else adb('shell','settings','put','secure','lock_screen_show_silent_notifications',silentLockSetting);
+  adb('shell','wm','dismiss-keyguard');
+}
+adb('shell','am','start','-n',app+'/.MainActivity');await delay(800);
+expect((await page.evaluate(()=>OneStepNative.FlightPush.status())).snapshotVersion).toBe(20);
+connectivity(false);await delay(500);
+expect((await page.evaluate(()=>OneStepNative.FlightPush.status())).displayState.gate).toBe('B40');
+connectivity(true);console.log('PASS offline retained native display and reconnect');
+await page.locator('[data-screen="step"] [data-action="end-journey"]').click();
+await page.locator('[data-action="confirm-end"]').click();
+await expect(page.locator('[data-screen="welcome"]')).toBeVisible();
+// Returning home precedes the asynchronous native bridge completion. Assert
+// bounded cleanup before testing a genuinely late event after the journey ends.
+await expect.poll(()=>page.evaluate(()=>OneStepNative.FlightLiveActivity.status()).then(s=>s.active),{timeout:5000}).toBe(false);
+inject({...message,eventId:'late-after-end',snapshotVersion:'21',displayState:JSON.stringify({...display,snapshotVersion:21})});
+expect((await page.evaluate(()=>OneStepNative.FlightLiveActivity.status())).active).toBe(false);
+console.log('PASS end and late old event do not recreate card');
+await page.locator('[data-locale-select]').selectOption('es');
+await page.addStyleTag({content:'html,body{font-size:24px}'});
+const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
+expect(overflow).toBe(false);capture('spanish-large-text');
+await page.locator('[data-screen="welcome"] [data-action="manual"]').click();
+await page.locator('#flight-input').click();await delay(400);capture('keyboard');
+adb('shell','input','keyevent','4');await delay(600);adb('shell','input','keyevent','4');
+await expect(page.locator('[data-screen="welcome"]')).toBeVisible();
+console.log('PASS actual Android Spanish large text, keyboard dismissal and page back');
+const overlays=adb('shell','cmd','overlay','list');
+if(overlays.includes('com.android.internal.systemui.navbar.threebutton')) {
+  const previous=overlays.split('\n').find(line=>/\[x\].*com\.android\.internal\.systemui\.navbar\./.test(line))?.trim().split(' ').at(-1);
+  try {
+    adb('shell','cmd','overlay','enable-exclusive','--category','com.android.internal.systemui.navbar.threebutton');
+    await delay(1200);
+    // A system navigation overlay can recreate the activity/WebView. Attach
+    // to the current process rather than retaining its obsolete debug target.
+    try {await browser.close();} catch {}
+    adb('shell','am','start','-n',app+'/.MainActivity');
+    ({browser,context,page}=await connect());
+    await page.addStyleTag({content:'html,body{font-size:24px}'});
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await expect(page.locator('[data-screen="welcome"]')).toBeVisible();capture('three-button-navigation');
+    console.log('PASS actual Android three-button navigation with large Spanish text');
+  } finally {if(previous) adb('shell','cmd','overlay','enable-exclusive','--category',previous);}
+} else console.log('NOT EXECUTED three-button navigation: overlay absent from system image');
+await browser.close();
