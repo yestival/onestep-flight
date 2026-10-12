@@ -49,7 +49,7 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: '15859902'
-          packages: 'platform-tools platforms;android-36 build-tools;36.0.0 emulator'
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
           log-accepted-android-sdk-licenses: false
       - name: Use the pinned Android SDK device catalog
         run: |
@@ -65,6 +65,7 @@ jobs:
       - run: npm test --prefix mobile
       - run: npm run android:check --prefix mobile
       - name: Reserve disk space for Android 16 userdata
+        if: github.event_name == 'workflow_dispatch'
         run: |
           # This Java/Kotlin app uses no NDK. API 36 enforces a userdata minimum
           # larger than the requested partition, so free actual SDK disk space.
@@ -74,7 +75,9 @@ jobs:
           done < <(awk '$1 ~ /^ndk;/ {print $1}' "$RUNNER_TEMP/onestep-sdk-packages.txt")
           df -h "$HOME"
       - name: Configure and verify nested KVM acceleration
+        if: github.event_name == 'workflow_dispatch'
         run: |
+          sdkmanager 'emulator'
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
@@ -87,6 +90,9 @@ jobs:
           adb start-server
           (adb wait-for-device && adb logcat -v threadtime) > android-boot-logcat.txt 2>&1 &
       - name: Native notification lifecycle on Google APIs Android 16
+        # Cloud virtualization failures must not start on every source push.
+        # Keep this complete suite available through Actions > Run workflow.
+        if: github.event_name == 'workflow_dispatch'
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
@@ -113,13 +119,13 @@ jobs:
             timeout 10m npm run android:test:native --prefix mobile
             timeout 12m npm run android:test:emulator --prefix mobile
       - name: Capture emulator host diagnostics
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch'
         run: |
           {
             date -u
             df -h
             free -m
-            ps -eo pid,ppid,stat,rss,comm --sort=-rss | head -25
+            ps -eo pid,ppid,stat,rss,comm --sort=-rss | sed -n '1,25p'
             sudo dmesg | tail -100
           } > emulator-host-diagnostics.txt
       - uses: actions/upload-artifact@v4
