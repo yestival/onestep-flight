@@ -46,19 +46,34 @@ jobs:
         with: {node-version: '22', cache: npm, cache-dependency-path: mobile/package-lock.json}
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '21'}
-      - uses: android-actions/setup-android@v3
-        with:
-          cmdline-tools-version: '15859902'
-          packages: 'platform-tools platforms;android-36 build-tools;36.0.0 emulator'
-          log-accepted-android-sdk-licenses: false
-      - name: Use the pinned SDK tools throughout emulator setup
+      - name: Install verified Android SDK tools for Intel macOS
         run: |
+          # SDK 22 separates Intel/ARM archives. setup-android v3 still requests
+          # the removed, architecture-independent mac filename for this version.
+          export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          archive="$RUNNER_TEMP/onestep-sdk-tools.zip"
+          curl --fail --location --retry 3 --output "$archive" \
+            https://dl.google.com/android/repository/commandlinetools-mac_x86_64-15859902_latest.zip
+          echo "c5a6378ab5cf7e0d5701921405115befff13e9ff7417fb588389338f8bd050f3  $archive" | shasum -a 256 -c -
+          unzip -q "$archive" -d "$RUNNER_TEMP/onestep-sdk-tools"
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+          mv "$RUNNER_TEMP/onestep-sdk-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/15859902"
           # emulator-runner prepends cmdline-tools/latest to PATH. Point that
           # location at the installed tools instead of the runner's old catalog.
           if [ -e "$ANDROID_HOME/cmdline-tools/latest" ]; then
             mv "$ANDROID_HOME/cmdline-tools/latest" "$ANDROID_HOME/cmdline-tools/preinstalled-latest"
           fi
           ln -s "$ANDROID_HOME/cmdline-tools/15859902" "$ANDROID_HOME/cmdline-tools/latest"
+          # Bounded input avoids a successful license check failing on SIGPIPE
+          # under GitHub's default bash -e -o pipefail shell.
+          printf 'y\n%.0s' {1..100} | sdkmanager --licenses > "$RUNNER_TEMP/onestep-sdk-licenses.txt"
+          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0' 'emulator'
           "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" list device | tee "$RUNNER_TEMP/onestep-devices.txt"
           grep -q '"pixel_9"' "$RUNNER_TEMP/onestep-devices.txt"
       - run: npm ci --prefix mobile
