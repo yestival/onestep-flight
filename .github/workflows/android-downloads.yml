@@ -46,6 +46,9 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+          log-accepted-android-sdk-licenses: false
       - run: npm ci --prefix mobile
       - run: npm test --prefix mobile
       - name: Android unit tests, lint and signed build
