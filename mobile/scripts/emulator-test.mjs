@@ -79,9 +79,9 @@ function ui() {
   // On a memory constrained host System UI can time out during emulator boot.
   // Record that environment failure and close only its dialog. App ANRs remain
   // visible and fail the test; they must never be dismissed by this recovery.
-  if(xml.includes('System UI isn\'t responding')) {
+  if(/text="(?:System UI isn't responding|系统界面没有响应|系统界面无响应|La IU del sistema no responde)"/.test(xml)) {
     capture('system-ui-anr');console.warn('ENVIRONMENT: Android System UI ANR; restarting System UI');
-    const node=(xml.match(/<node\b[^>]+>/g)||[]).find(n=>n.includes('text="Close app"'));
+    const node=(xml.match(/<node\b[^>]+>/g)||[]).find(n=>/text="(?:Close app|关闭应用|Cerrar aplicación)"/.test(n));
     const b=node && /bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);
     if(b) adb('shell','input','tap',String((+b[1]+ +b[3])/2),String((+b[2]+ +b[4])/2));
     xml=dumpHierarchy();
