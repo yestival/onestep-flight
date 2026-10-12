@@ -96,6 +96,19 @@ jobs:
             ps -eo pid,ppid,stat,rss,comm --sort=-rss | sed -n '1,25p'
             sudo dmesg -T | tail -120
           } > emulator-host-diagnostics.txt
+          sudo python3 - <<'PY' >> emulator-host-diagnostics.txt
+          import glob
+          import problem_report
+          for filename in glob.glob('/var/crash/*'):
+              if not filename.endswith('.crash'):
+                  continue
+              report = problem_report.ProblemReport()
+              with open(filename, 'rb') as source:
+                  report.load(source, binary=False)
+              if 'qemu' in report.get('ExecutablePath', '') or 'emulator' in report.get('ExecutablePath', ''):
+                  for key in ['ExecutablePath', 'Signal', 'Title', 'AssertionMessage', 'StacktraceTop', 'Stacktrace']:
+                      print(key + ': ' + str(report.get(key, 'unavailable')))
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
