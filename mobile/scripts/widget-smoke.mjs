@@ -64,7 +64,9 @@ try {
   run('xcodebuild', ['-project', 'ios/App/App.xcodeproj', '-scheme', 'FlightActivitySmoke', '-destination', `platform=iOS Simulator,id=${device}`, '-derivedDataPath', 'build/SmokeDerivedData', '-resultBundlePath', 'build/widget-smoke/Result.xcresult', '-parallel-testing-enabled', 'NO', 'CODE_SIGNING_ALLOWED=YES', 'CODE_SIGN_IDENTITY=-', 'DEVELOPMENT_TEAM=', 'test'], { stdio: 'inherit' });
 } finally {
   if (device) {
-    const logs = spawnSync('xcrun', ['simctl', 'spawn', device, 'log', 'show', '--last', '15m', '--style', 'compact', '--info', '--debug', '--predicate', 'process CONTAINS "WidgetRenderer" OR process == "FlightActivity" OR process == "liveactivitiesd" OR process == "chronod" OR process == "App" OR (process == "SpringBoard" AND (subsystem CONTAINS "chrono" OR subsystem CONTAINS "activity" OR subsystem CONTAINS "Widget" OR messageType == error OR eventMessage CONTAINS "onestepflight"))'], { encoding: 'utf8', timeout: 30000, maxBuffer: 64 * 1024 * 1024 });
+    // Unfiltered chronod debug output can exceed the buffer during first boot and
+    // truncate the later App/Widget failure. Keep our processes and relevant system events.
+    const logs = spawnSync('xcrun', ['simctl', 'spawn', device, 'log', 'show', '--last', '15m', '--style', 'compact', '--info', '--predicate', 'process CONTAINS "WidgetRenderer" OR process == "FlightActivity" OR process == "App" OR ((process == "liveactivitiesd" OR process == "chronod" OR process == "SpringBoard") AND (eventMessage CONTAINS "onestepflight" OR eventMessage CONTAINS "FlightActivity" OR messageType == error))'], { encoding: 'utf8', timeout: 30000, maxBuffer: 64 * 1024 * 1024 });
     writeFileSync(new URL('build/widget-smoke/system.log', mobileRoot), logs.stdout || logs.stderr || 'No system logs');
     spawnSync('xcrun', ['simctl', 'io', device, 'screenshot', fileURLToPath(new URL('build/widget-smoke/screen.png', mobileRoot))], { timeout: 15000 });
   }

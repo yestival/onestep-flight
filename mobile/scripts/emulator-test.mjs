@@ -57,7 +57,24 @@ async function tap(text) {
     if(b) {adb('shell','input','tap',String((+b[1]+ +b[3])/2),String((+b[2]+ +b[4])/2));return;}
     await delay(500);
   }
+  writeFileSync(path.join(output,'missing-ui-target.xml'),ui());
+  capture('missing-ui-target');
   throw new Error('Android UI target missing: '+text);
+}
+async function showJourneyNotification(title) {
+  const escaped=title.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const target=new RegExp('(?:text|content-desc)="[^"\\n]*'+escaped+'[^"\\n]*"');
+  for(let attempt=0;attempt<4;attempt++) {
+    adb('shell','input','keyevent','224');
+    adb('shell','cmd','statusbar','collapse');await delay(200);
+    // A shell expand request can be cancelled by a heads-up/launcher transition.
+    // Use the same top-edge gesture as a user and verify the actual card is visible.
+    adb('shell','input','swipe','144','1','144','1400','500');await delay(500);
+    if(target.test(ui())) return target;
+  }
+  writeFileSync(path.join(output,'missing-notification.xml'),ui());
+  capture('missing-notification');
+  throw new Error('Journey notification was not visible after opening the shade: '+title);
 }
 if(process.argv[2]==='inspect') {
   const {browser,page}=await connect();
@@ -187,14 +204,14 @@ function inject(data) {
 adb('shell','input','keyevent','3');inject(message);inject(message);
 const nativeNotifications=adb('shell','dumpsys','notification','--noredact');
 expect(nativeNotifications).toContain(display.nextStep);expect(nativeNotifications).toContain('B40');expect(nativeNotifications).toContain('Gate changed');
-adb('shell','cmd','statusbar','expand-notifications');capture('background-notifications');adb('shell','cmd','statusbar','collapse');
+await showJourneyNotification(display.nextStep);capture('background-notifications');adb('shell','cmd','statusbar','collapse');
 console.log('PASS background local injection updates real card and important alert, duplicate event');
 await tapNotification();
 await expect(page.locator('[data-screen="step"]')).toBeVisible();
 console.log('PASS warm notification click returns to the saved journey');
 async function tapNotification() {
-  const title=display.nextStep.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  adb('shell','cmd','statusbar','expand-notifications');await delay(600);await tap(new RegExp('text="'+title+'"'));await delay(800);
+  const target=await showJourneyNotification(display.nextStep);
+  await tap(target);await delay(800);
 }
 adb('shell','input','keyevent','3');await delay(700);await browser.close();adb('shell','am','kill',app);
 await delay(500);expect(adb('shell','dumpsys','notification','--noredact')).toContain(display.nextStep);

@@ -47,6 +47,7 @@ final class FlightActivitySmokeController: UIViewController {
                         content: ActivityContent(state: state, staleDate: Date(timeIntervalSince1970: TimeInterval(state.staleAt))),
                         pushType: .token)
                     legacyID = legacy.id
+                    print("WIDGET_SMOKE legacy id=\(legacy.id) state=\(legacy.activityState) staleDate=\(String(describing: legacy.content.staleDate))")
                 }
                 try await FlightActivityCoordinator.shared.sync(state)
                 try await FlightActivityCoordinator.shared.sync(state)
@@ -54,6 +55,9 @@ final class FlightActivitySmokeController: UIViewController {
                 let reused = legacyID == nil || legacyID == activities.first?.id
                 status.text = "created=\(activities.count) reused=\(reused) state=\(String(describing: activities.first?.activityState))"
                 print("WIDGET_SMOKE \(status.text ?? "")")
+                for activity in activities {
+                    print("WIDGET_SMOKE synced id=\(activity.id) state=\(activity.activityState) staleDate=\(String(describing: activity.content.staleDate))")
+                }
             } catch { status.text = "error=\(error)"; print("WIDGET_SMOKE \(error)") }
         }
     }
