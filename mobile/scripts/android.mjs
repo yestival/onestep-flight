@@ -72,8 +72,10 @@ if(['debug','release','check','native-test'].includes(action)) {
 } else if(action==='emulator') {
   env.ANDROID_PREFS_ROOT ||= path.join(toolRoot,'android-user');
   env.ANDROID_SDK_HOME ||= toolRoot;
-  const emulator=path.join(env.ANDROID_HOME,'emulator',win?'emulator.exe':'emulator');
-  const args=['-avd',env.ANDROID_AVD_NAME || 'OneStep_API_36','-no-boot-anim','-gpu','swiftshader','-feature','-Vulkan','-memory',env.ANDROID_EMULATOR_MEMORY || '2048','-cores','2','-no-snapshot'];
+  const pinnedEmulator=path.join(toolRoot,'emulator-14763179/emulator',win?'emulator.exe':'emulator');
+  const emulator=env.ANDROID_EMULATOR_PATH || (existsSync(pinnedEmulator) ? pinnedEmulator : path.join(env.ANDROID_HOME,'emulator',win?'emulator.exe':'emulator'));
+  const pixel9=existsSync(path.join(env.ANDROID_AVD_HOME || '', 'OneStep_Pixel9_API36_ZH.avd/config.ini'));
+  const args=['-avd',env.ANDROID_AVD_NAME || (pixel9 ? 'OneStep_Pixel9_API36_ZH' : 'OneStep_API_36'),'-no-boot-anim','-gpu','swiftshader','-feature','-Vulkan','-memory',env.ANDROID_EMULATOR_MEMORY || '2048','-cores','2','-no-snapshot'];
   if(env.ANDROID_HEADLESS==='true') args.push('-no-window');
   if(win) {
     mkdirSync(path.join(root,'build'),{recursive:true});

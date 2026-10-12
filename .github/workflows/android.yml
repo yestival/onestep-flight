@@ -71,7 +71,8 @@ jobs:
           api-level: 36
           # Pin the official stable binary so SDK updates cannot silently change
           # the virtual machine underneath the same API 36 regression suite.
-          emulator-build: 14763179 # Emulator 36.4.9
+          emulator-build: 14763179
+          profile: pixel_9
           target: google_apis
           arch: x86_64
           disk-size: 4096M
