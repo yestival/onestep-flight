@@ -6574,6 +6574,9 @@
 
   function openDialog(dialogSelector, focusSelector) {
     overlayReturnFocus = document.activeElement;
+    // WKWebView may retain the keyboard's smaller visual viewport while focus
+    // moves to a dialog. Release the old input before sizing a non-editable card.
+    if (overlayReturnFocus && overlayReturnFocus.blur) overlayReturnFocus.blur();
     activeDialog = document.querySelector(dialogSelector);
     document.querySelector('.site-header').inert = true;
     document.getElementById('main-content').inert = true;
@@ -8295,11 +8298,19 @@
   if (nativeApp && window.visualViewport) {
     var updateViewport = function () {
       if (window.visualViewport.scale !== 1) return;
-      document.documentElement.style.setProperty('--visible-height', window.visualViewport.height + 'px');
-      document.documentElement.style.setProperty('--visible-top', window.visualViewport.offsetTop + 'px');
+      var editing = document.activeElement && document.activeElement.matches('input:not([type="file"]),textarea,[contenteditable="true"]');
+      // A dismissed keyboard can leave visualViewport at its old half height
+      // until a later scroll/resize on iOS. Non-editable dialogs use the actual
+      // WebView bounds; editable dialogs still fit above the visible keyboard.
+      var height = editing ? window.visualViewport.height : document.documentElement.clientHeight;
+      document.documentElement.style.setProperty('--visible-height', height + 'px');
+      document.documentElement.style.setProperty('--visible-top', (editing ? window.visualViewport.offsetTop : 0) + 'px');
     };
     window.visualViewport.addEventListener('resize', updateViewport);
     window.visualViewport.addEventListener('scroll', updateViewport);
+    window.addEventListener('resize', updateViewport);
+    document.addEventListener('focusin', updateViewport);
+    document.addEventListener('focusout', function () { queueMicrotask(updateViewport); });
     updateViewport();
   }
   if (platform) {

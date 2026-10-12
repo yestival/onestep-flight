@@ -73,6 +73,9 @@ try {
   run('xcrun', ['simctl', 'boot', device], { timeout: 60000 });
   run('xcrun', ['simctl', 'bootstatus', device, '-b'], { stdio: 'inherit', timeout: 240000 });
   run('xcrun', ['simctl', 'ui', device, 'appearance', process.env.SMOKE_APPEARANCE || 'light']);
+  // Lock-screen UI tests need an attached display. A simctl-only boot can leave
+  // SpringBoard's activity list offscreen even after chronod renders its archive.
+  run('open', ['-a', 'Simulator', '--args', '-CurrentDeviceUDID', device], { timeout: 30000 });
   // Stream the actual test interval. A retrospective first-boot log scan can
   // exhaust its deadline before reaching the App's later ActivityKit events.
   logDescriptor = openSync(new URL('build/widget-smoke/system.log', mobileRoot), 'w');

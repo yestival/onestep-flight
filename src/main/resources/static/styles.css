@@ -982,6 +982,9 @@ input,textarea,select{font-size:max(16px,1em)}
 }
 .staff-card-topbar{position:sticky;top:0;z-index:3;grid-template-columns:minmax(0,1fr) 56px;background:var(--color-surface);padding-bottom:8px}
 .staff-card .staff-overlay-close{grid-column:2;justify-self:end}
+@media(max-width:650px){
+  .staff-card{height:100%;max-width:none;align-self:stretch}
+}
 .family-card,.journey-problem-card{padding-top:16px}
 .family-overlay-close,.journey-problem-close{position:sticky;top:0;right:auto;z-index:3;margin:0 0 -56px auto;background:var(--color-surface)}
 .family-card h1,.journey-problem-card h1{padding-top:68px;padding-right:64px}

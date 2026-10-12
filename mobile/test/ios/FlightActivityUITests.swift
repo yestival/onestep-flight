@@ -33,7 +33,15 @@ final class FlightActivityUITests: XCTestCase {
         attach("notification-center-open")
         XCTAssertTrue(coverSheet.exists, "Notification Center must be open before evaluating Widget rendering.")
         let heading = system.staticTexts.containing(NSPredicate(format: "label CONTAINS '请前往 B32 登机口'")).firstMatch
-        var rendered = heading.waitForExistence(timeout: 30)
+        var rendered = heading.waitForExistence(timeout: 10)
+        // iOS 26 can initially place the activity list above the visible clock
+        // while its first archive is loading. Reveal the notification list as a
+        // user would, rather than accepting an offscreen AX node as a render.
+        if !rendered {
+            system.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.78))
+                .press(forDuration: 0.05, thenDragTo: system.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.38)))
+            rendered = heading.waitForExistence(timeout: 20)
+        }
         // A fresh Simulator first presents the system's Allow/Don't Allow row.
         // Verify the real ongoing card after consent, not only its prompt preview.
         for title in ["Allow", "Always Allow"] {

@@ -301,6 +301,45 @@ test('native cold start waits for private storage; offline state survives a fres
   expect(disk.get(key)).not.toMatch(/updateToken|passport|documentRootFields/);
 });
 
+test('native help fills the phone after a keyboard leaves a stale half-height viewport', async ({ page }) => {
+  const now = Date.parse('2026-09-05T07:00:00Z');
+  await mockedNative(page, new Map([['onestep-flight-offline-journey-v1', JSON.stringify(snapshot(now))]]));
+  await page.addInitScript(() => {
+    const viewport = new EventTarget();
+    Object.assign(viewport, { height: 420, offsetTop: 90, scale: 1 });
+    Object.defineProperty(window, 'visualViewport', { value: viewport });
+    window.keyboardViewport = viewport;
+  });
+  await page.clock.setFixedTime(new Date(now));
+  await page.route('**/api/**', route => route.abort());
+  await page.goto('/');
+  await expect(page.locator('[data-screen="step"]')).toBeVisible();
+  // Focus an input while WKWebView still reports the previous keyboard bounds,
+  // then use the real dialog entry point to transfer focus to its close control.
+  await page.evaluate(() => {
+    const input = document.createElement('input');
+    input.id = 'keyboard-regression-input';
+    document.body.append(input); input.focus();
+    keyboardViewport.dispatchEvent(new Event('resize'));
+  });
+  await expect.poll(() => page.evaluate(() => document.documentElement.style.getPropertyValue('--visible-height'))).toBe('420px');
+  await page.locator('[data-screen="step"] [data-action="staff"]:visible').click();
+  const overlay = page.locator('[data-staff-overlay]');
+  await expect(overlay).toBeVisible();
+  await expect.poll(async () => (await overlay.boundingBox()).height).toBe(844);
+  expect((await overlay.boundingBox()).y).toBe(0);
+  const card = await page.locator('.staff-card').boundingBox();
+  expect(card.height).toBeGreaterThan(800);
+  await expect(page.locator('[data-action="close-staff"]')).toBeInViewport();
+  await page.locator('[data-action="close-staff"]').click();
+  await expect(overlay).toBeHidden();
+  // Editing again must still respect keyboard bounds.
+  await page.evaluate(() => document.getElementById('keyboard-regression-input').focus());
+  await expect.poll(() => page.evaluate(() => document.documentElement.style.getPropertyValue('--visible-height'))).toBe('420px');
+  await page.evaluate(() => { document.getElementById('keyboard-regression-input').blur(); });
+  await expect.poll(() => page.evaluate(() => document.documentElement.style.getPropertyValue('--visible-height'))).toBe('844px');
+});
+
 test('expired native snapshot is not revived and pending revocation survives clearing', async ({ page }) => {
   const now = Date.parse('2026-09-05T07:00:00Z');
   const revokeKey = 'onestep-flight-share-revocation-pending-v1';

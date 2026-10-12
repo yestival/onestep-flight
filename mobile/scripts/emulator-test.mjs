@@ -17,6 +17,7 @@ const output=path.join(root,'build/emulator-tests');mkdirSync(output,{recursive:
 process.on('uncaughtException',async error=>{
   console.error(error);
   try {
+    if (!diagnosticPage) throw new Error('WebView was not attached; see native hierarchy and screenshot');
     const state=await diagnosticPage.evaluate(()=>({url:location.href,screen:document.querySelector('.screen.is-active')?.dataset.screen,
       initializing:document.getElementById('main-content')?.inert,body:document.body.innerText.slice(0,1800),
       files:[...document.getElementById('ticket-file').files].map(f=>({name:f.name,type:f.type,size:f.size})),
@@ -53,9 +54,27 @@ async function connect() {
   return {browser,context:browser.contexts()[0],page:browser.contexts()[0].pages()[0]};
 }
 function capture(name) {writeFileSync(path.join(output,name+'.png'),execFileSync(adbPath,['exec-out','screencap','-p'],{timeout:30000,maxBuffer:8*1024*1024}));}
+let hierarchySequence=0;
+function dumpHierarchy() {
+  const target='/sdcard/flight-ui-'+(++hierarchySequence)+'.xml';
+  let failure;
+  // Android reports boot completion before Launcher and System UI become idle.
+  // uiautomator may return exit 0 with an ERROR and no file during that interval.
+  // Never read an earlier dump or interpret a missing file as an App failure.
+  for(let attempt=0;attempt<3;attempt++) {
+    try {
+      const result=adb('shell','uiautomator','dump',target);
+      if(result.includes('ERROR:')) throw new Error(result);
+      const xml=adb('shell','cat',target);
+      if(!xml.includes('<hierarchy')) throw new Error('Incomplete Android hierarchy');
+      adb('shell','rm','-f',target);
+      return xml;
+    } catch(error) {failure=error;}
+  }
+  throw new Error('Android hierarchy unavailable after three attempts', {cause:failure});
+}
 function ui() {
-  adb('shell','uiautomator','dump','/sdcard/flight-ui.xml');
-  let xml=adb('shell','cat','/sdcard/flight-ui.xml');
+  let xml=dumpHierarchy();
   // On a memory constrained host System UI can time out during emulator boot.
   // Record that environment failure and close only its dialog. App ANRs remain
   // visible and fail the test; they must never be dismissed by this recovery.
@@ -64,8 +83,7 @@ function ui() {
     const node=(xml.match(/<node\b[^>]+>/g)||[]).find(n=>n.includes('text="Close app"'));
     const b=node && /bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);
     if(b) adb('shell','input','tap',String((+b[1]+ +b[3])/2),String((+b[2]+ +b[4])/2));
-  const dumped=adb('shell','uiautomator','dump','/sdcard/flight-ui.xml');
-  xml=dumped.includes('ERROR:') ? '' : adb('shell','cat','/sdcard/flight-ui.xml');
+    xml=dumpHierarchy();
   }
   return xml;
 }
