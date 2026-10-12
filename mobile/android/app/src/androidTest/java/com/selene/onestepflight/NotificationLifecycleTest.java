@@ -24,10 +24,11 @@ public class NotificationLifecycleTest {
             .put("staleLabel","Data may be out of date").put("offlineLabel","Refresh when online").put("staleAt",System.currentTimeMillis()/1000+600)
             .put("journeyEndsAt",System.currentTimeMillis()/1000+36000).put("snapshotVersion",0).put("clientRevision",0);
     }
-    @Before public void prepare() {
+    @Before public void prepare() throws Exception {
         Context context=ApplicationProvider.getApplicationContext(); c=FlightCoordinator.get(context);
         c.store.prefs.edit().clear().putBoolean("localInjectionTest",true).commit(); notifications=context.getSystemService(NotificationManager.class);notifications.cancelAll();
         if(Build.VERSION.SDK_INT>=33) InstrumentationRegistry.getInstrumentation().getUiAutomation().grantRuntimePermission(context.getPackageName(),Manifest.permission.POST_NOTIFICATIONS);
+        assertCount(0);
     }
     private Map<String,String> event(String id,String key,long version,long revision,boolean important,boolean end) throws Exception {
         var d=display(key).put("gate","B40").put("nextStep","Go to gate B40").put("snapshotVersion",version).put("clientRevision",revision);
@@ -35,8 +36,15 @@ public class NotificationLifecycleTest {
     }
     private int count() {return notifications.getActiveNotifications().length;}
     private void assertCount(int expected) throws Exception {
-        for(int n=0;n<30 && count()!=expected;n++) Thread.sleep(100);
-        assertEquals(expected,count());
+        // NotificationManager posts and cancels asynchronously. Require the
+        // observed state to settle, including assertions that no card returns.
+        int stable=0;
+        for(int n=0;n<30;n++) {
+            stable=count()==expected ? stable+1 : 0;
+            if(stable>=3) return;
+            Thread.sleep(100);
+        }
+        fail("Notification count did not settle to "+expected+"; last count was "+count());
     }
     @Test public void localCardWorksWithoutFirebaseAndKeepsGateOutOfMetricArea() throws Exception {
         c.local(display("one"));assertCount(1);assertTrue(c.liveStatus().getBoolean("active"));
@@ -49,7 +57,7 @@ public class NotificationLifecycleTest {
     @Test public void duplicateAndOutOfOrderEventsDoNotMakeDuplicateAlerts() throws Exception {
         c.local(display("one"));long revision=c.store.revision();var message=event("change","one",4,revision,true,false);
         c.receive(message);assertCount(2);c.receive(message);assertCount(2);
-        c.receive(event("old","one",3,revision,true,false));assertEquals(2,count());
+        c.receive(event("old","one",3,revision,true,false));assertCount(2);
         c.receive(event("old-progress","one",5,revision-1,true,false));assertEquals(4,c.store.prefs.getLong("snapshotVersion",0));
         assertEquals("B40",c.store.object("display").getString("gate"));
         c.store.nextRevision();c.local(display("one"));
@@ -58,16 +66,18 @@ public class NotificationLifecycleTest {
     }
     @Test public void oldPushAndOldClearCannotAffectReplacementAndEndIsIdempotent() throws Exception {
         c.local(display("old"));long revision=c.store.revision();c.local(display("new"));
-        c.receive(event("late","old",99,revision,true,false));c.clear("old");assertEquals("new",c.store.key());assertEquals(1,count());
+        c.receive(event("late","old",99,revision,true,false));c.clear("old");assertEquals("new",c.store.key());assertCount(1);
         var end=event("end","new",2,c.store.revision(),false,true);c.receive(end);c.receive(end);
         assertTrue(c.store.prefs.getBoolean("ended",false));assertCount(0);
-        c.receive(event("late-new","new",3,c.store.revision(),true,false));assertEquals(0,count());
-        c.local(display("new"));assertEquals(0,count());
+        c.receive(event("late-new","new",3,c.store.revision(),true,false));assertCount(0);
+        c.local(display("new"));assertCount(0);
     }
     @Test public void dismissalSuppressesCardButAllowsImportantAlerts() throws Exception {
-        c.local(display("one"));c.dismissed("one");notifications.cancel(FlightCoordinator.CARD_ID);
-        c.local(display("one"));assertEquals(0,count());
-        c.receive(event("change","one",2,c.store.revision(),true,false));assertEquals(1,count());
+        c.local(display("one"));assertCount(1);c.dismissed("one");notifications.cancel(FlightCoordinator.CARD_ID);
+        c.local(display("one"));assertCount(0);
+        c.receive(event("change","one",2,c.store.revision(),true,false));assertCount(1);
+        var alert=notifications.getActiveNotifications()[0];assertNotEquals(FlightCoordinator.CARD_ID,alert.getId());
+        if(Build.VERSION.SDK_INT>=26) assertEquals(FlightCoordinator.ALERT,alert.getNotification().getChannelId());
         assertTrue(c.liveStatus().getBoolean("removed"));assertFalse(c.liveStatus().getBoolean("active"));
     }
     @Test public void zDisabledChannelPreservesLocalJourneyWithoutRecreatingTheChannel() throws Exception {
