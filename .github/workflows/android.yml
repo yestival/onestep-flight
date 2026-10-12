@@ -51,6 +51,15 @@ jobs:
       - run: npm ci --prefix mobile
       - run: npm test --prefix mobile
       - run: npm run android:check --prefix mobile
+      - name: Reserve disk space for Android 16 userdata
+        run: |
+          # This Java/Kotlin app uses no NDK. API 36 enforces a userdata minimum
+          # larger than the requested partition, so free actual SDK disk space.
+          sdkmanager --list_installed > "$RUNNER_TEMP/onestep-sdk-packages.txt"
+          while IFS= read -r package; do
+            sdkmanager --uninstall "$package"
+          done < <(awk '$1 ~ /^ndk;/ {print $1}' "$RUNNER_TEMP/onestep-sdk-packages.txt")
+          df -h "$HOME"
       - name: Enable Android emulator hardware acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
