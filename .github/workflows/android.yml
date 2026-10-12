@@ -36,7 +36,9 @@ jobs:
           MIGRATION_POSTGRES_USER: postgres
           MIGRATION_POSTGRES_PASSWORD: test-only
   android:
-    runs-on: ubuntu-latest
+    # API 36's Linux x86_64 VM exits during DocumentsUI on hosted AMD/KVM
+    # runners. Use a different CPU/hypervisor; keep every native/UI assertion.
+    runs-on: macos-15-intel
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
@@ -47,7 +49,7 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: '15859902'
-          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0 emulator'
           log-accepted-android-sdk-licenses: false
       - name: Use the pinned SDK tools throughout emulator setup
         run: |
@@ -71,11 +73,10 @@ jobs:
             sdkmanager --uninstall "$package"
           done < <(awk '$1 ~ /^ndk;/ {print $1}' "$RUNNER_TEMP/onestep-sdk-packages.txt")
           df -h "$HOME"
-      - name: Enable Android emulator hardware acceleration
+      - name: Check macOS emulator acceleration and command deadlines
         run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
+          "$ANDROID_HOME/emulator/emulator" -accel-check
+          command -v gtimeout || brew install coreutils
       - name: Native notification lifecycle on Google APIs Android 16
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -96,31 +97,32 @@ jobs:
           emulator-options: -no-window -gpu swiftshader -feature -Vulkan -skin 720x1600 -no-snapshot -noaudio -no-boot-anim -camera-back none > emulator-host.log 2>&1
           script: |
             adb logcat -v threadtime > android-logcat.txt &
-            timeout 4m npm run android:test:emulator --prefix mobile -- ready
-            timeout 10m npm run android:test:native --prefix mobile
-            timeout 12m npm run android:test:emulator --prefix mobile
+            gtimeout 4m npm run android:test:emulator --prefix mobile -- ready
+            gtimeout 10m npm run android:test:native --prefix mobile
+            gtimeout 12m npm run android:test:emulator --prefix mobile
       - name: Capture emulator host diagnostics
         if: always()
         run: |
           {
             date -u
             df -h
-            free -m
-            ps -eo pid,ppid,stat,rss,comm --sort=-rss | sed -n '1,25p'
-            sudo dmesg -T | tail -120
+            vm_stat
+            sysctl hw.memsize
+            ps -axo pid,ppid,stat,rss,comm | sort -nrk4 | sed -n '1,25p'
           } > emulator-host-diagnostics.txt
-          sudo python3 - <<'PY' >> emulator-host-diagnostics.txt
+          python3 - <<'PY' >> emulator-host-diagnostics.txt
           import glob
-          import problem_report
-          for filename in glob.glob('/var/crash/*'):
-              if not filename.endswith('.crash'):
+          import json
+          import os
+          for filename in glob.glob(os.path.expanduser('~/Library/Logs/DiagnosticReports/*')):
+              if ('qemu' not in filename and 'emulator' not in filename) or not filename.endswith('.ips'):
                   continue
-              report = problem_report.ProblemReport()
-              with open(filename, 'rb') as source:
-                  report.load(source, binary=False)
-              if 'qemu' in report.get('ExecutablePath', '') or 'emulator' in report.get('ExecutablePath', ''):
-                  for key in ['ExecutablePath', 'Signal', 'Title', 'AssertionMessage', 'StacktraceTop', 'Stacktrace']:
-                      print(key + ': ' + str(report.get(key, 'unavailable')))
+              with open(filename) as source:
+                  metadata = json.loads(source.readline())
+                  report = json.load(source)
+              print('Executable: ' + str(report.get('procPath', metadata.get('app_name'))))
+              for key in ['exception', 'termination', 'asi']:
+                  print(key + ': ' + str(report.get(key, 'unavailable')))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
