@@ -51,7 +51,7 @@ async function connect() {
     console.error('WebView initialization diagnostic',await page.evaluate(()=>({url:location.href,ready:document.readyState,title:document.title,body:document.body?.innerText.slice(0,250),native:!!window.OneStepNative,platform:!!window.OneStepPlatform,scripts:[...document.scripts].map(s=>s.src)})));
     throw error;
   }
-  await page.waitForFunction(()=>document.getElementById('main-content')?.inert===false,null,{timeout:90000});
+  await page.waitForFunction(()=>document.getElementById('main-content')?.inert===false,null,{timeout:90000,polling:250});
   return {browser,context:browser.contexts()[0],page:browser.contexts()[0].pages()[0]};
 }
 function capture(name) {writeFileSync(path.join(output,name+'.png'),execFileSync(adbPath,['exec-out','screencap','-p'],{timeout:30000,maxBuffer:8*1024*1024}));}
@@ -239,9 +239,9 @@ await page.locator('[data-complete-action]').click();
 await expect.poll(()=>page.evaluate(()=>OneStepNative.FlightPush.status()).then(s=>s.displayState.actionCode)).toBe('GO_TO_GATE');
 console.log('PASS check-in, baggage choice and security step advance while notifications are denied');
 await page.evaluate(()=>OneStepNative.FlightPush.openSettings());
-await tap(/text="(?:All OneStep Flight notifications|Allow notifications|允许通知)"/);
+await tap(/text="(?:All OneStep Flight notifications|所有 OneStep Flight 通知|Allow notifications|允许通知)"/);
 adb('shell','input','keyevent','4');await delay(600);
-// Grant via shell as a fallback only if this system image exposes a different settings layout.
+// Verify the permission changed through the actual system settings switch.
 expect((await page.evaluate(()=>OneStepNative.FlightPush.status())).enabled).toBe(true);
 await expect.poll(()=>page.evaluate(async()=> (await OneStepNative.FlightLiveActivity.status()).active)).toBe(true);
 capture('permission-restored');console.log('PASS notification settings recovery and automatic journey card');

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
@@ -14,6 +15,12 @@ class StaticFrontendRegressionTest {
 
     private String resource(String name) throws IOException {
         return new ClassPathResource("static/" + name).getContentAsString(StandardCharsets.UTF_8);
+    }
+
+    private String appVersion(String html) {
+        var script = Pattern.compile("app\\.js\\?v=(\\d+)\"").matcher(html);
+        assertTrue(script.find(), "The app script must have an explicit cache version");
+        return script.group(1);
     }
 
     @Test
@@ -48,10 +55,10 @@ class StaticFrontendRegressionTest {
         assertTrue(overlay.contains("data-journey-problem-result"));
         assertTrue(html.contains("styles.css?v=45"));
         assertTrue(html.contains("locale.js?v=42"));
-        assertTrue(html.contains("app.js?v=50"));
+        String version = appVersion(html);
         assertTrue(worker.contains("onestep-flight-shell-"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v50'"));
-        assertTrue(worker.contains("/app.js?v=50"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v" + version + "'"));
+        assertTrue(worker.contains("/app.js?v=" + version));
         assertTrue(js.contains("POST") || js.contains("method: 'POST'"));
     }
 
@@ -801,11 +808,11 @@ class StaticFrontendRegressionTest {
         assertTrue(js.contains("Solo se encontró parte de la información"));
         assertTrue(html.contains("styles.css?v=45"));
         assertTrue(html.contains("locale.js?v=42"));
-        assertTrue(html.contains("app.js?v=50"));
+        String version = appVersion(html);
         assertFalse(html.contains("?v=37"));
-        assertTrue(worker.contains("CACHE_PREFIX + 'v50'"));
+        assertTrue(worker.contains("CACHE_PREFIX + 'v" + version + "'"));
         assertFalse(worker.contains("CACHE_PREFIX + 'v37'"));
-        for (String asset : new String[] { "/styles.css?v=45", "/locale.js?v=42", "/app.js?v=50",
+        for (String asset : new String[] { "/styles.css?v=45", "/locale.js?v=42", "/app.js?v=" + version,
                 "/share.css?v=33", "/share.js?v=34" }) {
             assertTrue(worker.contains("'" + asset + "'"), asset);
         }
