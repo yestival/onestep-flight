@@ -41,7 +41,12 @@ async function assets() {
   }
   const drawable=path.join(res,'drawable');
   const bars=[[0,15],[9,7],[18,0]].map(([x,y])=>[[x,y],[x+6,y],[x+6,27],[x,27]].map(([bx,by],i)=>(i?'L':'M')+(44+bx-Math.tan(Math.PI/10)*by).toFixed(3)+','+(36+by)).join('')+'Z').join('');
-  writeFileSync(path.join(drawable,'ic_launcher_foreground.xml'),`<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108"><path android:fillColor="#2C648E" android:pathData="${bars}"/></vector>`);
+  const foreground=`<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108"><path android:fillColor="#2C648E" android:pathData="${bars}"/></vector>`;
+  // Android selects the qualified template drawable before the base resource.
+  for(const name of ['drawable','drawable-v24']) {
+    const folder=path.join(res,name);mkdirSync(folder,{recursive:true});
+    writeFileSync(path.join(folder,'ic_launcher_foreground.xml'),foreground);
+  }
   writeFileSync(path.join(drawable,'flight_splash.xml'),'<layer-list xmlns:android="http://schemas.android.com/apk/res/android"><item android:drawable="@color/ic_launcher_background"/><item android:width="108dp" android:height="108dp" android:gravity="center" android:drawable="@drawable/ic_launcher_foreground"/></layer-list>');
   writeFileSync(path.join(res,'values/ic_launcher_background.xml'),'<resources><color name="ic_launcher_background">#F3F4F7</color></resources>');
 }
