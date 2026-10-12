@@ -1,77 +1,39 @@
 name: Publish Android download
 
 on:
-  workflow_dispatch:
-  push:
+  workflow_run:
+    workflows: ['Android and backend regression']
+    types: [completed]
     branches: [main]
-    paths:
-      - 'mobile/**'
-      - 'src/main/resources/static/**'
-      - '.github/workflows/android-downloads.yml'
 
 permissions:
   contents: read
+  actions: read
 
-# Serialize publication so an older build cannot replace a newer download.
 concurrency:
-  group: android-public-download
+  group: android-public-download-request
   cancel-in-progress: false
 
 jobs:
-  publish:
-    # Enable automatic public downloads after repository access and signing
-    # secrets are configured. Manual runs still validate missing configuration.
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.ANDROID_DOWNLOADS_ENABLED == 'true')
+  request:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    env:
-      ANDROID_DOWNLOADS_REPOSITORY: yestival/onestep-flight-android-downloads
-      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-      - name: Validate publication credentials and allocate update version
-        run: node mobile/scripts/android-downloads.mjs prepare
+        with: {node-version: '22'}
+      - name: Request an APK only after all regressions pass
+        run: node mobile/scripts/android-download-request.mjs
         env:
-          ANDROID_DOWNLOADS_TOKEN: ${{ secrets.ANDROID_DOWNLOADS_TOKEN }}
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
-          log-accepted-android-sdk-licenses: false
-      - run: npm ci --prefix mobile
-      - run: npm test --prefix mobile
-      - name: Android unit tests, lint and signed build
-        run: npm run android:check --prefix mobile && npm run android:release --prefix mobile
-        env:
-          # Website distribution can work before FCM is configured. The separate
-          # Codemagic push-release workflow still requires Firebase configuration.
-          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
-      - name: Verify signing and prepare the fixed APK filename
-        run: node mobile/scripts/android-downloads.mjs package
-      - uses: actions/upload-artifact@v4
-        with:
-          name: android-download
-          path: mobile/build/downloads/OneStep-Flight-Android.apk
-          if-no-files-found: error
-      - name: Upload APK before making the new release latest
-        env:
-          GH_TOKEN: ${{ secrets.ANDROID_DOWNLOADS_TOKEN }}
-        run: |
-          set -eu
-          gh release create "$ANDROID_DOWNLOAD_TAG" \
-            mobile/build/downloads/OneStep-Flight-Android.apk \
-            --repo "$ANDROID_DOWNLOADS_REPOSITORY" \
-            --title "OneStep Flight for Android" \
-            --notes-file mobile/build/downloads/release-body.txt \
-            --latest
+          GH_TOKEN: ${{ github.token }}
+          ANDROID_SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+          ANDROID_REGRESSION_RUN_ID: ${{ github.event.workflow_run.id }}
+          # This SSH key can write only the downloads repository. Publication
+          # uses that repository's own short-lived GITHUB_TOKEN.
+          ANDROID_DOWNLOADS_DEPLOY_KEY: ${{ secrets.ANDROID_DOWNLOADS_DEPLOY_KEY }}

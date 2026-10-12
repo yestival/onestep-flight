@@ -2,6 +2,8 @@ import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, read
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { runSync } from './process.mjs';
+import { createHash } from 'node:crypto';
+import { sourceRepository, downloadsRepository, verifiedCandidate } from './android-download-request.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const directory = path.join(root, 'build/downloads');
@@ -27,6 +29,58 @@ export function nextVersion(runNumber, previous) {
   const version = Math.max(run + 1, (previous?.versionCode || 1) + 1);
   if (version > 2100000000) throw new Error('Android versionCode is exhausted');
   return version;
+}
+
+export function signingBaseline(body, expectedCertificate) {
+  if (!/^[0-9a-f]{64}$/i.test(expectedCertificate || '')) throw new Error('Set ANDROID_SIGNING_CERTIFICATE_SHA256 to the existing APK certificate');
+  const previous = releaseState(body);
+  if (previous && previous.certificateSha256.toLowerCase() !== expectedCertificate.toLowerCase()) {
+    throw new Error('Published signing identity differs from the configured existing APK certificate');
+  }
+  return previous || { versionCode: 1, runNumber: 0, certificateSha256: expectedCertificate.toLowerCase() };
+}
+
+export async function publishRelease({ repository, token, tag, body, apk, sourceSha, runId }, request = fetch) {
+  if (repository !== downloadsRepository || !token || !/^android-\d+-\d+$/.test(tag || '') || !/^\d+$/.test(String(runId))) {
+    throw new Error('Invalid Android publication configuration');
+  }
+  const headers = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+  async function api(endpoint, options = {}) {
+    const response = await request(`https://api.github.com/${endpoint}`, {
+      ...options, headers: { ...headers, 'Content-Type': 'application/json', ...options.headers },
+      signal: AbortSignal.timeout(30000), redirect: 'error'
+    });
+    if (!response.ok) throw new Error(`Android publication failed (GitHub HTTP ${response.status})`);
+    return response.json();
+  }
+  const [branch, run] = await Promise.all([
+    api(`repos/${sourceRepository}/branches/main`),
+    api(`repos/${sourceRepository}/actions/runs/${runId}`)
+  ]);
+  if (!verifiedCandidate(sourceSha, branch.commit.sha, run)) return null;
+  const sha256 = createHash('sha256').update(apk).digest('hex');
+  const release = await api(`repos/${repository}/releases`, { method: 'POST', body: JSON.stringify({
+    tag_name: tag, target_commitish: 'main', name: 'OneStep Flight for Android', body, draft: true, prerelease: false
+  }) });
+  // Keep the old latest download available until the complete new APK is
+  // uploaded and GitHub confirms its hash. Never delete the current release.
+  const response = await request(`https://uploads.github.com/repos/${repository}/releases/${release.id}/assets?name=OneStep-Flight-Android.apk`, {
+    method: 'POST', headers: { ...headers, 'Content-Type': 'application/vnd.android.package-archive' }, body: apk,
+    signal: AbortSignal.timeout(120000), redirect: 'error'
+  });
+  if (!response.ok) throw new Error(`Android APK upload failed (HTTP ${response.status}); the previous latest release remains available`);
+  const asset = await response.json();
+  if (asset.state !== 'uploaded' || asset.size !== apk.length || asset.digest !== `sha256:${sha256}`) {
+    throw new Error('Uploaded APK hash or size differs; refusing to publish the draft');
+  }
+  const current = await api(`repos/${sourceRepository}/branches/main`);
+  if (current.commit.sha !== sourceSha) return null;
+  await api(`repos/${repository}/releases/${release.id}`, { method: 'PATCH', body: JSON.stringify({ draft: false, make_latest: 'true' }) });
+  const latest = await api(`repos/${repository}/releases/latest`);
+  if (latest.id !== release.id || !latest.assets.some(value => value.id === asset.id && value.digest === asset.digest)) {
+    throw new Error('Cannot verify the public latest APK after publication');
+  }
+  return latest.html_url;
 }
 
 export async function latestRelease(repository, token, request = fetch) {
@@ -83,15 +137,13 @@ async function main(action) {
       if (!process.env[name]) throw new Error(`Set the ${name} Actions secret or environment variable`);
     }
     const repository = process.env.ANDROID_DOWNLOADS_REPOSITORY || 'yestival/onestep-flight-android-downloads';
-    if (repository.toLowerCase() === process.env.GITHUB_REPOSITORY?.toLowerCase()) {
-      throw new Error('Use the separate public downloads repository, not the source repository');
-    }
+    if (repository !== downloadsRepository) throw new Error('Use the configured public Android downloads repository');
     const encodedKey = (process.env.ANDROID_KEYSTORE_BASE64 || '').replace(/\s/g, '');
     if (!encodedKey || !/^[A-Za-z0-9+/]+={0,2}$/.test(encodedKey) || encodedKey.length % 4 !== 0) {
       throw new Error('Set ANDROID_KEYSTORE_BASE64 to the base64-encoded existing release keystore');
     }
     const release = await latestRelease(repository, process.env.ANDROID_DOWNLOADS_TOKEN);
-    const previous = releaseState(release?.body);
+    const previous = signingBaseline(release?.body, process.env.ANDROID_SIGNING_CERTIFICATE_SHA256);
     const versionCode = nextVersion(process.env.GITHUB_RUN_NUMBER, previous);
     const signingPath = path.join(directory, 'signing.jks');
     writeFileSync(signingPath, Buffer.from(encodedKey, 'base64'), { mode: 0o600 });
@@ -110,7 +162,8 @@ async function main(action) {
     const apk = path.join(root, 'android/app/build/outputs/apk/release/app-release.apk');
     const certificateSha256 = inspectApk(apk, state, sdkTools());
     copyFileSync(apk, path.join(directory, 'OneStep-Flight-Android.apk'));
-    const metadata = { versionCode: state.versionCode, runNumber: state.runNumber, certificateSha256 };
+    const metadata = { versionCode: state.versionCode, runNumber: state.runNumber, certificateSha256,
+      sourceSha: process.env.ANDROID_SOURCE_SHA, sha256: createHash('sha256').update(readFileSync(apk)).digest('hex') };
     const body = [
       'OneStep Flight is a multilingual flight journey assistant.',
       '',
@@ -128,7 +181,14 @@ async function main(action) {
       ''
     ].join('\n');
     writeFileSync(path.join(directory, 'release-body.txt'), body);
-  } else throw new Error('Use prepare or package');
+  } else if (action === 'publish') {
+    const url = await publishRelease({ repository: process.env.ANDROID_DOWNLOADS_REPOSITORY,
+      token: process.env.ANDROID_DOWNLOADS_TOKEN, tag: process.env.ANDROID_DOWNLOAD_TAG,
+      body: readFileSync(path.join(directory, 'release-body.txt'), 'utf8'),
+      apk: readFileSync(path.join(directory, 'OneStep-Flight-Android.apk')),
+      sourceSha: process.env.ANDROID_SOURCE_SHA, runId: process.env.ANDROID_REGRESSION_RUN_ID });
+    console.log(url ? `Verified Android APK published: ${url}` : 'A newer main commit exists; the previous public download was preserved.');
+  } else throw new Error('Use prepare, package or publish');
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {

@@ -1,0 +1,101 @@
+name: Publish verified Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['build-request.json']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-android-apk
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.source.outputs.sha }}
+      run_id: ${{ steps.source.outputs.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - id: source
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (!fs.existsSync('build-request.json')) return;
+            const request = JSON.parse(fs.readFileSync('build-request.json', 'utf8'));
+            if (request.repository !== 'yestival/onestep-flight' || !/^[0-9a-f]{40}$/.test(request.sha) ||
+                !Number.isSafeInteger(request.regressionRunId)) throw new Error('Invalid APK build request');
+            const source = {owner: 'yestival', repo: 'onestep-flight'};
+            const {data: branch} = await github.rest.repos.getBranch({...source, branch: 'main'});
+            if (branch.commit.sha !== request.sha) return;
+            const {data: run} = await github.rest.actions.getWorkflowRun({...source, run_id: request.regressionRunId});
+            if (run.head_sha !== request.sha || run.head_branch !== 'main' || run.head_repository.full_name !== request.repository ||
+                !['push', 'workflow_dispatch'].includes(run.event) || run.conclusion !== 'success' || run.status !== 'completed' ||
+                run.path !== '.github/workflows/android.yml') throw new Error('Source regression has not passed');
+            try {
+              const {data: release} = await github.rest.repos.getLatestRelease(context.repo);
+              const match = /<!-- onestep-android-build (\{[^\r\n]*\}) -->/.exec(release.body || '');
+              if (match && JSON.parse(match[1]).sourceSha === request.sha) return;
+            } catch (error) { if (error.status !== 404) throw error; }
+            core.setOutput('sha', request.sha);
+            core.setOutput('run_id', request.regressionRunId);
+  publish:
+    needs: resolve
+    if: needs.resolve.outputs.sha != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    env:
+      ANDROID_DOWNLOADS_REPOSITORY: yestival/onestep-flight-android-downloads
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      ANDROID_SIGNING_CERTIFICATE_SHA256: ${{ vars.ANDROID_SIGNING_CERTIFICATE_SHA256 }}
+      ANDROID_SOURCE_SHA: ${{ needs.resolve.outputs.sha }}
+      ANDROID_REGRESSION_RUN_ID: ${{ needs.resolve.outputs.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: yestival/onestep-flight
+          ref: ${{ needs.resolve.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm, cache-dependency-path: mobile/package-lock.json}
+      - name: Preserve signing identity and allocate a newer Android version
+        run: node mobile/scripts/android-downloads.mjs prepare
+        env:
+          ANDROID_DOWNLOADS_TOKEN: ${{ github.token }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21'}
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+          log-accepted-android-sdk-licenses: false
+      - run: npm ci --prefix mobile
+      - run: npm test --prefix mobile
+      - name: Test and build the signed release APK and AAB
+        run: npm run android:check --prefix mobile && npm run android:release --prefix mobile
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+      - name: Verify signature, version and release-only contents
+        run: node mobile/scripts/android-downloads.mjs package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-download
+          path: |
+            mobile/build/downloads/OneStep-Flight-Android.apk
+            mobile/android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+      - name: Upload and verify the APK before updating latest
+        run: node mobile/scripts/android-downloads.mjs publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ANDROID_DOWNLOADS_TOKEN: ${{ github.token }}
