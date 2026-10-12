@@ -402,6 +402,18 @@ public class SerpApiFlightDataProvider implements LiveFlightDataProvider, Operat
 				|| status.startsWith("DEPARTED") || status.startsWith("ARRIVED");
 		boolean arrived = containsIgnoreCase(textOrNull(arrival, "status"), "arrived")
 				|| status.startsWith("ARRIVED");
+		// Cached search results can label a future scheduled/estimated time as an
+		// actual event. Do not let that contradiction end a traveller's journey.
+		boolean futureDeparture = departed && reportedDeparture != null
+				&& reportedDeparture.toInstant().isAfter(retrievedAt);
+		boolean futureArrival = arrived && reportedArrival != null
+				&& reportedArrival.toInstant().isAfter(retrievedAt);
+		if ((futureDeparture && (status.startsWith("DEPARTED") || status.startsWith("ARRIVED")))
+				|| (futureArrival && status.startsWith("ARRIVED"))) {
+			status = "UNKNOWN";
+		}
+		departed = departed && !futureDeparture;
+		arrived = arrived && !futureArrival;
 		String departureAirport = firstNonBlank(textOrNull(departure, "id"), textOrNull(metadata, "origin"));
 		String arrivalAirport = firstNonBlank(textOrNull(arrival, "id"), textOrNull(metadata, "destination"));
 		if (departureAirport == null || arrivalAirport == null) {

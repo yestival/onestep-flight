@@ -6,7 +6,12 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -21,7 +26,9 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.selene.onestepflight.dto.JourneyContext;
 import com.selene.onestepflight.dto.ProviderFlightResult;
+import com.selene.onestepflight.dto.ResolveFlightRequest;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -30,6 +37,61 @@ class SerpApiFlightDataProviderTest {
 
 	private static final LocalDate DATE = LocalDate.of(2026, 8, 25);
 	private final ObjectMapper objectMapper = new ObjectMapper();
+
+	@ParameterizedTest
+	@CsvSource({
+			"DEPARTED, 2, 10, false, false, UNKNOWN",
+			"ARRIVED, 2, 10, false, false, UNKNOWN",
+			"ARRIVED, -2, 6, true, false, UNKNOWN",
+			"BOARDING, 2, 10, false, false, BOARDING",
+			"DEPARTED, -2, 6, true, false, DEPARTED",
+			"ARRIVED, -10, -2, true, true, ARRIVED"
+	})
+	void futureReportedEventsCannotBecomeActualDepartureOrArrival(String status, int departureHours,
+			int arrivalHours, boolean actualDeparture, boolean actualArrival, String expectedStatus) {
+		Fixture fixture = fixture();
+		OffsetDateTime now = OffsetDateTime.now(ZoneOffset.ofHours(8));
+		OffsetDateTime departure = now.plusHours(departureHours);
+		OffsetDateTime arrival = now.plusHours(arrivalHours).withOffsetSameInstant(ZoneOffset.ofHours(-4));
+		LocalDate date = departure.toLocalDate();
+		fixture.server().expect(request -> { }).andRespond(withSuccess("""
+				{"search_metadata":{"status":"Success"},"flight_result":{"dates":[{
+				  "flight_designator":"BA117","date":"%s","metadata":{"status":"%s"},
+				  "departure_airport":{"id":"LHR","terminal":"5","gate":"B32",
+				    "status":"departed","scheduled_time":"%s","time":"%s"},
+				  "arrival_airport":{"id":"JFK","status":"%s","scheduled_time":"%s","time":"%s"}
+				}]}}
+				""".formatted(date, status, departure, departure,
+						status.equals("ARRIVED") ? "arrived" : "scheduled", arrival, arrival),
+				MediaType.APPLICATION_JSON));
+
+		ProviderFlightResult result = fixture.provider().findFlight("BA117", date, null, null, false);
+
+		assertThat(result.successful()).isTrue();
+		assertThat(result.status()).isEqualTo(expectedStatus);
+		assertThat(result.actualDeparture()).isEqualTo(actualDeparture ? departure : null);
+		assertThat(result.actualArrival()).isEqualTo(actualArrival ? arrival : null);
+		assertThat(result.estimatedDeparture()).isEqualTo(actualDeparture ? null : departure);
+		assertThat(result.estimatedArrival()).isEqualTo(actualArrival ? null : arrival);
+		assertThat(result.terminal()).isEqualTo("Terminal 5");
+		assertThat(result.gate()).isEqualTo("B32");
+		// Exercise the real merge, resolver and guidance pipeline as well: the
+		// contradictory search result must not stop a checked-in passenger.
+		MultiSourceFlightService aggregate = new MultiSourceFlightService(List.of(fixture.provider()),
+				Duration.ofMinutes(5), Duration.ofSeconds(2), Duration.ofSeconds(1),
+				Duration.ofSeconds(1), Runnable::run);
+		var resolved = new ResolvedFlightService(new FlightService(null, null), aggregate,
+				null, new FlightTimeService()).resolve(new ResolveFlightRequest("BA117", date,
+						false, null, null, false));
+		JourneyContext journey = new JourneyContext("BA117", date, resolved, false, null,
+				"MANUAL_ENTRY", false, true, null, false, false, false, false,
+				false, false, false, false, null, null, true, false);
+		var next = new NextActionService(Clock.fixed(now.toInstant(), ZoneOffset.UTC))
+				.calculate(resolved, journey);
+		assertThat(next.reason()).isEqualTo(actualDeparture
+				? "FLIGHT_ALREADY_DEPARTED" : "BAGGAGE_STATUS_REQUIRED");
+		fixture.server().verify();
+	}
 
 	@Test
 	void usesFlightResultEndpointAndDoesNotHardFilterAConflictingRouteHint() {
