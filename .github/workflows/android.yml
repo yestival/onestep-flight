@@ -74,9 +74,10 @@ jobs:
           disk-size: 4096M
           ram-size: 2048M
           emulator-boot-timeout: 300
-          # Match the Windows AVD that passed the complete UI flow, and avoid
-          # indirect SwiftShader/Vulkan rendering on the headless hosted runner.
-          emulator-options: -no-window -gpu off -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -camera-back none
+          # Use a supported explicit renderer. Emulator 37 does not list "off"
+          # as a GPU mode and falls back to ANGLE. Keep host output out of the
+          # action's completed boot pipe and retain it for crash diagnosis.
+          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -camera-back none > emulator-host.log 2>&1
           script: |
             adb logcat -v threadtime > android-logcat.txt &
             timeout 10m npm run android:test:native --prefix mobile
@@ -91,3 +92,4 @@ jobs:
             mobile/android/app/build/outputs/androidTest-results/
             mobile/build/emulator-tests/
             android-logcat.txt
+            emulator-host.log
