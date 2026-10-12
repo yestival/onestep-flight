@@ -117,6 +117,33 @@ test('read failure blocks initialization; failed write keeps the previous durabl
   const other = fixture(); other.native.Preferences.get = async () => { throw new Error('locked'); };
   await assert.rejects(other.platform.init());
 });
+
+test('slow first-launch native reads retain the journey and still have a deadline', async context => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const { platform, native, disk } = fixture();
+  const key = 'onestep-flight-offline-journey-v1';
+  disk.set(key, 'saved-journey');
+  native.Preferences.get = async ({ key }) => {
+    await new Promise(resolve => setTimeout(resolve, 7000));
+    return { value: disk.get(key) ?? null };
+  };
+  let initialized = false;
+  const loading = platform.init().then(() => { initialized = true; });
+  await new Promise(resolve => setImmediate(resolve));
+  context.mock.timers.tick(6000);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(initialized, false);
+  context.mock.timers.tick(1000);
+  await loading;
+  assert.equal(platform.storage.getItem(key), 'saved-journey');
+
+  const hanging = fixture();
+  hanging.native.Preferences.get = () => new Promise(() => {});
+  const rejected = assert.rejects(hanging.platform.init(), /timed out/);
+  await new Promise(resolve => setImmediate(resolve));
+  context.mock.timers.tick(15001);
+  await rejected;
+});
 test('network API failure is offline even with a connected radio; abort is preserved', async () => {
   const { platform, host } = fixture({ fetch: async () => { throw new TypeError('unreachable'); } });
   await assert.rejects(platform.apiFetch('/api/journeys/next-action'));

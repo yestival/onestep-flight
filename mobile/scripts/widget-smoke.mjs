@@ -1,5 +1,5 @@
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
+import { readFileSync, writeFileSync, mkdirSync, openSync, closeSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import xcode from 'xcode';
 import { mobileRoot, appConfig } from './config.mjs';
@@ -8,7 +8,7 @@ import { mobileRoot, appConfig } from './config.mjs';
 const root = fileURLToPath(mobileRoot);
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { cwd: root, encoding: 'utf8', ...options });
-  if (result.error || result.status !== 0) throw new Error(result.error?.message || `${command}: ${result.stderr || result.stdout}`);
+  if (result.error || result.status !== 0) throw new Error(result.error?.message || `${command}: exit ${result.status}, signal ${result.signal || 'none'}; ${result.stderr || result.stdout || ''}`);
   return result.stdout;
 }
 if (process.platform !== 'darwin') throw new Error('Widget runtime verification requires macOS and an iOS Simulator.');
@@ -16,6 +16,8 @@ const projectPath = new URL('ios/App/App.xcodeproj/project.pbxproj', mobileRoot)
 const scenePath = new URL('ios/App/App/SceneDelegate.swift', mobileRoot);
 const originals = [projectPath, scenePath].map(path => [path, readFileSync(path, 'utf8')]);
 let device;
+let logProcess, logDescriptor;
+const logPredicate = 'process CONTAINS "WidgetRenderer" OR process == "FlightActivity" OR process == "App" OR ((process == "liveactivitiesd" OR process == "chronod" OR process == "SpringBoard") AND (eventMessage CONTAINS "onestepflight" OR eventMessage CONTAINS "FlightActivity" OR messageType == error))';
 mkdirSync(new URL('build/widget-smoke/', mobileRoot), { recursive: true });
 try {
   const scene = readFileSync(scenePath, 'utf8').replace('FlightBridgeViewController()', 'FlightActivitySmokeController()');
@@ -71,13 +73,22 @@ try {
   run('xcrun', ['simctl', 'boot', device], { timeout: 60000 });
   run('xcrun', ['simctl', 'bootstatus', device, '-b'], { stdio: 'inherit', timeout: 240000 });
   run('xcrun', ['simctl', 'ui', device, 'appearance', process.env.SMOKE_APPEARANCE || 'light']);
+  // Stream the actual test interval. A retrospective first-boot log scan can
+  // exhaust its deadline before reaching the App's later ActivityKit events.
+  logDescriptor = openSync(new URL('build/widget-smoke/system.log', mobileRoot), 'w');
+  logProcess = spawn('xcrun', ['simctl', 'spawn', device, 'log', 'stream', '--style', 'compact', '--level', 'info', '--predicate', logPredicate], { stdio: ['ignore', logDescriptor, logDescriptor] });
+  logProcess.on('error', error => console.warn('System log stream:', error.message));
   run('xcodebuild', [...buildArguments, '-resultBundlePath', 'build/widget-smoke/Result.xcresult', 'test-without-building'], { stdio: 'inherit' });
 } finally {
+  logProcess?.kill('SIGTERM');
+  if (logDescriptor !== undefined) closeSync(logDescriptor);
   if (device) {
     // Unfiltered chronod debug output can exceed the buffer during first boot and
     // truncate the later App/Widget failure. Keep our processes and relevant system events.
-    const logs = spawnSync('xcrun', ['simctl', 'spawn', device, 'log', 'show', '--last', '15m', '--style', 'compact', '--info', '--predicate', 'process CONTAINS "WidgetRenderer" OR process == "FlightActivity" OR process == "App" OR ((process == "liveactivitiesd" OR process == "chronod" OR process == "SpringBoard") AND (eventMessage CONTAINS "onestepflight" OR eventMessage CONTAINS "FlightActivity" OR messageType == error))'], { encoding: 'utf8', timeout: 30000, maxBuffer: 64 * 1024 * 1024 });
-    writeFileSync(new URL('build/widget-smoke/system.log', mobileRoot), logs.stdout || logs.stderr || 'No system logs');
+    if (!logProcess) {
+      const logs = spawnSync('xcrun', ['simctl', 'spawn', device, 'log', 'show', '--last', '5m', '--style', 'compact', '--info', '--predicate', logPredicate], { encoding: 'utf8', timeout: 30000, maxBuffer: 64 * 1024 * 1024 });
+      writeFileSync(new URL('build/widget-smoke/system.log', mobileRoot), logs.stdout || logs.stderr || 'No system logs');
+    }
     spawnSync('xcrun', ['simctl', 'io', device, 'screenshot', fileURLToPath(new URL('build/widget-smoke/screen.png', mobileRoot))], { timeout: 15000 });
     spawnSync('xcrun', ['simctl', 'shutdown', device], { timeout: 30000 });
   }

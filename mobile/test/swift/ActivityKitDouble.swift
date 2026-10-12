@@ -17,6 +17,7 @@ struct ActivityAuthorizationInfo { var areActivitiesEnabled: Bool { true } }
     static let shared = ActivityStore()
     var activities: [Activity<FlightActivityAttributes>] = []
     var requests = 0
+    var updates = 0
     var rejectRequest = false
 }
 @MainActor final class Activity<Attributes: ActivityAttributes> {
@@ -40,7 +41,9 @@ struct ActivityAuthorizationInfo { var areActivitiesEnabled: Bool { true } }
         store.activities.append(result as! Activity<FlightActivityAttributes>)
         return result
     }
-    func update(_ value: ActivityContent<Attributes.ContentState>) async { content = value }
+    func update(_ value: ActivityContent<Attributes.ContentState>) async {
+        ActivityStore.shared.updates += 1; content = value
+    }
     func end(_ value: ActivityContent<Attributes.ContentState>?, dismissalPolicy: ActivityUIDismissalPolicy) async {
         if let value { content = value }
         activityState = .ended

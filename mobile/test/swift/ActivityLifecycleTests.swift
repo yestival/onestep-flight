@@ -17,12 +17,18 @@ import Foundation
         async let second: Void = coordinator.sync(flight)
         _ = try await (first, second)
         precondition(store.requests == 1, "Concurrent automatic sync must create only one activity")
+        precondition(store.updates == 0, "Identical automatic sync must not issue a duplicate system update")
         precondition(coordinator.current?.content.state.gate == "B24", "Stale state must preserve known facts")
         precondition(coordinator.current?.content.staleDate == nil, "An elapsed initial system deadline suppresses the Lock Screen")
         precondition(coordinator.current?.content.state.staleAt == flight.staleAt, "Do not invent a new freshness deadline")
         let existingID = coordinator.current?.id
+        // The old implementation can leave an elapsed system deadline behind.
+        coordinator.current?.content.staleDate = Date(timeIntervalSince1970: TimeInterval(flight.staleAt))
         flight.stale = false // A cached state may only carry its original deadline.
         try await coordinator.sync(flight)
+        precondition(store.updates == 1 && coordinator.current?.content.staleDate == nil, "A changed system freshness deadline must still update")
+        try await coordinator.sync(flight)
+        precondition(store.updates == 1, "Repeated recovery must coalesce an identical repaired state")
         precondition(coordinator.current?.content.state.stale == true, "Elapsed data must still display the stale footer")
         precondition(coordinator.current?.id == existingID && store.requests == 1, "Repair must update the existing activity")
         var fresh = flight; fresh.staleAt = Int64(Date().timeIntervalSince1970) + 600

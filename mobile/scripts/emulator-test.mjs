@@ -9,13 +9,15 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const sdk=process.env.ANDROID_HOME || path.join(root,'build/toolchain/sdk');
 const adbPath=path.join(sdk,'platform-tools',process.platform==='win32'?'adb.exe':'adb');
 const app='com.selene.onestepflight';
+const uploads=[];
+let diagnosticPage;
 console.log('Emulator host memory (MiB)',{free:Math.round(os.freemem()/1048576),total:Math.round(os.totalmem()/1048576)});
 if(process.argv[2]==='environment') process.exit(0);
 const output=path.join(root,'build/emulator-tests');mkdirSync(output,{recursive:true});
 process.on('uncaughtException',async error=>{
   console.error(error);
   try {
-    const state=await page.evaluate(()=>({url:location.href,screen:document.querySelector('.screen.is-active')?.dataset.screen,
+    const state=await diagnosticPage.evaluate(()=>({url:location.href,screen:document.querySelector('.screen.is-active')?.dataset.screen,
       initializing:document.getElementById('main-content')?.inert,body:document.body.innerText.slice(0,1800),
       files:[...document.getElementById('ticket-file').files].map(f=>({name:f.name,type:f.type,size:f.size})),
       readBytes:window.__selectedDocument?.length}));
@@ -39,6 +41,7 @@ async function connect() {
   adb('forward','tcp:9222','localabstract:'+socket.split('@')[1].trim());
   const browser=await chromium.connectOverCDP('http://127.0.0.1:9222',{noDefaults:true});
   const page=browser.contexts()[0].pages()[0];
+  diagnosticPage=page;
   page.on('pageerror',error=>console.error('WebView page error:',error.message));
   page.on('requestfailed',request=>console.error('WebView request failed:',new URL(request.url()).pathname,request.failure()?.errorText));
   try { await page.waitForFunction(()=>window.OneStepNative && window.OneStepPlatform,null,{timeout:90000,polling:250}); }
@@ -115,7 +118,6 @@ await expect(page.locator('[data-screen="welcome"]')).toBeVisible();
 expect(await page.evaluate(()=>location.origin)).toBe('https://localhost');
 expect(await page.evaluate(()=>OneStepNative.platform)).toBe('android');
 capture('cold-start');console.log('PASS actual WebView cold start, bundled HTTPS origin, Android plugins');
-const uploads=[];
 const now=Date.now(), departure=new Date(now+2*3600000).toISOString(), date=departure.slice(0,10);
 const flight={flightNumber:'BA117',departureDate:date,departureAirport:'LHR',arrivalAirport:'JFK',terminal:'T5',gate:'B32',status:'SCHEDULED',live:true,demo:false,
   scheduledDeparture:departure,estimatedDeparture:departure,scheduledArrival:new Date(now+9*3600000).toISOString(),

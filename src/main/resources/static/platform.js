@@ -98,7 +98,9 @@
         'onestep-flight-share-revocation-pending-v1'];
       // Do not interpret a failed native read as an empty journey, or revoke its link.
       await Promise.all(keys.map(async function (key) {
-      var result = await bounded(function () { return native.Preferences.get({ key: key }); });
+      // First-launch bridge delivery can be delayed while Android initializes
+      // WebView. Allow a bounded local read without treating it as empty storage.
+      var result = await bounded(function () { return native.Preferences.get({ key: key }); }, 15000);
         var value = result.value;
         if (value == null) {
           try { value = host.localStorage.getItem(key); } catch (_) { value = null; }

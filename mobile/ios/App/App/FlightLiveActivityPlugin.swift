@@ -155,7 +155,11 @@ final class FlightActivityCoordinator {
                 defaults.set("ended", forKey: "flight.activityReason." + activity.id)
                 await activity.end(content, dismissalPolicy: .after(Date().addingTimeInterval(1800)))
             } else {
-                await activity.update(content) // Ordinary APNs is the sole alert channel.
+                // Foreground recovery and WebView sync may submit identical
+                // content together. Avoid spending another system update on it.
+                if activity.content.state != state || activity.content.staleDate != staleDate {
+                    await activity.update(content) // Ordinary APNs is the sole alert channel.
+                }
             }
             clearFailure()
         } else {
