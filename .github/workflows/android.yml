@@ -39,7 +39,7 @@ jobs:
     # API 36's Linux x86_64 VM exits during DocumentsUI on hosted AMD/KVM
     # runners. Use a different CPU/hypervisor; keep every native/UI assertion.
     runs-on: macos-15-intel
-    timeout-minutes: 40
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -92,6 +92,8 @@ jobs:
         run: |
           "$ANDROID_HOME/emulator/emulator" -accel-check
           command -v gtimeout || brew install coreutils
+          adb start-server
+          (adb wait-for-device && adb logcat -v threadtime) > android-boot-logcat.txt 2>&1 &
       - name: Native notification lifecycle on Google APIs Android 16
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -105,11 +107,14 @@ jobs:
           disk-size: 4096M
           ram-size: 4096M
           cores: 4
-          emulator-boot-timeout: 300
+          emulator-boot-timeout: 900
           # Use a supported explicit renderer. Emulator 37 does not list "off"
           # as a GPU mode and falls back to ANGLE. Keep host output out of the
           # action's completed boot pipe and retain it for crash diagnosis.
-          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -skin 720x1600 -no-snapshot -noaudio -no-boot-anim -camera-back none > emulator-host.log 2>&1
+          # Supply numeric RAM/CPU flags too: the runner writes RAM with an M
+          # suffix to config.ini, while this emulator parses hw.ramSize as MB.
+          # Capture kernel/early Android logs even if system boot does not finish.
+          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -memory 4096 -cores 2 -skin 720x1600 -no-snapshot -noaudio -no-boot-anim -camera-back none -show-kernel > emulator-host.log 2>&1
           script: |
             adb logcat -v threadtime > android-logcat.txt &
             gtimeout 4m npm run android:test:emulator --prefix mobile -- ready
@@ -149,5 +154,6 @@ jobs:
             mobile/android/app/build/outputs/androidTest-results/
             mobile/build/emulator-tests/
             android-logcat.txt
+            android-boot-logcat.txt
             emulator-host.log
             emulator-host-diagnostics.txt
