@@ -8102,12 +8102,15 @@
     var state = liveActivity.current();
     var disabled = state.supported && !state.enabled;
     var dismissed = state.dismissedJourneyKey === nativeJourneyKey(currentFlight);
-    var active = state.active && state.journeyKey === nativeJourneyKey(currentFlight);
-    notice.hidden = !journeyContext;
+    notice.hidden = !journeyContext || !disabled && !dismissed && !state.errorCode;
+    if (notice.hidden) {
+      notice.querySelector('span').textContent = '';
+      notice.querySelector('button').hidden = true;
+      return;
+    }
     var message = disabled
       ? platform.nativePlatform === 'android' ? localeText('通知权限或行程渠道已关闭。', 'Notifications or the journey channel are disabled.', 'Las notificaciones o el canal del viaje están desactivados.') : localeText('实时活动已被系统禁用。', 'Live Activities are disabled in system settings.', 'Las actividades en directo están desactivadas en los ajustes.')
       : dismissed ? localeText('此行程的锁屏活动已被移除。', 'The Lock Screen activity for this journey was dismissed.', 'Se ha descartado la actividad de este viaje en la pantalla bloqueada.')
-      : active && !state.errorCode ? platform.nativePlatform === 'android' ? localeText('行程通知已发布；锁屏内容由系统设置决定。', 'Journey notification posted. Lock Screen visibility follows system settings.', 'Notificación del viaje publicada. La pantalla bloqueada depende de los ajustes.') : localeText('锁屏行程已交给系统，可锁屏查看。', 'Journey sent to iOS. Lock your screen to view it.', 'Viaje enviado a iOS. Bloquea la pantalla para verlo.')
       : localeText('锁屏行程暂未显示，回到 App 后会自动重试。', 'The Lock Screen journey is unavailable. Returning to the app retries automatically.', 'El viaje no aparece en la pantalla bloqueada. Se reintentará al volver a la app.');
     if (!disabled && !dismissed && state.errorCode) message += ' (' + (state.errorReference || state.errorCode) + ')';
     if (platform.nativePlatform === 'android' && state.pushStatus === 'FIREBASE_NOT_CONFIGURED') message += ' ' + localeText('后台推送尚未配置。', 'Background push is not configured.', 'Las notificaciones en segundo plano no están configuradas.');

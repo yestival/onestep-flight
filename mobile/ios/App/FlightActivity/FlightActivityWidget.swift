@@ -75,24 +75,21 @@ private struct FlightDetails: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.colorScheme) private var colorScheme
     private var freshness: String {
-        state.updatedText + (state.offline ? " · " + state.offlineLabel : stale || state.stale ? " · " + state.staleLabel : "")
+        state.updatedText + (state.offline ? " · " + state.offlineLabel : "")
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(state.nextStep).font(.headline).fixedSize(horizontal: false, vertical: true).layoutPriority(2)
                 .accessibilityAddTraits(.isHeader)
-                .accessibilityLabel(typeSize.isAccessibilitySize ? state.nextStep + ". " + state.flightNumber + ". " + state.dateText + ". " + state.departureAirport + " → " + state.arrivalAirport + ". " + state.timezoneText + ". " + freshness : state.nextStep)
+                .accessibilityLabel(typeSize.isAccessibilitySize ? state.nextStep + ". " + state.flightNumber + ". " + state.dateText + ". " + state.departureAirport + " → " + state.arrivalAirport + ". " + freshness : state.nextStep)
             HStack(alignment: .top, spacing: 8) {
                 metric(state.metricOneLabel, state.metricOneValue)
                 metric(state.metricTwoLabel, state.metricTwoValue)
                 metric(state.metricThreeLabel, state.metricThreeValue)
             }.layoutPriority(1)
             if !typeSize.isAccessibilitySize {
-                HStack(alignment: .top, spacing: 6) {
-                    Text(state.timezoneText)
-                    Spacer(minLength: 0)
-                    Text(freshness).multilineTextAlignment(.trailing)
-                }.font(.caption2)
+                Text(freshness).font(.caption2)
+                    .foregroundStyle(FlightPalette.muted(colorScheme))
             }
         }
         .foregroundStyle(FlightPalette.ink(colorScheme))

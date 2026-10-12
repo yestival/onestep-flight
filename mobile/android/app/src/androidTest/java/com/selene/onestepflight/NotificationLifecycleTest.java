@@ -47,10 +47,15 @@ public class NotificationLifecycleTest {
         fail("Notification count did not settle to "+expected+"; last count was "+count());
     }
     @Test public void localCardWorksWithoutFirebaseAndKeepsGateOutOfMetricArea() throws Exception {
-        c.local(display("one"));assertCount(1);assertTrue(c.liveStatus().getBoolean("active"));
+        c.local(display("one").put("stale",true).put("staleAt",System.currentTimeMillis()/1000-60));assertCount(1);assertTrue(c.liveStatus().getBoolean("active"));
         var card=notifications.getActiveNotifications()[0].getNotification();
         assertEquals("Go to gate B32",card.extras.getString("android.title"));
         assertFalse(card.extras.getCharSequence("android.bigText").toString().contains("T5 · B32"));
+        String expanded=card.extras.getCharSequence("android.bigText").toString();
+        assertTrue(expanded.contains("14:00 updated"));
+        assertFalse(expanded.contains("Departure airport local time"));
+        assertFalse(expanded.contains("Data may be out of date"));
+        assertEquals("14:00 updated",card.extras.getString("android.subText"));
         assertTrue(c.pushStatus().getString("pushStatus").contains("FIREBASE_NOT_CONFIGURED"));
         assertEquals(2,c.store.identity().length()); assertFalse(c.store.prefs.getString("identity","").contains("secret"));
     }

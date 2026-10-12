@@ -59,14 +59,15 @@ final class FlightActivityUITests: XCTestCase {
             XCTAssertTrue(system.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", fact)).firstMatch.exists, "Missing known flight fact: \(fact)")
         }
         assertReadableHeading(heading, system: system)
-        if !fresh {
-            XCTAssertTrue(system.staticTexts.containing(NSPredicate(format: "label CONTAINS '14:05 更新' AND label CONTAINS '可打开 App 刷新'")).firstMatch.exists)
+        XCTAssertTrue(system.staticTexts.containing(NSPredicate(format: "label CONTAINS '14:05 更新'")).firstMatch.exists)
+        for removed in ["可打开 App 刷新", "时间为出发机场当地时间"] {
+            XCTAssertFalse(system.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", removed)).firstMatch.exists)
         }
         if ages {
             // iOS coalesces the stale-state transition: it remained active beyond
             // its deadline in the Simulator logs. Do not assert a delivery SLA.
-            // Verify retention across the deadline; the explicit stale footer is
-            // independently checked by testStaleActivityRenders.
+            // Verify that known facts and the last update remain visible across
+            // the deadline without adding explanatory lock screen copy.
             let elapsed = expectation(description: "Past the fixture freshness deadline")
             DispatchQueue.main.asyncAfter(deadline: .now() + max(0, pastDeadline.timeIntervalSinceNow)) { elapsed.fulfill() }
             wait(for: [elapsed], timeout: 40)

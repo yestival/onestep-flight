@@ -217,8 +217,7 @@ test('Android startup survives stalled push initialization and uses Android copy
   await page.goto('/');
   await expect(page.locator('[data-screen="step"]')).toBeVisible();
   await expect.poll(()=>calls.filter(c=>c.name==='start').length).toBe(1);
-  await expect(page.locator('[data-live-activity-status]')).toContainText('Journey notification posted');
-  await expect(page.locator('[data-live-activity-status]')).not.toContainText('iOS');
+  await expect(page.locator('[data-live-activity-status]')).toBeHidden();
   await page.locator('[data-screen="step"] [data-action="staff"]:visible').click();
   await page.evaluate(()=>nativeEvents.backButton({canGoBack:false}));
   await expect(page.locator('[data-staff-overlay]')).toBeHidden();
@@ -271,7 +270,7 @@ test('automatic activity creation proceeds while push sync is stalled and late o
   await expect.poll(() => calls.filter(call => call.name === 'syncJourney').length).toBeGreaterThan(0);
   await expect.poll(() => page.evaluate(() => typeof window.finishJourneyPreparation)).toBe('function');
   await expect.poll(() => calls.filter(call => call.name === 'start').length).toBe(1);
-  await expect(page.locator('[data-live-activity-status]')).toContainText('Journey sent to iOS');
+  await expect(page.locator('[data-live-activity-status]')).toBeHidden();
   await page.evaluate(() => finishJourneyPreparation());
   await expect.poll(() => calls.filter(call => call.name === 'start').length).toBe(1);
   expect(calls.findIndex(call => call.name === 'previousJourneyCleared')).toBeGreaterThan(calls.findIndex(call => call.name === 'start'));
@@ -298,7 +297,7 @@ test('confirming a flight creates its activity automatically when push synchroni
   await page.locator('[data-action="continue"]').click();
   await expect(page.locator('[data-screen="step"]')).toBeVisible();
   await expect.poll(() => calls.filter(call => call.name === 'start').length).toBe(1);
-  await expect(page.locator('[data-live-activity-status]')).toContainText('Journey sent to iOS');
+  await expect(page.locator('[data-live-activity-status]')).toBeHidden();
   expect(calls.find(call => call.name === 'start').payload.gate).toBe('B12');
 });
 
@@ -326,7 +325,7 @@ test('native activity creation failure is visible and foreground recovery preced
     nativeEvents.appStateChange({ isActive: true });
   });
   await expect.poll(() => calls.filter(call => call.name === 'start').length).toBeGreaterThan(attempts);
-  await expect(notice).toContainText('Journey sent to iOS');
+  await expect(notice).toBeHidden();
   expect(calls.find(call => call.name === 'start').payload.gate).toBe('B12');
   if (releaseRequest) releaseRequest();
 });

@@ -233,15 +233,14 @@ final class FlightCoordinator {
     private void postCard(JSONObject d) {
         if(store.prefs.getBoolean("ended",false) || !notificationsEnabled() || !channelEnabled(CARD) || store.key().equals(store.prefs.getString("dismissedJourneyKey",""))) return;
         try {
-            boolean stale=d.optBoolean("stale") || d.optLong("staleAt")<=System.currentTimeMillis()/1000;
             String flight=d.optString("flightNumber")+" · "+d.optString("flightDate")+" · "+d.optString("departureAirport")+" → "+d.optString("arrivalAirport");
             String detail=d.optString("metricOneLabel")+": "+d.optString("metricOneValue")+"\n"+d.optString("metricTwoLabel")+": "+d.optString("metricTwoValue")+"\n"+d.optString("metricThreeLabel")+": "+d.optString("metricThreeValue");
-            String footer=d.optString("timezoneText")+" · "+d.optString("updatedText")+(d.optBoolean("offline") ? " · "+d.optString("offlineLabel") : stale ? " · "+d.optString("staleLabel") : "");
+            String footer=d.optString("updatedText")+(d.optBoolean("offline") ? " · "+d.optString("offlineLabel") : "");
             long generation=store.prefs.getLong("journeyGeneration",0);
             Intent dismissed=new Intent(context,JourneyDismissReceiver.class).setData(android.net.Uri.parse("onestepflight://dismiss/"+android.net.Uri.encode(store.key())+"?generation="+generation))
                 .putExtra("journeyKey",store.key()).putExtra("journeyGeneration",generation);
             var notification=base(CARD,store.key(),CARD_ID).setContentTitle(d.optString("nextStep")).setContentText(flight)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(flight+"\n"+detail+"\n"+footer)).setSubText(stale ? d.optString("staleLabel") : d.optString("updatedText"))
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(flight+"\n"+detail+"\n"+footer)).setSubText(d.optString("updatedText"))
                 .setOngoing(true).setOnlyAlertOnce(true).setSilent(true).setShowWhen(false).setCategory(NotificationCompat.CATEGORY_STATUS)
                 .setDeleteIntent(PendingIntent.getBroadcast(context,0,dismissed,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE)).build();
             context.getSystemService(NotificationManager.class).notify(CARD_ID,notification); store.prefs.edit().putBoolean("posted",true).putLong("postedAt",System.currentTimeMillis()).commit(); error="";
