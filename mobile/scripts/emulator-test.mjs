@@ -10,6 +10,7 @@ const sdk=process.env.ANDROID_HOME || path.join(root,'build/toolchain/sdk');
 const adbPath=path.join(sdk,'platform-tools',process.platform==='win32'?'adb.exe':'adb');
 const app='com.selene.onestepflight';
 const uploads=[];
+const pageErrors=[];
 let diagnosticPage;
 console.log('Emulator host memory (MiB)',{free:Math.round(os.freemem()/1048576),total:Math.round(os.totalmem()/1048576)});
 if(process.argv[2]==='environment') process.exit(0);
@@ -43,7 +44,7 @@ async function connect() {
   const browser=await chromium.connectOverCDP('http://127.0.0.1:9222',{noDefaults:true});
   const page=browser.contexts()[0].pages()[0];
   diagnosticPage=page;
-  page.on('pageerror',error=>console.error('WebView page error:',error.message));
+  page.on('pageerror',error=>{pageErrors.push(error.stack || error.message);console.error('WebView page error:',error.stack || error.message);});
   page.on('requestfailed',request=>console.error('WebView request failed:',new URL(request.url()).pathname,request.failure()?.errorText));
   try { await page.waitForFunction(()=>window.OneStepNative && window.OneStepPlatform,null,{timeout:90000,polling:250}); }
   catch(error) {
@@ -125,7 +126,20 @@ if(!booted) throw new Error('Android Emulator did not finish booting within thre
 adb('shell','input','keyevent','224');adb('shell','wm','dismiss-keyguard');
 connectivity(true);
 adb('shell','wm','size','720x1600');adb('shell','wm','density','280');
-ui();
+// boot_completed does not mean System UI has finished its first-run setup.
+// A closed System UI ANR also needs time to recreate its accessibility root.
+// This bounded readiness check never dismisses an App ANR or skips a test.
+const systemReadyDeadline=Date.now()+90000;
+for(;;) {
+  try {
+    if(!ui().includes('<hierarchy')) throw new Error('No Android UI root');
+    break;
+  } catch(error) {
+    if(Date.now()>=systemReadyDeadline) throw error;
+    await delay(1000);
+  }
+}
+if(process.argv[2]==='ready') {console.log('READY Android System UI accessibility hierarchy');process.exit(0);}
 adb('install','-r',path.join(root,'android/app/build/outputs/apk/debug/app-debug.apk'));
 adb('shell','pm','clear',app);adb('shell','am','start','-n',app+'/.MainActivity');
 let {browser,context,page}=await connect();
@@ -205,9 +219,7 @@ await page.locator('#flight-input').fill('BA117');
 const dateInput=page.locator('[data-screen="manual"] input[type="date"]');if(await dateInput.count()) await dateInput.fill(date);
 // DOM focus through DevTools does not reliably show Android's IME. Tap the
 // actual input and verify the keyboard before testing the system Back action.
-const inputBounds=await page.locator('#flight-input').boundingBox();
-if(!inputBounds) throw new Error('Manual flight input has no visible bounds');
-adb('shell','input','tap',String(Math.round(inputBounds.x+inputBounds.width/2)),String(Math.round(inputBounds.y+inputBounds.height/2)));
+await tap(/resource-id="flight-input" class="android.widget.EditText"/);
 const keyboardVisible=()=>/mInputShown=true/.test(adb('shell','dumpsys','input_method'));
 await expect.poll(keyboardVisible,{timeout:15000}).toBe(true);
 adb('shell','input','keyevent','4');
@@ -330,8 +342,10 @@ if(overlays.includes('com.android.internal.systemui.navbar.threebutton')) {
     ({browser,context,page}=await connect());
     await page.addStyleTag({content:'html,body{font-size:24px}'});
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await expect(page.locator('[data-locale-select]')).toHaveValue('es');
     await expect(page.locator('[data-screen="welcome"]')).toBeVisible();capture('three-button-navigation');
     console.log('PASS actual Android three-button navigation with large Spanish text');
   } finally {if(previous) adb('shell','cmd','overlay','enable-exclusive','--category',previous);}
 } else console.log('NOT EXECUTED three-button navigation: overlay absent from system image');
 await browser.close();
+expect(pageErrors, 'No uncaught JavaScript errors during native lifecycle and navigation changes').toEqual([]);
