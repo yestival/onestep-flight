@@ -20,6 +20,13 @@ final class FlightActivityCoordinator {
     var current: Activity<FlightActivityAttributes>? {
         Activity<FlightActivityAttributes>.activities.first { $0.activityState == .active || $0.activityState == .stale }
     }
+    func acceptsBinding(activity id: String, journeyKey: String, state: String) -> Bool {
+        if let current {
+            return current.id == id && current.attributes.journeyKey == journeyKey
+        }
+        return state != "active" && defaults.string(forKey: "flight.lastActivityId") == id
+            && defaults.string(forKey: "flight.lastActivityJourney") == journeyKey
+    }
     func restore() {
         let activities = Activity<FlightActivityAttributes>.activities
         for activity in activities {
@@ -131,9 +138,9 @@ final class FlightActivityCoordinator {
         }
         // An activity born with an elapsed staleDate is accepted by ActivityKit,
         // but iOS 26 does not add it to the Lock Screen. Preserve the original
-        // freshness deadline and facts in content-state; an already-stale card
-        // needs its explicit footer, not another system transition into stale.
-        // Updating the existing activity this way also repairs affected installs.
+        // freshness deadline and facts in content-state without scheduling an
+        // already-elapsed system transition. Legacy activities need the separate
+        // foreground repair below: updating their content alone is insufficient.
         let freshnessElapsed = state.staleAt <= now
         if freshnessElapsed { state.stale = true }
         let staleDate: Date? = freshnessElapsed ? nil : Date(timeIntervalSince1970: TimeInterval(state.staleAt))
@@ -155,9 +162,26 @@ final class FlightActivityCoordinator {
                 defaults.set("ended", forKey: "flight.activityReason." + activity.id)
                 await activity.end(content, dismissalPolicy: .after(Date().addingTimeInterval(1800)))
             } else {
-                // Foreground recovery and WebView sync may submit identical
-                // content together. Avoid spending another system update on it.
-                if activity.content.state != state || activity.content.staleDate != staleDate {
+                let policyKey = "flight.activityDeadlinePolicy." + activity.id
+                let policy = defaults.string(forKey: policyKey)
+                let legacyDeadline = policy == "repair-pending" || policy == nil
+                    && activity.content.staleDate.map { $0.timeIntervalSince1970 <= Double(now) } == true
+                if legacyDeadline { defaults.set("repair-pending", forKey: policyKey) }
+                else if policy == nil { defaults.set("future-only", forKey: policyKey) }
+                let normalEnd = defaults.double(forKey: "flight.activityNormalEnd." + activity.id)
+                if legacyDeadline && UIApplication.shared.applicationState != .background
+                    && (normalEnd == 0 || normalEnd > Date().timeIntervalSince1970) {
+                    // Create first so a denied/failed request leaves the last card
+                    // intact. Serialization prevents a second simultaneous repair.
+                    // Only legacy deadlines are repaired; normally aging cards and
+                    // user-dismissed activities must never be repeatedly recreated.
+                    let replacement = try Activity.request(attributes: FlightActivityAttributes(journeyKey: state.journeyKey), content: content, pushType: .token)
+                    ended.insert(activity.id)
+                    defaults.set("ended", forKey: "flight.activityReason." + activity.id)
+                    await activity.end(nil, dismissalPolicy: .immediate)
+                    remember(replacement, normalEnd: normalEnd > 0 ? normalEnd : nil)
+                } else if activity.content.state != state || activity.content.staleDate != staleDate {
+                    // Ordinary foreground updates remain silent and reuse the card.
                     await activity.update(content) // Ordinary APNs is the sole alert channel.
                 }
             }
@@ -169,12 +193,16 @@ final class FlightActivityCoordinator {
             guard UIApplication.shared.applicationState != .background else { return }
             await endActivities(clearPending: false)
             let activity = try Activity.request(attributes: FlightActivityAttributes(journeyKey: state.journeyKey), content: content, pushType: .token)
-            defaults.set(activity.id, forKey: "flight.lastActivityId")
-            defaults.set(state.journeyKey, forKey: "flight.lastActivityJourney")
-            defaults.set(min(Date().timeIntervalSince1970 + 8 * 3600, Double(state.journeyEndsAt)), forKey: "flight.activityNormalEnd." + activity.id)
-            observe(activity)
+            remember(activity)
             clearFailure()
         }
+    }
+    private func remember(_ activity: Activity<FlightActivityAttributes>, normalEnd: Double? = nil) {
+        defaults.set(activity.id, forKey: "flight.lastActivityId")
+        defaults.set(activity.attributes.journeyKey, forKey: "flight.lastActivityJourney")
+        defaults.set("future-only", forKey: "flight.activityDeadlinePolicy." + activity.id)
+        defaults.set(min(normalEnd ?? Date().timeIntervalSince1970 + 8 * 3600, Double(activity.content.state.journeyEndsAt)), forKey: "flight.activityNormalEnd." + activity.id)
+        observe(activity)
     }
     func status() -> [String: Any] {
         restore()

@@ -24,22 +24,33 @@ import Foundation
         let existingID = coordinator.current?.id
         // The old implementation can leave an elapsed system deadline behind.
         coordinator.current?.content.staleDate = Date(timeIntervalSince1970: TimeInterval(flight.staleAt))
+        defaults.removeObject(forKey: "flight.activityDeadlinePolicy." + existingID!)
+        let originalEnd = defaults.double(forKey: "flight.activityNormalEnd." + existingID!)
         flight.stale = false // A cached state may only carry its original deadline.
         try await coordinator.sync(flight)
-        precondition(store.updates == 1 && coordinator.current?.content.staleDate == nil, "A changed system freshness deadline must still update")
+        precondition(store.requests == 2 && coordinator.current?.content.staleDate == nil, "An invisible legacy card needs a new system activity")
+        precondition(coordinator.current?.id != existingID, "Updating the legacy ID alone does not reliably restore its system view")
+        precondition(defaults.double(forKey: "flight.activityNormalEnd." + coordinator.current!.id) == originalEnd, "Repair must preserve the original activity lifetime")
+        precondition(!coordinator.acceptsBinding(activity: existingID!, journeyKey: flight.journeyKey, state: "active"), "Late legacy tokens must not replace the new subscription")
+        precondition(!coordinator.acceptsBinding(activity: existingID!, journeyKey: flight.journeyKey, state: "ended"), "Late legacy removal must not revoke the replacement")
+        precondition(coordinator.acceptsBinding(activity: coordinator.current!.id, journeyKey: flight.journeyKey, state: "active"))
+        let repairedID = coordinator.current?.id
         try await coordinator.sync(flight)
-        precondition(store.updates == 1, "Repeated recovery must coalesce an identical repaired state")
-        precondition(coordinator.current?.content.state.stale == true, "Elapsed data must still display the stale footer")
-        precondition(coordinator.current?.id == existingID && store.requests == 1, "Repair must update the existing activity")
+        precondition(store.requests == 2 && store.updates == 0, "Repeated recovery must reuse the repaired card")
+        precondition(coordinator.current?.content.state.stale == true, "Elapsed data must still retain its stale flag")
+        precondition(coordinator.current?.id == repairedID, "A repaired activity must not be recreated again")
         var fresh = flight; fresh.staleAt = Int64(Date().timeIntervalSince1970) + 600
         try await coordinator.sync(fresh)
         precondition(coordinator.current?.content.staleDate != nil, "Fresh data still needs the future system stale transition")
+        coordinator.current?.content.staleDate = Date().addingTimeInterval(-1)
+        try await coordinator.sync(flight)
+        precondition(coordinator.current?.id == repairedID && store.requests == 2, "A normally aging card must only update, never be replaced")
 
         // This is the regression: an old subscription clear arrives after the
         // new card was created. It must not end the card or erase its retry state.
         await coordinator.end(journeyKey: "previous-flight")
         await coordinator.resume()
-        precondition(store.requests == 1 && coordinator.current != nil, "Old journey cleanup ended the new activity")
+        precondition(store.requests == 2 && coordinator.current != nil, "Old journey cleanup ended the new activity")
         var next = flight; next.journeyKey = "BA117|2026-10-13|LHR|JFK"
         try await coordinator.sync(next)
         await coordinator.end(journeyKey: flight.journeyKey)
@@ -71,6 +82,35 @@ import Foundation
         await coordinator.resume()
         precondition(coordinator.current?.attributes.journeyKey == flight.journeyKey, "Creation failure lost the cached flight")
         precondition(coordinator.status()["errorCode"] as? String == "")
-        print("Native automatic creation, stale retention, scoped cleanup, dismissal and foreground recovery verified")
+        await coordinator.end()
+
+        // A legacy card may first be discovered by a background fetch. Updating
+        // it must preserve a durable repair marker until creation is permitted.
+        let legacy = try Activity<FlightActivityAttributes>.request(attributes: FlightActivityAttributes(journeyKey: flight.journeyKey),
+            content: ActivityContent(state: flight, staleDate: Date(timeIntervalSince1970: TimeInterval(flight.staleAt))), pushType: .token)
+        let legacyCount = store.requests
+        UIApplication.shared.applicationState = .background
+        try await coordinator.sync(flight)
+        precondition(store.requests == legacyCount && coordinator.current?.id == legacy.id, "Background recovery must not request a replacement")
+        precondition(legacy.content.staleDate == nil, "Background updates must preserve useful state without an elapsed system deadline")
+        UIApplication.shared.applicationState = .active
+        store.rejectRequest = true
+        do { try await coordinator.sync(flight); preconditionFailure("Expected native request failure") }
+        catch { precondition(coordinator.current?.id == legacy.id, "A failed replacement must leave the old activity intact") }
+        store.rejectRequest = false
+        await coordinator.resume()
+        precondition(coordinator.current?.id != legacy.id && store.requests == legacyCount + 1, "Foreground retry must repair the legacy activity once")
+        await coordinator.end()
+
+        // Do not replace legacy activities after their recorded system lifetime.
+        let expired = try Activity<FlightActivityAttributes>.request(attributes: FlightActivityAttributes(journeyKey: flight.journeyKey),
+            content: ActivityContent(state: flight, staleDate: Date(timeIntervalSince1970: TimeInterval(flight.staleAt))), pushType: .token)
+        defaults.set(Date().timeIntervalSince1970 - 1, forKey: "flight.activityNormalEnd." + expired.id)
+        let expiredCount = store.requests
+        try await coordinator.sync(flight)
+        precondition(store.requests == expiredCount, "Repair must not restart the ActivityKit lifetime")
+        expired.activityState = .dismissed
+        await coordinator.end()
+        print("Native creation, one-time legacy repair, lifetime preservation, late bindings, dismissal and foreground retry verified")
     }
 }

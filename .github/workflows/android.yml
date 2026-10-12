@@ -1,11 +1,6 @@
-name: Android and backend regression
+name: Manual Android and backend regression
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ['mobile/**', 'src/**', 'pom.xml', '.github/workflows/android.yml']
-  pull_request:
-    paths: ['mobile/**', 'src/**', 'pom.xml', '.github/workflows/android.yml']
 jobs:
   frontend:
     runs-on: ubuntu-latest

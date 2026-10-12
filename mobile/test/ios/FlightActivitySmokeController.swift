@@ -51,7 +51,7 @@ final class FlightActivitySmokeController: UIViewController {
                 }
                 try await FlightActivityCoordinator.shared.sync(state)
                 try await FlightActivityCoordinator.shared.sync(state)
-                let activities = Activity<FlightActivityAttributes>.activities
+                let activities = Activity<FlightActivityAttributes>.activities.filter { $0.activityState == .active || $0.activityState == .stale }
                 let reused = legacyID == nil || legacyID == activities.first?.id
                 status.text = "created=\(activities.count) reused=\(reused) state=\(String(describing: activities.first?.activityState))"
                 NSLog("WIDGET_SMOKE \(status.text ?? "")")

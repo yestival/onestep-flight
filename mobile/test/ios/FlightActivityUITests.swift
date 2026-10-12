@@ -5,12 +5,13 @@ final class FlightActivityUITests: XCTestCase {
     func testFreshActivityRenders() { verifyRender(fresh: true) }
     func testStaleActivityRenders() { verifyRender(fresh: false) }
     func testExistingInvisibleActivityRecovers() { verifyRender(fresh: false, recover: true) }
+    func testExistingFreshActivityIsReused() { verifyRender(fresh: true, recover: true) }
     func testFlightFactsRemainVisiblePastFreshnessDeadline() { verifyRender(fresh: true, ages: true) }
     private func verifyRender(fresh: Bool, recover: Bool = false, ages: Bool = false) {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.selene.onestepflight")
         if fresh { app.launchArguments = ["--fresh"] }
-        if recover { app.launchArguments = ["--recover"] }
+        if recover { app.launchArguments.append("--recover") }
         if ages { app.launchArguments.append("--ages") }
         app.launch()
         let pastDeadline = Date().addingTimeInterval(35)
@@ -19,7 +20,7 @@ final class FlightActivityUITests: XCTestCase {
         let created = NSPredicate(format: "label CONTAINS 'created=1'")
         expectation(for: created, evaluatedWith: status)
         waitForExpectations(timeout: 30)
-        XCTAssertTrue(status.label.contains("reused=true"), "Recovery must reuse the existing activity")
+        XCTAssertTrue(status.label.contains("reused=\(!recover || fresh)"), "Only legacy activities with elapsed system deadlines need replacement")
         attach("native-created")
         XCUIDevice.shared.press(.home)
         let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")

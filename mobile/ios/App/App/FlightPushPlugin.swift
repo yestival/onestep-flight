@@ -180,7 +180,8 @@ final class FlightPushCoordinator: NSObject, UNUserNotificationCenterDelegate {
         Task { await drain() }
     }
     func bind(activity: String, journeyKey: String, token: String?, state: String) async {
-        guard identity != nil, journeyKey == currentJourney else { return }
+        guard identity != nil, journeyKey == currentJourney,
+              FlightActivityCoordinator.shared.acceptsBinding(activity: activity, journeyKey: journeyKey, state: state) else { return }
         let storedId = defaults.string(forKey: "flight.boundActivity")
         if storedId != activity { defaults.set(activity, forKey: "flight.boundActivity"); defaults.set(defaults.integer(forKey: "flight.activityGeneration") + 1, forKey: "flight.activityGeneration") }
         var body: [String: Any] = ["journeyKey": journeyKey, "activityId": activity, "state": state, "generation": defaults.integer(forKey: "flight.activityGeneration")]
