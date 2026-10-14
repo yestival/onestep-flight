@@ -8,9 +8,13 @@ public class DebugMessageReceiver extends BroadcastReceiver {
     @Override public void onReceive(Context context,Intent intent) {
         if(!BuildConfig.DEBUG) return;
         try {
-            if(intent.getBooleanExtra("localTest",false)) {
-                FlightCoordinator.get(context).store.prefs.edit().putBoolean("localInjectionTest",true).commit();
-                androidx.work.WorkManager.getInstance(context).cancelUniqueWork("flight-sync");setResultCode(1);return;
+            if(intent.hasExtra("localTest")) {
+                boolean active = intent.getBooleanExtra("localTest",false);
+                var coordinator = FlightCoordinator.get(context);
+                coordinator.store.prefs.edit().putBoolean("localInjectionTest",active).commit();
+                if (active) androidx.work.WorkManager.getInstance(context).cancelUniqueWork("flight-sync");
+                else coordinator.schedule();
+                setResultCode(1);return;
             }
             String data=intent.getStringExtra("data");
             if(data==null) try(var stream=new java.io.FileInputStream(new java.io.File(context.getFilesDir(),"debug-message.json"))) {data=new String(FlightSyncWorker.readBounded(stream,8192),java.nio.charset.StandardCharsets.UTF_8);}

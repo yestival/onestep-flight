@@ -85,6 +85,16 @@ public class NotificationLifecycleTest {
         if(Build.VERSION.SDK_INT>=26) assertEquals(FlightCoordinator.ALERT,alert.getNotification().getChannelId());
         assertTrue(c.liveStatus().getBoolean("removed"));assertFalse(c.liveStatus().getBoolean("active"));
     }
+    @Test public void systemCancellationDoesNotBecomeAUserDismissal() throws Exception {
+        c.local(display("one"));assertCount(1);
+        notifications.cancel(FlightCoordinator.CARD_ID);assertCount(0);
+        c.store.prefs.edit().putLong("postedAt",0).commit();
+        assertFalse(c.liveStatus().getBoolean("removed"));
+        c.refreshCard("one");assertCount(1);
+        c.dismissed("one",c.store.prefs.getLong("journeyGeneration",0));assertCount(0);
+        c.refreshCard("one");assertCount(0);
+        assertTrue(c.liveStatus().getBoolean("removed"));
+    }
     @Test public void zDisabledChannelPreservesLocalJourneyWithoutRecreatingTheChannel() throws Exception {
         if(Build.VERSION.SDK_INT<26) return;
         notifications.deleteNotificationChannel(FlightCoordinator.CARD);

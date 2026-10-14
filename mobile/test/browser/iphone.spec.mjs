@@ -191,7 +191,7 @@ async function mockedNative(page, disk, options = {}) {
       Network: { addListener:async(k,f)=>{nativeEvents[k]=f},getStatus:async()=>({connected:true}) },
       Share: { share:async p=>{await nativeCall('share',p);throw new Error('Share canceled')} },
       Filesystem: { readdir:async()=>({files:[]}),writeFile:async p=>{await nativeCall('write',p);return {uri:'file:///cache/card.png'}},deleteFile:async p=>nativeCall('delete',p) },
-      FlightNative: {openExternal:async p=>nativeCall('openExternal',p),dismissKeyboard:async()=>{const dismissed=!!window.keyboardOpen;window.keyboardOpen=false;await nativeCall('dismissKeyboard');return {dismissed}}},
+      FlightNative: {${options.nativeSpeech ? "speak:async p=>{await nativeCall('nativeSpeech',p);if(window.failNativeSpeech)throw {code:'SPEECH_LANGUAGE_UNAVAILABLE'};return new Promise(resolve=>(window.speechCompletions ||= []).push(resolve));},stopSpeech:async()=>nativeCall('stopSpeech')," : ''}openExternal:async p=>nativeCall('openExternal',p),dismissKeyboard:async()=>{const dismissed=!!window.keyboardOpen;window.keyboardOpen=false;await nativeCall('dismissKeyboard');return {dismissed}}},
       FlightPush: {addListener:async()=>{},status:async()=>(${JSON.stringify(options.nativeState || {})}),initialize:async()=>${options.hangInitialization ? 'new Promise(()=>{})' : '('+JSON.stringify(options.nativeState || {ready:true})+')'},syncJourney:async p=>{
         await nativeCall('syncJourney',p);
         if (holdJourneyPreparation) {
@@ -207,6 +207,73 @@ async function mockedNative(page, disk, options = {}) {
     };` }));
   return calls;
 }
+
+for (const platform of ['android', 'ios']) {
+  test(platform + ' keeps the unanswered check-in question after cold restoration and flight checks', async ({ page }) => {
+    const now = Date.parse('2026-09-05T07:00:00Z'), saved = snapshot(now);
+    saved.context.checkedIn = false;
+    saved.checkInStatusAnswer = null;
+    saved.action = { stepType: 'CHECK_IN_QUESTION', titleEn: 'Have you checked in?', descriptionEn: 'Check your boarding pass.' };
+    const disk = new Map([['onestep-flight-offline-journey-v1', JSON.stringify(saved)]]);
+    await mockedNative(page, disk, { platform });
+    await page.clock.setFixedTime(new Date(now));
+    let checks = 0;
+    await page.route('**/api/journeys/next-action', route => {
+      checks++;
+      return route.fulfill({ json: { flight: saved.flight, nextAction: { stepType: 'ACTION', actionCode: 'CHECK_IN', titleEn: 'Check in now' } } });
+    });
+    await page.goto('/');
+    await expect.poll(() => checks).toBeGreaterThan(0);
+    await expect(page.locator('[data-checkin-question]')).toBeVisible();
+    await expect(page.locator('[data-action="checkin-status"][data-answer="yes"]')).toBeVisible();
+    const before = checks;
+    await page.clock.setFixedTime(new Date(now + 3000));
+    await page.evaluate(() => nativeEvents.appStateChange({ isActive: false }));
+    await page.evaluate(() => nativeEvents.appStateChange({ isActive: true }));
+    await expect.poll(() => checks).toBeGreaterThan(before);
+    await expect(page.locator('[data-checkin-question]')).toBeVisible();
+    const stored = JSON.parse(disk.get('onestep-flight-offline-journey-v1'));
+    expect(stored.action.stepType).toBe('CHECK_IN_QUESTION');
+    expect(stored.checkInStatusAnswer).toBeNull();
+  });
+}
+
+test('Android reads without Web Speech, stops and ignores old speech completions', async ({ page }) => {
+  const now = Date.parse('2026-09-05T07:00:00Z');
+  const disk = new Map([['onestep-flight-offline-journey-v1', JSON.stringify(snapshot(now))]]);
+  const calls = await mockedNative(page, disk, { platform: 'android', nativeSpeech: true });
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'speechSynthesis', { value: undefined, configurable: true });
+    Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: undefined, configurable: true });
+  });
+  await page.clock.setFixedTime(new Date(now));
+  await page.route('**/api/**', route => route.abort());
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  const button = page.locator('[data-screen="step"] [data-action="speak"]');
+  await expect(button).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => calls.filter(call => call.name === 'nativeSpeech').length).toBe(1);
+  await button.click();
+  await expect(button).toHaveAttribute('aria-pressed', 'false');
+  await button.click();
+  await expect.poll(() => calls.filter(call => call.name === 'nativeSpeech').length).toBe(2);
+  await page.evaluate(() => speechCompletions[0]({ cancelled: true }));
+  await expect(button).toHaveAttribute('aria-pressed', 'true');
+  await page.evaluate(() => speechCompletions[1]({ cancelled: false }));
+  await expect(button).toHaveAttribute('aria-pressed', 'false');
+  for (const [locale, language] of [['zh', 'zh-CN'], ['es', 'es-ES']]) {
+    await page.locator('[data-locale-select]').selectOption(locale);
+    await button.click();
+    await expect.poll(() => calls.filter(call => call.name === 'nativeSpeech').at(-1)?.payload.language).toBe(language);
+    await page.evaluate(() => speechCompletions.at(-1)({ cancelled: false }));
+    await expect(button).toHaveAttribute('aria-pressed', 'false');
+  }
+  await page.evaluate(() => { window.failNativeSpeech = true; });
+  await button.click();
+  await expect(button).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('[data-toast]')).toContainText('voz de este idioma');
+  expect(errors).toEqual([]);
+});
 
 test('Android startup survives stalled push initialization and uses Android copy and back handling',async({page})=>{
   const now=Date.parse('2026-09-05T07:00:00Z');

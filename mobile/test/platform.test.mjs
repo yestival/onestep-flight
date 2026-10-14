@@ -29,6 +29,28 @@ test('production origins are separate and reject missing, loopback, HTTP and pla
     assert.throws(() => buildConfig({ API_BASE_URL: value }));
   }
 });
+
+test('Android reading uses the native engine without a Web Speech API and keeps errors actionable', async () => {
+  const { host, native } = fixture();
+  const spoken = [];
+  native.platform = 'android';
+  native.FlightNative = { speak: async value => { spoken.push(value); }, stopSpeech: async () => { spoken.push('stop'); } };
+  const platform = createPlatform(host, native, {});
+  assert.equal(host.speechSynthesis, undefined);
+  await platform.speech.speak('请前往登机口', 'zh-CN');
+  await platform.speech.stop();
+  assert.deepEqual(spoken, [{ text: '请前往登机口', language: 'zh-CN' }, 'stop']);
+  native.FlightNative.speak = async () => { throw Object.assign(new Error('Missing voice'), { code: 'SPEECH_LANGUAGE_UNAVAILABLE' }); };
+  await assert.rejects(platform.speech.speak('Hola', 'es-ES'), { code: 'SPEECH_LANGUAGE_UNAVAILABLE' });
+});
+
+test('iOS and web keep their existing Web Speech path without calling Android-only methods', () => {
+  const { host, native } = fixture();
+  native.platform = 'ios';
+  native.FlightNative = { speak: () => { throw new Error('Android-only method'); } };
+  assert.equal(createPlatform(host, native, {}).speech, null);
+  assert.equal(createPlatform(host, null, {}).speech, null);
+});
 test('web stays same-origin; every API verb including multipart uses native API origin', async () => {
   const { platform, host, calls } = fixture();
   assert.equal(createPlatform(host, null, {}).apiUrl('/api/journeys/next-action'), '/api/journeys/next-action');

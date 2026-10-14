@@ -4,11 +4,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { runSync } from './process.mjs';
+import { prepareOfflineSpeech } from './offline-speech.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const android=path.join(root,'android');
 const win=process.platform==='win32';
 const toolRoot=path.join(root,'build/toolchain');
 const env={...process.env};
+env.NODE_BINARY ||= process.execPath;
 env.JAVA_HOME=env.ANDROID_JAVA_HOME || (existsSync(path.join(toolRoot,'jdk/bin/java.exe')) ? path.join(toolRoot,'jdk') : env.JAVA_HOME);
 env.ANDROID_HOME=env.ANDROID_HOME || env.ANDROID_SDK_ROOT || (existsSync(path.join(toolRoot,'sdk')) ? path.join(toolRoot,'sdk') : '');
 if(existsSync(path.join(toolRoot,'avd'))) {
@@ -61,6 +63,7 @@ if(['sync','debug','release','install','check','native-test'].includes(action)) 
 const adb=path.join(env.ANDROID_HOME,'platform-tools',win ? 'adb.exe' : 'adb');
 if(['debug','release','check','native-test'].includes(action)) {
   if(!env.JAVA_HOME || !env.ANDROID_HOME) throw new Error('Set ANDROID_JAVA_HOME (JDK 21+) and ANDROID_HOME. On Windows: powershell -File scripts/setup-android.ps1 -WithEmulator');
+  prepareOfflineSpeech(env);
   const gradle=path.join(android,win?'gradlew.bat':'gradlew');
   if(action==='release') {
     for(const name of ['ANDROID_KEYSTORE_PATH','ANDROID_KEYSTORE_PASSWORD','ANDROID_KEY_ALIAS','ANDROID_KEY_PASSWORD']) if(!env[name]) throw new Error(`Missing release signing variable: ${name}`);

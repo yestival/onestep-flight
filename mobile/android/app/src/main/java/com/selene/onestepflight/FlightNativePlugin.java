@@ -6,6 +6,19 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 @CapacitorPlugin(name="FlightNative")
 public class FlightNativePlugin extends Plugin {
+    private FlightSpeech speech;
+    private FlightSpeech speech() { if (speech == null) speech = new FlightSpeech(getContext()); return speech; }
+    @PluginMethod public void speak(PluginCall call) {
+        getActivity().runOnUiThread(() -> speech().speak(call.getString("text", ""), call.getString("language", "en-US"), new FlightSpeech.Completion() {
+            @Override public void complete(boolean cancelled) { call.resolve(new JSObject().put("cancelled", cancelled)); }
+            @Override public void failed(String code) { call.reject("Unable to read aloud", code); }
+        }));
+    }
+    @PluginMethod public void stopSpeech(PluginCall call) {
+        getActivity().runOnUiThread(() -> { if (speech != null) speech.stop(); call.resolve(); });
+    }
+    @Override protected void handleOnPause() { getActivity().runOnUiThread(() -> { if (speech != null) speech.stop(); }); }
+    @Override protected void handleOnDestroy() { getActivity().runOnUiThread(() -> { if (speech != null) speech.shutdown(); speech = null; }); }
     @PluginMethod public void dismissKeyboard(PluginCall call) {
       getActivity().runOnUiThread(()->{
         var view=getActivity().getWindow().getDecorView();

@@ -3593,7 +3593,10 @@
       currentFlight = response.flight;
       restoredFromOffline = false;
       journeyContext.flightSnapshot = currentFlight;
-      currentAction = response.nextAction;
+      // Checking operational facts must not answer a pending traveler question.
+      currentAction = previousAction && previousAction.stepType === 'CHECK_IN_QUESTION'
+        && checkInStatusAnswer == null && response.nextAction && response.nextAction.actionCode === 'CHECK_IN'
+        ? buildCheckInQuestion() : response.nextAction;
       recordLiveChanges(currentFlight.latestChanges);
       var hasNewChangeBatch = false;
       if (refreshRequested) hasNewChangeBatch = updateRefreshChangeState(previousAction);
@@ -6106,7 +6109,7 @@
   }
 
   function speechIsSupported() {
-    return 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
+    return Boolean(platform.speech) || 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
   }
 
   function speechViewKey() {
@@ -6214,11 +6217,12 @@
     speechGeneration += 1;
     window.clearTimeout(automaticSpeechTimer);
     automaticSpeechTimer = null;
-    var synthesis = speechIsSupported() ? window.speechSynthesis : null;
+    var synthesis = window.speechSynthesis;
     var wasSpeaking = speakingActive || Boolean(synthesis && (synthesis.speaking || synthesis.pending));
     if (synthesis) {
       try { synthesis.cancel(); } catch (error) { /* Speech is optional. */ }
     }
+    if (platform.speech) platform.speech.stop();
     speakingActive = false;
     updateSpeechButtons();
     if (showMessage && wasSpeaking) showToast(localeText('朗读已停止。', 'Reading stopped.', 'Lectura detenida.'));
@@ -6234,6 +6238,20 @@
       return;
     }
     var generation = ++speechGeneration;
+    if (platform.speech) {
+      speakingActive = true;
+      updateSpeechButtons();
+      platform.speech.speak(text, speechLocale === 'zh' ? 'zh-CN' : speechLocale === 'es' ? 'es-ES' : 'en-US').then(function () {
+        if (generation === speechGeneration) stopSpeech(false);
+      }).catch(function (error) {
+        if (generation !== speechGeneration) return;
+        stopSpeech(false);
+        if (!automatic) showToast(error && error.code === 'SPEECH_LANGUAGE_UNAVAILABLE'
+          ? localeText('手机尚未安装该语言的朗读语音。', 'This language’s reading voice is not installed on your phone.', 'El teléfono no tiene instalada la voz de este idioma.')
+          : localeText('暂时无法开始朗读。', 'Reading could not start.', 'No se pudo iniciar la lectura.'));
+      });
+      return;
+    }
     var utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = speechLocale === 'zh' ? 'zh-CN' : speechLocale === 'es' ? 'es-ES' : 'en-US';
     var voicePrefix = speechLocale === 'zh' ? 'zh' : speechLocale === 'es' ? 'es' : 'en';
@@ -6296,7 +6314,7 @@
   }
 
   function speak() {
-    if (speakingActive || speechIsSupported() && (window.speechSynthesis.speaking || window.speechSynthesis.pending)) {
+    if (speakingActive || window.speechSynthesis && (window.speechSynthesis.speaking || window.speechSynthesis.pending)) {
       stopSpeech(true);
       return;
     }

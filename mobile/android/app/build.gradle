@@ -1,6 +1,20 @@
 apply plugin: 'com.android.application'
 
+tasks.register('prepareOfflineSpeech', Exec) {
+    workingDir file('../..')
+    commandLine(System.getenv('NODE_BINARY') ?: 'node', 'scripts/offline-speech.mjs')
+    inputs.files(file('../offline-speech/CMakeLists.txt'), file('../offline-speech/speech.lock.json'),
+        file('../offline-speech/espeak-ng-data.zip'), file('../offline-speech/espeak-ng-1.52.0-source.tar.gz'),
+        file('../offline-speech/COPYING.GPL3'), file('../../scripts/offline-speech.mjs'), file('../../scripts/process.mjs'))
+    outputs.dirs(file('../../build/offline-speech/assets'), file('../../build/offline-speech/jniLibs'))
+    doFirst { environment 'ANDROID_HOME', android.sdkDirectory.absolutePath }
+}
+tasks.named('preBuild').configure { dependsOn 'prepareOfflineSpeech' }
+
 android {
+    sourceSets.main.assets.srcDir file('../../build/offline-speech/assets')
+    sourceSets.main.jniLibs.srcDir file('../../build/offline-speech/jniLibs')
+    packagingOptions { jniLibs { useLegacyPackaging true } }
     buildFeatures { buildConfig true }
     namespace = "com.selene.onestepflight"
     compileSdk = rootProject.ext.compileSdkVersion

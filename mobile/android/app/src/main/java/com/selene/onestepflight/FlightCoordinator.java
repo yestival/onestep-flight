@@ -211,19 +211,24 @@ final class FlightCoordinator {
     }
     synchronized void deliverRoute() { if(pendingRoute!=null && routeListener!=null) {routeListener.accept(pendingRoute);pendingRoute=null;} }
     private void reconcileDismissal() {
-        if(!store.prefs.getBoolean("posted",false) || !notificationsEnabled() || !channelEnabled(CARD)) return;
+        if(!store.prefs.getBoolean("posted",false)) return;
+        if(!notificationsEnabled() || !channelEnabled(CARD)) { store.prefs.edit().putBoolean("posted",false).commit(); return; }
         // NotificationManager accepts a post before System UI lists it. Absence
         // during that short handoff is not a user dismissal.
         if(System.currentTimeMillis()-store.prefs.getLong("postedAt",0)<3000) return;
         boolean found=false; for(var notification:context.getSystemService(NotificationManager.class).getActiveNotifications()) if(notification.getId()==CARD_ID) found=true;
-        if(!found) dismissed(store.key());
+        // Android can clear cards during permission changes, package replacement
+        // or system recovery. Missing from the shade is not proof of a swipe.
+        // Only the scoped deleteIntent records an explicit user dismissal.
+        if(!found) store.prefs.edit().putBoolean("posted",false).commit();
     }
     synchronized void dismissed(String key) {
         if(key==null || key.isEmpty() || !key.equals(store.key())) return;
         store.prefs.edit().putString("dismissedJourneyKey",key).putBoolean("posted",false).commit();
+        context.getSystemService(NotificationManager.class).cancel(CARD_ID);
     }
     synchronized void dismissed(String key,long generation) {
-        if(generation==store.prefs.getLong("journeyGeneration",0)) dismissed(key);
+        if(generation==store.prefs.getLong("journeyGeneration",0) && notificationsEnabled() && channelEnabled(CARD)) dismissed(key);
     }
     private NotificationCompat.Builder base(String channel,String key,int request) {
         return new NotificationCompat.Builder(context,channel).setSmallIcon(R.drawable.ic_flight_notification).setColor(0xff2c648e)

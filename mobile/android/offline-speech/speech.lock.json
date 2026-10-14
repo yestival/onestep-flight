@@ -1,0 +1,14 @@
+{
+  "version": "1.52.0",
+  "license": "GPL-3.0-or-later",
+  "sourceUrl": "https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.52.0.tar.gz",
+  "sourceSha256": "bb4338102ff3b49a81423da8a1a158b420124b055b60fa76cfb4b18677130a23",
+  "dataOrigin": "https://github.com/espeak-ng/espeak-ng/releases/download/1.52.0/espeak-1.52.0-signed.apk",
+  "dataOriginSha256": "741b46abf84d843f9b0cce80136f60ffee9b9fe591601b9701aa2a9ff99c9ddf",
+  "dataMember": "res/t8.zip",
+  "dataSha256": "a65a7d90fcc24719787bbf278e18c48d6e42d164473ab181db9337834e4bf56c",
+  "ndk": "28.2.13676358",
+  "cmake": "3.22.1",
+  "androidApi": 24,
+  "abis": ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
+}

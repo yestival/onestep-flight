@@ -235,6 +235,10 @@
   }
   return {
     isNative: isNative, nativePlatform: nativePlatform, storage: storage, init: init, apiUrl: apiUrl, apiFetch: apiFetch,
+    speech: nativePlatform === 'android' && native.FlightNative && typeof native.FlightNative.speak === 'function' ? {
+      speak: function (text, language) { return bounded(function () { return native.FlightNative.speak({ text: text, language: language }); }, Math.min(630000, Math.max(60000, text.length * 350 + 30000))); },
+      stop: function () { return bounded(function () { return native.FlightNative.stopSpeech(); }, 1000).catch(function () {}); }
+    } : null,
     exitApp: function () { return native.App.exitApp(); },
     dismissKeyboard: function () {
       if (nativePlatform !== 'android' || !native.FlightNative || typeof native.FlightNative.dismissKeyboard !== 'function') return Promise.resolve(false);
