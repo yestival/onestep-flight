@@ -34,7 +34,15 @@ public class NotificationLifecycleTest {
         var d=display(key).put("gate","B40").put("nextStep","Go to gate B40").put("snapshotVersion",version).put("clientRevision",revision);
         return Map.of("eventId",id,"journeyKey",key,"snapshotVersion",Long.toString(version),"clientRevision",Long.toString(revision),"important",Boolean.toString(important),"end",Boolean.toString(end),"expiresAt",Long.toString(System.currentTimeMillis()/1000+900),"displayState",d.toString(),"title","Gate changed","body","B32 → B40");
     }
-    private int count() {return notifications.getActiveNotifications().length;}
+    private android.service.notification.StatusBarNotification[] contentNotifications() {
+        var content=new ArrayList<android.service.notification.StatusBarNotification>();
+        // Android 16 may add its own Aggregate_AlertingSection summary. It is a
+        // container for our notifications, not another journey or change event.
+        for(var notification:notifications.getActiveNotifications())
+            if((notification.getNotification().flags & android.app.Notification.FLAG_GROUP_SUMMARY)==0) content.add(notification);
+        return content.toArray(new android.service.notification.StatusBarNotification[0]);
+    }
+    private int count() {return contentNotifications().length;}
     private void assertCount(int expected) throws Exception {
         // NotificationManager posts and cancels asynchronously. Require the
         // observed state to settle, including assertions that no card returns.
@@ -48,7 +56,7 @@ public class NotificationLifecycleTest {
     }
     @Test public void localCardWorksWithoutFirebaseAndKeepsGateOutOfMetricArea() throws Exception {
         c.local(display("one").put("stale",true).put("staleAt",System.currentTimeMillis()/1000-60));assertCount(1);assertTrue(c.liveStatus().getBoolean("active"));
-        var card=notifications.getActiveNotifications()[0].getNotification();
+        var card=contentNotifications()[0].getNotification();
         assertEquals("Go to gate B32",card.extras.getString("android.title"));
         assertFalse(card.extras.getCharSequence("android.bigText").toString().contains("T5 · B32"));
         String expanded=card.extras.getCharSequence("android.bigText").toString();
@@ -56,12 +64,20 @@ public class NotificationLifecycleTest {
         assertFalse(expanded.contains("Departure airport local time"));
         assertFalse(expanded.contains("Data may be out of date"));
         assertEquals("14:00 updated",card.extras.getString("android.subText"));
+        if(Build.VERSION.SDK_INT>=26) {
+            var channel=notifications.getNotificationChannel(FlightCoordinator.CARD);
+            assertEquals(NotificationManager.IMPORTANCE_DEFAULT,channel.getImportance());
+            assertNull(channel.getSound());assertFalse(channel.shouldVibrate());
+        }
+        assertTrue((card.flags & android.app.Notification.FLAG_ONLY_ALERT_ONCE)!=0);
+        assertEquals(android.app.Notification.VISIBILITY_PRIVATE,card.visibility);
+        assertEquals("OneStep Flight",card.publicVersion.extras.getString("android.title"));
         assertTrue(c.pushStatus().getString("pushStatus").contains("FIREBASE_NOT_CONFIGURED"));
         assertEquals(2,c.store.identity().length()); assertFalse(c.store.prefs.getString("identity","").contains("secret"));
     }
     @Test public void duplicateAndOutOfOrderEventsDoNotMakeDuplicateAlerts() throws Exception {
         c.local(display("one"));long revision=c.store.revision();var message=event("change","one",4,revision,true,false);
-        c.receive(message);assertCount(2);c.receive(message);assertCount(2);
+        c.receive(message);assertCount(2);c.receive(message);assertCount(2);assertEquals(1,c.store.array("seenEvents").length());
         c.receive(event("old","one",3,revision,true,false));assertCount(2);
         c.receive(event("old-progress","one",5,revision-1,true,false));assertEquals(4,c.store.prefs.getLong("snapshotVersion",0));
         assertEquals("B40",c.store.object("display").getString("gate"));
@@ -81,7 +97,7 @@ public class NotificationLifecycleTest {
         c.local(display("one"));assertCount(1);c.dismissed("one");notifications.cancel(FlightCoordinator.CARD_ID);
         c.local(display("one"));assertCount(0);
         c.receive(event("change","one",2,c.store.revision(),true,false));assertCount(1);
-        var alert=notifications.getActiveNotifications()[0];assertNotEquals(FlightCoordinator.CARD_ID,alert.getId());
+        var alert=contentNotifications()[0];assertNotEquals(FlightCoordinator.CARD_ID,alert.getId());
         if(Build.VERSION.SDK_INT>=26) assertEquals(FlightCoordinator.ALERT,alert.getNotification().getChannelId());
         assertTrue(c.liveStatus().getBoolean("removed"));assertFalse(c.liveStatus().getBoolean("active"));
     }

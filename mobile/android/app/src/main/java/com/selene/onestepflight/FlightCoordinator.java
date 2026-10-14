@@ -21,11 +21,12 @@ final class FlightCoordinator {
     static com.getcapacitor.JSObject js(JSONObject object) {
         var result=new com.getcapacitor.JSObject();object.keys().forEachRemaining(k->result.put(k,object.opt(k)));return result;
     }
-    static final String CARD="flight_journey", ALERT="flight_changes";
+    static final String CARD=JourneyChannels.CARD, ALERT="flight_changes";
     static final int CARD_ID=117;
     private static FlightCoordinator instance;
     final Context context;
     final JourneyStore store;
+    final String cardChannel;
     private String error="";
     private boolean initialized;
     private boolean tokenLoading;
@@ -38,13 +39,12 @@ final class FlightCoordinator {
     }
     private FlightCoordinator(Context context) {
         this.context=context; store=new JourneyStore(context);
+        cardChannel=Build.VERSION.SDK_INT>=26 ? JourneyChannels.configure(context.getSystemService(NotificationManager.class)) : CARD;
         if(Build.VERSION.SDK_INT>=26) {
             var manager=context.getSystemService(NotificationManager.class);
-            var card=new NotificationChannel(CARD,"OneStep Flight · Journey",NotificationManager.IMPORTANCE_LOW);
-            card.setDescription("Current journey · silent updates"); card.setSound(null,null); card.enableVibration(false);
             var alerts=new NotificationChannel(ALERT,"OneStep Flight · Important changes",NotificationManager.IMPORTANCE_HIGH);
             alerts.setDescription("Gate, terminal and important flight changes");
-            manager.createNotificationChannel(card); manager.createNotificationChannel(alerts);
+            manager.createNotificationChannel(alerts);
         }
     }
     synchronized void initialize() {
@@ -85,7 +85,7 @@ final class FlightCoordinator {
     }
     synchronized JSONObject liveStatus() {
         reconcileDismissal();
-        var out=new JSONObject(); boolean enabled=notificationsEnabled() && channelEnabled(CARD);
+        var out=new JSONObject(); boolean enabled=notificationsEnabled() && channelEnabled(cardChannel);
         boolean active=false;
         for(var n:context.getSystemService(NotificationManager.class).getActiveNotifications()) if(n.getId()==CARD_ID) active=true;
         JourneyMessage.put(out,"supported",true); JourneyMessage.put(out,"enabled",enabled);
@@ -100,7 +100,7 @@ final class FlightCoordinator {
     }
     synchronized JSONObject pushStatus() {
         var out=liveStatus(); String reason=!googleAvailable() ? "GOOGLE_SERVICES_UNAVAILABLE" : !configured() ? "FIREBASE_NOT_CONFIGURED"
-            : !notificationsEnabled() ? "NOTIFICATIONS_DISABLED" : !channelEnabled(CARD) || !channelEnabled(ALERT) ? "NOTIFICATION_CHANNEL_DISABLED"
+            : !notificationsEnabled() ? "NOTIFICATIONS_DISABLED" : !channelEnabled(cardChannel) || !channelEnabled(ALERT) ? "NOTIFICATION_CHANNEL_DISABLED"
             : store.prefs.getString("tokenError","").isEmpty() ? store.prefs.getString("token","").isEmpty() ? "FCM_REGISTERING" : store.prefs.getString("serverPushStatus","FCM_SERVER_UNCONFIRMED") : "FCM_REGISTRATION_FAILED";
         JourneyMessage.put(out,"ready",error.isEmpty()); JourneyMessage.put(out,"pushStatus",reason);
         JourneyMessage.put(out,"pushReady","READY".equals(reason)); JourneyMessage.put(out,"platform","android");
@@ -212,7 +212,7 @@ final class FlightCoordinator {
     synchronized void deliverRoute() { if(pendingRoute!=null && routeListener!=null) {routeListener.accept(pendingRoute);pendingRoute=null;} }
     private void reconcileDismissal() {
         if(!store.prefs.getBoolean("posted",false)) return;
-        if(!notificationsEnabled() || !channelEnabled(CARD)) { store.prefs.edit().putBoolean("posted",false).commit(); return; }
+        if(!notificationsEnabled() || !channelEnabled(cardChannel)) { store.prefs.edit().putBoolean("posted",false).commit(); return; }
         // NotificationManager accepts a post before System UI lists it. Absence
         // during that short handoff is not a user dismissal.
         if(System.currentTimeMillis()-store.prefs.getLong("postedAt",0)<3000) return;
@@ -228,7 +228,7 @@ final class FlightCoordinator {
         context.getSystemService(NotificationManager.class).cancel(CARD_ID);
     }
     synchronized void dismissed(String key,long generation) {
-        if(generation==store.prefs.getLong("journeyGeneration",0) && notificationsEnabled() && channelEnabled(CARD)) dismissed(key);
+        if(generation==store.prefs.getLong("journeyGeneration",0) && notificationsEnabled() && channelEnabled(cardChannel)) dismissed(key);
     }
     private NotificationCompat.Builder base(String channel,String key,int request) {
         return new NotificationCompat.Builder(context,channel).setSmallIcon(R.drawable.ic_flight_notification).setColor(0xff2c648e)
@@ -236,7 +236,7 @@ final class FlightCoordinator {
             .setPublicVersion(new NotificationCompat.Builder(context,channel).setSmallIcon(R.drawable.ic_flight_notification).setContentTitle("OneStep Flight").setContentText("Journey update").build());
     }
     private void postCard(JSONObject d) {
-        if(store.prefs.getBoolean("ended",false) || !notificationsEnabled() || !channelEnabled(CARD) || store.key().equals(store.prefs.getString("dismissedJourneyKey",""))) return;
+        if(store.prefs.getBoolean("ended",false) || !notificationsEnabled() || !channelEnabled(cardChannel) || store.key().equals(store.prefs.getString("dismissedJourneyKey",""))) return;
         try {
             String flight=d.optString("flightNumber")+" · "+d.optString("flightDate")+" · "+d.optString("departureAirport")+" → "+d.optString("arrivalAirport");
             String detail=d.optString("metricOneLabel")+": "+d.optString("metricOneValue")+"\n"+d.optString("metricTwoLabel")+": "+d.optString("metricTwoValue")+"\n"+d.optString("metricThreeLabel")+": "+d.optString("metricThreeValue");
@@ -244,7 +244,7 @@ final class FlightCoordinator {
             long generation=store.prefs.getLong("journeyGeneration",0);
             Intent dismissed=new Intent(context,JourneyDismissReceiver.class).setData(android.net.Uri.parse("onestepflight://dismiss/"+android.net.Uri.encode(store.key())+"?generation="+generation))
                 .putExtra("journeyKey",store.key()).putExtra("journeyGeneration",generation);
-            var notification=base(CARD,store.key(),CARD_ID).setContentTitle(d.optString("nextStep")).setContentText(flight)
+            var notification=base(cardChannel,store.key(),CARD_ID).setContentTitle(d.optString("nextStep")).setContentText(flight)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(flight+"\n"+detail+"\n"+footer)).setSubText(d.optString("updatedText"))
                 .setOngoing(true).setOnlyAlertOnce(true).setSilent(true).setShowWhen(false).setCategory(NotificationCompat.CATEGORY_STATUS)
                 .setDeleteIntent(PendingIntent.getBroadcast(context,0,dismissed,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE)).build();
